@@ -1,0 +1,31 @@
+# Alchemize Domain Event Catalog
+
+Events are immutable facts emitted after an authorized transaction commits, preferably through a transactional outbox. Payloads contain stable IDs and necessary state changes, not full sensitive records. Consumers must be idempotent.
+
+| Event                          | Trigger                             | Payload concept                                               | Potential consumers                          |    Client visible |            Audit required |
+| ------------------------------ | ----------------------------------- | ------------------------------------------------------------- | -------------------------------------------- | ----------------: | ------------------------: |
+| `lead.created`                 | Public/admin inquiry accepted       | leadId, audience, serviceKey?, source, occurredAt             | Admin queue, confirmation, analytics         | Confirmation only |                         C |
+| `lead.status_changed`          | Valid lead transition               | leadId, from, to, actorId                                     | Activity, admin queue                        |                No |                         C |
+| `lead.converted`               | Atomic conversion committed         | leadId, clientId, businessId?, userInviteId?, engagementId?   | Onboarding tasks, analytics                  |                 C |                       Yes |
+| `client.created`               | Client record created               | clientId, type, actorId                                       | Activity, onboarding                         |                 C |                       Yes |
+| `engagement.created`           | Service accepted/started            | engagementId, clientId, serviceKey, status, stage             | Tasks, activity, analytics                   |               Yes |                       Yes |
+| `engagement.status_changed`    | Valid status transition             | engagementId, clientId, from, to, actorId                     | Attention, notification, activity            |           Usually |                         C |
+| `engagement.stage_changed`     | Workflow stage advances/reverses    | engagementId, workflowVersion, from, to                       | Progress UI, activity                        |               Yes |                         C |
+| `engagement.completed`         | Engagement completed                | engagementId, serviceKey, completedAt                         | Completion notification, analytics           |               Yes |                       Yes |
+| `task.created`                 | Task committed                      | taskId, clientId, engagementId?, assignee, visibility, dueAt? | Notification, dashboard                      |  If client-facing |                         C |
+| `task.completed`               | Task completed                      | taskId, actorId, completedAt                                  | Activity, dependent task evaluation          |        If visible |                         C |
+| `document.requested`           | Request created                     | requestId, clientId, engagementId?, type, dueAt?              | Client notification                          |               Yes | Yes for sensitive classes |
+| `document.received`            | Upload accepted and metadata stored | documentId, requestId?, classification, uploaderId            | Review queue, receipt                        |               Yes |                       Yes |
+| `document.accepted`            | Staff accepts document version      | documentId, requestId?, reviewerId                            | Request fulfillment, activity                |               Yes |                       Yes |
+| `appointment.requested`        | Request created                     | appointmentId, clientId, type, requested window               | Admin queue                                  |               Yes |                         C |
+| `appointment.scheduled`        | Time committed                      | appointmentId, startAt, timezone, participants                | Confirmation, calendar adapter, reminder job |               Yes |                         C |
+| `appointment.completed`        | Meeting completed                   | appointmentId, completedAt                                    | Follow-up task, activity                     |               Yes |                         C |
+| `message.received`             | Inbound message committed           | conversationId, messageId, senderId, clientId                 | Unread notification, attention queue         |               Yes |                         C |
+| `invoice.issued`               | Draft becomes Open                  | invoiceId, clientId, total, currency, dueAt                   | Email/portal notification, accounting        |               Yes |                       Yes |
+| `invoice.paid`                 | Reconciled successful payment       | invoiceId, paymentId, amount, providerRef                     | Receipt, accounting, analytics               |               Yes |                       Yes |
+| `payment.failed`               | Provider/payment failure recorded   | invoiceId, paymentId, failure category                        | Client/admin notification, retry policy      |    Yes, sanitized |                       Yes |
+| `notification.delivery_failed` | Delivery provider returns failure   | notificationId, channel, category                             | Retry/dead-letter/admin alert                |                No |                         C |
+| `user.role_changed`            | Privileged role mutation            | userId, fromRoles, toRoles, actorId                           | Session review/revocation                    |     Self optional |                       Yes |
+| `access_grant.changed`         | Relationship access added/revoked   | userId, scopeType, scopeId, action, actorId                   | Session/auth cache invalidation              |     Self optional |                       Yes |
+
+`C` means conditionally audit depending on sensitivity/policy. Analytics should reuse these event names or a documented projection rather than invent parallel facts.

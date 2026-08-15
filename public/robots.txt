@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /client-portal/
+Disallow: /client-portal/*
+Disallow: /admin/
+Disallow: /admin/*
+Disallow: /login/
+Disallow: /register/
+
+Sitemap: https://getalchemize.com/sitemap.xml

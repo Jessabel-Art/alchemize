@@ -1,0 +1,79 @@
+[
+  {
+    "type": "resource",
+    "title": "Preparing for Tax Season",
+    "path": "/resources/preparing-for-tax-season/",
+    "description": "A practical process for organizing tax records early, tracking missing documents, and preparing for filing.",
+    "category": "Taxes"
+  },
+  {
+    "type": "resource",
+    "title": "Tax Documents Checklist",
+    "path": "/resources/tax-documents-checklist/",
+    "description": "A checklist of common tax records and supporting information to review before filing or a consultation.",
+    "category": "Taxes"
+  },
+  {
+    "type": "resource",
+    "title": "Understanding Insurance Coverage",
+    "path": "/resources/understanding-insurance-coverage/",
+    "description": "A plain-language overview of premiums, deductibles, coverage limits, and policy basics.",
+    "category": "Insurance"
+  },
+  {
+    "type": "resource",
+    "title": "Questions to Ask Before Choosing Insurance",
+    "path": "/resources/questions-to-ask-before-choosing-insurance/",
+    "description": "Questions for evaluating policy fit, obligations, exclusions, and personal risk before choosing coverage.",
+    "category": "Insurance"
+  },
+  {
+    "type": "resource",
+    "title": "Starting a Business: Organization Checklist",
+    "path": "/resources/starting-a-business-organization-checklist/",
+    "description": "A practical checklist for beginning business setup and keeping records organized from the start.",
+    "category": "Business"
+  },
+  {
+    "type": "resource",
+    "title": "Business Records Organization",
+    "path": "/resources/business-records-organization/",
+    "description": "A simple framework for organizing business records, responsibilities, and recurring administrative tasks.",
+    "category": "Business"
+  },
+  {
+    "type": "resource",
+    "title": "Preparing for a Notary Appointment",
+    "path": "/resources/preparing-for-a-notary-appointment/",
+    "description": "A brief checklist to help prepare for a notary appointment and identify required documents.",
+    "category": "Documents"
+  },
+  {
+    "type": "resource",
+    "title": "Documents to Bring to a Consultation",
+    "path": "/resources/documents-to-bring-to-a-consultation/",
+    "description": "A concise guide to the records and background information that are most useful before a consultation.",
+    "category": "Documents"
+  },
+  {
+    "type": "blog",
+    "title": "Why Tax Preparation Starts Before Tax Season",
+    "path": "/blog/why-tax-preparation-starts-before-tax-season/",
+    "description": "Why consistent record organization makes tax preparation more orderly long before filing deadlines arrive.",
+    "category": "Taxes"
+  },
+  {
+    "type": "blog",
+    "title": "How Business Organization Reduces Administrative Friction",
+    "path": "/blog/how-business-organization-reduces-administrative-friction/",
+    "description": "How clear recordkeeping and defined routines reduce administrative friction across a business lifecycle.",
+    "category": "Operations"
+  },
+  {
+    "type": "blog",
+    "title": "What to Organize Before Your First Business Consultation",
+    "path": "/blog/what-to-organize-before-your-first-business-consultation/",
+    "description": "A practical list of the information and documents that make a first business consultation more productive.",
+    "category": "Getting Started"
+  }
+]

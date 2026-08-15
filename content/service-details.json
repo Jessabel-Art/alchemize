@@ -1,0 +1,990 @@
+[
+  {
+    "route": "services/individuals/tax-preparation",
+    "audience": "Individuals",
+    "slug": "individual-tax",
+    "label": "Individual Tax Preparation",
+    "title": "Tax preparation built around organized records and a clearer filing process.",
+    "description": "Prepare federal and applicable state filings with an organized review of the records, changes, and questions that shape your return.",
+    "overview": "Tax preparation begins with understanding the taxpayer, the year, and the records involved. Alchemize helps organize income documents, relevant deduction and credit records, prior-year information, and major changes before preparation and filing readiness.",
+    "for": [
+      "Employees with one or multiple W-2s",
+      "Individuals with dependents, education costs, retirement income, investments, or homeownership records",
+      "People with self-employment or side-income records",
+      "Taxpayers who moved, married, divorced, or experienced another significant change"
+    ],
+    "situations": [
+      "Documents have arrived from several employers or institutions",
+      "A prior-year return or tax notice needs to be organized",
+      "Self-employment income and business-related records need review",
+      "You want a clear missing-items list before preparation begins"
+    ],
+    "helps": [
+      "Federal and applicable state return preparation",
+      "Income-document and prior-year record organization",
+      "Review of potentially relevant deductions and credits based on the information provided",
+      "Filing-readiness review and identification of missing information",
+      "Year-round document organization for the next filing season"
+    ],
+    "process": [
+      [
+        "Gather",
+        "Receive a tailored preparation list and collect records through the approved method."
+      ],
+      [
+        "Review",
+        "Organize documents, identify gaps, and discuss changes that may affect preparation."
+      ],
+      [
+        "Prepare",
+        "Prepare the return within the accepted engagement and clarify questions that arise."
+      ],
+      [
+        "Finalize",
+        "Review filing information, complete required authorizations, and confirm next steps."
+      ]
+    ],
+    "prepare": [
+      "Taxpayer, spouse, and dependent information",
+      "W-2, 1099, retirement, unemployment, Social Security, investment, and other income records",
+      "Education, childcare, charitable, property, and health-related documents where applicable",
+      "Self-employment income and applicable expense records",
+      "Prior-year return, estimated-payment records, and tax correspondence"
+    ],
+    "scope": "Website content is general education. Actual preparation depends on your records, applicable law, and the accepted engagement. Alchemize does not promise a refund, deduction, tax savings, or specific outcome and does not represent itself as a CPA firm.",
+    "checklist": "Individual Tax Preparation Document Checklist",
+    "pdf": "individual-tax-preparation-checklist.pdf",
+    "checkPurpose": "Organize the personal, income, deduction, credit, and prior-year records commonly reviewed before tax preparation.",
+    "categories": {
+      "Personal information": [
+        "Taxpayer and spouse identification information",
+        "Dependent information",
+        "Current contact information",
+        "Relevant life changes"
+      ],
+      "Income": [
+        "W-2 and applicable 1099 forms",
+        "Retirement, unemployment, and Social Security statements",
+        "Investment income documents",
+        "Self-employment and other income records"
+      ],
+      "Deductions and credits": [
+        "Education and childcare information",
+        "Charitable contribution records",
+        "Mortgage and property records where applicable",
+        "Health-related tax forms where applicable"
+      ],
+      "Other records": [
+        "Prior-year return",
+        "IRS or state correspondence",
+        "Estimated-tax payment records",
+        "Direct-deposit information only through an approved method"
+      ]
+    },
+    "faq": [
+      "What should I gather before tax preparation?",
+      "When should I begin preparing for tax season?",
+      "What happens if I am missing documents?"
+    ],
+    "resources": [
+      ["Preparing for Tax Season", "/resources/preparing-for-tax-season/"],
+      ["Tax Documents Checklist", "/resources/tax-documents-checklist/"],
+      [
+        "Why Preparation Starts Early",
+        "/blog/why-tax-preparation-starts-before-tax-season/"
+      ]
+    ],
+    "related": [
+      ["Insurance Solutions", "/services/individuals/insurance/"],
+      [
+        "Notary & Document Services",
+        "/services/individuals/notary-document-services/"
+      ]
+    ],
+    "cta": "Start tax preparation with the records already organized.",
+    "disclaimer": "Required documentation varies based on your individual tax situation."
+  },
+  {
+    "route": "services/individuals/insurance",
+    "audience": "Individuals",
+    "slug": "individual-insurance",
+    "label": "Insurance Solutions",
+    "title": "Understand the protection you are considering before making the decision.",
+    "description": "Organize household priorities, existing coverage, budget considerations, and questions before comparing available insurance options.",
+    "overview": "Insurance decisions are easier to evaluate when the need is clear. Alchemize helps clients prepare relevant information, understand common terminology, review existing coverage context, and identify questions for an insurance conversation.",
+    "for": [
+      "Individuals reviewing current protection",
+      "Households preparing for a life or employment change",
+      "People comparing available coverage options",
+      "Clients who want common terms explained clearly"
+    ],
+    "situations": [
+      "Existing coverage no longer reflects household needs",
+      "A renewal or life change creates questions",
+      "Policy limits, deductibles, premiums, or exclusions are unclear",
+      "Information needs to be organized before an application discussion"
+    ],
+    "helps": [
+      "Clarify general coverage goals and household priorities",
+      "Organize current policy information and renewal dates",
+      "Explain common insurance terminology",
+      "Prepare information and questions for available options",
+      "Compare relevant features where appropriate and within licensed scope"
+    ],
+    "process": [
+      [
+        "Identify",
+        "Clarify what you want to protect and the concern prompting the conversation."
+      ],
+      [
+        "Organize",
+        "Gather current coverage, household context, priorities, and budget considerations."
+      ],
+      [
+        "Explore",
+        "Review available options and explain relevant terms and tradeoffs."
+      ],
+      [
+        "Decide",
+        "Complete applicable next steps based on eligibility, jurisdiction, and formal documents."
+      ]
+    ],
+    "prepare": [
+      "Household composition, state of residence, and employment context",
+      "Current policy types, limits, premiums, and renewal dates",
+      "General coverage goals and budget considerations",
+      "Known concerns, possible gaps, and upcoming life changes",
+      "Questions about limits, exclusions, deductibles, costs, and effective dates"
+    ],
+    "scope": "Insurance availability, eligibility, premiums, underwriting, coverage, and policy terms depend on applicable products, carriers, licensing, jurisdiction, and formal policy documents. No approval or coverage is guaranteed.",
+    "checklist": "Insurance Consultation Preparation Checklist",
+    "pdf": "insurance-consultation-checklist.pdf",
+    "checkPurpose": "Clarify your household context, existing coverage, priorities, and questions without collecting sensitive medical details.",
+    "categories": {
+      "About you": [
+        "Household composition and relevant age ranges",
+        "State of residence",
+        "Employment status",
+        "General coverage goals"
+      ],
+      "Current coverage": [
+        "Policy types and renewal dates",
+        "Coverage limits",
+        "Premiums and deductibles",
+        "Known concerns"
+      ],
+      "Priorities": [
+        "What you want to protect",
+        "Budget considerations",
+        "Possible gaps",
+        "Upcoming life changes"
+      ],
+      "Questions": [
+        "What is covered or excluded?",
+        "What limits and deductibles apply?",
+        "When does coverage begin?",
+        "What changes require notification?"
+      ]
+    },
+    "faq": [
+      "What types of insurance support are available?",
+      "How does the insurance process work?",
+      "Can Alchemize help me understand different coverage options?"
+    ],
+    "resources": [
+      [
+        "Understanding Insurance Coverage",
+        "/resources/understanding-insurance-coverage/"
+      ],
+      [
+        "Questions Before Choosing Insurance",
+        "/resources/questions-to-ask-before-choosing-insurance/"
+      ]
+    ],
+    "related": [
+      ["Tax Preparation", "/services/individuals/tax-preparation/"],
+      [
+        "Notary & Document Services",
+        "/services/individuals/notary-document-services/"
+      ]
+    ],
+    "cta": "Begin with the protection questions already on your mind.",
+    "disclaimer": "Coverage availability, eligibility, terms, and pricing depend on applicable products, carriers, underwriting, and jurisdiction.",
+    "ownerReview": "Confirm exact individual insurance lines and licensed jurisdictions before production."
+  },
+  {
+    "route": "services/individuals/notary-document-services",
+    "audience": "Individuals",
+    "slug": "individual-notary",
+    "label": "Notary & Document Services",
+    "title": "Prepare the document, the signer, and the appointment with clarity.",
+    "description": "Authorized notarial acts and practical document-readiness support for personal documents that need proper execution.",
+    "overview": "A notary verifies identity, willingness, and other requirements of an authorized notarial act. Alchemize helps clients prepare complete documents, required signers, acceptable identification, and requesting-party instructions before the appointment.",
+    "for": [
+      "Individuals with documents requiring notarization",
+      "Signers coordinating witnesses or multiple participants",
+      "Clients who need help organizing personal documents",
+      "People responding to instructions from a requesting organization"
+    ],
+    "situations": [
+      "A document must be signed in a notary's presence",
+      "Names or instructions need to be checked before the appointment",
+      "Witness or signer logistics need coordination",
+      "Completed documents need an organized return process"
+    ],
+    "helps": [
+      "Perform authorized notarial acts where permitted",
+      "Review appointment-readiness requirements",
+      "Coordinate signer, witness, and identification reminders",
+      "Support general personal-document organization",
+      "Clarify delivery or return instructions supplied by the requesting party"
+    ],
+    "process": [
+      [
+        "Prepare",
+        "Confirm the document, act requested, signers, witnesses, and instructions."
+      ],
+      [
+        "Verify",
+        "Present acceptable identification and allow the notary to complete required verification."
+      ],
+      [
+        "Execute",
+        "Sign or acknowledge the document as required for the authorized act."
+      ],
+      [
+        "Complete",
+        "Finish the notarial certificate and follow the requesting organization's return instructions."
+      ]
+    ],
+    "prepare": [
+      "A complete document with blank spaces addressed",
+      "Acceptable, current identification",
+      "All required signers and witnesses",
+      "Instructions from the receiving or requesting organization",
+      "Payment and document return information where applicable"
+    ],
+    "scope": "A notary performs authorized notarial acts; a notary does not select legal forms, draft legal language, determine whether a document is appropriate, or provide legal advice unless separately authorized to do so.",
+    "checklist": "Notary Appointment Preparation Checklist",
+    "pdf": "notary-appointment-checklist.pdf",
+    "checkPurpose": "Confirm the document, identification, signer, witness, and return details before a notary appointment.",
+    "categories": {
+      "Document": [
+        "Complete document",
+        "No unexplained blank spaces",
+        "Requesting organization's instructions",
+        "Do not sign prematurely when presence is required"
+      ],
+      "Identification": [
+        "Acceptable current identification",
+        "Names match the document where applicable",
+        "Any secondary identification requested"
+      ],
+      "People": [
+        "All required signers",
+        "Required witnesses",
+        "Appointment time and location confirmed"
+      ],
+      "Completion": [
+        "Payment method if applicable",
+        "Copies needed",
+        "Delivery or return instructions",
+        "Recordkeeping plan"
+      ]
+    },
+    "faq": [
+      "What types of documents may require notarization?",
+      "Do I need identification for a notary appointment?",
+      "Can Alchemize provide legal advice about my documents?"
+    ],
+    "resources": [
+      [
+        "Preparing for a Notary Appointment",
+        "/resources/preparing-for-a-notary-appointment/"
+      ],
+      [
+        "Consultation Preparation Guide",
+        "/resources/documents-to-bring-to-a-consultation/"
+      ]
+    ],
+    "related": [
+      ["Tax Preparation", "/services/individuals/tax-preparation/"],
+      ["Insurance Solutions", "/services/individuals/insurance/"]
+    ],
+    "cta": "Arrive with the document ready and the requirements understood.",
+    "disclaimer": "Document and identification requirements vary by the notarial act, requesting organization, and applicable law."
+  },
+  {
+    "route": "services/businesses/business-formation",
+    "audience": "Businesses",
+    "slug": "business-formation",
+    "label": "Business Formation & Startup",
+    "title": "Build the business on an organized foundation.",
+    "description": "Turn an idea into defined formation steps, organized startup records, and practical administrative readiness.",
+    "overview": "Formation is more than filing one document. Alchemize helps organize business identity, ownership information, filing preparation, EIN-related steps, initial records, and the operational decisions needed to begin deliberately.",
+    "for": [
+      "Entrepreneurs preparing to launch",
+      "Owners formalizing an existing activity",
+      "New entities organizing federal and state steps",
+      "Founders building administrative infrastructure"
+    ],
+    "situations": [
+      "The business concept exists but required information is scattered",
+      "Ownership and responsible-party information needs organization",
+      "Formation, EIN, banking, records, and deadlines need sequencing",
+      "The owner needs a practical startup checklist"
+    ],
+    "helps": [
+      "Organize business identity, purpose, ownership, and responsible-party information",
+      "Prepare administrative formation and EIN-related workflows within scope",
+      "Create an initial company-record structure",
+      "Plan business contact, banking, recordkeeping, license research, and insurance conversations",
+      "Build a startup calendar for known renewals and responsibilities"
+    ],
+    "process": [
+      [
+        "Clarify",
+        "Define the business, owners, activities, state, and immediate goals."
+      ],
+      [
+        "Prepare",
+        "Organize decisions and information needed for applicable filings and registrations."
+      ],
+      [
+        "Establish",
+        "Complete agreed administrative steps and retain resulting records."
+      ],
+      [
+        "Organize",
+        "Set up the files, calendars, contacts, and next operational priorities."
+      ]
+    ],
+    "prepare": [
+      "Proposed legal and alternate names",
+      "Business purpose, activities, location, and state",
+      "Owner, member, management, and responsible-party information",
+      "Entity-type decision made with qualified advice where needed",
+      "Registered-agent, EIN, licensing, banking, and record-storage information"
+    ],
+    "scope": "Alchemize provides practical administrative support and formation preparation within scope. It is not a law firm and does not select a legal entity for you, provide legal advice, or replace required advice from an attorney, accountant, or regulated specialist.",
+    "checklist": "Business Formation & Startup Checklist",
+    "pdf": "business-formation-startup-checklist.pdf",
+    "checkPurpose": "Organize business identity, ownership, formation, federal, operational, digital, and recurring responsibilities before launch.",
+    "categories": {
+      "Business identity": [
+        "Proposed legal and alternate names",
+        "Business purpose and primary activities",
+        "Location and formation state"
+      ],
+      "Ownership and formation": [
+        "Owner/member information and percentages",
+        "Management structure",
+        "Entity decision and registered-agent information",
+        "State filing preparation"
+      ],
+      "Federal and operations": [
+        "EIN preparation and responsible party",
+        "Business email, domain, and telephone",
+        "Banking and bookkeeping preparation",
+        "Record storage and licenses to investigate"
+      ],
+      "Ongoing foundation": [
+        "Tax and renewal calendars",
+        "Insurance considerations",
+        "Contracts/templates for qualified review",
+        "Compliance reminders and recurring records"
+      ]
+    },
+    "faq": [
+      "Can Alchemize help me get a new business organized?",
+      "What services are available for small businesses?",
+      "What happens during a consultation?"
+    ],
+    "resources": [
+      [
+        "Starting a Business Organization Checklist",
+        "/resources/starting-a-business-organization-checklist/"
+      ],
+      [
+        "Business Records Organization",
+        "/resources/business-records-organization/"
+      ],
+      [
+        "First Business Consultation",
+        "/blog/what-to-organize-before-your-first-business-consultation/"
+      ]
+    ],
+    "related": [
+      [
+        "Administration & Operations",
+        "/services/businesses/administration-operations/"
+      ],
+      ["Business Tax Services", "/services/businesses/business-tax/"],
+      [
+        "Business Insurance Solutions",
+        "/services/businesses/business-insurance/"
+      ]
+    ],
+    "cta": "Turn the business idea into an organized next step.",
+    "disclaimer": "This checklist provides general organizational guidance and is not legal advice."
+  },
+  {
+    "route": "services/businesses/administration-operations",
+    "audience": "Businesses",
+    "slug": "business-operations",
+    "label": "Administration & Operations",
+    "title": "Turn recurring administrative work into a more organized operation.",
+    "description": "Create usable file structures, calendars, workflows, and documented responsibilities around the work that keeps the business moving.",
+    "overview": "Businesses often do not need another piece of software; they need a clearer system. Alchemize helps identify recurring work, organize records, document workflows, clarify ownership, and reduce the friction caused by scattered administrative practices.",
+    "for": [
+      "Owners whose records are difficult to find",
+      "Teams relying on memory for recurring work",
+      "Businesses preparing to delegate or grow",
+      "Operations that need an administrative reset"
+    ],
+    "situations": [
+      "Scattered records need a predictable structure",
+      "Deadlines are remembered manually",
+      "Processes live in one person's head",
+      "Intake, correspondence, or recurring tasks are inconsistent"
+    ],
+    "helps": [
+      "Design practical digital and document organization",
+      "Create recurring calendars and responsibility lists",
+      "Document intake, correspondence, and operating workflows",
+      "Develop straightforward templates and standard operating procedures",
+      "Organize client, vendor, tax, insurance, contract, and company records"
+    ],
+    "process": [
+      [
+        "Map",
+        "Identify the records, recurring work, tools, people, and breakdowns."
+      ],
+      [
+        "Structure",
+        "Design usable categories, calendars, ownership, and access rules."
+      ],
+      [
+        "Document",
+        "Write the repeatable steps, templates, and handoffs that matter."
+      ],
+      [
+        "Maintain",
+        "Establish a realistic review rhythm and improve the system as work changes."
+      ]
+    ],
+    "prepare": [
+      "Current files, tools, task lists, and calendars",
+      "Examples of delays, duplicate effort, or missing information",
+      "Known recurring deadlines and responsible people",
+      "Existing templates, procedures, intake forms, and correspondence",
+      "Access, backup, and security practices for digital accounts"
+    ],
+    "scope": "Operational support focuses on organization, documentation, and practical process improvement. It does not promise automation, legal compliance, cybersecurity certification, or guaranteed business performance.",
+    "checklist": "Business Operations Organization Checklist",
+    "pdf": "business-operations-organization-checklist.pdf",
+    "checkPurpose": "Assess company, financial, tax, insurance, client, vendor, contract, digital, deadline, procedure, storage, backup, and access organization.",
+    "categories": {
+      "Records": [
+        "Legal/company records",
+        "Financial and tax records",
+        "Insurance and contracts",
+        "Client and vendor records"
+      ],
+      "Operations": [
+        "Recurring deadlines",
+        "Standard operating procedures",
+        "Business contact information",
+        "Intake and correspondence workflows"
+      ],
+      "Digital organization": [
+        "Account inventory",
+        "Document storage",
+        "File naming and permissions",
+        "Backups"
+      ],
+      "Control and maintenance": [
+        "Security and access responsibilities",
+        "Task ownership",
+        "Review calendar",
+        "Archive and retention decisions"
+      ]
+    },
+    "faq": [
+      "Does Alchemize provide ongoing administrative support?",
+      "Can Alchemize help me improve business processes?",
+      "What if I need help in more than one business area?"
+    ],
+    "resources": [
+      [
+        "Business Records Organization",
+        "/resources/business-records-organization/"
+      ],
+      [
+        "How Organization Reduces Friction",
+        "/blog/how-business-organization-reduces-administrative-friction/"
+      ]
+    ],
+    "related": [
+      ["Business Advisory", "/services/businesses/business-advisory/"],
+      [
+        "Business Formation & Startup",
+        "/services/businesses/business-formation/"
+      ],
+      ["Business Tax Services", "/services/businesses/business-tax/"]
+    ],
+    "cta": "Create a working system around the responsibilities that repeat.",
+    "disclaimer": "This checklist is an organizational tool; required controls and records vary by business and applicable obligations."
+  },
+  {
+    "route": "services/businesses/business-tax",
+    "audience": "Businesses",
+    "slug": "business-tax",
+    "label": "Business Tax Services",
+    "title": "Business tax preparation starts with records that tell a coherent story.",
+    "description": "Organize business income, expenses, reports, entity records, and correspondence for an efficient preparation process.",
+    "overview": "Business tax preparation depends on the quality and completeness of the underlying records. Alchemize helps owners assemble relevant information, identify gaps, and prepare agreed business filings within the service scope.",
+    "for": [
+      "Owners preparing annual business tax records",
+      "Businesses with contractor, payroll, asset, or mileage information",
+      "Entities organizing prior returns and formation records",
+      "Owners responding to tax correspondence"
+    ],
+    "situations": [
+      "Income and expense records come from several systems",
+      "Bookkeeping reports need a readiness review",
+      "Contractor or payroll documents are incomplete",
+      "Prior returns, estimated payments, or notices need organization"
+    ],
+    "helps": [
+      "Organize business income and expense documentation",
+      "Review bookkeeping-readiness and identify missing records",
+      "Assemble contractor, payroll, asset, vehicle, and entity information where applicable",
+      "Prepare agreed business tax filings within confirmed scope",
+      "Create a clear workflow for questions, authorizations, and final records"
+    ],
+    "process": [
+      [
+        "Assemble",
+        "Gather reports, records, prior filings, entity documents, and notices."
+      ],
+      [
+        "Reconcile",
+        "Identify gaps, inconsistencies, and questions requiring clarification."
+      ],
+      [
+        "Prepare",
+        "Complete the accepted business tax work using the records provided."
+      ],
+      [
+        "Close",
+        "Review required authorizations, filing steps, and records to retain."
+      ]
+    ],
+    "prepare": [
+      "Legal business and entity information",
+      "Income, expense, banking, and bookkeeping records",
+      "Payroll and contractor documentation where applicable",
+      "Asset, equipment, vehicle, and mileage records where applicable",
+      "Prior returns, estimated payments, and tax correspondence"
+    ],
+    "scope": "Exact entity-return and filing availability must be confirmed before engagement. Tax outcomes are not guaranteed, and website content does not replace advice based on the business's facts and applicable law.",
+    "checklist": "Business Tax Preparation Document Checklist",
+    "pdf": "business-tax-preparation-checklist.pdf",
+    "checkPurpose": "Organize business identity, income, expenses, reports, payroll, contractors, assets, payments, prior returns, and correspondence.",
+    "categories": {
+      "Business information": [
+        "Legal name, EIN, and entity information",
+        "Formation documents",
+        "Ownership changes",
+        "Prior-year return"
+      ],
+      "Financial records": [
+        "Income and expense detail",
+        "Banking records",
+        "Bookkeeping reports",
+        "Estimated tax payments"
+      ],
+      "People and assets": [
+        "Payroll records where applicable",
+        "Contractor records where applicable",
+        "Assets and equipment",
+        "Vehicle/mileage records where applicable"
+      ],
+      "Other": [
+        "Tax correspondence",
+        "Applicable loan information",
+        "Inventory information where applicable",
+        "Questions and missing-items list"
+      ]
+    },
+    "faq": [
+      "Does Alchemize prepare both individual and business tax returns?",
+      "When should I begin preparing for tax season?",
+      "What happens if I am missing documents?"
+    ],
+    "resources": [
+      ["Tax Documents Checklist", "/resources/tax-documents-checklist/"],
+      [
+        "Business Records Organization",
+        "/resources/business-records-organization/"
+      ],
+      ["Preparing for Tax Season", "/resources/preparing-for-tax-season/"]
+    ],
+    "related": [
+      [
+        "Administration & Operations",
+        "/services/businesses/administration-operations/"
+      ],
+      ["Business Advisory", "/services/businesses/business-advisory/"],
+      [
+        "Business Formation & Startup",
+        "/services/businesses/business-formation/"
+      ]
+    ],
+    "cta": "Bring the business records together before preparation begins.",
+    "disclaimer": "Required records and filing scope vary by entity, activity, jurisdiction, and engagement.",
+    "ownerReview": "Confirm which business return and entity types will be offered before production."
+  },
+  {
+    "route": "services/businesses/business-advisory",
+    "audience": "Businesses",
+    "slug": "business-advisory",
+    "label": "Business Advisory",
+    "title": "Practical perspective for the decisions shaping your business.",
+    "description": "Clarify the situation, organize relevant information, evaluate operational considerations, and turn a priority into defined next steps.",
+    "overview": "Advisory is useful when the owner has a real decision or recurring problem but the path is not yet clear. Alchemize brings structure to the conversation through context, prioritization, documentation, and practical implementation planning.",
+    "for": [
+      "Owners facing an operational decision",
+      "Entrepreneurs preparing a new initiative",
+      "Businesses with recurring administrative friction",
+      "Leaders who need priorities translated into an action plan"
+    ],
+    "situations": [
+      "Several priorities compete for attention",
+      "A recurring problem has not been clearly defined",
+      "The owner needs to evaluate workflow or responsibility changes",
+      "A project needs scope, ownership, milestones, and follow-through"
+    ],
+    "helps": [
+      "Define the decision, problem, or desired outcome",
+      "Organize relevant operational and financial context",
+      "Identify gaps, constraints, responsibilities, and deadlines",
+      "Prioritize practical options and next actions",
+      "Create an implementation outline and follow-through structure"
+    ],
+    "process": [
+      [
+        "Understand",
+        "Describe the priority, history, constraints, and desired outcome."
+      ],
+      [
+        "Evaluate",
+        "Review relevant systems, responsibilities, information, and options."
+      ],
+      ["Prioritize", "Choose the issues and actions that matter most now."],
+      [
+        "Act",
+        "Translate the decision into owners, milestones, documentation, and next steps."
+      ]
+    ],
+    "prepare": [
+      "A concise description of the current priority or problem",
+      "What is working and what is not",
+      "Current systems, tools, team roles, and responsibilities",
+      "Relevant operational or financial context",
+      "Known deadlines, desired outcome, and questions for the consultation"
+    ],
+    "scope": "Business Advisory provides practical decision and implementation support. It does not guarantee revenue, profitability, funding, growth, legal compliance, investment performance, or any specific business result. Specialized legal, accounting, investment, or other advice may be needed.",
+    "checklist": "Business Advisory Consultation Preparation Guide",
+    "pdf": "business-advisory-preparation-guide.pdf",
+    "checkPurpose": "Prepare the context and reflection prompts needed for a focused advisory conversation.",
+    "categories": {
+      "About the business": [
+        "Business stage and activities",
+        "Current team and responsibilities",
+        "Current systems and tools"
+      ],
+      "Current priority": [
+        "Problem or decision to address",
+        "What is working",
+        "What is not working",
+        "Known deadlines or constraints"
+      ],
+      "Relevant context": [
+        "Operational information",
+        "Financial context relevant to discussion",
+        "Previous attempts and results"
+      ],
+      "Desired outcome": [
+        "What a useful result looks like",
+        "Questions for the consultation",
+        "Decisions that must be made",
+        "First actions you can own"
+      ]
+    },
+    "faq": [
+      "Can Alchemize help me improve business processes?",
+      "What if I need help in more than one business area?",
+      "What happens during a consultation?"
+    ],
+    "resources": [
+      [
+        "Consultation Preparation Guide",
+        "/resources/documents-to-bring-to-a-consultation/"
+      ],
+      [
+        "First Business Consultation",
+        "/blog/what-to-organize-before-your-first-business-consultation/"
+      ],
+      [
+        "How Organization Reduces Friction",
+        "/blog/how-business-organization-reduces-administrative-friction/"
+      ]
+    ],
+    "related": [
+      [
+        "Administration & Operations",
+        "/services/businesses/administration-operations/"
+      ],
+      [
+        "Business Formation & Startup",
+        "/services/businesses/business-formation/"
+      ],
+      ["Business Tax Services", "/services/businesses/business-tax/"]
+    ],
+    "cta": "Bring the situation. We will help organize the path forward.",
+    "disclaimer": "This guide supports preparation and does not promise a particular business outcome."
+  },
+  {
+    "route": "services/businesses/business-insurance",
+    "audience": "Businesses",
+    "slug": "business-insurance",
+    "label": "Business Insurance Solutions",
+    "title": "Understand the exposures behind the business before discussing coverage.",
+    "description": "Organize business activities, property, people, contracts, existing policies, and protection priorities for a clearer insurance conversation.",
+    "overview": "Coverage discussions begin with how the business actually operates. Alchemize helps organize the business profile, existing policies, contractual requirements, and practical exposures that shape available insurance options.",
+    "for": [
+      "New businesses preparing for an insurance discussion",
+      "Owners approaching renewal",
+      "Businesses whose operations, staff, locations, or equipment have changed",
+      "Companies responding to contractual insurance requirements"
+    ],
+    "situations": [
+      "Current limits or deductibles are unclear",
+      "New employees, contractors, vehicles, property, or services change the exposure",
+      "A customer or contract requests proof of coverage",
+      "Existing coverage needs an organized review"
+    ],
+    "helps": [
+      "Document business activities, locations, people, equipment, vehicles, and customer interaction",
+      "Organize current policies, limits, deductibles, and renewal dates",
+      "Identify contractual requirements and priority questions",
+      "Explain common terminology and available categories within licensed scope",
+      "Prepare information for application and underwriting discussions"
+    ],
+    "process": [
+      [
+        "Profile",
+        "Describe the legal business, activities, locations, people, property, and contracts."
+      ],
+      [
+        "Assess",
+        "Identify practical exposures, current coverage, and priority concerns."
+      ],
+      [
+        "Explore",
+        "Review available categories and explain relevant terms and requirements."
+      ],
+      [
+        "Proceed",
+        "Complete applicable application or next steps subject to licensing and underwriting."
+      ]
+    ],
+    "prepare": [
+      "Legal name, entity type, industry, products/services, locations, and years operating",
+      "Employees, contractors, equipment, vehicles, and customer locations",
+      "Current policy types, carrier, limits, deductibles, and renewal dates",
+      "Property, liability, professional, employee, vehicle, and contractual exposures",
+      "Coverage goals and questions"
+    ],
+    "scope": "Product availability, eligibility, underwriting, terms, pricing, and jurisdiction vary. Alchemize does not guarantee approval or coverage and offers only insurance support within applicable licensing and available product scope.",
+    "checklist": "Business Insurance Consultation Checklist",
+    "pdf": "business-insurance-consultation-checklist.pdf",
+    "checkPurpose": "Organize the business profile, operations, current coverage, exposures, requirements, goals, and questions for an insurance discussion.",
+    "categories": {
+      "Business profile": [
+        "Legal name and entity type",
+        "Industry, products, and services",
+        "Operating locations",
+        "Years in operation"
+      ],
+      "Operations": [
+        "Employees and contractors",
+        "Equipment and vehicles",
+        "Physical and customer locations",
+        "Professional activities"
+      ],
+      "Current coverage": [
+        "Policy types and carrier",
+        "Renewal dates",
+        "Limits and deductibles",
+        "Known concerns"
+      ],
+      "Exposures and goals": [
+        "Property and liability",
+        "Employee and vehicle considerations",
+        "Contract requirements",
+        "Questions and protection priorities"
+      ]
+    },
+    "faq": [
+      "What types of insurance support are available?",
+      "How does the insurance process work?",
+      "Can Alchemize help me understand different coverage options?"
+    ],
+    "resources": [
+      [
+        "Understanding Insurance Coverage",
+        "/resources/understanding-insurance-coverage/"
+      ],
+      [
+        "Questions Before Choosing Insurance",
+        "/resources/questions-to-ask-before-choosing-insurance/"
+      ],
+      [
+        "Business Records Organization",
+        "/resources/business-records-organization/"
+      ]
+    ],
+    "related": [
+      [
+        "Business Formation & Startup",
+        "/services/businesses/business-formation/"
+      ],
+      [
+        "Administration & Operations",
+        "/services/businesses/administration-operations/"
+      ],
+      ["Business Advisory", "/services/businesses/business-advisory/"]
+    ],
+    "cta": "Start the insurance conversation with the business exposure clearly described.",
+    "disclaimer": "Availability, eligibility, terms, and pricing depend on products, carriers, underwriting, licensing, and jurisdiction.",
+    "ownerReview": "Confirm exact business insurance lines, carrier availability, and licensed jurisdictions before production."
+  },
+  {
+    "route": "services/businesses/notary-administrative-services",
+    "audience": "Businesses",
+    "slug": "business-notary",
+    "label": "Notary & Administrative Services",
+    "title": "Keep business documents ready for proper execution and reliable follow-through.",
+    "description": "Authorized notarial acts, document coordination, and practical administrative support for recurring business-document responsibilities.",
+    "overview": "Business documents may require both a valid notarial act and a clear administrative workflow. Alchemize separates those functions: the notary performs authorized acts, while administrative support can organize instructions, signers, copies, delivery, and recordkeeping.",
+    "for": [
+      "Businesses coordinating document execution",
+      "Owners managing recurring forms and records",
+      "Teams with multiple signers or witnesses",
+      "Companies responding to requesting-organization instructions"
+    ],
+    "situations": [
+      "A business document requires notarization",
+      "Signer authority or capacity information needs organization",
+      "Copies, return instructions, and follow-up records are inconsistent",
+      "Recurring document work needs a clearer process"
+    ],
+    "helps": [
+      "Perform authorized notarial acts where permitted",
+      "Coordinate document, signer, witness, identification, and appointment readiness",
+      "Organize business forms, copies, delivery instructions, and follow-up records",
+      "Create a practical recurring-document workflow",
+      "Support general business record organization"
+    ],
+    "process": [
+      [
+        "Prepare",
+        "Confirm the document, requested act, authority, signers, witnesses, and instructions."
+      ],
+      [
+        "Verify",
+        "Review required identification and complete the notary's verification steps."
+      ],
+      [
+        "Execute",
+        "Complete signatures or acknowledgments required for the authorized act."
+      ],
+      [
+        "Record",
+        "Follow delivery instructions and file copies or related records appropriately."
+      ]
+    ],
+    "prepare": [
+      "Complete document and requesting-party instructions",
+      "All signers, titles, capacities, and authority information",
+      "Acceptable identification and required witnesses",
+      "Supporting business information and copies",
+      "Delivery, return, and follow-up recordkeeping instructions"
+    ],
+    "scope": "Notarial acts, administrative support, and legal services are separate. Alchemize is not a law firm and does not select legal documents, draft legal language, determine signer authority as a legal matter, or provide legal advice.",
+    "checklist": "Business Document & Notary Preparation Checklist",
+    "pdf": "business-document-notary-checklist.pdf",
+    "checkPurpose": "Coordinate the document, signers, identification, witnesses, business capacity, copies, delivery, and follow-up records.",
+    "categories": {
+      "Document": [
+        "Complete document",
+        "Requested notarial act",
+        "Requesting organization's instructions",
+        "No unexplained blanks"
+      ],
+      "People and authority": [
+        "All signers",
+        "Titles and business capacity",
+        "Authority information",
+        "Required witnesses"
+      ],
+      "Appointment": [
+        "Acceptable identification",
+        "Time and location",
+        "Supporting business information",
+        "Copies and payment if applicable"
+      ],
+      "Completion": [
+        "Delivery/return instructions",
+        "Recipient information",
+        "Follow-up responsibility",
+        "Recordkeeping location"
+      ]
+    },
+    "faq": [
+      "What types of documents may require notarization?",
+      "Do I need identification for a notary appointment?",
+      "Can Alchemize provide legal advice about my documents?"
+    ],
+    "resources": [
+      [
+        "Preparing for a Notary Appointment",
+        "/resources/preparing-for-a-notary-appointment/"
+      ],
+      [
+        "Business Records Organization",
+        "/resources/business-records-organization/"
+      ],
+      [
+        "Consultation Preparation Guide",
+        "/resources/documents-to-bring-to-a-consultation/"
+      ]
+    ],
+    "related": [
+      [
+        "Administration & Operations",
+        "/services/businesses/administration-operations/"
+      ],
+      [
+        "Business Formation & Startup",
+        "/services/businesses/business-formation/"
+      ],
+      ["Business Advisory", "/services/businesses/business-advisory/"]
+    ],
+    "cta": "Make the document workflow as organized as the execution itself.",
+    "disclaimer": "Requirements vary by document, notarial act, requesting organization, and applicable law."
+  }
+]

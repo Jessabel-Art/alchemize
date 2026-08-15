@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      name="description"
+      content="Contact Alchemize Business Services to discuss individual or business service needs and identify an appropriate next step."
+    />
+    <title>Contact | Alchemize Business Services</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="interior">
+    <a class="skip" href="#main">Skip to content</a>
+    <header id="site-header"></header>
+    <main class="interior-main" id="main">
+      <section class="page-hero">
+        <div class="hero-inner">
+          <p class="eyebrow kicker-line">Contact Alchemize</p>
+          <h1>Let&rsquo;s figure out what you need.</h1>
+          <p class="lede">
+            Tell us whether you need individual or business support. We can help
+            identify the appropriate service and a practical next step.
+          </p>
+        </div>
+      </section>
+      <section class="page-section">
+        <div class="section-inner contact-layout">
+          <aside class="contact-aside">
+            <p class="eyebrow">Begin the conversation</p>
+            <h2>Start with what is in front of you.</h2>
+            <p>
+              You do not need to know the exact service before reaching out. A
+              brief overview will help provide useful direction.
+            </p>
+            <p class="privacy-note">
+              <strong>Protect your information.</strong><br />Do not send Social
+              Security numbers, tax documents, banking information, identity
+              documents, insurance records, or other confidential financial
+              information through this form.
+            </p>
+            <a class="text-link card-link" href="/services/"
+              >Explore Services <span>&nearr;</span></a
+            >
+          </aside>
+          <form
+            class="contact-form"
+            action="/api/v1/leads/"
+            method="post"
+            data-contact-form
+            aria-describedby="form-status"
+          >
+            <div class="form-grid">
+              <div class="field">
+                <label for="first-name">First Name</label
+                ><input
+                  id="first-name"
+                  name="firstName"
+                  autocomplete="given-name"
+                  required
+                />
+              </div>
+              <div class="field">
+                <label for="last-name">Last Name</label
+                ><input
+                  id="last-name"
+                  name="lastName"
+                  autocomplete="family-name"
+                  required
+                />
+              </div>
+              <div class="field">
+                <label for="email">Email</label
+                ><input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autocomplete="email"
+                  required
+                />
+              </div>
+              <div class="field">
+                <label for="phone"
+                  >Phone <span class="muted">&mdash; optional</span></label
+                ><input id="phone" name="phone" type="tel" autocomplete="tel" />
+              </div>
+              <div class="field full">
+                <label for="audience">Who is this for?</label
+                ><select id="audience" name="audience" required>
+                  <option value="">Select one</option>
+                  <option value="individual">For me</option>
+                  <option value="business">For my business</option>
+                </select>
+              </div>
+              <div class="field full">
+                <label for="service">I need help with</label
+                ><select id="service" name="service">
+                  <option value="">Not sure yet</option>
+                  <optgroup label="Individual Services">
+                    <option value="individual-tax">
+                      Individual Tax Preparation
+                    </option>
+                    <option value="individual-insurance">
+                      Individual Insurance
+                    </option>
+                    <option value="individual-notary">
+                      Notary / Document Services
+                    </option>
+                  </optgroup>
+                  <optgroup label="Business Services">
+                    <option value="business-formation">
+                      Business Formation / Startup
+                    </option>
+                    <option value="business-operations">
+                      Administration / Operations
+                    </option>
+                    <option value="business-tax">Business Tax Services</option>
+                    <option value="business-advisory">Business Advisory</option>
+                    <option value="business-insurance">
+                      Business Insurance
+                    </option>
+                    <option value="business-notary">
+                      Business Notary / Administrative Services
+                    </option>
+                  </optgroup>
+                </select>
+              </div>
+              <div class="field full">
+                <label for="message">Message</label
+                ><textarea
+                  id="message"
+                  name="message"
+                  required
+                  aria-describedby="message-help"
+                ></textarea
+                ><span class="form-note" id="message-help"
+                  >Please share a general overview only. Do not include
+                  sensitive records or identification numbers.</span
+                >
+              </div>
+              <fieldset class="field full choice-set">
+                <legend>
+                  Preferred Contact Method
+                  <span class="muted">&mdash; optional</span>
+                </legend>
+                <div class="choices">
+                  <label
+                    ><input type="radio" name="contactMethod" value="email" />
+                    Email</label
+                  ><label
+                    ><input type="radio" name="contactMethod" value="phone" />
+                    Phone</label
+                  ><label
+                    ><input type="radio" name="contactMethod" value="either" />
+                    Either</label
+                  >
+                </div>
+              </fieldset>
+              <div class="contact-honeypot" aria-hidden="true">
+                <label for="website">Leave this field empty</label>
+                <input
+                  id="website"
+                  name="website"
+                  type="text"
+                  tabindex="-1"
+                  autocomplete="off"
+                />
+              </div>
+              <div class="field full">
+                <p
+                  class="form-status"
+                  id="form-status"
+                  role="status"
+                  aria-live="polite"
+                  tabindex="-1"
+                >
+                  Share a general overview and Alchemize will review your
+                  request.
+                </p>
+                <button
+                  class="button gold"
+                  type="submit"
+                  aria-describedby="form-status"
+                >
+                  Submit Request
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </section>
+      <section class="interior-cta">
+        <div class="section-inner">
+          <div>
+            <p class="eyebrow">Prepare for the conversation</p>
+            <h2>Review the services before getting started.</h2>
+          </div>
+          <a class="button gold" href="/services/">Explore Services</a>
+        </div>
+      </section>
+    </main>
+    <footer id="site-footer"></footer>
+    <script type="module" src="/script.js"></script>
+  </body>
+</html>

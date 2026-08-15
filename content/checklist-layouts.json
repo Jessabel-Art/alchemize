@@ -1,0 +1,300 @@
+{
+  "insurance-consultation-checklist.pdf": {
+    "audience": "INDIVIDUAL SERVICES",
+    "title": "Insurance Consultation\nPreparation Checklist",
+    "intro": "Organize the coverage information, priorities, and questions that may be useful before your consultation. You do not need every item before contacting Alchemize.",
+    "pages": [
+      {
+        "label": "01 / YOUR SITUATION",
+        "heading": "Start with what is changing and what you want to protect.",
+        "sections": [
+          {
+            "title": "About your situation",
+            "items": [
+              "State of residence",
+              "Household composition",
+              "Employment status",
+              "General coverage goals",
+              "Upcoming life changes that may affect protection needs"
+            ]
+          },
+          {
+            "title": "Current coverage",
+            "items": [
+              "Current policy types",
+              "Carrier or provider, where applicable",
+              "Coverage limits",
+              "Premiums",
+              "Deductibles or cost sharing",
+              "Renewal or expiration dates",
+              "Known concerns or possible gaps"
+            ]
+          },
+          {
+            "title": "What you want to protect",
+            "items": [
+              "Income",
+              "Family or dependents",
+              "Health-related financial exposure, where relevant",
+              "Household financial stability",
+              "Other priorities"
+            ]
+          }
+        ],
+        "prompts": [
+          "My biggest concern is",
+          "Coverage I want to understand better",
+          "Budget considerations"
+        ]
+      },
+      {
+        "label": "02 / QUESTIONS",
+        "heading": "Use the conversation to understand the protection in practical terms.",
+        "sections": [
+          {
+            "title": "Questions to ask",
+            "items": [
+              "What does this coverage protect?",
+              "What is excluded?",
+              "What coverage limits apply?",
+              "What costs am I responsible for?",
+              "When does coverage begin?",
+              "What could cause premiums or benefits to change?",
+              "What changes should I report?",
+              "What happens if I need to use the coverage?"
+            ]
+          }
+        ],
+        "notesTitle": "Questions for my consultation",
+        "notesLines": 7
+      }
+    ],
+    "disclaimer": "Coverage availability, eligibility, terms, pricing, and underwriting depend on applicable products, carriers, jurisdiction, and individual circumstances."
+  },
+  "business-formation-startup-checklist.pdf": {
+    "audience": "BUSINESS SERVICES",
+    "title": "Business Formation & Startup\nChecklist",
+    "intro": "Organize the decisions, records, and operating foundations involved in starting a business. You do not need every answer before contacting Alchemize.",
+    "pages": [
+      {
+        "label": "01 / ESTABLISH THE BUSINESS",
+        "heading": "Clarify the business identity, ownership, and formation information.",
+        "sections": [
+          {
+            "title": "Business identity",
+            "items": [
+              "Proposed legal business name",
+              "Alternate or DBA names being considered",
+              "Primary business activity",
+              "Short business purpose description",
+              "State where the business will be formed",
+              "Primary operating location",
+              "Planned launch date"
+            ]
+          },
+          {
+            "title": "Ownership & management",
+            "items": [
+              "Owner or member names",
+              "Ownership percentages, where applicable",
+              "Management structure",
+              "Responsible party",
+              "Authorized decision-makers"
+            ]
+          },
+          {
+            "title": "Formation preparation",
+            "items": [
+              "Entity type being considered",
+              "Registered agent information",
+              "State filing information",
+              "Formation document status",
+              "Ownership or organizational agreements to discuss with qualified counsel"
+            ]
+          },
+          {
+            "title": "Federal / tax identity",
+            "items": [
+              "EIN status",
+              "Responsible-party information",
+              "Tax-classification questions for an appropriate tax professional",
+              "Prior federal business registrations, if applicable"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "02 / PREPARE TO OPERATE",
+        "heading": "Build the practical infrastructure that supports the launch.",
+        "sections": [
+          {
+            "title": "Business contact infrastructure",
+            "items": [
+              "Business email",
+              "Domain",
+              "Business phone, where applicable",
+              "Business address strategy",
+              "Website or online presence"
+            ]
+          },
+          {
+            "title": "Financial foundation",
+            "items": [
+              "Business bank account",
+              "Recordkeeping or bookkeeping approach",
+              "Expense tracking",
+              "Initial owner-funding records",
+              "Payment-processing needs, where applicable"
+            ]
+          },
+          {
+            "title": "Operational foundation",
+            "items": [
+              "File storage",
+              "Contracts or templates needing qualified review",
+              "Recurring administrative calendar",
+              "Licenses or permits to investigate",
+              "Insurance considerations",
+              "Document-retention approach"
+            ]
+          },
+          {
+            "title": "Digital foundation",
+            "items": [
+              "Domain and email ownership",
+              "Digital-account inventory",
+              "Password and access-management plan",
+              "Backups"
+            ]
+          }
+        ],
+        "readinessTitle": "Before launch",
+        "readiness": [
+          "Formation filing complete",
+          "EIN obtained where required",
+          "Business banking prepared",
+          "Recordkeeping system selected",
+          "Required licenses or permits researched",
+          "Insurance needs reviewed",
+          "Core business records organized"
+        ],
+        "notesTitle": "Questions / decisions to discuss",
+        "notesLines": 3
+      }
+    ],
+    "disclaimer": "This checklist provides general organizational guidance and is not legal advice. Formation, tax, licensing, and other requirements vary by business and jurisdiction."
+  },
+  "business-operations-organization-checklist.pdf": {
+    "audience": "BUSINESS SERVICES",
+    "title": "Business Operations\nOrganization Checklist",
+    "intro": "Use this operational review to identify scattered records, recurring responsibilities, and processes that need clearer ownership. It is a starting point, not a requirement to solve everything first.",
+    "pages": [
+      {
+        "label": "01 / RECORDS & RESPONSIBILITIES",
+        "heading": "Create a dependable home for the records behind the business.",
+        "sections": [
+          {
+            "title": "Company records",
+            "items": [
+              "Formation documents and EIN confirmation",
+              "Ownership or organizational records",
+              "Licenses and permits",
+              "Annual filings",
+              "Registered-agent records, where applicable"
+            ]
+          },
+          {
+            "title": "Financial & tax records",
+            "items": [
+              "Business bank and bookkeeping records",
+              "Tax returns, notices, and estimated-payment records",
+              "Receipts and supporting documentation",
+              "Payroll or contractor records, where applicable"
+            ]
+          },
+          {
+            "title": "Insurance & risk",
+            "items": [
+              "Policy inventory and renewal dates",
+              "Certificates of insurance",
+              "Claims records, where applicable",
+              "Business-continuity considerations"
+            ]
+          },
+          {
+            "title": "Clients / customers",
+            "items": [
+              "Intake process and agreements",
+              "Correspondence and invoices",
+              "Service records",
+              "Document-retention decisions"
+            ]
+          },
+          {
+            "title": "Vendors & contractors",
+            "items": [
+              "Agreements and contact information",
+              "W-9 information, where applicable",
+              "Invoices",
+              "Renewal dates"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "02 / WORKFLOWS & CONTROL",
+        "heading": "Document how recurring work moves—and who is responsible.",
+        "sections": [
+          {
+            "title": "Recurring operations",
+            "items": [
+              "Weekly and monthly tasks",
+              "Quarterly and annual responsibilities",
+              "Renewal calendar",
+              "Tax calendar"
+            ]
+          },
+          {
+            "title": "Workflows & procedures",
+            "items": [
+              "Client intake",
+              "Invoicing and payment",
+              "Document storage",
+              "Customer communication",
+              "Issue escalation",
+              "Recurring administrative processes"
+            ]
+          },
+          {
+            "title": "Digital organization",
+            "items": [
+              "Account inventory",
+              "File naming and shared folders",
+              "User permissions",
+              "Password and access management",
+              "Backups",
+              "Business email organization"
+            ]
+          },
+          {
+            "title": "Control & ownership",
+            "items": [
+              "Owner for each recurring responsibility",
+              "Who has access",
+              "Backup person",
+              "Review frequency",
+              "Archive and retention decisions"
+            ]
+          }
+        ],
+        "prompts": [
+          "The process creating the most friction",
+          "The responsibility most likely to be missed",
+          "The system I most need to organize",
+          "Questions for Alchemize"
+        ]
+      }
+    ],
+    "disclaimer": "This checklist is an organizational tool. Records, controls, retention requirements, and operational obligations vary by business and applicable requirements."
+  }
+}
