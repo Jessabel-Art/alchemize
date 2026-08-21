@@ -1,3 +1,5 @@
+import { adminStore } from "./data/admin-store.js";
+
 const canonicalServiceKeys = new Set([
   "individual-tax",
   "individual-insurance",
@@ -17,6 +19,9 @@ const legacyServiceAliases = {
   "business-administration-operations": "business-operations",
   "business-notary-administrative-services": "business-notary",
   "insurance-review": "individual-insurance",
+  "business-digital": "business-operations",
+  "business-readiness": "business-formation",
+  "business-financial": "business-tax",
 };
 
 const serviceAudience = (serviceKey) =>
@@ -84,16 +89,28 @@ function setStatus(status, message, state, moveFocus = true) {
 
 function buildPayload(form) {
   const data = new window.FormData(form);
+  const firstName = String(data.get("firstName") ?? "").trim();
+  const lastName = String(data.get("lastName") ?? "").trim();
+  const serviceKey = String(data.get("service") ?? "").trim();
+  const audience = String(data.get("audience") ?? "").trim();
+
   return {
-    full_name:
-      `${data.get("firstName") ?? ""} ${data.get("lastName") ?? ""}`.trim(),
-    email: data.get("email"),
-    phone: data.get("phone") || null,
-    audience: data.get("audience"),
-    service_key: data.get("service") || null,
-    message: data.get("message"),
-    preferred_contact: data.get("contactMethod") || null,
-    website: data.get("website") || "",
+    firstName,
+    lastName,
+    full_name: `${firstName} ${lastName}`.trim(),
+    email: String(data.get("email") ?? "").trim(),
+    phone: String(data.get("phone") ?? "").trim() || null,
+    audience,
+    service_key: serviceKey || null,
+    serviceInterest: serviceKey
+      ? (canonicalServiceKeys.has(serviceKey)
+        ? serviceKey
+        : normalizeServiceKey(serviceKey)) || "General consultation"
+      : "General consultation",
+    message: String(data.get("message") ?? "").trim(),
+    preferred_contact: String(data.get("contactMethod") ?? "").trim() || null,
+    preferredContact: String(data.get("contactMethod") ?? "").trim() || null,
+    website: String(data.get("website") ?? "").trim(),
   };
 }
 
@@ -105,7 +122,10 @@ function initializePreselection(form) {
   );
   const serviceKey = normalizeServiceKey(requested ?? "");
   if (!serviceKey || !(select instanceof window.HTMLSelectElement)) return;
-  select.value = serviceKey;
+  const requestedOption = requested
+    ? [...select.options].some((option) => option.value === requested)
+    : false;
+  select.value = requestedOption ? requested : serviceKey;
   if (audience instanceof window.HTMLSelectElement)
     audience.value = serviceAudience(serviceKey);
 }
@@ -166,6 +186,34 @@ export function initContactForm() {
       }
 
       const reference = result?.data?.leadId;
+      const leadPayload = buildPayload(form);
+      const localLead = adminStore?.createLeadFromContact
+        ? adminStore.createLeadFromContact({
+            id: reference || undefined,
+            name: leadPayload.full_name || `${leadPayload.firstName} ${leadPayload.lastName}`.trim() || "New lead",
+            firstName: leadPayload.firstName,
+            lastName: leadPayload.lastName,
+            email: leadPayload.email,
+            phone: leadPayload.phone,
+            audience: leadPayload.audience === "business" ? "Business" : "Individual",
+            serviceInterest: leadPayload.serviceInterest,
+            message: leadPayload.message,
+            preferredContact: leadPayload.preferredContact,
+            source: "Website Contact Form",
+            receivedAt: new Date().toISOString(),
+            status: "New",
+            leadSource: "Website Contact Form",
+            internalNotes: "Website inquiry created from contact form.",
+          })
+        : null;
+
+      if (localLead) {
+        const event = new window.CustomEvent("alchemize:lead-created", {
+          detail: { leadId: localLead.id },
+        });
+        window.dispatchEvent(event);
+      }
+
       form.reset();
       setStatus(
         status,

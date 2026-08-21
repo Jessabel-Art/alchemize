@@ -1,0 +1,97 @@
+<?php
+
+declare(strict_types=1);
+
+ini_set('display_errors', '0');
+ini_set('log_errors', '1');
+
+$configuredBootstrap = getenv('ALCHEMIZE_SERVER_BOOTSTRAP');
+$documentRoot = $_SERVER['DOCUMENT_ROOT'] ?? '';
+$bootstrapCandidates = array_filter([
+    is_string($configuredBootstrap) ? $configuredBootstrap : null,
+    $documentRoot !== '' ? dirname($documentRoot) . '/alchemize-server/bootstrap.php' : null,
+    dirname(__DIR__, 3) . '/server/bootstrap.php',
+]);
+
+$bootstrap = null;
+foreach ($bootstrapCandidates as $candidate) {
+    if (is_file($candidate)) {
+        $bootstrap = $candidate;
+        break;
+    }
+}
+
+if ($bootstrap === null) {
+    http_response_code(500);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['error' => ['code' => 'INTERNAL_ERROR', 'message' => 'Authentication is temporarily unavailable.']]);
+    exit;
+}
+
+$config = require $bootstrap;
+
+try {
+    require_once dirname(__DIR__, 3) . '/server/auth/session.php';
+    require_once dirname(__DIR__, 3) . '/server/repositories/role-repository.php';
+    require_once dirname(__DIR__, 3) . '/server/repositories/user-repository.php';
+    require_once dirname(__DIR__, 3) . '/server/services/auth-service.php';
+
+    $database = alchemize_database($config['database']);
+    $auth = new AlchemizeAuthService(
+        new AlchemizeUserRepository($database),
+        new AlchemizeRoleRepository($database),
+    );
+
+    $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
+    $path = trim($_SERVER['PATH_INFO'] ?? ($_SERVER['REQUEST_URI'] ?? ''), '/');
+    $parts = array_values(array_filter(explode('/', $path), static fn (string $value): bool => $value !== ''));
+
+    if ($method === 'GET' && $parts === ['session']) {
+        $user = alchemize_session_user();
+        $csrfToken = alchemize_csrf_token();
+        alchemize_json_response([
+            'data' => [
+                'authenticated' => is_array($user) && !empty($user['user_id']),
+                'user' => $user,
+                'csrf_token' => $csrfToken,
+            ],
+        ], 200);
+    }
+
+    if ($method === 'POST' && $parts === ['login']) {
+        $payload = alchemize_read_json_request();
+        $email = trim((string) ($payload['email'] ?? ''));
+        $password = (string) ($payload['password'] ?? '');
+
+        if ($email === '' || $password === '') {
+            throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Email and password are required.');
+        }
+
+        $sessionUser = $auth->login($email, $password);
+        alchemize_set_session_user($sessionUser);
+        alchemize_json_response([
+            'data' => [
+                'authenticated' => true,
+                'user' => $sessionUser,
+                'csrf_token' => alchemize_csrf_token(),
+            ],
+        ], 200);
+    }
+
+    if ($method === 'POST' && $parts === ['logout']) {
+        alchemize_clear_session_user();
+        alchemize_json_response([
+            'data' => ['authenticated' => false, 'csrf_token' => ''],
+        ], 200);
+    }
+
+    throw new AlchemizeRequestException(404, 'NOT_FOUND', 'The requested authentication route was not found.');
+} catch (AlchemizeRequestException $error) {
+    if ($error->httpStatus === 405) {
+        header('Allow: GET, POST');
+    }
+    alchemize_error_response($error->httpStatus, $error->errorCode, $error->getMessage());
+} catch (Throwable $error) {
+    error_log(sprintf('Auth endpoint failure [%s]: %s', get_class($error), $error->getMessage()));
+    alchemize_error_response(500, 'INTERNAL_ERROR', 'Authentication is temporarily unavailable.');
+}

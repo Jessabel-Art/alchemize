@@ -45,7 +45,7 @@ The PDF generator requires ReportLab. The bundled Codex document runtime include
 ## Premium template capabilities
 
 - Fixed US Letter canvas with printer-safe margins and a quiet emerald/gold footer.
-- Approved horizontal dark-theme logo, optimized at generation time without changing the source asset.
+- Approved light logo colorway for the dark masthead, optimized at generation time without changing the source asset.
 - Distinct page-one masthead and compact continuation masthead on page two.
 - Two-column checklist sections, true drawn checkboxes, writing rules, reflection prompts, and optional full-width readiness sections.
 - Selectable/searchable text plus PDF title, author, and subject metadata.
@@ -68,7 +68,7 @@ The PDF generator requires ReportLab. The bundled Codex document runtime include
 
 ## General branding rules
 
-- Use an approved horizontal logo from `assets/` without alteration. The premium dark masthead uses `alchemize-logo-horizontal-dark-main-theme.png`.
+- Use an approved horizontal logo from `assets/` without alteration. The premium dark masthead uses `alchemize-logo-light.png` because the file name describes the logo colorway, not the surface theme.
 - Use emerald, gold, navy, ivory, and white only.
 - Keep US Letter margins suitable for ordinary office printers.
 - Checkboxes, rules, and hierarchy must remain usable in grayscale.

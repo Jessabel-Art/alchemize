@@ -21,6 +21,9 @@ const ALCHEMIZE_SERVICE_ALIASES = [
     'business-administration-operations' => 'business-operations',
     'business-notary-administrative-services' => 'business-notary',
     'insurance-review' => 'individual-insurance',
+    'business-digital' => 'business-operations',
+    'business-readiness' => 'business-formation',
+    'business-financial' => 'business-tax',
 ];
 
 function alchemize_string_value(array $payload, string $field): ?string

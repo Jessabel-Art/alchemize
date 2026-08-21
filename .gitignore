@@ -1,5 +1,6 @@
 # Dependencies / build output
 node_modules/
+.venv/
 dist/
 
 # Test and temporary output

@@ -1,0 +1,87 @@
+const RESOURCE_SLUGS = [
+  "preparing-for-tax-season",
+  "tax-records-what-to-keep",
+  "estimated-taxes-questions",
+  "medicare-basics-coverage-choices",
+  "medicare-enrollment-periods",
+  "comparing-medicare-coverage",
+  "understanding-insurance-coverage",
+  "starting-a-business-organization-checklist",
+  "your-first-year-in-business",
+  "business-formation-information-to-gather",
+  "business-needs-a-process",
+  "simple-administrative-system",
+  "business-records-what-needs-a-home",
+  "building-a-business-deadline-calendar",
+];
+
+const SERVICE_DETAIL_PATHS = [
+  "/services/individuals/tax-preparation",
+  "/services/individuals/insurance",
+  "/services/individuals/notary-document-services",
+  "/services/businesses/advisory-optimization",
+  "/services/businesses/operations-implementation",
+  "/services/businesses/digital-business-technology",
+  "/services/businesses/readiness-growth",
+  "/services/businesses/financial-tax-support",
+];
+
+export const APP_ROUTE_PATHS = [
+  "/",
+  "/about",
+  "/services",
+  "/services/individuals",
+  "/services/businesses",
+  ...SERVICE_DETAIL_PATHS,
+  "/contact",
+  "/resources",
+  ...RESOURCE_SLUGS.map((slug) => `/resources/${slug}`),
+  "/resources/documents-to-bring-to-a-consultation",
+  "/faq",
+  "/why-alchemize",
+  "/privacy",
+  "/terms",
+  "/login",
+  "/register",
+  "/admin",
+  "/admin/dashboard",
+  "/admin/leads",
+  "/admin/clients",
+  "/admin/services",
+  "/admin/tasks",
+  "/admin/documents",
+  "/admin/appointments",
+  "/admin/messages",
+  "/admin/billing",
+  "/admin/content",
+  "/admin/settings",
+  "/client-portal",
+  "/client-portal/dashboard",
+  "/client-portal/services",
+  "/client-portal/tasks",
+  "/client-portal/documents",
+  "/client-portal/appointments",
+  "/client-portal/messages",
+  "/client-portal/billing",
+  "/client-portal/profile",
+];
+
+const REDIRECT_ROUTE_PATHS = new Set([
+  "/about",
+  "/services/individuals",
+  "/services/businesses",
+  "/resources/documents-to-bring-to-a-consultation",
+]);
+
+export const PUBLIC_SITEMAP_ROUTES = APP_ROUTE_PATHS.filter(
+  (path) =>
+    !REDIRECT_ROUTE_PATHS.has(path) &&
+    !path.startsWith("/admin") &&
+    !path.startsWith("/client-portal") &&
+    !path.startsWith("/login") &&
+    !path.startsWith("/register"),
+);
+
+export function getSitemapRoutes() {
+  return PUBLIC_SITEMAP_ROUTES.map((path) => ({ path }));
+}

@@ -1,0 +1,7 @@
+.text-center { text-align: center; }
+
+.mt-0 { margin-top: 0; }
+.mb-0 { margin-bottom: 0; }
+
+.stack-lg > * + * { margin-top: 1.25rem; }
+.stack-md > * + * { margin-top: 0.75rem; }

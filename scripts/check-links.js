@@ -46,7 +46,7 @@ function normalizeHref(href) {
 }
 
 function isLikelyStaticAsset(href) {
-  return /\.(png|jpe?g|gif|svg|webp|avif|ico|css|js|pdf|docx?|xlsx?|mp4|webm|mp3|woff2?|ttf)(?:$|[?#])/i.test(
+  return /\.(png|jpe?g|gif|svg|webp|avif|ico|webmanifest|css|js|pdf|docx?|xlsx?|mp4|webm|mp3|woff2?|ttf)(?:$|[?#])/i.test(
     href,
   );
 }

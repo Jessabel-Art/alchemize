@@ -88,11 +88,7 @@
     ],
     "resources": [
       ["Preparing for Tax Season", "/resources/preparing-for-tax-season/"],
-      ["Tax Documents Checklist", "/resources/tax-documents-checklist/"],
-      [
-        "Why Preparation Starts Early",
-        "/blog/why-tax-preparation-starts-before-tax-season/"
-      ]
+      ["Tax Documents Checklist", "/resources/tax-documents-checklist/"]
     ],
     "related": [
       ["Insurance Solutions", "/services/individuals/insurance/"],
@@ -302,10 +298,7 @@
         "Preparing for a Notary Appointment",
         "/resources/preparing-for-a-notary-appointment/"
       ],
-      [
-        "Consultation Preparation Guide",
-        "/resources/documents-to-bring-to-a-consultation/"
-      ]
+      ["Consultation preparation questions", "/faq/"]
     ],
     "related": [
       ["Tax Preparation", "/services/individuals/tax-preparation/"],
@@ -408,10 +401,6 @@
       [
         "Business Records Organization",
         "/resources/business-records-organization/"
-      ],
-      [
-        "First Business Consultation",
-        "/blog/what-to-organize-before-your-first-business-consultation/"
       ]
     ],
     "related": [
@@ -519,10 +508,6 @@
       [
         "Business Records Organization",
         "/resources/business-records-organization/"
-      ],
-      [
-        "How Organization Reduces Friction",
-        "/blog/how-business-organization-reduces-administrative-friction/"
       ]
     ],
     "related": [
@@ -729,18 +714,7 @@
       "What happens during a consultation?"
     ],
     "resources": [
-      [
-        "Consultation Preparation Guide",
-        "/resources/documents-to-bring-to-a-consultation/"
-      ],
-      [
-        "First Business Consultation",
-        "/blog/what-to-organize-before-your-first-business-consultation/"
-      ],
-      [
-        "How Organization Reduces Friction",
-        "/blog/how-business-organization-reduces-administrative-friction/"
-      ]
+      ["Consultation preparation questions", "/faq/"]
     ],
     "related": [
       [
@@ -968,10 +942,7 @@
         "Business Records Organization",
         "/resources/business-records-organization/"
       ],
-      [
-        "Consultation Preparation Guide",
-        "/resources/documents-to-bring-to-a-consultation/"
-      ]
+      ["Consultation preparation questions", "/faq/"]
     ],
     "related": [
       [

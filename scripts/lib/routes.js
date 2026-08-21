@@ -43,10 +43,6 @@ export function classifyRoute(routePath) {
     return "resource";
   }
 
-  if (routePath.startsWith("/blog/")) {
-    return "blog";
-  }
-
   if (routePath.startsWith("/services/")) {
     return "service";
   }
@@ -121,7 +117,7 @@ export function validateSlug(slug) {
 
 export function buildContentIndex(routes) {
   return routes
-    .filter((route) => route.type === "resource" || route.type === "blog")
+    .filter((route) => route.type === "resource" )
     .map((route) => ({
       type: route.type,
       title: route.title,

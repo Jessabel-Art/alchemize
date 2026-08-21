@@ -1,0 +1,369 @@
+﻿import { useMemo, useState } from "react";
+import PageShell from "../../components/ui/PageShell.jsx";
+import "./faq.css";
+
+const faqCategories = [
+  {
+    category: "General",
+    description: "The basic questions most clients ask before starting.",
+    items: [
+      {
+        question: "What does Alchemize Business Services do?",
+        answer:
+          "Alchemize provides professional support for individuals, entrepreneurs, and small businesses across administrative, tax-related, insurance, business, organizational, and operational responsibilities. The goal is to help clients understand what needs attention, organize the information around it, and determine practical next steps. In some cases, a licensed or specialized professional may be the more appropriate provider for a specific service or requirement.",
+      },
+      {
+        question: "Who does Alchemize work with?",
+        answer:
+          "Alchemize works with individuals, entrepreneurs, freelancers, owner-operated businesses, and small businesses that need help organizing responsibilities, preparing for decisions, improving administrative processes, or moving a business task forward. The appropriate service depends on the situation, scope, location, and any licensing or professional requirements involved.",
+      },
+      {
+        question: "Do I need to know exactly which service I need?",
+        answer:
+          "No. Many clients know what they are trying to accomplish but are not sure which service category applies. Start by describing the situation, what has already happened, and what you are trying to resolve or prepare for. Alchemize can help identify the most appropriate starting point.",
+      },
+      {
+        question: "Can Alchemize help with more than one type of need?",
+        answer:
+          "Yes, when the needs fall within Alchemize's scope. Personal and business responsibilities often overlap, and a client may need support across more than one area over time. Each responsibility is still evaluated individually so the correct service, process, and professional boundaries remain clear.",
+      },
+      {
+        question: "Are services available virtually?",
+        answer:
+          "Many Alchemize services can be handled through virtual consultation and remote communication. Some services may depend on location, document requirements, licensing rules, or the nature of the work. Availability should be confirmed when the service is requested.",
+      },
+      {
+        question: "Where is Alchemize based?",
+        answer:
+          "Alchemize Business Services is based in North Carolina and is designed to support clients through both local and virtual service models. Specific service availability may vary by location and by the requirements that apply to the service.",
+      },
+      {
+        question: "Is assistance available in Spanish?",
+        answer:
+          "Yes. Alchemize intends to support clients in both English and Spanish. The website is being developed to provide a full Spanish-language experience as well. Availability of third-party forms, government documents, carrier materials, or external platforms in Spanish may depend on the organization that provides them.",
+      },
+    ],
+  },
+  {
+    category: "Individual Services",
+    description: "Common questions for personal tax, insurance, and document support.",
+    items: [
+      {
+        question: "What services are available for individuals?",
+        answer:
+          "Individual services may include tax preparation support, insurance-related assistance, notary and document services, preparation guidance, and help organizing information connected to an important personal responsibility. The final scope depends on the specific request, applicable requirements, and service availability.",
+      },
+      {
+        question: "What should I prepare before contacting Alchemize?",
+        answer:
+          "Start with a short description of what you are trying to accomplish, any important dates or deadlines, and the information or documents you already have. You do not need to organize everything perfectly before reaching out. The initial conversation can help determine what is actually needed.",
+      },
+      {
+        question: "Can I ask for help even if I am not sure which service fits?",
+        answer:
+          "Yes. The initial inquiry can focus on the situation rather than a service name. Explain what is happening, what feels unclear, and what outcome you are trying to reach. Alchemize can then determine whether the request fits an available service and what should happen next.",
+      },
+      {
+        question: "How will I know which documents are required?",
+        answer:
+          "Document requirements depend on the service. Once the request is understood, Alchemize can identify which records are useful, which documents are required, and which information should not be sent until a secure method is available.",
+      },
+      {
+        question: "Should I send sensitive documents with my first inquiry?",
+        answer:
+          "No. Do not send Social Security numbers, full tax returns, banking information, identity documents, medical records, insurance records, confidential business records, or other sensitive information through an ordinary contact form or unsecured email. Alchemize will provide instructions when secure document handling is required.",
+      },
+      {
+        question: "Can one individual use Alchemize for different needs over time?",
+        answer:
+          "Yes. A client may begin with one responsibility and later return for another service that falls within Alchemize's scope. The objective is to create a professional relationship that can remain useful as needs change.",
+      },
+    ],
+  },
+  {
+    category: "Business Services",
+    description: "Questions for owners, operators, and growing businesses.",
+    items: [
+      {
+        question: "Can Alchemize help get a new business organized?",
+        answer:
+          "Yes. Alchemize can help organize the administrative information, records, responsibilities, and next steps involved in establishing a business. The exact support depends on the business, jurisdiction, formation status, licensing requirements, and whether legal, tax, accounting, or other specialized professional guidance is required.",
+      },
+      {
+        question: "Do I need to already have a registered business?",
+        answer:
+          "No. Alchemize may work with someone who is still preparing to start a business as well as an existing business that needs better organization, operations, or administrative structure. The appropriate starting point depends on how far the business has progressed.",
+      },
+      {
+        question: "Does Alchemize provide ongoing operational support?",
+        answer:
+          "Ongoing support may be available depending on the business need and agreed scope. This may involve helping organize administrative processes, responsibilities, records, workflows, recurring tasks, or other operational areas supported by Alchemize.",
+      },
+      {
+        question: "What if I need help in more than one business area?",
+        answer:
+          "That is common. Business responsibilities often connect. A formation issue can create administrative work, an operational issue can affect financial records, and a new service or opportunity can create new processes and deadlines. Alchemize can help identify how the responsibilities relate and determine a practical order for addressing them.",
+      },
+      {
+        question: "Can Alchemize help implement recommendations, not just provide advice?",
+        answer:
+          "Where the work falls within Alchemize's scope, yes. The business model is intended to go beyond simply identifying a problem. Alchemize may also help organize, document, coordinate, prepare, or implement practical next steps.",
+      },
+      {
+        question: "Can Alchemize work with systems and processes I already use?",
+        answer:
+          "Yes. The objective is not to replace tools that are already working. Alchemize can first assess the existing process, identify where information or responsibility is breaking down, and determine whether the current system can be improved before recommending something new.",
+      },
+
+    ],
+  },
+  {
+    category: "Consultations",
+    description: "What to expect before, during, and after a conversation.",
+    items: [
+      {
+        question: "What happens during a consultation?",
+        answer:
+          "The consultation begins with the situation rather than a predetermined solution. The conversation generally focuses on what you are trying to accomplish, what has already happened, what information is available, what feels unclear, and what next step may be appropriate.",
+      },
+      {
+        question: "What should I bring to a consultation?",
+        answer:
+          "Bring enough information to explain the situation clearly. Useful items may include relevant dates, a short description of the issue, a list of questions, and a summary of documents or records you already have. Do not send highly sensitive documents until Alchemize provides an appropriate method for doing so.",
+      },
+      {
+        question: "What if I do not have everything organized yet?",
+        answer:
+          "That is not a problem. The purpose of the initial conversation is often to determine what information actually matters and what needs to be gathered next.",
+      },
+      {
+        question: "Can we discuss more than one issue during the same consultation?",
+        answer:
+          "Yes, especially when the responsibilities appear connected. If the issues require substantially different services, Alchemize may recommend addressing them separately so each can be handled with the appropriate scope and preparation.",
+      },
+      {
+        question: "Does scheduling a consultation commit me to purchasing a service?",
+        answer:
+          "No. A consultation is intended to help determine whether Alchemize is an appropriate fit and what the next step should be. Any service engagement, pricing, or additional work should be clearly defined before work begins.",
+      },
+      {
+        question: "What happens after the consultation?",
+        answer:
+          "The next step depends on the situation. You may receive a recommended service path, a request for additional information, preparation instructions, a proposed scope of work, or guidance that another type of professional or provider is more appropriate.",
+      },
+    ],
+  },
+  {
+    category: "Working With Alchemize",
+    description: "How client intake, communication, and follow-through are handled.",
+    items: [
+      {
+        question: "Can I contact Alchemize without committing to a service?",
+        answer:
+          "Yes. An initial inquiry can simply explain what you are trying to accomplish or what responsibility needs attention. Alchemize can then determine whether the request is within scope and what next step makes sense.",
+      },
+      {
+        question: "Do I need to send documents upfront?",
+        answer:
+          "Usually not. The initial inquiry should provide enough context to understand the request. If documents are needed, Alchemize will identify what is required and how it should be provided.",
+      },
+      {
+        question: "How are services priced?",
+        answer:
+          "Pricing depends on the type of service, scope of work, complexity, and amount of support required. Where pricing has not yet been standardized, Alchemize should define the scope and applicable cost before substantial work begins.",
+      },
+      {
+        question: "Will I know the cost before work begins?",
+        answer:
+          "The objective is to make scope and pricing clear before significant work begins. Some services may have standardized pricing while others may require review of the request before a fee can be determined.",
+      },
+      {
+        question: "How will Alchemize communicate with me while work is in progress?",
+        answer:
+          "Communication methods depend on the service and the information being exchanged. Routine communication may occur through approved business communication channels, while sensitive information should use a secure process when required. As the client portal becomes operational, more service communication and status information can be centralized there.",
+      },
+      {
+        question: "How does Alchemize handle confidential information?",
+        answer:
+          "Alchemize treats personal and business information as confidential and limits its use to legitimate business and service purposes. Sensitive information should only be collected when necessary and through appropriate methods. Specific privacy practices are described in the site's Privacy Policy.",
+      },
+
+    ],
+  },
+];
+
+const slugify = (value) =>
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+function FaqPage() {
+  const [query, setQuery] = useState("");
+  const [openQuestion, setOpenQuestion] = useState(
+    "What does Alchemize Business Services do?"
+  );
+  const [activeCategory, setActiveCategory] = useState("General");
+
+  const normalizedQuery = query.trim().toLowerCase();
+
+  const filteredCategories = useMemo(
+    () =>
+      faqCategories
+        .map((category) => ({
+          ...category,
+          items: category.items.filter(({ question, answer }) =>
+            `${category.category} ${question} ${answer}`
+              .toLowerCase()
+              .includes(normalizedQuery)
+          ),
+        }))
+        .filter((category) => category.items.length > 0),
+    [normalizedQuery]
+  );
+
+  const totalResults = filteredCategories.reduce(
+    (sum, category) => sum + category.items.length,
+    0
+  );
+
+  return (
+    <div className="faq-page">
+      <PageShell
+        eyebrow="Frequently asked questions"
+        title="Questions before you get started?"
+        summary="Clear answers about Alchemize services, consultations, and what to expect when working with us."
+      >
+        <div className="faq-search">
+          <label htmlFor="faq-query">Search questions</label>
+          <div className="faq-search-field">
+            <input
+              id="faq-query"
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Try “consultation” or “business”"
+            />
+            {query ? (
+              <button
+                type="button"
+                className="faq-clear-button"
+                onClick={() => setQuery("")}
+              >
+                Clear
+              </button>
+            ) : null}
+          </div>
+        </div>
+
+        {query ? (
+          <p className="faq-results-meta">
+            Showing {totalResults} answer{totalResults === 1 ? "" : "s"} across {filteredCategories.length} category
+            {filteredCategories.length === 1 ? "" : "ies"}.
+          </p>
+        ) : null}
+
+        <div className="faq-layout">
+          <nav className="faq-category-nav" aria-label="FAQ categories">
+            {faqCategories.map((category) => {
+              const visibleCount =
+                filteredCategories.find(
+                  (entry) => entry.category === category.category
+                )?.items.length ?? 0;
+              const isActive = activeCategory === category.category;
+
+              return (
+                <a
+                  key={category.category}
+                  href={`#faq-${slugify(category.category)}`}
+                  className={`${visibleCount === 0 ? "is-disabled" : ""} ${isActive ? "is-active" : ""}`.trim()}
+                  aria-disabled={visibleCount === 0}
+                  onClick={() => setActiveCategory(category.category)}
+                >
+                  <span>{category.category}</span>
+                  <em>{visibleCount}</em>
+                </a>
+              );
+            })}
+          </nav>
+
+          <div className="faq-groups">
+            {filteredCategories.length > 0 ? (
+              filteredCategories.map((category) => (
+                <section
+                  id={`faq-${slugify(category.category)}`}
+                  key={category.category}
+                  className="faq-category-section"
+                >
+                  <header className="faq-category-header">
+                    <h2>{category.category}</h2>
+                    <p>{category.description}</p>
+                  </header>
+
+                  <div className="faq-accordion" role="list">
+                    {category.items.map(({ question, answer }) => {
+                      const itemId = `faq-${slugify(category.category)}-${slugify(
+                        question
+                      )}`;
+                      const isOpen = openQuestion === question;
+
+                      return (
+                        <article
+                          key={question}
+                          className="faq-accordion-item"
+                          role="listitem"
+                        >
+                          <button
+                            type="button"
+                            className="faq-question"
+                            aria-expanded={isOpen}
+                            aria-controls={itemId}
+                            onClick={() =>
+                              setOpenQuestion((current) =>
+                                current === question ? "" : question
+                              )
+                            }
+                          >
+                            <span>{question}</span>
+                            <span className="faq-question-icon" aria-hidden="true">
+                              {isOpen ? "−" : "+"}
+                            </span>
+                          </button>
+
+                          <div
+                            id={itemId}
+                            className={`faq-answer ${isOpen ? "is-open" : ""}`}
+                            hidden={!isOpen}
+                          >
+                            <p>{answer}</p>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                </section>
+              ))
+            ) : (
+              <div className="faq-empty-state">
+                <h2>No matching answers found.</h2>
+                <p>
+                  Try a broader keyword such as “consultation,” “tax,” “notary,”
+                  “insurance,” or “organization.”
+                </p>
+                <button
+                  type="button"
+                  className="button button-primary"
+                  onClick={() => setQuery("")}
+                >
+                  Clear search
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </PageShell>
+    </div>
+  );
+}
+
+export default FaqPage;

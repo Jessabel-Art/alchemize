@@ -1,12 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
-import { discoverRoutes } from "./lib/routes.js";
+import { getSitemapRoutes } from "./lib/react-routes.js";
 
 const rootDir = process.cwd();
 const baseUrl = "https://getalchemize.com";
-const routes = discoverRoutes(rootDir).filter(
-  (route) => !["application", "admin", "auth"].includes(route.type),
-);
+const routes = getSitemapRoutes();
 
 const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

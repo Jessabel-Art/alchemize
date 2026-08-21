@@ -5,10 +5,8 @@ const routes = discoverRoutes(process.cwd());
 const resourceCount = routes.filter(
   (route) => route.type === "resource",
 ).length;
-const blogCount = routes.filter((route) => route.type === "blog").length;
 
 console.log(`Resources: ${resourceCount}`);
-console.log(`Blog posts: ${blogCount}`);
 console.log(`Total route entries: ${routes.length}`);
 
 try {

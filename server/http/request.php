@@ -19,11 +19,12 @@ function alchemize_decode_json_request(
     ?string $contentLength,
     string $rawBody,
 ): array {
-    if (strtoupper($method) !== 'POST') {
-        throw new AlchemizeRequestException(405, 'METHOD_NOT_ALLOWED', 'Only POST is supported.');
+    $method = strtoupper($method);
+    if (!in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
+        throw new AlchemizeRequestException(405, 'METHOD_NOT_ALLOWED', 'Only POST, PUT, PATCH, and DELETE are supported for JSON payloads.');
     }
 
-    if (strtolower(trim(explode(';', $contentType)[0])) !== 'application/json') {
+    if (trim(explode(';', $contentType)[0]) !== 'application/json') {
         throw new AlchemizeRequestException(415, 'UNSUPPORTED_MEDIA_TYPE', 'Content-Type must be application/json.');
     }
 
@@ -45,15 +46,20 @@ function alchemize_decode_json_request(
     return $payload;
 }
 
-function alchemize_read_json_request(): array
+function alchemize_read_json_request(?string $method = null): array
 {
     $rawBody = file_get_contents('php://input');
     if ($rawBody === false) {
         throw new AlchemizeRequestException(400, 'INVALID_REQUEST', 'The request body could not be read.');
     }
 
+    $methodToUse = strtoupper($method ?? ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+    if ($methodToUse === 'GET') {
+        return [];
+    }
+
     return alchemize_decode_json_request(
-        $_SERVER['REQUEST_METHOD'] ?? 'GET',
+        $methodToUse,
         $_SERVER['CONTENT_TYPE'] ?? '',
         $_SERVER['CONTENT_LENGTH'] ?? null,
         $rawBody,

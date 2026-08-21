@@ -54,26 +54,5 @@
     "path": "/resources/documents-to-bring-to-a-consultation/",
     "description": "A concise guide to the records and background information that are most useful before a consultation.",
     "category": "Documents"
-  },
-  {
-    "type": "blog",
-    "title": "Why Tax Preparation Starts Before Tax Season",
-    "path": "/blog/why-tax-preparation-starts-before-tax-season/",
-    "description": "Why consistent record organization makes tax preparation more orderly long before filing deadlines arrive.",
-    "category": "Taxes"
-  },
-  {
-    "type": "blog",
-    "title": "How Business Organization Reduces Administrative Friction",
-    "path": "/blog/how-business-organization-reduces-administrative-friction/",
-    "description": "How clear recordkeeping and defined routines reduce administrative friction across a business lifecycle.",
-    "category": "Operations"
-  },
-  {
-    "type": "blog",
-    "title": "What to Organize Before Your First Business Consultation",
-    "path": "/blog/what-to-organize-before-your-first-business-consultation/",
-    "description": "A practical list of the information and documents that make a first business consultation more productive.",
-    "category": "Getting Started"
   }
 ]

@@ -19,12 +19,12 @@ DATA = json.loads((ROOT / "content/service-details.json").read_text(encoding="ut
 PREMIUM = json.loads((ROOT / "content/checklist-layouts.json").read_text(encoding="utf-8"))
 OUT = ROOT / "public/assets/downloads"
 OUT.mkdir(parents=True, exist_ok=True)
-LOGO = ROOT / "assets/alchemize-logo-horizontal-light-theme.png"
+LOGO = ROOT / "public/assets/logos/alchemize-logo-dark.png"
 EMERALD, GOLD, NAVY, IVORY, GRAY = map(HexColor, ["#063D35", "#CE9D35", "#193744", "#F5F1E9", "#506169"])
 DEEP_EMERALD, FOREST, LIGHT_GOLD, WHITE = map(HexColor, ["#062B2B", "#0B4332", "#D7B05F", "#FFFFFF"])
 
 def optimized_logo():
-    image = PILImage.open(ROOT / "assets/alchemize-logo-horizontal-dark-main-theme.png").convert("RGBA")
+    image = PILImage.open(ROOT / "public/assets/logos/alchemize-logo-light.png").convert("RGBA")
     image.thumbnail((900, 240), PILImage.Resampling.LANCZOS)
     buffer = BytesIO(); image.save(buffer, format="PNG", optimize=True); buffer.seek(0)
     return ImageReader(buffer), buffer
@@ -189,3 +189,8 @@ for item in DATA:
         build_premium(item["pdf"], PREMIUM[item["pdf"]])
     else:
         build(item)
+
+generated = {item["pdf"] for item in DATA}
+for filename, layout in PREMIUM.items():
+    if filename not in generated:
+        build_premium(filename, layout)

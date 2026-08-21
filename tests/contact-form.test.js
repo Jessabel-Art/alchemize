@@ -4,6 +4,7 @@ import {
   canonicalServiceKeys,
   normalizeServiceKey,
 } from "../js/contact-form.js";
+import { getSitemapRoutes } from "../scripts/lib/react-routes.js";
 
 test("exposes exactly the nine canonical service keys", () => {
   assert.deepEqual(
@@ -31,8 +32,21 @@ test("normalizes documented legacy service aliases", () => {
     normalizeServiceKey("individual-notary-documents"),
     "individual-notary",
   );
+  assert.equal(normalizeServiceKey("business-digital"), "business-operations");
+  assert.equal(normalizeServiceKey("business-readiness"), "business-formation");
+  assert.equal(normalizeServiceKey("business-financial"), "business-tax");
 });
 
 test("rejects unknown service values", () => {
   assert.equal(normalizeServiceKey("invented-service"), "");
+});
+
+test("uses the canonical React sitemap routes for the migrated app", () => {
+  const routes = getSitemapRoutes().map((route) => route.path);
+  assert.ok(routes.includes("/"));
+  assert.ok(routes.includes("/services"));
+  assert.ok(routes.includes("/resources/preparing-for-tax-season"));
+  assert.ok(routes.includes("/contact"));
+  assert.ok(routes.includes("/faq"));
+  assert.ok(routes.length >= 18);
 });

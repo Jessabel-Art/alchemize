@@ -1,0 +1,30 @@
+.brand-logo-picture {
+  display: block;
+}
+
+.brand-logo {
+  display: block;
+  width: clamp(205px, 16vw, 250px);
+  max-width: 100%;
+  height: auto;
+}
+
+.brand-logo--footer {
+  width: clamp(220px, 18vw, 270px);
+}
+
+@media (max-width: 480px) {
+  .brand-logo {
+    width: min(220px, 62vw);
+  }
+
+  .brand-logo--footer {
+    width: min(250px, 76vw);
+  }
+}
+
+@media (max-width: 380px) {
+  .site-header .brand-logo {
+    width: 58px;
+  }
+}

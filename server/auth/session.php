@@ -1,0 +1,77 @@
+<?php
+
+declare(strict_types=1);
+
+function alchemize_session_start(): void
+{
+    if (session_status() !== PHP_SESSION_NONE) {
+        return;
+    }
+
+    $isSecure = (($_SERVER['HTTPS'] ?? '') === 'on' || ($_SERVER['SERVER_PORT'] ?? '') === '443');
+    session_set_cookie_params([
+        'lifetime' => 60 * 60 * 8,
+        'path' => '/',
+        'domain' => '',
+        'secure' => $isSecure,
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
+    session_name('alchemize_sid');
+    session_start();
+}
+
+function alchemize_session_user(): ?array
+{
+    alchemize_session_start();
+    $user = $_SESSION['alchemize_user'] ?? null;
+    return is_array($user) ? $user : null;
+}
+
+function alchemize_set_session_user(array $user): void
+{
+    alchemize_session_start();
+    session_regenerate_id(true);
+    $_SESSION['alchemize_user'] = $user;
+}
+
+function alchemize_clear_session_user(): void
+{
+    alchemize_session_start();
+    $_SESSION = [];
+    if (ini_get('session.use_cookies')) {
+        $params = session_get_cookie_params();
+        setcookie(
+            session_name(),
+            '',
+            time() - 42000,
+            $params['path'],
+            $params['domain'],
+            $params['secure'],
+            $params['httponly'],
+            $params['samesite'] ?? 'Lax',
+        );
+    }
+    session_destroy();
+}
+
+function alchemize_require_authenticated_user(): array
+{
+    $user = alchemize_session_user();
+    if (!is_array($user) || empty($user['user_id'])) {
+        throw new AlchemizeRequestException(401, 'UNAUTHORIZED', 'Authentication required.');
+    }
+
+    return $user;
+}
+
+function alchemize_require_roles(array $allowedRoles): array
+{
+    $user = alchemize_require_authenticated_user();
+    $roleSlug = (string) ($user['role_slug'] ?? '');
+    if ($allowedRoles === [] || in_array($roleSlug, $allowedRoles, true)) {
+        return $user;
+    }
+
+    throw new AlchemizeRequestException(403, 'FORBIDDEN', 'You do not have permission to perform that action.');
+}

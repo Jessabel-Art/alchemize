@@ -1,0 +1,18 @@
+.page-shell { overflow: clip; }
+.page-hero { position: relative; padding: clamp(4rem,8vw,7.5rem) 0 clamp(3.5rem,7vw,6rem); background: linear-gradient(135deg,#ece8e1 0%,var(--ivory) 60%,#e5e1da 100%); border-bottom: 1px solid var(--color-border); }
+.page-hero::after { content: ""; position: absolute; width: 320px; height: 320px; right: -120px; top: -150px; border: 1px solid rgba(6,43,43,.09); border-radius: 50%; box-shadow: 0 0 0 45px rgba(6,43,43,.025), 0 0 0 90px rgba(6,43,43,.018); }
+.page-hero-copy { position: relative; z-index: 1; max-width: 900px; }
+.page-hero-copy h1 { max-width: 850px; margin: .65rem 0 1rem; color: var(--emerald-deep); font-size: clamp(3rem,6vw,5.5rem); font-weight: 500; line-height: .93; letter-spacing: -.035em; }
+.page-hero-copy p { max-width: 720px; color: var(--color-text-soft); font-size: clamp(1rem,1.6vw,1.18rem); line-height: 1.75; }
+.page-actions { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 1.7rem; }
+.page-content { padding-block: clamp(3.5rem,7vw,6.5rem); }
+.content-section + .content-section { margin-top: clamp(3.5rem,7vw,6rem); }
+.section-header { max-width: 780px; margin-bottom: 2rem; }
+.section-header h2 { margin-top: .65rem; color: var(--emerald-deep); font-size: clamp(2.2rem,4vw,3.6rem); font-weight: 500; line-height: 1; }
+.content-grid, .card-grid { display: grid; gap: 1px; background: rgba(6,43,43,.18); border: 1px solid rgba(6,43,43,.18); }
+.two-column { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.three-column { grid-template-columns: repeat(3,minmax(0,1fr)); }
+.card, .copy-block, .info-card { min-width: 0; padding: clamp(1.4rem,3vw,2.2rem); background: var(--white); }
+.info-card h3 { margin-bottom: .7rem; color: var(--emerald-deep); font-size: clamp(1.45rem,2.2vw,1.85rem); font-weight: 600; line-height: 1.05; }
+.info-card p, .copy-block p { color: var(--color-text-soft); line-height: 1.75; }
+@media (max-width: 760px) { .two-column, .three-column { grid-template-columns: 1fr; } .page-hero-copy h1 { font-size: clamp(2.7rem,13vw,4.4rem); } }

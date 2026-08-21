@@ -296,5 +296,120 @@
       }
     ],
     "disclaimer": "This checklist is an organizational tool. Records, controls, retention requirements, and operational obligations vary by business and applicable requirements."
+  },
+  "digital-business-systems-assessment-checklist.pdf": {
+    "audience": "BUSINESS SERVICES",
+    "title": "Digital Business Systems\nAssessment Checklist",
+    "intro": "Inventory the tools behind the business, clarify who owns them, and identify which systems should be kept, replaced, or reviewed before adding more technology.",
+    "pages": [
+      {
+        "label": "01 / DIGITAL FOUNDATION",
+        "heading": "Start with ownership, purpose, and the systems clients can see.",
+        "sections": [
+          {
+            "title": "Business website",
+            "items": [
+              "Website platform and administrator",
+              "Domain owner and renewal date",
+              "Hosting provider",
+              "Primary website purpose",
+              "Known content, accessibility, or maintenance issues"
+            ]
+          },
+          {
+            "title": "Domain & business email",
+            "items": [
+              "Domain registrar and account owner",
+              "Business email provider",
+              "User and mailbox inventory",
+              "DNS and recovery-contact ownership",
+              "Renewal and billing responsibility"
+            ]
+          },
+          {
+            "title": "Scheduling & client intake",
+            "items": [
+              "Scheduling platform",
+              "Intake forms and required information",
+              "Confirmation and reminder workflow",
+              "Owner of follow-up",
+              "Duplicate entry or manual handoff issues"
+            ]
+          },
+          {
+            "title": "CRM & client records",
+            "items": [
+              "Current CRM or record location",
+              "Record owner",
+              "Required fields and stages",
+              "Follow-up workflow",
+              "Retention and access questions"
+            ]
+          }
+        ],
+        "prompts": [
+          "The digital problem creating the most friction",
+          "The system clients interact with most",
+          "The account whose ownership needs clarification"
+        ]
+      },
+      {
+        "label": "02 / WORKFLOW & CONTROL",
+        "heading": "Evaluate how information moves, where it lives, and who is accountable.",
+        "sections": [
+          {
+            "title": "Document storage & cloud workspace",
+            "items": [
+              "Primary storage platform",
+              "Folder and file-naming structure",
+              "User permissions",
+              "Archive and retention approach",
+              "Backup method and last review"
+            ]
+          },
+          {
+            "title": "Automations & integrations",
+            "items": [
+              "Connected applications",
+              "Trigger and intended result",
+              "Data being transferred",
+              "Owner and failure notification",
+              "Keep / replace / review decision"
+            ]
+          },
+          {
+            "title": "Reporting",
+            "items": [
+              "Decisions the report should support",
+              "Source system",
+              "Person responsible",
+              "Review frequency",
+              "Missing or unreliable information"
+            ]
+          },
+          {
+            "title": "Vendor & account inventory",
+            "items": [
+              "Tool or vendor name",
+              "Current tool / owner / purpose",
+              "Cost and renewal date",
+              "Known issue",
+              "Keep / replace / review decision"
+            ]
+          }
+        ],
+        "readinessTitle": "System assessment fields",
+        "readiness": [
+          "Current tool",
+          "Owner",
+          "Purpose",
+          "Issue",
+          "Keep / replace / review"
+        ],
+        "notesTitle": "Priorities / systems to review",
+        "notesLines": 4
+      }
+    ],
+    "disclaimer": "This checklist supports business-process and technology organization. It is not a cybersecurity assessment, managed IT service, or guarantee that a particular tool or integration will meet every requirement."
   }
 }

@@ -3,18 +3,32 @@ import path from "node:path";
 
 const rootDir = process.cwd();
 const assetPatterns = /(?:src|href)\s*=\s*['"]([^'"]+)['"]/gi;
-const results = [];
 const seen = new Map();
+const ignoredDirs = new Set([
+  "node_modules",
+  "dist",
+  ".git",
+  "docs",
+  "tests",
+  "tmp",
+  "api",
+  "server",
+  "migrations",
+  "generated",
+  "content",
+  "public",
+  "scripts",
+]);
 
-function walk(dir) {
+function walk(dir, results) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (["node_modules", "dist", ".git"].includes(entry.name)) {
+    if (ignoredDirs.has(entry.name)) {
       continue;
     }
 
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
-      walk(full);
+      walk(full, results);
       continue;
     }
 
@@ -34,10 +48,6 @@ function resolveReference(fromFile, ref) {
     return null;
   }
 
-  if (normalized === "/") {
-    return rootDir;
-  }
-
   if (normalized.startsWith("/")) {
     return path.resolve(rootDir, normalized.slice(1));
   }
@@ -47,32 +57,33 @@ function resolveReference(fromFile, ref) {
 
 function resolveExistingReference(fromFile, ref) {
   const normalized = normalizeReference(ref).replace(/\\/g, "/");
-
-  const candidates = [];
   const directCandidate = resolveReference(fromFile, ref);
-  if (directCandidate) candidates.push(directCandidate);
+  if (!directCandidate) return null;
 
+  const candidates = [directCandidate];
   if (normalized.startsWith("/")) {
-    candidates.push(path.resolve(rootDir, normalized.slice(1)));
     candidates.push(path.resolve(rootDir, "public", normalized.slice(1)));
   }
 
   for (const candidate of candidates) {
-    if (candidate && fs.existsSync(candidate)) return candidate;
+    if (fs.existsSync(candidate)) return candidate;
   }
 
-  return directCandidate;
+  return null;
 }
 
-walk(rootDir);
+const files = [];
+walk(rootDir, files);
+const activeFiles = files.filter((file) => {
+  const relative = path.relative(rootDir, file).replace(/\\/g, "/");
+  return (
+    (relative.startsWith("src/") || relative.startsWith("public/") || file === path.join(rootDir, "index.html")) &&
+    (file.endsWith(".js") || file.endsWith(".css") || file.endsWith(".html"))
+  );
+});
 
-const files = results.filter(
-  (file) =>
-    file.endsWith(".html") || file.endsWith(".css") || file.endsWith(".js"),
-);
 const localRefs = [];
-
-for (const file of files) {
+for (const file of activeFiles) {
   const content = fs.readFileSync(file, "utf8");
   assetPatterns.lastIndex = 0;
   let match;
@@ -84,19 +95,8 @@ for (const file of files) {
     }
 
     const normalized = normalizeReference(ref);
-    if (normalized === "" || normalized === ".") {
+    if (!normalized || normalized === ".") {
       continue;
-    }
-
-    if (normalized === "/" || normalized.endsWith("/")) {
-      const routeTarget = resolveReference(file, ref);
-      if (
-        routeTarget &&
-        (fs.existsSync(routeTarget) ||
-          fs.existsSync(path.join(routeTarget, "index.html")))
-      ) {
-        continue;
-      }
     }
 
     if (!/[.]/.test(normalized) && !normalized.endsWith("/")) {
@@ -108,20 +108,15 @@ for (const file of files) {
 }
 
 const problems = [];
-
 for (const { from, ref } of localRefs) {
   const candidate = resolveExistingReference(from, ref);
-
   if (!candidate || !fs.existsSync(candidate)) {
     problems.push({ from, ref, reason: "missing local asset" });
     continue;
   }
 
   const stats = fs.statSync(candidate);
-  if (stats.isDirectory()) {
-    continue;
-  }
-
+  if (stats.isDirectory()) continue;
   if (stats.size === 0) {
     problems.push({ from, ref, reason: "zero-byte file" });
     continue;
@@ -151,6 +146,4 @@ if (problems.length > 0) {
   process.exit(1);
 }
 
-console.log(
-  `Checked ${files.length} project files. No missing or zero-byte local assets detected.`,
-);
+console.log(`Checked ${activeFiles.length} active frontend files. No missing or zero-byte local assets detected.`);

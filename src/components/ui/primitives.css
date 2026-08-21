@@ -1,0 +1,20 @@
+.content-shell { width: min(var(--content-max), calc(100% - (var(--page-gutter) * 2))); margin-inline: auto; min-width: 0; }
+.text-shell { width: min(var(--text-max), calc(100% - (var(--page-gutter) * 2))); margin-inline: auto; }
+.eyebrow,.section-kicker{display:inline-flex;align-items:center;gap:.7rem;color:var(--emerald-forest);font-size:.77rem;font-weight:600;letter-spacing:.15em;line-height:1.4;text-transform:uppercase}
+.eyebrow::before { content: ""; width: 28px; height: 1px; background: currentColor; }
+.eyebrow--gold { color: var(--gold); }
+.section-heading { max-width: var(--text-max); }
+.section-heading h2 { margin-top: .7rem; color: var(--emerald-deep); font-size: clamp(2.25rem, 4.5vw, 4rem); line-height: .98; }
+.section-heading p { margin-top: 1rem; color: var(--color-text-soft); font-size: clamp(1rem, 1.5vw, 1.14rem); line-height: 1.75; }
+.button{display:inline-flex;min-height:50px;align-items:center;justify-content:center;padding:.88rem 1.5rem;border:1px solid transparent;border-radius:2px;font-size:.75rem;font-weight:600;letter-spacing:.1em;line-height:1.2;text-align:center;text-transform:uppercase;transition:background-color var(--transition-base),color var(--transition-base),border-color var(--transition-base),transform var(--transition-base)}
+.button:hover { transform: translateY(-2px); }
+.button-primary { background: var(--gold); color: var(--emerald-deep); }
+.button-primary:hover { background: #e7c66c; }
+.button-secondary { border-color: rgba(6,43,43,.3); background: transparent; color: var(--emerald-deep); }
+.button-secondary:hover { border-color: var(--emerald-deep); }
+.button--light { border-color: rgba(255,255,255,.38); color: var(--white); }
+.text-link{display:inline-flex;align-items:center;gap:.45rem;margin-top:1rem;color:var(--emerald-deep);font-size:.79rem;font-weight:600;letter-spacing:.095em;text-transform:uppercase}
+.text-link::after { content: "→"; transition: transform .2s ease; }
+.text-link:hover::after { transform: translateX(4px); }
+.editorial-rule { border: 0; border-top: 1px solid rgba(6,43,43,.18); }
+@media (prefers-reduced-motion: reduce) { .button:hover, .text-link:hover::after { transform: none; } }

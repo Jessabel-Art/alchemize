@@ -1,0 +1,223 @@
+.faq-page .page-content {
+  max-width: 1160px;
+}
+
+.faq-search {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr);
+  gap: 1rem;
+  align-items: center;
+  padding: 1.2rem 0 2rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.faq-search label {
+  color: var(--emerald-deep);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.faq-search-field {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.faq-search input {
+  flex: 1;
+  min-width: 0;
+  padding: 1rem 1.1rem;
+  border: 1px solid rgba(6, 43, 43, 0.25);
+  background: var(--white);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.faq-search input:focus {
+  outline: 2px solid rgba(170, 124, 55, 0.35);
+  outline-offset: 2px;
+}
+
+.faq-clear-button {
+  border: 1px solid rgba(6, 43, 43, 0.2);
+  background: transparent;
+  color: var(--emerald-deep);
+  font: inherit;
+  font-weight: 600;
+  padding: 0.9rem 1.1rem;
+  cursor: pointer;
+}
+
+.faq-results-meta {
+  margin: 1.25rem 0 0;
+  color: var(--color-text-soft);
+  font-size: 0.83rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.faq-layout {
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  gap: clamp(2rem, 6vw, 6rem);
+  margin-top: 3rem;
+  align-items: start;
+}
+
+.faq-category-nav {
+  position: sticky;
+  top: calc(var(--site-header-height) + 2rem);
+  display: grid;
+  border-top: 2px solid var(--gold);
+}
+
+.faq-category-nav a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.95rem 0;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-soft);
+  font-size: 0.8rem;
+  text-decoration: none;
+}
+
+.faq-category-nav a.is-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.faq-category-nav em {
+  color: var(--gold);
+  font-style: normal;
+  font-weight: 700;
+}
+
+.faq-groups {
+  display: grid;
+  gap: 3rem;
+}
+
+.faq-category-section {
+  scroll-margin-top: calc(var(--site-header-height) + 2rem);
+}
+
+.faq-category-header {
+  margin-bottom: 1.25rem;
+}
+
+.faq-category-header h2 {
+  margin: 0;
+  font-size: clamp(2.2rem, 4vw, 3.7rem);
+  line-height: 1.05;
+}
+
+.faq-category-header p {
+  margin: 0.7rem 0 0;
+  color: var(--color-text-soft);
+  line-height: 1.7;
+}
+
+.faq-accordion {
+  display: grid;
+  gap: 0;
+}
+
+.faq-accordion-item {
+  border-top: 1px solid var(--color-border);
+}
+
+.faq-accordion-item:last-child {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.faq-question {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: transparent;
+  border: 0;
+  padding: 1.3rem 3rem 1.3rem 0;
+  text-align: left;
+  color: var(--emerald-deep);
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 2vw, 1.7rem);
+  line-height: 1.35;
+  cursor: pointer;
+}
+
+.faq-question span:first-child {
+  flex: 1;
+}
+
+.faq-question-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  color: var(--gold);
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.faq-answer {
+  padding: 0 3rem 1.5rem 0;
+}
+
+.faq-answer p {
+  margin: 0;
+  color: var(--color-text-soft);
+  line-height: 1.8;
+}
+
+.faq-empty-state {
+  padding: 2rem;
+  border: 1px solid var(--color-border);
+  background: rgba(6, 43, 43, 0.02);
+}
+
+.faq-empty-state h2 {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  font-size: clamp(1.8rem, 3vw, 2.5rem);
+}
+
+.faq-empty-state p {
+  margin: 0 0 1.5rem;
+  color: var(--color-text-soft);
+  line-height: 1.7;
+}
+
+@media (max-width: 720px) {
+  .faq-search,
+  .faq-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .faq-search {
+    gap: 0.75rem;
+  }
+
+  .faq-search-field {
+    display: grid;
+    grid-template-columns: 1fr auto;
+  }
+
+  .faq-layout > nav {
+    position: static;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 1rem;
+  }
+
+  .faq-question,
+  .faq-answer {
+    padding-right: 0;
+  }
+}
+
