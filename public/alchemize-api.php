@@ -73,8 +73,16 @@ if ($resource === 'auth' && !in_array($remaining[0] ?? '', $allowedAuthRoutes, t
     alchemize_error_response(404, 'NOT_FOUND', 'The requested authentication route was not found.');
 }
 
-$endpointPath = __DIR__ . '/../api/v1/' . $resource . '/index.php';
-if (!is_file($endpointPath)) {
+$deployedEndpointPath = __DIR__ . '/api/v1/' . $resource . '/index.php';
+$sourceEndpointPath = dirname(__DIR__) . '/api/v1/' . $resource . '/index.php';
+
+if (is_file($deployedEndpointPath)) {
+    $endpointPath = $deployedEndpointPath;
+} elseif (basename(__DIR__) === 'public' && is_file($sourceEndpointPath)) {
+    // In the source tree the front controller lives in public/, while api/ is
+    // its sibling. Production packages place both beneath public_html/.
+    $endpointPath = $sourceEndpointPath;
+} else {
     alchemize_error_response(404, 'NOT_FOUND', 'The requested route was not found.');
 }
 
