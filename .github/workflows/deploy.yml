@@ -1,0 +1,58 @@
+name: Build Deploy Branch
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production frontend
+        run: npm run build
+
+      - name: Assemble production package
+        shell: bash
+        run: |
+          rm -rf deploy-output
+          mkdir -p deploy-output
+
+          cp -R dist/. deploy-output/
+          cp -R api deploy-output/api
+          cp public/alchemize-api.php deploy-output/alchemize-api.php
+          cp public/.htaccess deploy-output/.htaccess
+
+      - name: Verify deployment package
+        shell: bash
+        run: |
+          test -f deploy-output/index.html
+          test -f deploy-output/alchemize-api.php
+          test -f deploy-output/.htaccess
+          test -f deploy-output/api/v1/auth/index.php
+          test -d deploy-output/assets
+
+      - name: Publish deploy branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: deploy
+          publish_dir: ./deploy-output
+          force_orphan: true
