@@ -172,6 +172,13 @@
   color: #ccd7db;
   line-height: 1.8;
 }
+.home-final .home-language-availability {
+  margin-top: 1rem;
+  color: var(--gold);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
 .home-connect ol {
   margin-top: 2rem;
   border-top: 1px solid rgba(255, 255, 255, 0.2);

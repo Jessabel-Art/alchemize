@@ -1,0 +1,183 @@
+export const contactContent = {
+  en: {
+    metadata: {
+      title: "Contact | Alchemize Business Services",
+      description:
+        "Tell Alchemize what you are working through and request a consultation for personal or business support.",
+    },
+    page: {
+      eyebrow: "Start the conversation",
+      title: "Tell us what you are working through.",
+      summary:
+        "You do not need to identify the exact service before reaching out. Start with the situation, responsibility, or outcome in front of you.",
+    },
+    form: {
+      kicker: "Consultation request",
+      title: "Tell us where you'd like to start.",
+      first: "First name",
+      last: "Last name",
+      email: "Email address",
+      phone: "Phone number",
+      audience: "Who is this for?",
+      service: "What do you need help with?",
+      contact: "Preferred contact",
+      message: "What are you trying to accomplish, improve, or resolve?",
+      website: "Website",
+      submit: "Send Inquiry",
+      unsure: "I'm not sure yet",
+      individual: "Me / my household",
+      business: "My business",
+      none: "No preference",
+      emailOption: "Email",
+      phoneOption: "Phone",
+      either: "Either",
+      privacyLabel: "Please don't send sensitive records here.",
+      privacy:
+        "Do not include Social Security numbers, tax records, banking information, medical information, identification documents, or other sensitive records in this form. If documents are needed, we'll provide the appropriate next step.",
+    },
+    services: {
+      "individual-tax": "Tax Preparation",
+      "individual-insurance": "Insurance Solutions",
+      "individual-notary": "Notary & Document Services",
+      "business-advisory": "Business Advisory & Optimization",
+      "business-operations": "Business Operations & Implementation",
+      "business-digital": "Digital Business & Technology",
+      "business-readiness": "Business Readiness & Growth",
+      "business-financial": "Financial & Tax Support",
+    },
+    aside: {
+      eyebrow: "What to expect",
+      title: "A clear first step.",
+      steps: [
+        [
+          "Describe the need",
+          "Tell us what is happening and what you need help moving forward.",
+        ],
+        [
+          "Identify the path",
+          "We will determine whether the request fits Alchemize's scope and what comes next.",
+        ],
+        [
+          "Prepare the conversation",
+          "If a consultation is appropriate, you will receive guidance about what to have ready.",
+        ],
+      ],
+      note: "Alchemize will follow up within 24 hours to schedule the consultation.",
+      language: "We speak Spanish. / Se habla español.",
+      contacts: {
+        general: "General inquiries",
+        phone: "Phone",
+        newClients: "New clients",
+        support: "Client support",
+      },
+    },
+    formMessages: {
+      submitting: "Submitting…",
+      submittingStatus: "Submitting your request securely…",
+      failure: "Your request could not be submitted.",
+      fallback: "We couldn't submit your request. Please try again.",
+      success:
+        "Your request has been received. Alchemize will review the information and follow up using the contact information provided.",
+      reference: "Reference",
+      required: "Please complete this required field.",
+      email: "Please enter a valid email address.",
+      messageLength: "Please provide at least 10 characters.",
+      fieldErrors: {},
+    },
+  },
+  es: {
+    metadata: {
+      title: "Contacto | Alchemize Business Services",
+      description:
+        "Cuéntenos qué necesita resolver y solicite una consulta en español para recibir apoyo personal o empresarial.",
+    },
+    page: {
+      eyebrow: "Inicie la conversación",
+      title: "Cuéntenos qué necesita resolver.",
+      summary:
+        "No necesita identificar el servicio exacto antes de comunicarse. Comience con la situación, la responsabilidad o el resultado que tiene por delante.",
+    },
+    form: {
+      kicker: "Solicitud de consulta",
+      title: "Cuéntenos por dónde desea comenzar.",
+      first: "Nombre",
+      last: "Apellido",
+      email: "Correo electrónico",
+      phone: "Número de teléfono",
+      audience: "¿Para quién es la consulta?",
+      service: "¿Con qué necesita ayuda?",
+      contact: "Medio de contacto preferido",
+      message: "¿Qué desea lograr, mejorar o resolver?",
+      website: "Sitio web",
+      submit: "Enviar consulta",
+      unsure: "Aún no estoy seguro",
+      individual: "Para mí o mi hogar",
+      business: "Para mi empresa",
+      none: "Sin preferencia",
+      emailOption: "Correo electrónico",
+      phoneOption: "Teléfono",
+      either: "Cualquiera de los dos",
+      privacyLabel:
+        "No envíe información confidencial mediante este formulario.",
+      privacy:
+        "No incluya números de Seguro Social, declaraciones de impuestos, información bancaria o médica, documentos de identidad ni otros datos confidenciales. Si necesitamos documentos, le indicaremos el método apropiado para enviarlos.",
+    },
+    services: {
+      "individual-tax": "Preparación de impuestos",
+      "individual-insurance": "Soluciones de seguros",
+      "individual-notary": "Servicios de notaría y documentos",
+      "business-advisory": "Asesoría y optimización empresarial",
+      "business-operations": "Operaciones e implementación",
+      "business-digital": "Tecnología para empresas",
+      "business-readiness": "Preparación y crecimiento empresarial",
+      "business-financial": "Apoyo financiero y fiscal",
+    },
+    aside: {
+      eyebrow: "Qué puede esperar",
+      title: "Un primer paso claro.",
+      steps: [
+        [
+          "Describa la necesidad",
+          "Cuéntenos qué está ocurriendo y qué necesita hacer avanzar.",
+        ],
+        [
+          "Identifique el camino",
+          "Determinaremos si la solicitud está dentro del alcance de Alchemize y cuál es el próximo paso.",
+        ],
+        [
+          "Prepare la conversación",
+          "Si una consulta es apropiada, recibirá orientación sobre lo que debe tener listo.",
+        ],
+      ],
+      note: "Alchemize se comunicará dentro de 24 horas para programar la consulta.",
+      language: "Se habla español.",
+      contacts: {
+        general: "Consultas generales",
+        phone: "Teléfono",
+        newClients: "Nuevos clientes",
+        support: "Soporte al cliente",
+      },
+    },
+    formMessages: {
+      submitting: "Enviando…",
+      submittingStatus: "Enviando su solicitud de forma segura…",
+      failure: "No se pudo enviar su solicitud.",
+      fallback: "No pudimos enviar su solicitud. Inténtelo de nuevo.",
+      success:
+        "Hemos recibido su solicitud. Alchemize revisará la información y se comunicará con usted mediante los datos proporcionados.",
+      reference: "Referencia",
+      required: "Complete este campo obligatorio.",
+      email: "Ingrese un correo electrónico válido.",
+      messageLength: "Escriba al menos 10 caracteres.",
+      fieldErrors: {
+        full_name: "Ingrese su nombre y apellido.",
+        email: "Ingrese un correo electrónico válido.",
+        phone: "Ingrese un número de teléfono válido.",
+        audience: "Indique para quién es la consulta.",
+        service_key: "Seleccione un servicio válido.",
+        message: "Describa brevemente lo que necesita.",
+        preferred_contact: "Seleccione un medio de contacto válido.",
+      },
+    },
+  },
+};

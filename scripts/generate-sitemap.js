@@ -6,16 +6,21 @@ const rootDir = process.cwd();
 const baseUrl = "https://getalchemize.com";
 const routes = getSitemapRoutes();
 
+function renderRoute(route) {
+  const alternates = route.alternates
+    ? `\n    ${Object.entries(route.alternates)
+        .map(
+          ([language, alternatePath]) =>
+            `<xhtml:link rel="alternate" hreflang="${language}" href="${baseUrl}${alternatePath}" />`,
+        )
+        .join("\n    ")}`
+    : "";
+  return `<url>\n    <loc>${baseUrl}${route.path}</loc>${alternates}\n  </url>`;
+}
+
 const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  ${routes
-    .map(
-      (route) => `
-  <url>
-    <loc>${baseUrl}${route.path}</loc>
-  </url>`,
-    )
-    .join("")}
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  ${routes.map(renderRoute).join("\n  ")}
 </urlset>
 `;
 

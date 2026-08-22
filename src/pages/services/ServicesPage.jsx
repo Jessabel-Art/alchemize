@@ -1,52 +1,38 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
 import Reveal from "../../components/ui/Reveal.jsx";
+import { useLanguage } from "../../i18n/LanguageContext.jsx";
+import LocalizedLink from "../../i18n/LocalizedLink.jsx";
+import usePageMetadata from "../../i18n/usePageMetadata.js";
 import { serviceGroups } from "./serviceCatalog.js";
+import { serviceGroupsEs } from "./serviceCatalog.es.js";
+import { servicesContent } from "./servicesContent.js";
 import "./services.css";
 
 const audienceOrder = ["individuals", "businesses"];
-
-function getInitialAudience() {
-  if (typeof window === "undefined") return "individuals";
-  const hash = window.location.hash.slice(1);
-  if (hash === "businesses") return "businesses";
-  if (hash === "individuals") return "individuals";
-  return "individuals";
-}
+const getInitialAudience = () =>
+  typeof window !== "undefined" &&
+  window.location.hash.slice(1) === "businesses"
+    ? "businesses"
+    : "individuals";
 
 function ServicesPage() {
+  const { language } = useLanguage();
+  const content = servicesContent[language];
+  const groups = language === "es" ? serviceGroupsEs : serviceGroups;
   const [audience, setAudience] = useState(getInitialAudience);
   const [hasInteracted, setHasInteracted] = useState(false);
   const catalogRef = useRef(null);
-
-  useEffect(() => {
-    document.title = "Services | Alchemize Business Services";
-    let meta = document.head.querySelector('meta[name="description"]');
-    if (!meta) {
-      meta = document.createElement("meta");
-      meta.name = "description";
-      document.head.append(meta);
-    }
-    meta.content =
-      "Explore professional services for individuals and businesses, including tax, insurance, notary, advisory, operations, technology, readiness, and financial support.";
-    let canonical = document.head.querySelector('link[rel="canonical"]');
-    if (!canonical) {
-      canonical = document.createElement("link");
-      canonical.rel = "canonical";
-      document.head.append(canonical);
-    }
-    canonical.href = "https://getalchemize.com/services";
-  }, []);
+  usePageMetadata({
+    en: servicesContent.en.metadata,
+    es: servicesContent.es.metadata,
+  });
 
   useEffect(() => {
     const sync = () => {
       const nextAudience = getInitialAudience();
       setAudience(nextAudience);
-      if (nextAudience === "businesses") {
-        setHasInteracted(true);
-      }
+      if (nextAudience === "businesses") setHasInteracted(true);
     };
-
     window.addEventListener("hashchange", sync);
     return () => window.removeEventListener("hashchange", sync);
   }, []);
@@ -67,101 +53,75 @@ function ServicesPage() {
   const chooseAudience = (nextAudience) => {
     setHasInteracted(true);
     setAudience(nextAudience);
-    if (typeof window !== "undefined") {
-      const url = new URL(window.location.href);
-      url.hash = nextAudience;
-      window.history.replaceState({}, "", url);
-    }
+    const url = new URL(window.location.href);
+    url.hash = nextAudience;
+    window.history.replaceState({}, "", url);
   };
-
-  const services = serviceGroups[audience];
-  const audienceMeta = {
-    individuals: {
-      eyebrow: "Individual services",
-      heading:
-        "Support for the responsibilities that affect you and your family.",
-      description:
-        "Clear, organized assistance for tax, protection, documents, and related personal responsibilities.",
-    },
-    businesses: {
-      eyebrow: "Business services",
-      heading:
-        "Build a stronger business. Improve how it operates. Prepare for what comes next.",
-      description:
-        "Practical support that moves from assessment and recommendations into implementation where Alchemize can help.",
-    },
-  }[audience];
 
   return (
     <article className="services-page">
       <section className="services-hero">
         <div className="content-shell">
           <Reveal>
-            <span className="eyebrow eyebrow--gold">Services</span>
-            <h1>Start with what you need.</h1>
-            <p>
-              Whether you know exactly what you need or simply know something
-              needs to work better, Alchemize can help identify the appropriate
-              path forward.
-            </p>
+            <span className="eyebrow eyebrow--gold">
+              {content.hero.eyebrow}
+            </span>
+            <h1>{content.hero.title}</h1>
+            <p>{content.hero.text}</p>
           </Reveal>
         </div>
       </section>
-
-      <section className="services-choice" aria-labelledby="services-choice-title">
+      <section
+        className="services-choice"
+        aria-labelledby="services-choice-title"
+      >
         <div className="content-shell">
           <Reveal className="services-choice-header">
-            <span className="eyebrow">Who are you here for?</span>
-            <h2 id="services-choice-title">
-              Choose the path that fits the responsibility in front of you.
-            </h2>
+            <span className="eyebrow">{content.choice.eyebrow}</span>
+            <h2 id="services-choice-title">{content.choice.title}</h2>
           </Reveal>
-
-          <div className="services-choice-grid" role="tablist" aria-label="Service audiences">
+          <div
+            className="services-choice-grid"
+            role="tablist"
+            aria-label={content.choice.label}
+          >
             {audienceOrder.map((option) => {
-              const isSelected = audience === option;
-              const isIndividuals = option === "individuals";
-
+              const selected = audience === option;
+              const item = content.choice[option];
               return (
                 <button
                   key={option}
                   type="button"
                   id={`${option}-tab`}
-                  aria-selected={isSelected}
+                  aria-selected={selected}
                   aria-controls={`${option}-panel`}
-                  tabIndex={isSelected ? 0 : -1}
-                  className={isSelected ? "is-selected" : ""}
-                  aria-pressed={isSelected}
+                  tabIndex={selected ? 0 : -1}
+                  className={selected ? "is-selected" : ""}
+                  aria-pressed={selected}
                   onClick={() => chooseAudience(option)}
                   onKeyDown={(event) => {
-                    if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") {
+                    if (!["ArrowRight", "ArrowLeft"].includes(event.key))
                       return;
-                    }
                     event.preventDefault();
-                    const currentIndex = audienceOrder.indexOf(audience);
-                    const nextIndex =
-                      event.key === "ArrowRight"
-                        ? (currentIndex + 1) % audienceOrder.length
-                        : (currentIndex - 1 + audienceOrder.length) % audienceOrder.length;
-                    chooseAudience(audienceOrder[nextIndex]);
+                    const current = audienceOrder.indexOf(audience);
+                    chooseAudience(
+                      audienceOrder[
+                        event.key === "ArrowRight"
+                          ? (current + 1) % 2
+                          : (current + 1) % 2
+                      ],
+                    );
                   }}
                 >
-                  <span>{isIndividuals ? "For me" : "For my business"}</span>
-                  <strong>
-                    {isIndividuals ? "Individual Services" : "Business Services"}
-                  </strong>
-                  <p>
-                    {isIndividuals
-                      ? "Personal tax preparation, insurance, notary, and document support for responsibilities that affect you and your household."
-                      : "Advisory, operations, technology, readiness, financial, and administrative support for entrepreneurs and growing businesses."}
-                  </p>
+                  <span>{item.short}</span>
+                  <strong>{item.title}</strong>
+                  <p>{item.text}</p>
                 </button>
               );
             })}
           </div>
         </div>
       </section>
-
       <section
         ref={catalogRef}
         className="services-catalog"
@@ -172,27 +132,28 @@ function ServicesPage() {
       >
         <div className="content-shell services-catalog-inner">
           <Reveal className="services-catalog-intro">
-            <span className="eyebrow">{audienceMeta.eyebrow}</span>
-            <h2>{audienceMeta.heading}</h2>
-            <p>{audienceMeta.description}</p>
+            <span className="eyebrow">
+              {content.audience[audience].eyebrow}
+            </span>
+            <h2>{content.audience[audience].heading}</h2>
+            <p>{content.audience[audience].description}</p>
           </Reveal>
-
           <div className="services-list">
-            {services.map(({ title, statement, capabilities, slug }, index) => {
-              const detailRoute = `/services/${audience}/${slug}/`;
-
-              return (
+            {groups[audience].map(
+              ({ title, statement, capabilities, slug }, index) => (
                 <Reveal
-                  as={Link}
+                  as={LocalizedLink}
                   className="service-row"
                   delay={index * 40}
                   key={title}
-                  to={detailRoute}
+                  to={`/services/${audience}/${slug}/`}
                 >
                   <div className="service-row-copy">
                     <h3>{title}</h3>
                     <p>{statement}</p>
-                    <ul aria-label={`${title} capabilities`}>
+                    <ul
+                      aria-label={`${title}: ${language === "es" ? "capacidades" : "capabilities"}`}
+                    >
                       {capabilities.map((item) => (
                         <li key={item}>{item}</li>
                       ))}
@@ -202,29 +163,24 @@ function ServicesPage() {
                     →
                   </span>
                 </Reveal>
-              );
-            })}
+              ),
+            )}
           </div>
         </div>
       </section>
-
       <section className="services-close">
         <div className="content-shell services-close-grid">
           <Reveal>
             <span className="eyebrow eyebrow--gold">
-              Start with the problem, not the service
+              {content.close.eyebrow}
             </span>
-            <h2>Not sure where your needs fit?</h2>
+            <h2>{content.close.title}</h2>
           </Reveal>
           <Reveal>
-            <p>
-              Tell us what you are trying to accomplish, improve, organize, or
-              resolve. We will help identify the appropriate next step—and point
-              you in the right direction when the need falls outside our scope.
-            </p>
-            <Link className="button button-primary" to="/contact">
-              Schedule a Consultation
-            </Link>
+            <p>{content.close.text}</p>
+            <LocalizedLink className="button button-primary" to="/contact">
+              {content.close.cta}
+            </LocalizedLink>
           </Reveal>
         </div>
       </section>

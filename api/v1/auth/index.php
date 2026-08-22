@@ -28,15 +28,18 @@ if ($bootstrap === null) {
     exit;
 }
 
-$config = require $bootstrap;
+$bootstrapPath = getenv('ALCHEMIZE_SERVER_BOOTSTRAP') ?: $bootstrap;
+$config = require $bootstrapPath;
+$serverRoot = dirname($bootstrapPath);
 
 try {
-    require_once dirname(__DIR__, 3) . '/server/auth/session.php';
-    require_once dirname(__DIR__, 3) . '/server/repositories/role-repository.php';
-    require_once dirname(__DIR__, 3) . '/server/repositories/user-repository.php';
-    require_once dirname(__DIR__, 3) . '/server/services/auth-service.php';
+    require_once $serverRoot . '/auth/session.php';
+    require_once $serverRoot . '/repositories/role-repository.php';
+    require_once $serverRoot . '/repositories/user-repository.php';
+    require_once $serverRoot . '/services/auth-service.php';
 
-    $database = alchemize_database($config['database']);
+    $appConfig = alchemize_config();
+    $database = alchemize_database($appConfig['database']);
     $auth = new AlchemizeAuthService(
         new AlchemizeUserRepository($database),
         new AlchemizeRoleRepository($database),

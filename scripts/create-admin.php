@@ -23,10 +23,6 @@ if ($bootstrap === null) {
 }
 
 require_once $bootstrap;
-require_once dirname(__DIR__) . '/server/auth/session.php';
-require_once dirname(__DIR__) . '/server/repositories/role-repository.php';
-require_once dirname(__DIR__) . '/server/repositories/user-repository.php';
-require_once dirname(__DIR__) . '/server/services/auth-service.php';
 
 function readArgOrPrompt(array $args, string $key, string $prompt): string
 {

@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import PageShell from "../../components/ui/PageShell.jsx";
+import { businessContact, contactRouting } from "../../data/contactInfo.js";
 import "./legal.css";
 
 const privacySections = [
@@ -217,7 +218,7 @@ const privacySections = [
           professional recordkeeping obligations.
         </p>
         <p>
-          Requests may be sent to: <a href="mailto:support@getalchemize.com">support@getalchemize.com</a>
+          Requests may be sent to: <a href={contactRouting.support.mailto}>{contactRouting.support.email}</a>
         </p>
       </>
     ),
@@ -237,7 +238,7 @@ const privacySections = [
         </p>
         <p>
           If information is believed to have been submitted by a child through the
-          public website, contact: <a href="mailto:support@getalchemize.com">support@getalchemize.com</a>
+          public website, contact: <a href={contactRouting.general.mailto}>{contactRouting.general.email}</a>
         </p>
       </>
     ),
@@ -270,7 +271,7 @@ const privacySections = [
       <>
         <p>
           Questions about this Privacy Policy or Alchemize's handling of website
-          information may be sent to: <a href="mailto:support@getalchemize.com">support@getalchemize.com</a>
+          information may be sent to: <a href={contactRouting.general.mailto}>{contactRouting.general.email}</a>
         </p>
         <p>
           Do not include sensitive personal, tax, financial, identity, health,
@@ -568,9 +569,9 @@ function LegalPage({ title, summary }) {
                   ? "Questions about this Privacy Policy or Alchemize's handling of website information may be sent to:"
                   : "Questions about these Terms of Service or website use may be sent to:"}
                 <br />
-                <a href="mailto:support@getalchemize.com">
-                  support@getalchemize.com
-                </a>
+                <a href={contactRouting.general.mailto}>{contactRouting.general.email}</a>
+                <br />
+                <a href={businessContact.phone.href}>{businessContact.phone.display}</a>
               </p>
             </div>
           </article>

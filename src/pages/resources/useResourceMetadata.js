@@ -14,16 +14,21 @@ function ensureMeta(selector, attributes) {
   return element;
 }
 
-export default function useResourceMetadata(resource) {
+export default function useResourceMetadata(resource, language = "en") {
   useEffect(() => {
+    const prefix = language === "es" ? "/es" : "";
     const title = resource
       ? `${resource.title} | Alchemize Resource Library`
-      : "Resources | Alchemize Business Services";
+      : language === "es"
+        ? "Recursos | Alchemize Business Services"
+        : "Resources | Alchemize Business Services";
     const description = resource
       ? resource.excerpt
-      : "Practical guides, checklists, official resources, and straightforward explanations for personal and business responsibilities.";
+      : language === "es"
+        ? "Guías, listas, recursos oficiales y explicaciones claras para responsabilidades personales y empresariales."
+        : "Practical guides, checklists, official resources, and straightforward explanations for personal and business responsibilities.";
     const path = resource ? `/resources/${resource.slug}` : "/resources";
-    const canonical = `${SITE_URL}${path}`;
+    const canonical = `${SITE_URL}${prefix}${path}`;
     document.title = title;
 
     ensureMeta('meta[name="description"]', {
@@ -89,8 +94,8 @@ export default function useResourceMetadata(resource) {
               {
                 "@type": "ListItem",
                 position: 1,
-                name: "Resources",
-                item: `${SITE_URL}/resources`,
+                name: language === "es" ? "Recursos" : "Resources",
+                item: `${SITE_URL}${prefix}/resources`,
               },
               {
                 "@type": "ListItem",
@@ -105,5 +110,5 @@ export default function useResourceMetadata(resource) {
       document.head.appendChild(script);
     }
     return () => document.getElementById("resource-structured-data")?.remove();
-  }, [resource]);
+  }, [resource, language]);
 }

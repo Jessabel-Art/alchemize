@@ -1,5 +1,16 @@
 const clone = (value) => (value === undefined ? value : JSON.parse(JSON.stringify(value)));
 
+export function buildApiUrl(route, params = {}) {
+  const safeRoute = String(route ?? "").trim();
+  if (!safeRoute || !/^[A-Za-z0-9][A-Za-z0-9_/-]*$/.test(safeRoute)) {
+    throw new Error("Invalid API route.");
+  }
+
+  const query = new window.URLSearchParams(params);
+  query.set("route", safeRoute);
+  return `/alchemize-api.php?${query.toString()}`;
+}
+
 async function apiRequest(url, options = {}) {
   const method = String(options.method || "GET").toUpperCase();
   const headers = {
@@ -35,7 +46,7 @@ async function apiRequest(url, options = {}) {
 
 export const auth = {
   async session() {
-    const data = await apiRequest("/api/v1/auth/session");
+    const data = await apiRequest(buildApiUrl("auth/session"));
     if (data?.csrf_token) {
       window.__ALCHEMIZE_CSRF_TOKEN__ = data.csrf_token;
     }
@@ -43,7 +54,7 @@ export const auth = {
   },
 
   async login(credentials) {
-    const data = await apiRequest("/api/v1/auth/login", {
+    const data = await apiRequest(buildApiUrl("auth/login"), {
       method: "POST",
       body: JSON.stringify(credentials),
     });
@@ -54,70 +65,70 @@ export const auth = {
   },
 
   async logout() {
-    const data = await apiRequest("/api/v1/auth/logout", { method: "POST" });
+    const data = await apiRequest(buildApiUrl("auth/logout"), { method: "POST" });
     delete window.__ALCHEMIZE_CSRF_TOKEN__;
     return data;
   },
 };
 
 export const clients = {
-  list: () => apiRequest("/api/v1/clients"),
-  get: (id) => apiRequest(`/api/v1/clients/${id}`),
-  create: (payload) => apiRequest("/api/v1/clients", { method: "POST", body: JSON.stringify(payload) }),
-  update: (id, payload) => apiRequest(`/api/v1/clients/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
+  list: () => apiRequest(buildApiUrl("clients")),
+  get: (id) => apiRequest(buildApiUrl(`clients/${id}`)),
+  create: (payload) => apiRequest(buildApiUrl("clients"), { method: "POST", body: JSON.stringify(payload) }),
+  update: (id, payload) => apiRequest(buildApiUrl(`clients/${id}`), { method: "PUT", body: JSON.stringify(payload) }),
 };
 
 export const services = {
-  list: () => apiRequest("/api/v1/services"),
-  get: (id) => apiRequest(`/api/v1/services/${id}`),
-  create: (payload) => apiRequest("/api/v1/services", { method: "POST", body: JSON.stringify(payload) }),
-  update: (id, payload) => apiRequest(`/api/v1/services/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
+  list: () => apiRequest(buildApiUrl("services")),
+  get: (id) => apiRequest(buildApiUrl(`services/${id}`)),
+  create: (payload) => apiRequest(buildApiUrl("services"), { method: "POST", body: JSON.stringify(payload) }),
+  update: (id, payload) => apiRequest(buildApiUrl(`services/${id}`), { method: "PUT", body: JSON.stringify(payload) }),
 };
 
 export const engagements = {
-  list: () => apiRequest("/api/v1/engagements"),
-  get: (id) => apiRequest(`/api/v1/engagements/${id}`),
-  create: (payload) => apiRequest("/api/v1/engagements", { method: "POST", body: JSON.stringify(payload) }),
-  update: (id, payload) => apiRequest(`/api/v1/engagements/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
+  list: () => apiRequest(buildApiUrl("engagements")),
+  get: (id) => apiRequest(buildApiUrl(`engagements/${id}`)),
+  create: (payload) => apiRequest(buildApiUrl("engagements"), { method: "POST", body: JSON.stringify(payload) }),
+  update: (id, payload) => apiRequest(buildApiUrl(`engagements/${id}`), { method: "PUT", body: JSON.stringify(payload) }),
 };
 
 export const tasks = {
-  list: () => apiRequest("/api/v1/tasks"),
-  get: (id) => apiRequest(`/api/v1/tasks/${id}`),
-  create: (payload) => apiRequest("/api/v1/tasks", { method: "POST", body: JSON.stringify(payload) }),
-  update: (id, payload) => apiRequest(`/api/v1/tasks/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
+  list: () => apiRequest(buildApiUrl("tasks")),
+  get: (id) => apiRequest(buildApiUrl(`tasks/${id}`)),
+  create: (payload) => apiRequest(buildApiUrl("tasks"), { method: "POST", body: JSON.stringify(payload) }),
+  update: (id, payload) => apiRequest(buildApiUrl(`tasks/${id}`), { method: "PUT", body: JSON.stringify(payload) }),
 };
 
 export const appointments = {
-  list: () => apiRequest("/api/v1/appointments"),
-  get: (id) => apiRequest(`/api/v1/appointments/${id}`),
-  create: (payload) => apiRequest("/api/v1/appointments", { method: "POST", body: JSON.stringify(payload) }),
-  update: (id, payload) => apiRequest(`/api/v1/appointments/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
+  list: () => apiRequest(buildApiUrl("appointments")),
+  get: (id) => apiRequest(buildApiUrl(`appointments/${id}`)),
+  create: (payload) => apiRequest(buildApiUrl("appointments"), { method: "POST", body: JSON.stringify(payload) }),
+  update: (id, payload) => apiRequest(buildApiUrl(`appointments/${id}`), { method: "PUT", body: JSON.stringify(payload) }),
 };
 
 export const documents = {
-  list: () => apiRequest("/api/v1/documents"),
-  get: (id) => apiRequest(`/api/v1/documents/${id}`),
-  create: (payload) => apiRequest("/api/v1/documents", { method: "POST", body: JSON.stringify(payload) }),
-  update: (id, payload) => apiRequest(`/api/v1/documents/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
+  list: () => apiRequest(buildApiUrl("documents")),
+  get: (id) => apiRequest(buildApiUrl(`documents/${id}`)),
+  create: (payload) => apiRequest(buildApiUrl("documents"), { method: "POST", body: JSON.stringify(payload) }),
+  update: (id, payload) => apiRequest(buildApiUrl(`documents/${id}`), { method: "PUT", body: JSON.stringify(payload) }),
 };
 
 export const invoices = {
-  list: () => apiRequest("/api/v1/invoices"),
-  get: (id) => apiRequest(`/api/v1/invoices/${id}`),
-  create: (payload) => apiRequest("/api/v1/invoices", { method: "POST", body: JSON.stringify(payload) }),
-  update: (id, payload) => apiRequest(`/api/v1/invoices/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
+  list: () => apiRequest(buildApiUrl("invoices")),
+  get: (id) => apiRequest(buildApiUrl(`invoices/${id}`)),
+  create: (payload) => apiRequest(buildApiUrl("invoices"), { method: "POST", body: JSON.stringify(payload) }),
+  update: (id, payload) => apiRequest(buildApiUrl(`invoices/${id}`), { method: "PUT", body: JSON.stringify(payload) }),
 };
 
 export const payments = {
-  create: (payload) => apiRequest("/api/v1/payments", { method: "POST", body: JSON.stringify(payload) }),
+  create: (payload) => apiRequest(buildApiUrl("payments"), { method: "POST", body: JSON.stringify(payload) }),
 };
 
 export const leads = {
-  list: () => apiRequest("/api/v1/leads"),
-  get: (id) => apiRequest(`/api/v1/leads/${id}`),
-  update: (id, payload) => apiRequest(`/api/v1/leads/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
-  convert: (id, payload) => apiRequest(`/api/v1/leads/${id}/convert`, { method: "POST", body: JSON.stringify(payload) }),
+  list: () => apiRequest(buildApiUrl("leads")),
+  get: (id) => apiRequest(buildApiUrl(`leads/${id}`)),
+  update: (id, payload) => apiRequest(buildApiUrl(`leads/${id}`), { method: "PUT", body: JSON.stringify(payload) }),
+  convert: (id, payload) => apiRequest(buildApiUrl(`leads/${id}/convert`), { method: "POST", body: JSON.stringify(payload) }),
 };
 
 export async function getLeads() {

@@ -4,6 +4,10 @@ import {
   canonicalServiceKeys,
   normalizeServiceKey,
 } from "../js/contact-form.js";
+import {
+  businessContact,
+  contactRouting,
+} from "../src/data/contactInfo.js";
 import { getSitemapRoutes } from "../scripts/lib/react-routes.js";
 
 test("exposes exactly the nine canonical service keys", () => {
@@ -39,6 +43,17 @@ test("normalizes documented legacy service aliases", () => {
 
 test("rejects unknown service values", () => {
   assert.equal(normalizeServiceKey("invented-service"), "");
+});
+
+test("uses the official Alchemize business contact routing", () => {
+  assert.equal(businessContact.phone.display, "(910) 644-0207");
+  assert.equal(businessContact.phone.tel, "tel:+19106440207");
+  assert.equal(contactRouting.general.email, "hello@getalchemize.com");
+  assert.equal(contactRouting.newClients.email, "start@getalchemize.com");
+  assert.equal(contactRouting.support.email, "support@getalchemize.com");
+  assert.equal(contactRouting.documents.email, "documents@getalchemize.com");
+  assert.equal(contactRouting.billing.email, "billing@getalchemize.com");
+  assert.equal(contactRouting.founder.email, "founder@getalchemize.com");
 });
 
 test("uses the canonical React sitemap routes for the migrated app", () => {

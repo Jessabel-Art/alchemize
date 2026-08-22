@@ -1,5 +1,8 @@
-﻿import { useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import PageShell from "../../components/ui/PageShell.jsx";
+import { useLanguage } from "../../i18n/LanguageContext.jsx";
+import usePageMetadata from "../../i18n/usePageMetadata.js";
+import { faqCategoriesEs, faqUiEs } from "./faqContent.es.js";
 import "./faq.css";
 
 const faqCategories = [
@@ -46,7 +49,8 @@ const faqCategories = [
   },
   {
     category: "Individual Services",
-    description: "Common questions for personal tax, insurance, and document support.",
+    description:
+      "Common questions for personal tax, insurance, and document support.",
     items: [
       {
         question: "What services are available for individuals?",
@@ -59,7 +63,8 @@ const faqCategories = [
           "Start with a short description of what you are trying to accomplish, any important dates or deadlines, and the information or documents you already have. You do not need to organize everything perfectly before reaching out. The initial conversation can help determine what is actually needed.",
       },
       {
-        question: "Can I ask for help even if I am not sure which service fits?",
+        question:
+          "Can I ask for help even if I am not sure which service fits?",
         answer:
           "Yes. The initial inquiry can focus on the situation rather than a service name. Explain what is happening, what feels unclear, and what outcome you are trying to reach. Alchemize can then determine whether the request fits an available service and what should happen next.",
       },
@@ -74,7 +79,8 @@ const faqCategories = [
           "No. Do not send Social Security numbers, full tax returns, banking information, identity documents, medical records, insurance records, confidential business records, or other sensitive information through an ordinary contact form or unsecured email. Alchemize will provide instructions when secure document handling is required.",
       },
       {
-        question: "Can one individual use Alchemize for different needs over time?",
+        question:
+          "Can one individual use Alchemize for different needs over time?",
         answer:
           "Yes. A client may begin with one responsibility and later return for another service that falls within Alchemize's scope. The objective is to create a professional relationship that can remain useful as needs change.",
       },
@@ -105,16 +111,17 @@ const faqCategories = [
           "That is common. Business responsibilities often connect. A formation issue can create administrative work, an operational issue can affect financial records, and a new service or opportunity can create new processes and deadlines. Alchemize can help identify how the responsibilities relate and determine a practical order for addressing them.",
       },
       {
-        question: "Can Alchemize help implement recommendations, not just provide advice?",
+        question:
+          "Can Alchemize help implement recommendations, not just provide advice?",
         answer:
           "Where the work falls within Alchemize's scope, yes. The business model is intended to go beyond simply identifying a problem. Alchemize may also help organize, document, coordinate, prepare, or implement practical next steps.",
       },
       {
-        question: "Can Alchemize work with systems and processes I already use?",
+        question:
+          "Can Alchemize work with systems and processes I already use?",
         answer:
           "Yes. The objective is not to replace tools that are already working. Alchemize can first assess the existing process, identify where information or responsibility is breaking down, and determine whether the current system can be improved before recommending something new.",
       },
-
     ],
   },
   {
@@ -137,12 +144,14 @@ const faqCategories = [
           "That is not a problem. The purpose of the initial conversation is often to determine what information actually matters and what needs to be gathered next.",
       },
       {
-        question: "Can we discuss more than one issue during the same consultation?",
+        question:
+          "Can we discuss more than one issue during the same consultation?",
         answer:
           "Yes, especially when the responsibilities appear connected. If the issues require substantially different services, Alchemize may recommend addressing them separately so each can be handled with the appropriate scope and preparation.",
       },
       {
-        question: "Does scheduling a consultation commit me to purchasing a service?",
+        question:
+          "Does scheduling a consultation commit me to purchasing a service?",
         answer:
           "No. A consultation is intended to help determine whether Alchemize is an appropriate fit and what the next step should be. Any service engagement, pricing, or additional work should be clearly defined before work begins.",
       },
@@ -155,7 +164,8 @@ const faqCategories = [
   },
   {
     category: "Working With Alchemize",
-    description: "How client intake, communication, and follow-through are handled.",
+    description:
+      "How client intake, communication, and follow-through are handled.",
     items: [
       {
         question: "Can I contact Alchemize without committing to a service?",
@@ -178,7 +188,8 @@ const faqCategories = [
           "The objective is to make scope and pricing clear before significant work begins. Some services may have standardized pricing while others may require review of the request before a fee can be determined.",
       },
       {
-        question: "How will Alchemize communicate with me while work is in progress?",
+        question:
+          "How will Alchemize communicate with me while work is in progress?",
         answer:
           "Communication methods depend on the service and the information being exchanged. Routine communication may occur through approved business communication channels, while sensitive information should use a secure process when required. As the client portal becomes operational, more service communication and status information can be centralized there.",
       },
@@ -187,7 +198,6 @@ const faqCategories = [
         answer:
           "Alchemize treats personal and business information as confidential and limits its use to legitimate business and service purposes. Sensitive information should only be collected when necessary and through appropriate methods. Specific privacy practices are described in the site's Privacy Policy.",
       },
-
     ],
   },
 ];
@@ -199,50 +209,85 @@ const slugify = (value) =>
     .replace(/^-+|-+$/g, "");
 
 function FaqPage() {
+  const { language } = useLanguage();
+  const categories = language === "es" ? faqCategoriesEs : faqCategories;
+  const ui =
+    language === "es"
+      ? faqUiEs
+      : {
+          metadata: {
+            title: "FAQ | Alchemize Business Services",
+            description:
+              "Clear answers about Alchemize services, consultations, and what to expect when working with us.",
+          },
+          eyebrow: "Frequently asked questions",
+          title: "Questions before you get started?",
+          summary:
+            "Clear answers about Alchemize services, consultations, and what to expect when working with us.",
+          search: "Search questions",
+          placeholder: "Try “consultation” or “business”",
+          clear: "Clear",
+          categories: "FAQ categories",
+          results: (answers, count) =>
+            `Showing ${answers} ${answers === 1 ? "answer" : "answers"} across ${count} ${count === 1 ? "category" : "categories"}.`,
+          emptyTitle: "No matching answers found.",
+          emptyText:
+            "Try a broader keyword such as “consultation,” “tax,” “notary,” “insurance,” or “organization.”",
+          clearSearch: "Clear search",
+        };
   const [query, setQuery] = useState("");
   const [openQuestion, setOpenQuestion] = useState(
-    "What does Alchemize Business Services do?"
+    categories[0].items[0].question,
   );
-  const [activeCategory, setActiveCategory] = useState("General");
+  const [activeCategory, setActiveCategory] = useState(categories[0].category);
+  usePageMetadata({
+    en: {
+      title: "FAQ | Alchemize Business Services",
+      description:
+        "Clear answers about Alchemize services, consultations, and what to expect when working with us.",
+    },
+    es: faqUiEs.metadata,
+  });
+  useEffect(() => {
+    setQuery("");
+    setOpenQuestion(categories[0].items[0].question);
+    setActiveCategory(categories[0].category);
+  }, [language, categories]);
 
   const normalizedQuery = query.trim().toLowerCase();
 
   const filteredCategories = useMemo(
     () =>
-      faqCategories
+      categories
         .map((category) => ({
           ...category,
           items: category.items.filter(({ question, answer }) =>
             `${category.category} ${question} ${answer}`
               .toLowerCase()
-              .includes(normalizedQuery)
+              .includes(normalizedQuery),
           ),
         }))
         .filter((category) => category.items.length > 0),
-    [normalizedQuery]
+    [categories, normalizedQuery],
   );
 
   const totalResults = filteredCategories.reduce(
     (sum, category) => sum + category.items.length,
-    0
+    0,
   );
 
   return (
     <div className="faq-page">
-      <PageShell
-        eyebrow="Frequently asked questions"
-        title="Questions before you get started?"
-        summary="Clear answers about Alchemize services, consultations, and what to expect when working with us."
-      >
+      <PageShell eyebrow={ui.eyebrow} title={ui.title} summary={ui.summary}>
         <div className="faq-search">
-          <label htmlFor="faq-query">Search questions</label>
+          <label htmlFor="faq-query">{ui.search}</label>
           <div className="faq-search-field">
             <input
               id="faq-query"
               type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Try “consultation” or “business”"
+              placeholder={ui.placeholder}
             />
             {query ? (
               <button
@@ -250,7 +295,7 @@ function FaqPage() {
                 className="faq-clear-button"
                 onClick={() => setQuery("")}
               >
-                Clear
+                {ui.clear}
               </button>
             ) : null}
           </div>
@@ -258,17 +303,16 @@ function FaqPage() {
 
         {query ? (
           <p className="faq-results-meta">
-            Showing {totalResults} answer{totalResults === 1 ? "" : "s"} across {filteredCategories.length} category
-            {filteredCategories.length === 1 ? "" : "ies"}.
+            {ui.results(totalResults, filteredCategories.length)}
           </p>
         ) : null}
 
         <div className="faq-layout">
-          <nav className="faq-category-nav" aria-label="FAQ categories">
-            {faqCategories.map((category) => {
+          <nav className="faq-category-nav" aria-label={ui.categories}>
+            {categories.map((category) => {
               const visibleCount =
                 filteredCategories.find(
-                  (entry) => entry.category === category.category
+                  (entry) => entry.category === category.category,
                 )?.items.length ?? 0;
               const isActive = activeCategory === category.category;
 
@@ -303,7 +347,7 @@ function FaqPage() {
                   <div className="faq-accordion" role="list">
                     {category.items.map(({ question, answer }) => {
                       const itemId = `faq-${slugify(category.category)}-${slugify(
-                        question
+                        question,
                       )}`;
                       const isOpen = openQuestion === question;
 
@@ -320,12 +364,15 @@ function FaqPage() {
                             aria-controls={itemId}
                             onClick={() =>
                               setOpenQuestion((current) =>
-                                current === question ? "" : question
+                                current === question ? "" : question,
                               )
                             }
                           >
                             <span>{question}</span>
-                            <span className="faq-question-icon" aria-hidden="true">
+                            <span
+                              className="faq-question-icon"
+                              aria-hidden="true"
+                            >
                               {isOpen ? "−" : "+"}
                             </span>
                           </button>
@@ -345,17 +392,14 @@ function FaqPage() {
               ))
             ) : (
               <div className="faq-empty-state">
-                <h2>No matching answers found.</h2>
-                <p>
-                  Try a broader keyword such as “consultation,” “tax,” “notary,”
-                  “insurance,” or “organization.”
-                </p>
+                <h2>{ui.emptyTitle}</h2>
+                <p>{ui.emptyText}</p>
                 <button
                   type="button"
                   className="button button-primary"
                   onClick={() => setQuery("")}
                 >
-                  Clear search
+                  {ui.clearSearch}
                 </button>
               </div>
             )}

@@ -64,6 +64,18 @@ export const APP_ROUTE_PATHS = [
   "/client-portal/messages",
   "/client-portal/billing",
   "/client-portal/profile",
+  "/es",
+  "/es/about",
+  "/es/services",
+  "/es/services/individuals",
+  "/es/services/businesses",
+  ...SERVICE_DETAIL_PATHS.map((path) => `/es${path}`),
+  "/es/contact",
+  "/es/resources",
+  ...RESOURCE_SLUGS.map((slug) => `/es/resources/${slug}`),
+  "/es/resources/documents-to-bring-to-a-consultation",
+  "/es/faq",
+  "/es/why-alchemize",
 ];
 
 const REDIRECT_ROUTE_PATHS = new Set([
@@ -71,6 +83,10 @@ const REDIRECT_ROUTE_PATHS = new Set([
   "/services/individuals",
   "/services/businesses",
   "/resources/documents-to-bring-to-a-consultation",
+  "/es/about",
+  "/es/services/individuals",
+  "/es/services/businesses",
+  "/es/resources/documents-to-bring-to-a-consultation",
 ]);
 
 export const PUBLIC_SITEMAP_ROUTES = APP_ROUTE_PATHS.filter(
@@ -83,5 +99,19 @@ export const PUBLIC_SITEMAP_ROUTES = APP_ROUTE_PATHS.filter(
 );
 
 export function getSitemapRoutes() {
-  return PUBLIC_SITEMAP_ROUTES.map((path) => ({ path }));
+  return PUBLIC_SITEMAP_ROUTES.map((path) => {
+    const isSpanish = path === "/es" || path.startsWith("/es/");
+    const base = isSpanish ? (path === "/es" ? "/" : path.slice(3)) : path;
+    const hasTranslation = !["/privacy", "/terms"].includes(base);
+    return {
+      path,
+      alternates: hasTranslation
+        ? {
+            en: base,
+            es: base === "/" ? "/es" : `/es${base}`,
+            "x-default": base,
+          }
+        : null,
+    };
+  });
 }

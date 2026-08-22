@@ -45,7 +45,7 @@ function clearFieldErrors(form) {
   });
 }
 
-function showFieldErrors(form, errors = {}) {
+function showFieldErrors(form, errors = {}, messages = {}) {
   const fieldMap = {
     full_name: "first-name",
     email: "email",
@@ -68,7 +68,7 @@ function showFieldErrors(form, errors = {}) {
     const error = document.createElement("span");
     error.className = "field-error";
     error.id = errorId;
-    error.textContent = message;
+    error.textContent = messages.fieldErrors?.[name] ?? message;
     const container = target.closest(".field") ?? target.parentElement;
     container?.append(error);
     target.setAttribute("aria-invalid", "true");
@@ -85,6 +85,29 @@ function setStatus(status, message, state, moveFocus = true) {
   status.textContent = message;
   status.dataset.state = state;
   if (moveFocus) status.focus({ preventScroll: true });
+}
+
+function applyLocalizedValidity(form, messages) {
+  for (const field of form.elements) {
+    if (!(
+      field instanceof window.HTMLInputElement ||
+      field instanceof window.HTMLSelectElement ||
+      field instanceof window.HTMLTextAreaElement
+    ))
+      continue;
+    field.setCustomValidity("");
+    if (field.validity.valueMissing) {
+      field.setCustomValidity(
+        messages.required ?? "Please complete this required field.",
+      );
+    } else if (field.validity.typeMismatch) {
+      field.setCustomValidity(messages.email ?? "Please enter a valid value.");
+    } else if (field.validity.tooShort) {
+      field.setCustomValidity(
+        messages.messageLength ?? "Please provide more detail.",
+      );
+    }
+  }
 }
 
 function buildPayload(form) {
@@ -104,8 +127,8 @@ function buildPayload(form) {
     service_key: serviceKey || null,
     serviceInterest: serviceKey
       ? (canonicalServiceKeys.has(serviceKey)
-        ? serviceKey
-        : normalizeServiceKey(serviceKey)) || "General consultation"
+          ? serviceKey
+          : normalizeServiceKey(serviceKey)) || "General consultation"
       : "General consultation",
     message: String(data.get("message") ?? "").trim(),
     preferred_contact: String(data.get("contactMethod") ?? "").trim() || null,
@@ -130,7 +153,7 @@ function initializePreselection(form) {
     audience.value = serviceAudience(serviceKey);
 }
 
-export function initContactForm() {
+export function initContactForm(messages = {}) {
   const form = document.querySelector("[data-contact-form]");
   if (!(form instanceof window.HTMLFormElement)) return;
 
@@ -145,27 +168,33 @@ export function initContactForm() {
     return;
 
   initializePreselection(form);
-  service?.addEventListener("change", () => {
+  const handleServiceChange = () => {
     const key = normalizeServiceKey(service.value);
     if (key && audience instanceof window.HTMLSelectElement)
       audience.value = serviceAudience(key);
-  });
+  };
+  service?.addEventListener("change", handleServiceChange);
 
-  form.addEventListener("submit", async (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     if (submit.disabled) return;
     clearFieldErrors(form);
 
+    applyLocalizedValidity(form, messages);
     if (!form.reportValidity()) return;
     submit.disabled = true;
     submit.setAttribute("aria-busy", "true");
     const originalLabel = submit.textContent;
-    submit.textContent = "Submitting…";
-    setStatus(status, "Submitting your request securely…", "submitting");
+    submit.textContent = messages.submitting ?? "Submitting…";
+    setStatus(
+      status,
+      messages.submittingStatus ?? "Submitting your request securely…",
+      "submitting",
+    );
 
     let validationFailure = false;
     try {
-      const response = await fetch("/api/v1/leads/", {
+      const response = await fetch("/alchemize-api.php?route=leads", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -178,10 +207,12 @@ export function initContactForm() {
       if (!response.ok) {
         if (response.status === 422) {
           validationFailure = true;
-          showFieldErrors(form, result?.error?.fields);
+          showFieldErrors(form, result?.error?.fields, messages);
         }
         throw new Error(
-          result?.error?.message || "Your request could not be submitted.",
+          messages.failure ||
+            result?.error?.message ||
+            "Your request could not be submitted.",
         );
       }
 
@@ -190,12 +221,16 @@ export function initContactForm() {
       const localLead = adminStore?.createLeadFromContact
         ? adminStore.createLeadFromContact({
             id: reference || undefined,
-            name: leadPayload.full_name || `${leadPayload.firstName} ${leadPayload.lastName}`.trim() || "New lead",
+            name:
+              leadPayload.full_name ||
+              `${leadPayload.firstName} ${leadPayload.lastName}`.trim() ||
+              "New lead",
             firstName: leadPayload.firstName,
             lastName: leadPayload.lastName,
             email: leadPayload.email,
             phone: leadPayload.phone,
-            audience: leadPayload.audience === "business" ? "Business" : "Individual",
+            audience:
+              leadPayload.audience === "business" ? "Business" : "Individual",
             serviceInterest: leadPayload.serviceInterest,
             message: leadPayload.message,
             preferredContact: leadPayload.preferredContact,
@@ -217,7 +252,7 @@ export function initContactForm() {
       form.reset();
       setStatus(
         status,
-        `Your request has been received. Alchemize will review the information and follow up using the contact information provided.${reference ? ` Reference: ${reference}` : ""}`,
+        `${messages.success ?? "Your request has been received. Alchemize will review the information and follow up using the contact information provided."}${reference ? ` ${messages.reference ?? "Reference"}: ${reference}` : ""}`,
         "success",
       );
     } catch (error) {
@@ -225,7 +260,8 @@ export function initContactForm() {
         status,
         error instanceof Error
           ? error.message
-          : "We couldn't submit your request. Please try again.",
+          : (messages.fallback ??
+              "We couldn't submit your request. Please try again."),
         "error",
         !validationFailure,
       );
@@ -234,7 +270,12 @@ export function initContactForm() {
       submit.removeAttribute("aria-busy");
       submit.textContent = originalLabel;
     }
-  });
+  };
+  form.addEventListener("submit", handleSubmit);
+  return () => {
+    service?.removeEventListener("change", handleServiceChange);
+    form.removeEventListener("submit", handleSubmit);
+  };
 }
 
 export { canonicalServiceKeys, normalizeServiceKey };

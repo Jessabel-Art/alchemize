@@ -6,13 +6,17 @@ import {
   ExternalLink,
   Printer,
 } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import Logo from "../../components/brand/Logo.jsx";
+import { useLanguage } from "../../i18n/LanguageContext.jsx";
+import LocalizedLink from "../../i18n/LocalizedLink.jsx";
 import { resourceBySlug } from "./resourcesData.js";
+import { resourceBySlugEs } from "./resourcesData.es.js";
+import { resourcesUi } from "./resourcesContent.js";
 import useResourceMetadata from "./useResourceMetadata.js";
 import "./resources.css";
 
-function SectionContent({ section }) {
+function SectionContent({ section, important }) {
   return (
     <section id={section.id} className="resource-article-section">
       <h2>{section.title}</h2>
@@ -85,7 +89,7 @@ function SectionContent({ section }) {
       )}
       {section.callout && (
         <aside className="resource-callout">
-          <strong>Important</strong>
+          <strong>{important}</strong>
           <p>{section.callout}</p>
         </aside>
       )}
@@ -93,17 +97,17 @@ function SectionContent({ section }) {
   );
 }
 
-function RelatedRows({ slugs }) {
+function RelatedRows({ slugs, map }) {
   return (
     <div className="resource-related-rows">
       {slugs.map((slug) => {
-        const item = resourceBySlug.get(slug);
+        const item = map.get(slug);
         return item ? (
-          <Link key={slug} to={`/resources/${slug}`}>
+          <LocalizedLink key={slug} to={`/resources/${slug}`}>
             <span>{item.category}</span>
             <strong>{item.title}</strong>
             <ArrowRight aria-hidden="true" />
-          </Link>
+          </LocalizedLink>
         ) : null;
       })}
     </div>
@@ -112,7 +116,10 @@ function RelatedRows({ slugs }) {
 
 export default function ResourceDetailPage({ resource }) {
   const location = useLocation();
-  useResourceMetadata(resource);
+  const { language } = useLanguage();
+  const ui = resourcesUi[language].article;
+  const map = language === "es" ? resourceBySlugEs : resourceBySlug;
+  useResourceMetadata(resource, language);
   useEffect(() => {
     if (new URLSearchParams(location.search).get("print") === "1") {
       const timer = window.setTimeout(() => window.print(), 350);
@@ -130,81 +137,77 @@ export default function ResourceDetailPage({ resource }) {
       </div>
       <header className="resource-article-hero">
         <div className="content-shell">
-          <Link className="resource-back-link" to="/resources">
-            <ArrowLeft aria-hidden="true" /> Back to Resources
-          </Link>
+          <LocalizedLink className="resource-back-link" to="/resources">
+            <ArrowLeft aria-hidden="true" /> {ui.back}
+          </LocalizedLink>
           <span className="eyebrow eyebrow--gold">{resource.category}</span>
           <h1>{resource.title}</h1>
           <p>{resource.excerpt}</p>
           <div className="resource-meta">
-            <span>Updated {resource.updated}</span>
+            <span>
+              {ui.updated} {resource.updated}
+            </span>
             <span>{resource.readTime}</span>
             <span>{resource.type}</span>
             {resource.reviewYear && (
-              <span>Reviewed for {resource.reviewYear}</span>
+              <span>
+                {ui.reviewed} {resource.reviewYear}
+              </span>
             )}
           </div>
-          <div className="resource-utilities" aria-label="Article utilities">
+          <div className="resource-utilities" aria-label={ui.utilities}>
             <button type="button" onClick={() => window.print()}>
-              <Printer aria-hidden="true" /> Print
+              <Printer aria-hidden="true" /> {ui.print}
             </button>
             {resource.download && (
               <a href={resource.download} download>
-                <Download aria-hidden="true" /> Download PDF
+                <Download aria-hidden="true" /> {ui.download}
               </a>
             )}
           </div>
         </div>
       </header>
-
       <div className="content-shell resource-article-layout">
         <div className="resource-article-body">
-          <p className="resource-article-intro">
-            This guide is designed to help you understand the responsibility,
-            organize useful information, and identify questions that require
-            current official guidance or professional review.
-          </p>
+          <p className="resource-article-intro">{ui.intro}</p>
           {resource.sections.map((section) => (
-            <SectionContent section={section} key={section.id} />
+            <SectionContent
+              section={section}
+              important={ui.important}
+              key={section.id}
+            />
           ))}
-
           <section
             className="resource-next"
             aria-labelledby="resource-next-title"
           >
-            <span className="eyebrow">What to do next</span>
-            <h2 id="resource-next-title">
-              Turn the guide into a useful next step.
-            </h2>
+            <span className="eyebrow">{ui.next}</span>
+            <h2 id="resource-next-title">{ui.nextTitle}</h2>
             <ol>
               {resource.nextSteps.map((step) => (
                 <li key={step}>{step}</li>
               ))}
             </ol>
-            <Link className="text-link" to="/services">
-              Need help organizing what comes next? Explore Services
-            </Link>
+            <LocalizedLink className="text-link" to="/services">
+              {ui.serviceLink}
+            </LocalizedLink>
           </section>
           <aside className="resource-disclaimer">
-            <strong>Educational notice</strong>
+            <strong>{ui.notice}</strong>
             <p>{resource.disclaimer}</p>
           </aside>
           <section
             className="resource-related-end"
             aria-labelledby="related-title"
           >
-            <span className="eyebrow">Continue learning</span>
-            <h2 id="related-title">Related resources</h2>
-            <RelatedRows slugs={resource.related} />
+            <span className="eyebrow">{ui.continue}</span>
+            <h2 id="related-title">{ui.related}</h2>
+            <RelatedRows slugs={resource.related} map={map} />
           </section>
         </div>
-
-        <aside
-          className="resource-rail"
-          aria-label="Guide navigation and official resources"
-        >
+        <aside className="resource-rail" aria-label={ui.rail}>
           <nav aria-labelledby="guide-nav-title">
-            <h2 id="guide-nav-title">In this guide</h2>
+            <h2 id="guide-nav-title">{ui.inGuide}</h2>
             <ol>
               {resource.sections.map((section) => (
                 <li key={section.id}>
@@ -215,7 +218,7 @@ export default function ResourceDetailPage({ resource }) {
           </nav>
           {resource.official.length > 0 && (
             <section className="resource-official">
-              <h2>Official resources</h2>
+              <h2>{ui.official}</h2>
               {resource.official.map((item) => (
                 <a
                   key={item.href}
@@ -226,19 +229,19 @@ export default function ResourceDetailPage({ resource }) {
                   <span>{item.source}</span>
                   <strong>{item.title}</strong>
                   <ExternalLink aria-hidden="true" />
-                  <small>External government resource</small>
+                  <small>{ui.external}</small>
                 </a>
               ))}
             </section>
           )}
           <section className="resource-rail-related">
-            <h2>Related guides</h2>
+            <h2>{ui.relatedGuides}</h2>
             {resource.related.slice(0, 3).map((slug) => {
-              const item = resourceBySlug.get(slug);
+              const item = map.get(slug);
               return item ? (
-                <Link key={slug} to={`/resources/${slug}`}>
+                <LocalizedLink key={slug} to={`/resources/${slug}`}>
                   {item.title}
-                </Link>
+                </LocalizedLink>
               ) : null;
             })}
           </section>

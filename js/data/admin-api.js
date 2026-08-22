@@ -4,6 +4,17 @@ export * from "../../src/services/admin-api.js";
 
 const clone = (value) => JSON.parse(JSON.stringify(value));
 
+export function buildApiUrl(route, params = {}) {
+  const safeRoute = String(route ?? "").trim();
+  if (!safeRoute || !/^[A-Za-z0-9][A-Za-z0-9_/-]*$/.test(safeRoute)) {
+    throw new Error("Invalid API route.");
+  }
+
+  const query = new window.URLSearchParams(params);
+  query.set("route", safeRoute);
+  return `/alchemize-api.php?${query.toString()}`;
+}
+
 async function fetchJson(url, options = {}) {
   const headers = {
     Accept: "application/json",
@@ -35,7 +46,7 @@ export { adminStore };
 
 export async function getAdminSession() {
   try {
-    const data = await fetchJson("/api/v1/auth/session");
+    const data = await fetchJson(buildApiUrl("auth/session"));
     if (data?.csrf_token) {
       window.__ALCHEMIZE_CSRF_TOKEN__ = data.csrf_token;
     }
@@ -55,7 +66,7 @@ export async function getAdminDashboard() {
 
 export async function getLeads() {
   try {
-    return await fetchJson("/api/v1/leads");
+    return await fetchJson(buildApiUrl("leads"));
   } catch {
     return clone(adminStore.state.leads);
   }
@@ -63,7 +74,7 @@ export async function getLeads() {
 
 export async function getLeadById(id) {
   try {
-    return await fetchJson(`/api/v1/leads/${id}`);
+    return await fetchJson(buildApiUrl(`leads/${id}`));
   } catch {
     return clone(adminStore.findLeadById(id));
   }
@@ -71,7 +82,7 @@ export async function getLeadById(id) {
 
 export async function getClients() {
   try {
-    return await fetchJson("/api/v1/clients");
+    return await fetchJson(buildApiUrl("clients"));
   } catch {
     return clone(adminStore.state.clients);
   }
@@ -79,7 +90,7 @@ export async function getClients() {
 
 export async function getClientById(id) {
   try {
-    return await fetchJson(`/api/v1/clients/${id}`);
+    return await fetchJson(buildApiUrl(`clients/${id}`));
   } catch {
     return clone(adminStore.findClientById(id));
   }
@@ -87,7 +98,7 @@ export async function getClientById(id) {
 
 export async function getEngagements() {
   try {
-    return await fetchJson("/api/v1/engagements");
+    return await fetchJson(buildApiUrl("engagements"));
   } catch {
     return clone(adminStore.state.engagements);
   }
@@ -95,7 +106,7 @@ export async function getEngagements() {
 
 export async function getEngagementById(id) {
   try {
-    return await fetchJson(`/api/v1/engagements/${id}`);
+    return await fetchJson(buildApiUrl(`engagements/${id}`));
   } catch {
     return clone(adminStore.findEngagementById(id));
   }
@@ -103,7 +114,7 @@ export async function getEngagementById(id) {
 
 export async function getTasks() {
   try {
-    return await fetchJson("/api/v1/tasks");
+    return await fetchJson(buildApiUrl("tasks"));
   } catch {
     return clone(adminStore.state.tasks);
   }
@@ -111,7 +122,7 @@ export async function getTasks() {
 
 export async function getDocuments() {
   try {
-    return await fetchJson("/api/v1/documents");
+    return await fetchJson(buildApiUrl("documents"));
   } catch {
     return clone(adminStore.state.documents);
   }
@@ -119,7 +130,7 @@ export async function getDocuments() {
 
 export async function getAppointments() {
   try {
-    return await fetchJson("/api/v1/appointments");
+    return await fetchJson(buildApiUrl("appointments"));
   } catch {
     return clone(adminStore.state.appointments);
   }
@@ -131,7 +142,7 @@ export async function getMessages() {
 
 export async function getInvoices() {
   try {
-    return await fetchJson("/api/v1/invoices");
+    return await fetchJson(buildApiUrl("invoices"));
   } catch {
     return clone(adminStore.state.invoices);
   }

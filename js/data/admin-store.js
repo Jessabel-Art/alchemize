@@ -1,6 +1,20 @@
-import { adminDemoData } from "./admin-demo-data.js";
-
 const clone = (value) => JSON.parse(JSON.stringify(value));
+
+const emptyAdminData = {
+  leads: [],
+  clients: [],
+  services: [],
+  engagements: [],
+  tasks: [],
+  documents: [],
+  appointments: [],
+  messages: [],
+  invoices: [],
+  payments: [],
+  activity: [],
+  contentInventory: [],
+  notes: [],
+};
 
 export const serviceStageCatalog = {
   "Business Formation & Startup": [
@@ -28,7 +42,7 @@ export const staffOptions = [
   "Staff",
 ];
 
-export function createAdminStore(initialData = adminDemoData) {
+export function createAdminStore(initialData = emptyAdminData) {
   let state = clone(initialData);
 
   const ensureState = () => {
@@ -1336,4 +1350,4 @@ export function createAdminStore(initialData = adminDemoData) {
   };
 }
 
-export const adminStore = createAdminStore(adminDemoData);
+export const adminStore = createAdminStore();
