@@ -141,7 +141,7 @@ test("messages has no admin templates or fabricated records", async ({
 }) => {
   await page.goto("/client-portal/messages/");
   await expect(
-    page.getByRole("heading", { name: "Start a conversation" }),
+    page.getByRole("heading", { name: "Send a message to Alchemize" }),
   ).toBeVisible();
   await expect(
     page.getByText("No messages are currently listed."),

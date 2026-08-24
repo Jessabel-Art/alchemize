@@ -22,6 +22,7 @@ function ServicesPage() {
   const [audience, setAudience] = useState(getInitialAudience);
   const [hasInteracted, setHasInteracted] = useState(false);
   const catalogRef = useRef(null);
+  const tabRefs = useRef([]);
   usePageMetadata({
     en: servicesContent.en.metadata,
     es: servicesContent.es.metadata,
@@ -58,6 +59,25 @@ function ServicesPage() {
     window.history.replaceState({}, "", url);
   };
 
+  const moveTabFocus = (event, currentIndex) => {
+    const keyOffsets = { ArrowRight: 1, ArrowLeft: -1 };
+    let nextIndex;
+    if (event.key in keyOffsets) {
+      nextIndex =
+        (currentIndex + keyOffsets[event.key] + audienceOrder.length) %
+        audienceOrder.length;
+    } else if (event.key === "Home") {
+      nextIndex = 0;
+    } else if (event.key === "End") {
+      nextIndex = audienceOrder.length - 1;
+    } else {
+      return;
+    }
+    event.preventDefault();
+    chooseAudience(audienceOrder[nextIndex]);
+    tabRefs.current[nextIndex]?.focus();
+  };
+
   return (
     <article className="services-page">
       <section className="services-hero">
@@ -85,33 +105,24 @@ function ServicesPage() {
             role="tablist"
             aria-label={content.choice.label}
           >
-            {audienceOrder.map((option) => {
+            {audienceOrder.map((option, index) => {
               const selected = audience === option;
               const item = content.choice[option];
               return (
                 <button
                   key={option}
                   type="button"
+                  role="tab"
                   id={`${option}-tab`}
                   aria-selected={selected}
                   aria-controls={`${option}-panel`}
                   tabIndex={selected ? 0 : -1}
                   className={selected ? "is-selected" : ""}
-                  aria-pressed={selected}
-                  onClick={() => chooseAudience(option)}
-                  onKeyDown={(event) => {
-                    if (!["ArrowRight", "ArrowLeft"].includes(event.key))
-                      return;
-                    event.preventDefault();
-                    const current = audienceOrder.indexOf(audience);
-                    chooseAudience(
-                      audienceOrder[
-                        event.key === "ArrowRight"
-                          ? (current + 1) % 2
-                          : (current + 1) % 2
-                      ],
-                    );
+                  ref={(node) => {
+                    tabRefs.current[index] = node;
                   }}
+                  onClick={() => chooseAudience(option)}
+                  onKeyDown={(event) => moveTabFocus(event, index)}
                 >
                   <span>{item.short}</span>
                   <strong>{item.title}</strong>
@@ -122,51 +133,54 @@ function ServicesPage() {
           </div>
         </div>
       </section>
-      <section
-        ref={catalogRef}
-        className="services-catalog"
-        aria-live="polite"
-        aria-labelledby={`${audience}-tab`}
-        role="tabpanel"
-        id={`${audience}-panel`}
-      >
-        <div className="content-shell services-catalog-inner">
-          <Reveal className="services-catalog-intro">
-            <span className="eyebrow">
-              {content.audience[audience].eyebrow}
-            </span>
-            <h2>{content.audience[audience].heading}</h2>
-            <p>{content.audience[audience].description}</p>
-          </Reveal>
-          <div className="services-list">
-            {groups[audience].map(
-              ({ title, statement, capabilities, slug }, index) => (
-                <Reveal
-                  as={LocalizedLink}
-                  className="service-row"
-                  delay={index * 40}
-                  key={title}
-                  to={`/services/${audience}/${slug}/`}
-                >
-                  <div className="service-row-copy">
-                    <h3>{title}</h3>
-                    <p>{statement}</p>
-                    <ul
-                      aria-label={`${title}: ${language === "es" ? "capacidades" : "capabilities"}`}
+      <section ref={catalogRef} className="services-catalog" aria-live="polite">
+        {audienceOrder.map((option) => (
+          <div
+            key={option}
+            role="tabpanel"
+            id={`${option}-panel`}
+            aria-labelledby={`${option}-tab`}
+            hidden={audience !== option}
+          >
+            <div className="content-shell services-catalog-inner">
+              <Reveal className="services-catalog-intro">
+                <span className="eyebrow">
+                  {content.audience[option].eyebrow}
+                </span>
+                <h2>{content.audience[option].heading}</h2>
+                <p>{content.audience[option].description}</p>
+              </Reveal>
+              <div className="services-list">
+                {groups[option].map(
+                  ({ title, statement, capabilities, slug }, index) => (
+                    <Reveal
+                      as={LocalizedLink}
+                      className="service-row"
+                      delay={index * 40}
+                      key={title}
+                      to={`/services/${option}/${slug}/`}
                     >
-                      {capabilities.map((item) => (
-                        <li key={item}>{item}</li>
-                      ))}
-                    </ul>
-                  </div>
-                  <span className="service-row-arrow" aria-hidden="true">
-                    →
-                  </span>
-                </Reveal>
-              ),
-            )}
+                      <div className="service-row-copy">
+                        <h3>{title}</h3>
+                        <p>{statement}</p>
+                        <ul
+                          aria-label={`${title}: ${language === "es" ? "capacidades" : "capabilities"}`}
+                        >
+                          {capabilities.map((item) => (
+                            <li key={item}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                      <span className="service-row-arrow" aria-hidden="true">
+                        →
+                      </span>
+                    </Reveal>
+                  ),
+                )}
+              </div>
+            </div>
           </div>
-        </div>
+        ))}
       </section>
       <section className="services-close">
         <div className="content-shell services-close-grid">

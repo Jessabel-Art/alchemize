@@ -37,11 +37,23 @@ test("service index exposes one audience catalog at a time", async ({
   await expect(
     page.getByRole("heading", { name: "Tax Preparation" }),
   ).toHaveCount(0);
-  await page.getByRole("button", { name: /Individual Services/ }).click();
+  const individualTab = page.getByRole("tab", {
+    name: /Individual Services/,
+  });
+  await individualTab.click();
+  await expect(individualTab).toHaveAttribute("aria-selected", "true");
   await expect(
     page.getByRole("heading", { name: "Tax Preparation" }),
   ).toBeVisible();
   await expect(page).toHaveURL(/#individuals$/);
+  await individualTab.focus();
+  const businessTab = page.getByRole("tab", { name: /Business Services/ });
+  await page.keyboard.press("ArrowRight");
+  await expect(businessTab).toBeFocused();
+  await expect(businessTab).toHaveAttribute("aria-selected", "true");
+  await page.keyboard.press("ArrowLeft");
+  await expect(individualTab).toBeFocused();
+  await expect(individualTab).toHaveAttribute("aria-selected", "true");
 });
 
 test("legacy business route redirects to its canonical service", async ({

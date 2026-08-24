@@ -1,12 +1,54 @@
 import { test, expect } from "@playwright/test";
 
-test.describe("Admin prototype workflows", () => {
-  test("converts a lead to a client in memory", async ({ page }) => {
-    await page.goto("/admin/dashboard/");
+async function openAdminPage(page, path) {
+  await page.goto(path);
+  await page.waitForFunction(() => Boolean(window.adminStore));
+}
+
+test.describe("Authenticated admin state workflows", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.route("**/alchemize-api.php?*", async (route) => {
+      const requestUrl = new URL(route.request().url());
+      const apiRoute = requestUrl.searchParams.get("route");
+      if (apiRoute === "portal-admin/attention") {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({ data: { items: [] } }),
+        });
+        return;
+      }
+      if (apiRoute !== "auth/session") {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          data: {
+            authenticated: true,
+            user: { user_id: 1, role_slug: "owner-admin" },
+            csrf_token: "browser-qa-token",
+          },
+        }),
+      });
+    });
+  });
+
+  test("converts a lead through the retained admin state", async ({ page }) => {
+    await openAdminPage(page, "/admin/dashboard/");
 
     await page.evaluate(() => {
+      window.adminStore.createLeadFromContact({
+        id: "lead-conversion-test",
+        name: "North Harbor Studio",
+        email: "hello@northharbor.demo",
+        audience: "business",
+        serviceInterest: "Business Formation & Startup",
+      });
       window.adminStore.convertLeadToClient({
-        leadId: "lead-003",
+        leadId: "lead-conversion-test",
         clientType: "Business",
         email: "hello@northharbor.demo",
         phone: "(555) 881-2143",
@@ -19,7 +61,7 @@ test.describe("Admin prototype workflows", () => {
 
     const outcome = await page.evaluate(() => {
       const lead = window.adminStore.state.leads.find(
-        (item) => item.id === "lead-003",
+        (item) => item.id === "lead-conversion-test",
       );
       const client = window.adminStore.state.clients.find(
         (item) => item.displayName === "North Harbor Studio",
@@ -37,14 +79,14 @@ test.describe("Admin prototype workflows", () => {
     });
 
     expect(outcome.leadStatus).toBe("Converted");
-    expect(outcome.clientCount).toBeGreaterThan(3);
+    expect(outcome.clientCount).toBe(1);
     expect(outcome.engagementCreated).toBe(true);
   });
 
   test("creates a task and completes it in the admin state", async ({
     page,
   }) => {
-    await page.goto("/admin/tasks/");
+    await openAdminPage(page, "/admin/tasks/");
 
     await page.evaluate(() => {
       window.adminStore.createTask({
@@ -78,13 +120,13 @@ test.describe("Admin prototype workflows", () => {
 
     expect(snapshot.created).toBe(true);
     expect(snapshot.status).toBe("Completed");
-    expect(snapshot.completedTasks).toBeGreaterThan(1);
+    expect(snapshot.completedTasks).toBe(1);
   });
 
   test("requests a document and updates its status in-session", async ({
     page,
   }) => {
-    await page.goto("/admin/documents/");
+    await openAdminPage(page, "/admin/documents/");
 
     await page.evaluate(() => {
       window.adminStore.createDocumentRequest({
@@ -118,16 +160,23 @@ test.describe("Admin prototype workflows", () => {
     expect(snapshot.status).toBe("Under Review");
   });
 
-  test("resets the admin prototype after reload", async ({ page }) => {
-    await page.goto("/admin/dashboard/");
+  test("resets the retained admin state after reload", async ({ page }) => {
+    await openAdminPage(page, "/admin/dashboard/");
     await page.evaluate(() => {
+      window.adminStore.createLeadFromContact({
+        id: "lead-reload-test",
+        name: "Renee Chavez",
+        email: "renee.chavez.demo@example.com",
+        audience: "individual",
+        serviceInterest: "Business Advisory",
+      });
       window.adminStore.convertLeadToClient({
-        leadId: "lead-004",
+        leadId: "lead-reload-test",
         clientType: "Individual",
         email: "renee.chavez.demo@example.com",
         phone: "(555) 206-1177",
         businessName: "",
-        intendedService: "Insurance Review",
+        intendedService: "Business Advisory",
         initialClientStatus: "Onboarding",
         createEngagement: true,
       });
@@ -135,18 +184,21 @@ test.describe("Admin prototype workflows", () => {
 
     const beforeReload = await page.evaluate(
       () =>
-        window.adminStore.state.leads.find((lead) => lead.id === "lead-004")
-          ?.status,
+        window.adminStore.state.leads.find(
+          (lead) => lead.id === "lead-reload-test",
+        )?.status,
     );
     expect(beforeReload).toBe("Converted");
 
     await page.reload();
+    await page.waitForFunction(() => Boolean(window.adminStore));
 
     const afterReload = await page.evaluate(
       () =>
-        window.adminStore.state.leads.find((lead) => lead.id === "lead-004")
-          ?.status,
+        window.adminStore.state.leads.find(
+          (lead) => lead.id === "lead-reload-test",
+        )?.status,
     );
-    expect(afterReload).toBe("Contacted");
+    expect(afterReload).toBeUndefined();
   });
 });
