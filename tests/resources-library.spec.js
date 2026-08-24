@@ -50,7 +50,7 @@ test("featured resources replace retired coverage content", async ({
     "/resources/preparing-for-tax-season",
   );
 
-  await page.getByRole("button", { name: /Next featured resource/i }).click();
+  await page.getByRole("button", { name: /^Next:/i }).click();
   await expect(heading).toHaveText(
     "What a Digital Presence Audit Can Reveal About Your Business",
   );
