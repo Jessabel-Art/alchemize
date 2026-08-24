@@ -1,21 +1,12 @@
 export const RESOURCE_CATEGORIES = [
   "All",
   "Taxes",
-  "Medicare & Insurance",
+  "Web & Digital Solutions",
   "Starting a Business",
   "Business Operations",
   "Records & Administration",
   "Guides & Checklists",
 ];
-
-// Medicare resources require review at least annually and whenever CMS makes a
-// material rule or communications change. Do not infer marketing approval from
-// the presence of educational content.
-export const MEDICARE_MARKETING_COMPLIANCE = {
-  status: "pending-owner-compliance-review",
-  finalMarketingDisclaimer: null,
-  note: "Confirm Alchemize's agent, carrier, FMO, TPMO, represented-plan, and required marketing-disclaimer status before Medicare marketing or enrollment activity goes live.",
-};
 
 const updated = "August 18, 2026";
 const irsRecords = {
@@ -33,43 +24,12 @@ const sbaRegister = {
   title: "Register your business and find state resources",
   href: "https://www.sba.gov/counseling/launch-your-business/#register-business",
 };
-const medicareOptions = {
-  source: "MEDICARE.GOV",
-  title: "Your Medicare coverage options",
-  href: "https://www.medicare.gov/basics/get-started-with-medicare/get-more-coverage/your-coverage-options",
-};
-const medicareJoin = {
-  source: "MEDICARE.GOV",
-  title: "Joining a Medicare health or drug plan",
-  href: "https://www.medicare.gov/basics/get-started-with-medicare/get-more-coverage/joining-a-plan",
-};
-const medicareSep = {
-  source: "MEDICARE.GOV",
-  title: "Special Enrollment Periods",
-  href: "https://www.medicare.gov/basics/get-started-with-medicare/get-more-coverage/joining-a-plan/special-enrollment-periods",
-};
-const medicarePlanFinder = {
-  source: "MEDICARE.GOV",
-  title: "Compare Medicare coverage options",
-  href: "https://www.medicare.gov/plan-compare/",
-};
-const medicareHandbook = {
-  source: "MEDICARE.GOV",
-  title: "Medicare & You 2026 handbook",
-  href: "https://www.medicare.gov/publications/10050-medicare-and-you.pdf",
-};
-const cmsEducation = {
-  source: "CMS.GOV",
-  title: "Medicare educational resources",
-  href: "https://www.cms.gov/training-education/medicare/general-resources",
-};
-
 const taxDisclaimer =
   "General educational information only. Tax treatment depends on individual facts and applicable federal and state law.";
 const businessDisclaimer =
   "General educational and organizational information only. Requirements vary by jurisdiction and circumstance. This resource is not legal, accounting, or individualized tax advice.";
-const medicareDisclaimer =
-  "Medicare information on this page is provided for general educational purposes. Medicare rules, costs, benefits, plan availability, and enrollment requirements can change. For current official Medicare information, visit Medicare.gov or call 1-800-MEDICARE. This educational notice is not a substitute for any marketing disclaimer required for Alchemize's eventual agent, carrier, FMO, or TPMO status.";
+const digitalDisclaimer =
+  "General educational information about websites and digital presence. Specific recommendations depend on the business, audience, existing systems, and project scope. Search visibility, traffic, and business outcomes are not guaranteed.";
 
 export const resources = [
   {
@@ -322,324 +282,202 @@ export const resources = [
     disclaimer: taxDisclaimer,
   },
   {
-    slug: "medicare-basics-coverage-choices",
-    title: "Medicare Basics: Understanding Your Coverage Choices",
+    slug: "professional-website-design-process",
+    title: "What to Expect During a Professional Website Design Process",
     excerpt:
-      "Understand how Medicare's parts and two primary coverage paths relate before comparing options.",
-    category: "Medicare & Insurance",
-    audience: "Individuals",
-    type: "Educational guide",
+      "Understand the practical stages of a professional website project, what decisions clients help shape, and how the work moves from discovery to launch.",
+    category: "Web & Digital Solutions",
+    audience: "Small businesses and professionals",
+    type: "Practical guide",
     updated,
-    reviewYear: 2026,
-    readTime: "9 min read",
-    sections: [
-      {
-        id: "introduction",
-        title: "Begin with official eligibility information",
-        paragraphs: [
-          "Medicare is federal health insurance primarily for people age 65 or older and certain younger people who meet eligibility requirements. Eligibility circumstances vary; confirm current information through Medicare.gov or Social Security.",
-        ],
-      },
-      {
-        id: "parts",
-        title: "The basic parts",
-        terms: [
-          [
-            "Part A — Hospital Insurance",
-            "Generally helps cover inpatient hospital care, skilled nursing facility care, hospice, and some home health care, subject to Medicare rules.",
-          ],
-          [
-            "Part B — Medical Insurance",
-            "Generally helps cover medically necessary services from doctors and other providers, outpatient care, durable medical equipment, and many preventive services.",
-          ],
-          [
-            "Part C — Medicare Advantage",
-            "An alternative way to receive Medicare benefits through a Medicare-approved private plan. Plan rules, networks, benefits, and costs vary.",
-          ],
-          [
-            "Part D — Drug Coverage",
-            "Helps cover prescription drugs through a stand-alone drug plan or many Medicare Advantage plans.",
-          ],
-          [
-            "Medigap",
-            "Medicare Supplement Insurance can help with certain Original Medicare out-of-pocket costs. It is not Medicare Advantage and availability or timing can depend on the situation.",
-          ],
-        ],
-      },
-      {
-        id: "paths",
-        title: "Two primary coverage paths",
-        comparison: [
-          {
-            title: "Original Medicare",
-            items: [
-              "Part A + Part B",
-              "May add a separate Part D plan",
-              "May potentially add Medigap depending on eligibility and timing",
-            ],
-          },
-          {
-            title: "Medicare Advantage",
-            items: [
-              "Medicare-approved private plan providing Part A and Part B benefits",
-              "Many plans include Part D",
-              "Networks, plan rules, benefits, and costs vary",
-            ],
-          },
-        ],
-      },
-      {
-        id: "questions",
-        title: "Questions before comparing options",
-        items: [
-          "Which doctors, specialists, and hospitals do I use?",
-          "What prescriptions do I take and which pharmacies do I prefer?",
-          "Do I travel or live in more than one location?",
-          "What monthly and out-of-pocket costs can I reasonably manage?",
-          "Do I have employer, retiree, Medicaid, VA, TRICARE, or other coverage?",
-          "Which coverage features are especially important to me?",
-        ],
-      },
-    ],
-    official: [
-      medicareOptions,
-      medicarePlanFinder,
-      medicareHandbook,
-      cmsEducation,
-    ],
-    related: ["medicare-enrollment-periods", "comparing-medicare-coverage"],
-    nextSteps: [
-      "List providers, prescriptions, pharmacies, and other coverage.",
-      "Review the two coverage paths through Medicare.gov.",
-      "Use Medicare Plan Finder for current options in your area.",
-      "Write down questions that depend on your eligibility or circumstances.",
-    ],
-    disclaimer: medicareDisclaimer,
-  },
-  {
-    slug: "medicare-enrollment-periods",
-    title: "Medicare Enrollment Periods: When You Can Make Changes",
-    excerpt:
-      "Learn why Medicare choices cannot always be changed at any time and where to verify the period that applies.",
-    category: "Medicare & Insurance",
-    audience: "Individuals",
-    type: "Educational guide",
-    updated,
-    reviewYear: 2026,
     readTime: "8 min read",
     sections: [
       {
-        id: "initial",
-        title: "Initial Enrollment Period",
+        id: "discovery",
+        title: "Begin with the business, not the pages",
         paragraphs: [
-          "For plan enrollment, Medicare.gov generally describes a period beginning three months before a person gets Medicare and ending three months after. The exact timing and permitted actions depend on when Parts A and B begin, so verify the official instructions for the individual situation.",
-        ],
-      },
-      {
-        id: "general",
-        title: "General Enrollment Period",
-        paragraphs: [
-          "The General Enrollment Period concerns signing up for Part A and/or Part B in certain circumstances. Plan enrollment after gaining Part A or B has its own timing. Confirm both steps through Medicare.gov or Social Security rather than assuming one enrollment completes the other.",
-        ],
-      },
-      {
-        id: "open",
-        title: "Medicare Open Enrollment",
-        paragraphs: [
-          "October 15 through December 7 permits certain changes involving Medicare Advantage and Part D coverage, with coverage generally beginning January 1 when the request is received by the deadline. Verify current permitted actions on Medicare.gov.",
-        ],
-      },
-      {
-        id: "ma-open",
-        title: "Medicare Advantage Open Enrollment",
-        paragraphs: [
-          "January 1 through March 31 applies to people already enrolled in Medicare Advantage. Medicare.gov explains the limited changes available during this period, including switching Medicare Advantage plans or returning to Original Medicare in applicable circumstances.",
-        ],
-      },
-      {
-        id: "special",
-        title: "Special Enrollment Periods",
-        paragraphs: [
-          "Certain events—such as a move or loss or change of other coverage—can create another opportunity to change coverage. Eligibility, timing, and permitted actions depend on the event. The official Special Enrollment Period resource should be used instead of an abbreviated eligibility checklist.",
-        ],
-      },
-    ],
-    official: [medicareJoin, medicareSep, medicareHandbook],
-    related: [
-      "medicare-basics-coverage-choices",
-      "comparing-medicare-coverage",
-    ],
-    nextSteps: [
-      "Identify the coverage action you are considering.",
-      "Confirm the enrollment period and permitted action on Medicare.gov.",
-      "Gather current plan, provider, prescription, and other-coverage information.",
-      "Do not cancel existing coverage until the replacement timing is understood.",
-    ],
-    disclaimer: medicareDisclaimer,
-  },
-  {
-    slug: "comparing-medicare-coverage",
-    title: "Comparing Medicare Coverage: What to Review Beyond the Premium",
-    excerpt:
-      "Compare providers, prescriptions, cost sharing, plan rules, and patterns of care—not only the monthly premium.",
-    category: "Medicare & Insurance",
-    audience: "Individuals",
-    type: "Comparison guide",
-    updated,
-    reviewYear: 2026,
-    readTime: "9 min read",
-    sections: [
-      {
-        id: "providers",
-        title: "Start with providers",
-        paragraphs: [
-          "List physicians, specialists, hospitals, and recurring facilities. Verify network participation through current plan materials and directly with the provider when appropriate; directories can change.",
-        ],
-      },
-      {
-        id: "prescriptions",
-        title: "Review every prescription",
-        paragraphs: [
-          "Check the formulary, tier, preferred pharmacies, and any prior authorization, quantity limit, or step-therapy rule that applies. Not every plan uses every mechanism, and drug coverage can change.",
-        ],
-      },
-      {
-        id: "costs",
-        title: "Look beyond the premium",
-        items: [
-          "Deductibles",
-          "Copayments and coinsurance",
-          "Expected prescription costs",
-          "Maximum out-of-pocket considerations for Medicare Advantage",
-          "Costs for out-of-network or non-preferred use where applicable",
+          "A useful website process begins by understanding the business, the audience, the services being presented, and the action visitors should be able to take. Discovery may include reviewing the current online presence, clarifying project goals, and identifying practical constraints.",
+          "This stage gives later design decisions a clear purpose. The questions and sequence may vary by engagement because a new website, a focused landing page, and a redesign do not require exactly the same work.",
         ],
       },
       {
         id: "structure",
-        title: "Understand the coverage structure",
+        title: "Plan the structure and content",
         paragraphs: [
-          "Original Medicare and Medicare Advantage organize coverage differently. Medicare Advantage is not supplemental insurance, and Medigap is not an alternative name for Medicare Advantage.",
+          "Before visual design begins, the project needs a content plan. That usually means identifying the pages, deciding how information should be grouped, and determining which calls to action belong in each part of the site.",
+          "Existing copy, photographs, brand assets, policies, and business information should be reviewed early. Missing content does not always stop a project, but it should be identified so ownership and next steps are clear.",
         ],
       },
       {
-        id: "use",
-        title: "Consider how you use health care",
+        id: "direction",
+        title: "Establish the visual and user-experience direction",
         paragraphs: [
-          "Travel, multiple residences, specialist access, recurring care, preferred pharmacies, and other coverage can materially affect how an option works in practice.",
+          "Visual direction translates the business into typography, color, imagery, spacing, and interface choices. User-experience decisions consider how visitors move through the site, find information, and complete important actions.",
+          "References can help communicate preferences, but the goal is not to copy another website. It is to make choices that fit the business, its audience, and the information being presented.",
         ],
       },
       {
-        id: "annual",
-        title: "Review annually",
+        id: "development",
+        title: "Build and test the website",
         paragraphs: [
-          "Premiums, cost sharing, networks, formularies, rules, and benefits can change from year to year. Review the Annual Notice of Change where applicable and compare using current official plan information.",
-        ],
-      },
-    ],
-    official: [medicarePlanFinder, medicareOptions, medicareHandbook],
-    related: [
-      "medicare-basics-coverage-choices",
-      "medicare-enrollment-periods",
-    ],
-    nextSteps: [
-      "Create one provider and prescription list.",
-      "Compare total expected costs and plan rules, not premium alone.",
-      "Verify current network and formulary information.",
-      "Review other coverage before making changes.",
-    ],
-    disclaimer: medicareDisclaimer,
-  },
-  {
-    slug: "understanding-insurance-coverage",
-    title: "Understanding Insurance Coverage: Terms That Affect What You Pay",
-    excerpt:
-      "Understand the terms that shape cost, access, limits, and protection before making a coverage decision.",
-    category: "Medicare & Insurance",
-    audience: "Individuals and business owners",
-    type: "Explainer",
-    updated,
-    readTime: "8 min read",
-    sections: [
-      {
-        id: "terms",
-        title: "Terms that affect cost and coverage",
-        terms: [
-          ["Premium", "The amount paid to keep coverage in force."],
-          [
-            "Deductible",
-            "An amount that may need to be paid before certain coverage applies.",
-          ],
-          [
-            "Copayment",
-            "A fixed amount that may apply to a covered service or item.",
-          ],
-          [
-            "Coinsurance",
-            "A percentage of an allowed or covered amount that may be the covered person's responsibility.",
-          ],
-          [
-            "Coverage limit",
-            "A maximum amount, duration, or quantity the coverage may provide.",
-          ],
-          [
-            "Exclusion",
-            "A circumstance, service, condition, or loss the governing document does not cover.",
-          ],
-          [
-            "Network",
-            "A group of participating providers or facilities, where the product uses one.",
-          ],
-          [
-            "Out-of-pocket cost",
-            "An amount paid by the covered person rather than the insurer.",
-          ],
-          [
-            "Beneficiary",
-            "A person or entity designated to receive a benefit where beneficiary designations apply.",
-          ],
-          [
-            "Waiting period",
-            "A period before certain coverage or benefits may begin, where applicable.",
-          ],
-        ],
-        paragraphs: [
-          "Terminology and application vary by insurance product. Read the governing documents for the actual definition.",
+          "Development turns the approved direction into a working website. Pages, navigation, forms, responsive behavior, metadata, and agreed integrations are implemented according to the project scope.",
+          "Testing should include common screen sizes, content accuracy, links, forms, keyboard use, and the most important visitor paths. Technical details matter because they support a clear and dependable experience.",
         ],
       },
       {
-        id: "questions",
-        title: "Questions to ask when reviewing coverage",
-        items: [
-          "What exactly is covered—and what is excluded?",
-          "When does the deductible apply?",
-          "Is there a provider network?",
-          "What costs apply when I use the coverage?",
-          "Are there limits or waiting periods?",
-          "What happens outside the normal network or service area?",
-          "Which documents control the actual coverage?",
-        ],
-      },
-      {
-        id: "documents",
-        title: "The governing document matters",
+        id: "review-launch",
+        title: "Review, launch, and support what comes next",
         paragraphs: [
-          "Marketing summaries are not the insurance contract. The policy, certificate, Evidence of Coverage, or other governing coverage documents determine the actual terms. Use terminology appropriate to the product involved.",
+          "Client review is most useful when feedback is consolidated and tied to the agreed goals. Final checks address content, responsive presentation, functionality, domain or hosting coordination, and launch readiness.",
+          "After launch, support depends on the engagement. It may include updates, content changes, selected integrations, domain or email coordination, or future improvements. The scope should be clear rather than assumed.",
         ],
       },
     ],
     official: [],
     related: [
-      "medicare-basics-coverage-choices",
-      "comparing-medicare-coverage",
+      "digital-presence-audit",
+      "seo-and-website-metadata",
+      "business-needs-a-process",
     ],
     nextSteps: [
-      "Collect the governing coverage documents.",
-      "Mark unfamiliar terms, exclusions, and limits.",
-      "List the real situations in which coverage may be used.",
-      "Ask for clarification before making a decision.",
+      "Clarify the primary business goal for the website.",
+      "Identify the audiences and actions the site needs to support.",
+      "Gather existing content, brand assets, and access information.",
+      "Schedule a consultation to discuss fit, scope, and the appropriate starting point.",
     ],
-    disclaimer:
-      "General educational information only. Insurance availability, terminology, suitability, and governing requirements depend on the product and individual situation.",
+    disclaimer: digitalDisclaimer,
+  },
+  {
+    slug: "digital-presence-audit",
+    title: "What a Digital Presence Audit Can Reveal About Your Business",
+    excerpt:
+      "A practical review can show where your website, profiles, contact paths, and digital systems are clear, inconsistent, outdated, or creating unnecessary friction.",
+    category: "Web & Digital Solutions",
+    audience: "Small businesses and professionals",
+    type: "Assessment guide",
+    updated,
+    readTime: "7 min read",
+    sections: [
+      {
+        id: "purpose",
+        title: "See the current digital presence as a visitor does",
+        paragraphs: [
+          "A digital presence audit reviews how a business currently appears and functions online. It can include the website, search listings, social or professional profiles, domain-based email, and the paths people use to make contact.",
+          "The purpose is not to find faults for their own sake. It is to identify practical gaps before investing in a redesign, new content, or additional digital tools.",
+        ],
+      },
+      {
+        id: "website",
+        title: "Review clarity and usability",
+        paragraphs: [
+          "The review should ask whether the website explains what the business does, who it serves, and what a visitor should do next. Navigation, page organization, calls to action, contact forms, and mobile usability all affect whether information is easy to use.",
+          "Outdated services, old staff details, broken links, inconsistent contact information, or unclear next steps can weaken confidence even when the visual design still looks acceptable.",
+        ],
+      },
+      {
+        id: "consistency",
+        title: "Check consistency across the business",
+        paragraphs: [
+          "Business names, addresses, phone numbers, service descriptions, hours, logos, and profile links should be reasonably consistent wherever the business appears. Differences can confuse visitors and make routine updates harder to manage.",
+          "A professional domain and business email can also affect credibility. The audit should note how the domain, email, website, and outside profiles connect without requesting passwords or exposing credentials.",
+        ],
+      },
+      {
+        id: "visibility",
+        title: "Consider visibility and measurement",
+        paragraphs: [
+          "Page titles, headings, meaningful content, local relevance, and technical cleanliness can help search engines understand the website. An audit may also review whether analytics or other tracking is configured appropriately.",
+          "These findings support better decisions, but they do not guarantee rankings, traffic, or revenue. They show what is currently measurable and where the foundation may need attention.",
+        ],
+      },
+      {
+        id: "priorities",
+        title: "Turn findings into priorities",
+        paragraphs: [
+          "Not every issue requires a complete redesign. Some businesses need clearer content, corrected listings, improved mobile behavior, a stronger contact path, or more consistent branding. Others may benefit from a broader rebuild.",
+          "A useful audit separates immediate corrections from larger improvements so the business can choose an appropriate starting point.",
+        ],
+      },
+    ],
+    official: [],
+    related: [
+      "professional-website-design-process",
+      "seo-and-website-metadata",
+      "simple-administrative-system",
+    ],
+    nextSteps: [
+      "List every public website and profile representing the business.",
+      "Check business details and contact paths for accuracy.",
+      "Review the website on both desktop and mobile.",
+      "Prioritize corrections before selecting new tools or beginning a redesign.",
+    ],
+    disclaimer: digitalDisclaimer,
+  },
+  {
+    slug: "seo-and-website-metadata",
+    title: "Why SEO and Website Metadata Matter for Your Online Presence",
+    excerpt:
+      "Learn how page titles, descriptions, headings, content, links, and technical quality help people and search engines understand a website.",
+    category: "Web & Digital Solutions",
+    audience: "Small businesses and professionals",
+    type: "Plain-language guide",
+    updated,
+    readTime: "8 min read",
+    sections: [
+      {
+        id: "foundation",
+        title: "SEO begins with a clear, useful website",
+        paragraphs: [
+          "Search engine optimization, or SEO, is the ongoing work of making a website understandable, useful, and technically accessible. It begins with pages that clearly explain the business, its services, its audience, and its relevance.",
+          "Keywords can help describe a topic, but repeating them does not create quality or guarantee a ranking. Search visibility depends on many factors, including competition, location, authority, technical condition, and whether the content serves the person searching.",
+        ],
+      },
+      {
+        id: "metadata",
+        title: "Metadata provides concise page context",
+        paragraphs: [
+          "A page title identifies the subject of a page for browser tabs and search results. A meta description summarizes the page and may be used by search engines when presenting it. Each important page should have wording that is specific, accurate, and useful.",
+          "Metadata supports understanding, but it cannot compensate for thin, unclear, or outdated page content. Search engines may also choose different result text when another passage better matches a search.",
+        ],
+      },
+      {
+        id: "structure",
+        title: "Page structure supports people and search engines",
+        paragraphs: [
+          "A clear main heading, descriptive subheadings, meaningful paragraphs, and useful internal links make information easier to navigate. Image alt text should explain meaningful images for people who cannot see them, rather than being used as a place to insert unrelated keywords.",
+          "Internal links help visitors move between related services and resources. They also help search systems understand how pages connect.",
+        ],
+      },
+      {
+        id: "technical",
+        title: "Technical cleanliness and mobile usability matter",
+        paragraphs: [
+          "Broken links, duplicate or missing titles, inaccessible controls, poor mobile layouts, slow or unstable pages, and confusing URL structures can make a site harder to use and understand.",
+          "Technical SEO is not separate from user experience. A site that works clearly across devices and exposes its content in a dependable structure creates a better foundation for discoverability.",
+        ],
+      },
+      {
+        id: "local",
+        title: "Keep business relevance accurate",
+        paragraphs: [
+          "For businesses serving particular locations or communities, website content and business profiles should describe those areas accurately. Names, addresses, phone numbers, hours, and services should remain consistent where practical.",
+          "SEO and metadata are valuable parts of a digital presence, but neither provides guaranteed rankings. They support a clearer foundation that still requires useful content, maintenance, and realistic expectations.",
+        ],
+      },
+    ],
+    official: [],
+    related: [
+      "digital-presence-audit",
+      "professional-website-design-process",
+      "business-records-what-needs-a-home",
+    ],
+    nextSteps: [
+      "Review the title and primary heading on each important page.",
+      "Check that page content answers the questions visitors actually bring.",
+      "Confirm images, internal links, and mobile layouts remain usable.",
+      "Treat metadata as part of a broader content and technical review.",
+    ],
+    disclaimer: digitalDisclaimer,
   },
   {
     slug: "starting-a-business-organization-checklist",

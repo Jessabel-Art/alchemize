@@ -129,9 +129,7 @@ export default function ResourceDetailPage({ resource }) {
   }, [location.search]);
 
   return (
-    <article
-      className={`resource-article${resource.reviewYear ? " resource-article--medicare" : ""}`}
-    >
+    <article className="resource-article">
       <div className="resource-print-brand">
         <Logo surface="light" />
       </div>

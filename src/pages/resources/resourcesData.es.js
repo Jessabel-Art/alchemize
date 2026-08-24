@@ -3,7 +3,7 @@ import { resources } from "./resourcesData.js";
 export const RESOURCE_CATEGORIES_ES = [
   ["All", "Todos"],
   ["Taxes", "Impuestos"],
-  ["Medicare & Insurance", "Medicare y seguros"],
+  ["Web & Digital Solutions", "Web y soluciones digitales"],
   ["Starting a Business", "Cómo iniciar un negocio"],
   ["Business Operations", "Operaciones empresariales"],
   ["Records & Administration", "Registros y administración"],
@@ -14,8 +14,8 @@ const taxNotice =
   "Información educativa general. El tratamiento tributario depende de los hechos individuales y de las leyes federales y estatales aplicables.";
 const businessNotice =
   "Información educativa y organizativa general. Los requisitos varían según la jurisdicción y las circunstancias. Este recurso no constituye asesoría legal, contable ni tributaria individualizada.";
-const medicareNotice =
-  "La información sobre Medicare se ofrece con fines educativos generales. Las reglas, costos, beneficios, planes disponibles y requisitos de inscripción pueden cambiar. Para obtener información oficial vigente, visite Medicare.gov o llame al 1-800-MEDICARE. Este aviso educativo no sustituye ningún aviso de mercadeo que pueda ser exigido según el futuro estado de Alchemize como agente, aseguradora representada, FMO o TPMO.";
+const digitalNotice =
+  "Información educativa general sobre sitios web y presencia digital. Las recomendaciones específicas dependen del negocio, la audiencia, los sistemas existentes y el alcance del proyecto. No se garantizan la visibilidad en buscadores, el tráfico ni los resultados comerciales.";
 
 const es = {
   "preparing-for-tax-season": {
@@ -162,225 +162,179 @@ const es = {
       "Consulte a un profesional tributario calificado sobre cómo se aplica a su situación.",
     ],
   },
-  "medicare-basics-coverage-choices": {
-    title: "Conceptos básicos de Medicare: cómo entender sus opciones",
+  "professional-website-design-process": {
+    title: "Qué esperar durante un proceso profesional de diseño web",
     excerpt:
-      "Un punto de partida claro para comprender las Partes A, B, C y D, las diferencias entre Medicare Original y Medicare Advantage y las preguntas importantes al comparar cobertura.",
-    category: "Medicare y seguros",
-    audience: "Personas",
-    type: "Guía educativa",
-    readTime: "10 min de lectura",
-    disclaimer: medicareNotice,
-    sections: [
-      {
-        id: "partes",
-        title: "Las partes básicas",
-        terms: [
-          [
-            "Parte A",
-            "Generalmente ayuda a cubrir hospitalización y determinados servicios de enfermería, hospicio y atención domiciliaria.",
-          ],
-          [
-            "Parte B",
-            "Generalmente ayuda a cubrir servicios médicos, atención ambulatoria, equipo médico y prevención.",
-          ],
-          [
-            "Parte C",
-            "Medicare Advantage es una alternativa privada aprobada por Medicare para recibir beneficios de las Partes A y B.",
-          ],
-          [
-            "Parte D",
-            "Ayuda a cubrir medicamentos recetados mediante planes privados aprobados.",
-          ],
-        ],
-      },
-      {
-        id: "caminos",
-        title: "Dos caminos principales de cobertura",
-        comparison: [
-          {
-            title: "Medicare Original",
-            items: [
-              "Partes A y B administradas por Medicare",
-              "Puede combinarse con una póliza Medigap y un plan de medicamentos por separado",
-            ],
-          },
-          {
-            title: "Medicare Advantage",
-            items: [
-              "Plan privado aprobado que ofrece los beneficios de A y B",
-              "Puede incluir medicamentos y beneficios adicionales con reglas de red",
-            ],
-          },
-        ],
-      },
-      {
-        id: "comparar",
-        title: "Antes de comparar",
-        items: [
-          "Médicos y hospitales preferidos",
-          "Medicamentos, dosis y farmacias",
-          "Cobertura actual o de empleador",
-          "Costos totales, no solo la prima",
-          "Viajes, residencias múltiples y necesidades de atención",
-        ],
-      },
-    ],
-    nextSteps: [
-      "Prepare una lista de proveedores, medicamentos, farmacias y otra cobertura.",
-      "Revise los dos caminos en Medicare.gov.",
-      "Use Medicare Plan Finder para ver opciones actuales en su área.",
-      "Anote las preguntas que dependan de su elegibilidad o circunstancias.",
-    ],
-  },
-  "medicare-enrollment-periods": {
-    title: "Períodos de inscripción de Medicare: cuándo puede hacer cambios",
-    excerpt:
-      "Una guía educativa sobre los períodos principales de inscripción y por qué el momento y la acción permitida deben confirmarse en fuentes oficiales.",
-    category: "Medicare y seguros",
-    audience: "Personas",
-    type: "Guía educativa",
+      "Conozca las etapas prácticas de un proyecto web profesional, las decisiones que ayuda a definir el cliente y cómo avanza el trabajo desde el descubrimiento hasta el lanzamiento.",
+    category: "Web y soluciones digitales",
+    audience: "Pequeñas empresas y profesionales",
+    type: "Guía práctica",
     readTime: "8 min de lectura",
-    disclaimer: medicareNotice,
+    disclaimer: digitalNotice,
     sections: [
       {
-        id: "inicial",
-        title: "Período de inscripción inicial",
+        id: "descubrimiento",
+        title: "Comience con el negocio, no con las páginas",
         paragraphs: [
-          "Generalmente rodea el mes en que una persona cumple 65 años, pero la elegibilidad y las fechas exactas dependen de sus circunstancias. Confirme su ventana individual.",
+          "Un proceso útil comienza por comprender el negocio, la audiencia, los servicios y la acción que las personas deben poder realizar. El descubrimiento puede incluir una revisión de la presencia actual, las metas y las limitaciones prácticas.",
+          "La secuencia puede variar según el proyecto. Un sitio nuevo, una página enfocada y un rediseño no requieren exactamente el mismo trabajo.",
         ],
       },
       {
-        id: "periodos",
-        title: "Otros períodos importantes",
-        terms: [
-          [
-            "Inscripción general",
-            "Puede permitir inscribirse en las Partes A o B cuando no se utilizó el período inicial.",
-          ],
-          [
-            "Inscripción abierta",
-            "Cada otoño permite determinadas revisiones y cambios de cobertura.",
-          ],
-          [
-            "Inscripción abierta de Medicare Advantage",
-            "Permite ciertas acciones para quienes ya están inscritos en Medicare Advantage.",
-          ],
-          [
-            "Períodos especiales",
-            "Pueden estar disponibles después de ciertos cambios de empleo, cobertura o circunstancias.",
-          ],
-        ],
-      },
-      {
-        id: "confirmar",
-        title: "Confirme antes de actuar",
+        id: "estructura",
+        title: "Planifique la estructura y el contenido",
         paragraphs: [
-          "La acción permitida y la fecha de vigencia varían. No cancele una cobertura existente hasta comprender el inicio de la nueva.",
+          "Antes del diseño visual, el proyecto necesita un plan de contenido: páginas, grupos de información y llamadas a la acción.",
+          "Conviene revisar temprano textos, fotografías, elementos de marca, políticas e información empresarial para identificar qué existe y quién preparará lo que falta.",
         ],
-        callout:
-          "Use Medicare.gov o 1-800-MEDICARE para confirmar información vigente y aplicable a su situación.",
       },
-    ],
-    nextSteps: [
-      "Identifique el cambio de cobertura que considera.",
-      "Confirme el período y la acción permitida en Medicare.gov.",
-      "Reúna datos del plan, proveedores, medicamentos y otra cobertura.",
-      "No cancele cobertura existente hasta comprender las fechas de reemplazo.",
-    ],
-  },
-  "comparing-medicare-coverage": {
-    title: "Cómo comparar la cobertura de Medicare más allá de la prima",
-    excerpt:
-      "Compare proveedores, medicamentos, costos y reglas del plan para formar una visión más completa de la cobertura.",
-    category: "Medicare y seguros",
-    audience: "Personas",
-    type: "Guía comparativa",
-    readTime: "9 min de lectura",
-    disclaimer: medicareNotice,
-    sections: [
       {
-        id: "proveedores",
-        title: "Comience con proveedores y medicamentos",
+        id: "direccion",
+        title: "Defina la dirección visual y de experiencia",
         paragraphs: [
-          "Confirme directamente la red de médicos, hospitales y farmacias y revise cada medicamento, dosis y restricción. Las redes y formularios pueden cambiar.",
+          "La dirección visual traduce el negocio en tipografía, color, imágenes, espacio e interfaz. Las decisiones de experiencia consideran cómo las personas encuentran información y completan acciones importantes.",
+          "Las referencias ayudan a comunicar preferencias, pero el objetivo es crear una solución adecuada para el negocio, no copiar otro sitio.",
         ],
       },
       {
-        id: "costos",
-        title: "Mire más allá de la prima",
-        items: [
-          "Deducible",
-          "Copagos y coseguro",
-          "Máximo de gastos de bolsillo cuando corresponda",
-          "Costos de medicamentos por nivel",
-          "Servicios fuera de la red y autorizaciones",
-        ],
-      },
-      {
-        id: "uso",
-        title: "Considere cómo utiliza la atención",
+        id: "desarrollo",
+        title: "Desarrolle y pruebe el sitio",
         paragraphs: [
-          "Incluya viajes, condiciones crónicas, frecuencia de especialistas, equipo médico y otra cobertura. Revise nuevamente cada año porque las necesidades y los planes cambian.",
+          "El desarrollo convierte la dirección aprobada en un sitio funcional. Se implementan páginas, navegación, formularios, comportamiento responsivo, metadatos e integraciones acordadas.",
+          "Las pruebas deben incluir tamaños de pantalla comunes, exactitud del contenido, enlaces, formularios, teclado y recorridos importantes.",
+        ],
+      },
+      {
+        id: "lanzamiento",
+        title: "Revise, publique y apoye lo que sigue",
+        paragraphs: [
+          "La revisión es más útil cuando los comentarios están organizados y relacionados con los objetivos acordados. Las comprobaciones finales cubren contenido, presentación responsiva, funciones y preparación para publicar.",
+          "El apoyo posterior depende del acuerdo y puede incluir actualizaciones, contenido, integraciones seleccionadas o mejoras futuras.",
         ],
       },
     ],
     nextSteps: [
-      "Cree una lista de proveedores y medicamentos.",
-      "Compare los costos totales esperados y las reglas, no solo la prima.",
-      "Verifique la red y el formulario vigentes.",
-      "Revise cualquier otra cobertura antes de hacer cambios.",
+      "Aclare la meta principal del sitio.",
+      "Identifique las audiencias y acciones importantes.",
+      "Reúna contenido, elementos de marca e información de acceso.",
+      "Programe una consulta para hablar sobre alcance y punto de partida.",
     ],
   },
-  "understanding-insurance-coverage": {
+  "digital-presence-audit": {
     title:
-      "Cómo entender la cobertura de seguros y los términos que afectan su costo",
+      "Qué puede revelar una auditoría de presencia digital sobre su negocio",
     excerpt:
-      "Una explicación práctica de los términos que influyen en lo que paga, lo que cubre una póliza y las preguntas que debe hacer.",
-    category: "Medicare y seguros",
-    audience: "Personas y propietarios de negocios",
-    type: "Explicación",
-    readTime: "8 min de lectura",
-    disclaimer:
-      "Información educativa general. La disponibilidad, terminología, idoneidad y requisitos de los seguros dependen del producto y de la situación individual.",
+      "Una revisión práctica puede mostrar dónde el sitio, los perfiles, las vías de contacto y los sistemas digitales son claros, inconsistentes, desactualizados o innecesariamente difíciles.",
+    category: "Web y soluciones digitales",
+    audience: "Pequeñas empresas y profesionales",
+    type: "Guía de evaluación",
+    readTime: "7 min de lectura",
+    disclaimer: digitalNotice,
     sections: [
       {
-        id: "terminos",
-        title: "Términos que afectan el costo y la cobertura",
-        terms: [
-          ["Prima", "Importe que paga para mantener la cobertura."],
-          [
-            "Deducible",
-            "Importe que puede pagar antes de que el plan comience a cubrir determinados servicios.",
-          ],
-          ["Copago", "Cantidad fija por un servicio cubierto."],
-          ["Coseguro", "Porcentaje del costo que puede corresponderle."],
-          ["Exclusión", "Situación o servicio que la póliza no cubre."],
-        ],
-      },
-      {
-        id: "preguntas",
-        title: "Preguntas para revisar la cobertura",
-        items: [
-          "¿Qué documento rige la cobertura?",
-          "¿Qué límites y exclusiones se aplican?",
-          "¿Qué proveedores o servicios requieren autorización?",
-          "¿Qué cambia en una emergencia o fuera del área?",
-        ],
-      },
-      {
-        id: "documento",
-        title: "El documento contractual es el que cuenta",
+        id: "proposito",
+        title: "Vea la presencia digital como la ve un visitante",
         paragraphs: [
-          "Los resúmenes ayudan, pero la póliza, el certificado o la evidencia de cobertura contienen los términos aplicables. Solicite aclaración antes de decidir.",
+          "Una auditoría revisa cómo aparece y funciona el negocio en línea. Puede incluir el sitio, perfiles públicos, correo con dominio profesional y las vías de contacto.",
+          "Su propósito es identificar brechas prácticas antes de invertir en un rediseño, contenido nuevo o herramientas adicionales.",
+        ],
+      },
+      {
+        id: "usabilidad",
+        title: "Revise claridad y facilidad de uso",
+        paragraphs: [
+          "La revisión pregunta si el sitio explica qué hace el negocio, a quién sirve y qué debe hacer el visitante. La navegación, organización, llamadas a la acción, formularios y experiencia móvil influyen en la claridad.",
+          "Servicios desactualizados, enlaces rotos, información inconsistente o próximos pasos poco claros pueden reducir la confianza.",
+        ],
+      },
+      {
+        id: "consistencia",
+        title: "Compruebe la consistencia",
+        paragraphs: [
+          "El nombre, dirección, teléfono, servicios, horarios, logotipo y enlaces deben ser razonablemente consistentes donde aparece el negocio.",
+          "Un dominio y correo profesional también pueden apoyar la credibilidad. La revisión debe observar cómo se conectan sin solicitar contraseñas.",
+        ],
+      },
+      {
+        id: "visibilidad",
+        title: "Considere visibilidad y medición",
+        paragraphs: [
+          "Títulos, encabezados, contenido útil, relevancia local y limpieza técnica ayudan a los buscadores a comprender el sitio. También puede revisarse si las analíticas están configuradas de forma apropiada.",
+          "Estos hallazgos no garantizan posiciones, tráfico ni ingresos. Ayudan a decidir qué base necesita atención.",
+        ],
+      },
+      {
+        id: "prioridades",
+        title: "Convierta los hallazgos en prioridades",
+        paragraphs: [
+          "No todo problema requiere un rediseño completo. A veces se necesita contenido más claro, información corregida, mejor experiencia móvil o una vía de contacto más directa.",
+          "Una auditoría útil separa las correcciones inmediatas de las mejoras mayores.",
         ],
       },
     ],
     nextSteps: [
-      "Reúna los documentos que rigen la cobertura.",
-      "Marque términos, exclusiones y límites desconocidos.",
-      "Enumere situaciones reales en las que podría usarla.",
-      "Solicite aclaraciones antes de tomar una decisión.",
+      "Enumere cada sitio y perfil público del negocio.",
+      "Verifique la información y las vías de contacto.",
+      "Revise el sitio en computadora y móvil.",
+      "Priorice correcciones antes de elegir herramientas o iniciar un rediseño.",
+    ],
+  },
+  "seo-and-website-metadata": {
+    title: "Por qué el SEO y los metadatos importan para su presencia en línea",
+    excerpt:
+      "Conozca cómo títulos, descripciones, encabezados, contenido, enlaces y calidad técnica ayudan a las personas y los buscadores a comprender un sitio.",
+    category: "Web y soluciones digitales",
+    audience: "Pequeñas empresas y profesionales",
+    type: "Guía en lenguaje claro",
+    readTime: "8 min de lectura",
+    disclaimer: digitalNotice,
+    sections: [
+      {
+        id: "base",
+        title: "El SEO comienza con un sitio claro y útil",
+        paragraphs: [
+          "La optimización para buscadores, o SEO, es el trabajo continuo de hacer que un sitio sea comprensible, útil y técnicamente accesible. Comienza con páginas que explican claramente el negocio, sus servicios y su relevancia.",
+          "Las palabras clave ayudan a describir un tema, pero repetirlas no garantiza una posición. La visibilidad depende de muchos factores.",
+        ],
+      },
+      {
+        id: "metadatos",
+        title: "Los metadatos ofrecen contexto",
+        paragraphs: [
+          "El título identifica el tema de una página en pestañas y resultados de búsqueda. La descripción resume la página y puede aparecer en los resultados. Cada página importante necesita texto específico y preciso.",
+          "Los metadatos no compensan contenido escaso, confuso o desactualizado, y los buscadores pueden elegir otro fragmento.",
+        ],
+      },
+      {
+        id: "estructura",
+        title: "La estructura ayuda a personas y buscadores",
+        paragraphs: [
+          "Un encabezado principal claro, subtítulos descriptivos, párrafos útiles y enlaces internos facilitan la navegación. El texto alternativo debe explicar imágenes significativas para quienes no pueden verlas.",
+          "Los enlaces internos ayudan a pasar entre servicios y recursos relacionados y muestran cómo se conectan las páginas.",
+        ],
+      },
+      {
+        id: "tecnico",
+        title: "La limpieza técnica y la experiencia móvil importan",
+        paragraphs: [
+          "Enlaces rotos, títulos duplicados, controles inaccesibles, diseños móviles deficientes y direcciones confusas dificultan el uso y la comprensión.",
+          "El SEO técnico y la experiencia de usuario comparten una misma base: contenido accesible y una estructura confiable en todos los dispositivos.",
+        ],
+      },
+      {
+        id: "local",
+        title: "Mantenga precisa la relevancia del negocio",
+        paragraphs: [
+          "Para negocios que atienden lugares específicos, el contenido y los perfiles deben describir esas áreas con precisión. Nombres, direcciones, teléfonos, horarios y servicios deben mantenerse consistentes.",
+          "El SEO y los metadatos apoyan una base más clara, pero no garantizan posiciones. Requieren contenido útil, mantenimiento y expectativas realistas.",
+        ],
+      },
+    ],
+    nextSteps: [
+      "Revise el título y encabezado principal de cada página importante.",
+      "Confirme que el contenido responde preguntas reales de los visitantes.",
+      "Compruebe imágenes, enlaces internos y diseño móvil.",
+      "Trate los metadatos como parte de una revisión más amplia.",
     ],
   },
   "starting-a-business-organization-checklist": {
@@ -739,14 +693,6 @@ const officialTitles = {
     "Registre su empresa y encuentre recursos estatales",
   "Apply for an Employer Identification Number":
     "Solicite un Número de Identificación del Empleador",
-  "Your Medicare coverage options": "Sus opciones de cobertura de Medicare",
-  "Compare Medicare coverage options":
-    "Compare opciones de cobertura de Medicare",
-  "Medicare & You 2026 handbook": "Manual Medicare y Usted 2026",
-  "Medicare educational resources": "Recursos educativos de Medicare",
-  "Joining a Medicare health or drug plan":
-    "Inscripción en un plan de salud o medicamentos de Medicare",
-  "Special Enrollment Periods": "Períodos especiales de inscripción",
   "Tax calendars": "Calendarios tributarios",
 };
 

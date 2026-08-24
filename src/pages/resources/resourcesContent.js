@@ -3,7 +3,7 @@ export const resourcesUi = {
     metadata: {
       title: "Resources | Alchemize Business Services",
       description:
-        "Practical guides and checklists for tax preparation, Medicare education, business formation, operations, records, and administration.",
+        "Practical guides and checklists for tax preparation, web and digital solutions, business formation, operations, records, and administration.",
     },
     directory: {
       eyebrow: "Understand · Prepare · Organize · Act",
@@ -43,7 +43,7 @@ export const resourcesUi = {
     metadata: {
       title: "Recursos | Alchemize Business Services",
       description:
-        "Guías y listas prácticas sobre impuestos, educación de Medicare, formación empresarial, operaciones, registros y administración.",
+        "Guías y listas prácticas sobre impuestos, soluciones web y digitales, formación empresarial, operaciones, registros y administración.",
     },
     directory: {
       eyebrow: "Comprender · Preparar · Organizar · Actuar",
@@ -116,24 +116,25 @@ export const featuredContent = {
         },
       },
       {
-        slug: "medicare-basics-coverage-choices",
-        label: "Featured guide · Medicare & Insurance",
+        slug: "digital-presence-audit",
+        label: "Featured guide · Web & Digital Solutions",
         summary:
-          "A clear starting point for understanding Medicare Parts A, B, C, and D, how Original Medicare differs from Medicare Advantage, and what questions matter before comparing coverage.",
-        panelLabel: "Begin with the coverage picture",
+          "A practical review can reveal where a website, business profiles, contact paths, and digital systems are clear, inconsistent, outdated, or creating unnecessary friction.",
+        panelLabel: "Review the current digital picture",
         panelItems: [
-          ["Understand Parts", "See how the basic parts relate."],
-          ["Compare Coverage", "Review the two primary coverage paths."],
           [
-            "Review Enrollment",
-            "Confirm timing through current official guidance.",
+            "Clarify",
+            "Check whether services and next steps are easy to understand.",
+          ],
+          [
+            "Connect",
+            "Review contact paths, profiles, domain, and business email.",
+          ],
+          [
+            "Prioritize",
+            "Separate immediate corrections from larger improvements.",
           ],
         ],
-        utility: {
-          label: "View official source",
-          href: "https://www.medicare.gov/basics/get-started-with-medicare/get-more-coverage/your-coverage-options",
-          external: true,
-        },
       },
       {
         slug: "your-first-year-in-business",
@@ -192,27 +193,22 @@ export const featuredContent = {
         },
       },
       {
-        slug: "medicare-basics-coverage-choices",
-        label: "Guía destacada · Medicare y seguros",
+        slug: "digital-presence-audit",
+        label: "Guía destacada · Web y soluciones digitales",
         summary:
-          "Un punto de partida claro para comprender las Partes A, B, C y D, las diferencias entre Medicare Original y Medicare Advantage y las preguntas importantes al comparar cobertura.",
-        panelLabel: "Comience con la visión de cobertura",
+          "Una revisión práctica puede mostrar dónde el sitio, los perfiles, las vías de contacto y los sistemas digitales son claros, inconsistentes o desactualizados.",
+        panelLabel: "Revise la presencia digital actual",
         panelItems: [
           [
-            "Comprender las partes",
-            "Vea cómo se relacionan las partes básicas.",
+            "Aclarar",
+            "Compruebe si los servicios y próximos pasos se entienden.",
           ],
-          ["Comparar cobertura", "Revise los dos caminos principales."],
           [
-            "Revisar la inscripción",
-            "Confirme las fechas en fuentes oficiales vigentes.",
+            "Conectar",
+            "Revise contactos, perfiles, dominio y correo empresarial.",
           ],
+          ["Priorizar", "Separe correcciones inmediatas de mejoras mayores."],
         ],
-        utility: {
-          label: "Ver la fuente oficial",
-          href: "https://www.medicare.gov/basics/get-started-with-medicare/get-more-coverage/your-coverage-options",
-          external: true,
-        },
       },
       {
         slug: "your-first-year-in-business",

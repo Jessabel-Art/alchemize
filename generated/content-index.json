@@ -15,17 +15,24 @@
   },
   {
     "type": "resource",
-    "title": "Understanding Insurance Coverage",
-    "path": "/resources/understanding-insurance-coverage/",
-    "description": "A plain-language overview of premiums, deductibles, coverage limits, and policy basics.",
-    "category": "Insurance"
+    "title": "What to Expect During a Professional Website Design Process",
+    "path": "/resources/professional-website-design-process/",
+    "description": "A practical overview of how goals, content, design, development, review, and launch come together in a professional website project.",
+    "category": "Web & Digital Solutions"
   },
   {
     "type": "resource",
-    "title": "Questions to Ask Before Choosing Insurance",
-    "path": "/resources/questions-to-ask-before-choosing-insurance/",
-    "description": "Questions for evaluating policy fit, obligations, exclusions, and personal risk before choosing coverage.",
-    "category": "Insurance"
+    "title": "What a Digital Presence Audit Can Reveal About Your Business",
+    "path": "/resources/digital-presence-audit/",
+    "description": "A practical review of how a business appears and functions online before committing to a redesign or new digital tools.",
+    "category": "Web & Digital Solutions"
+  },
+  {
+    "type": "resource",
+    "title": "Why SEO and Website Metadata Matter for Your Online Presence",
+    "path": "/resources/seo-and-website-metadata/",
+    "description": "A plain-language guide to page titles, descriptions, headings, content, and other signals that help people and search engines understand a website.",
+    "category": "Web & Digital Solutions"
   },
   {
     "type": "resource",

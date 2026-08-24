@@ -187,16 +187,7 @@
       "How does the insurance process work?",
       "Can Alchemize help me understand different coverage options?"
     ],
-    "resources": [
-      [
-        "Understanding Insurance Coverage",
-        "/resources/understanding-insurance-coverage/"
-      ],
-      [
-        "Questions Before Choosing Insurance",
-        "/resources/questions-to-ask-before-choosing-insurance/"
-      ]
-    ],
+    "resources": [],
     "related": [
       ["Tax Preparation", "/services/individuals/tax-preparation/"],
       [
@@ -816,14 +807,6 @@
       "Can Alchemize help me understand different coverage options?"
     ],
     "resources": [
-      [
-        "Understanding Insurance Coverage",
-        "/resources/understanding-insurance-coverage/"
-      ],
-      [
-        "Questions Before Choosing Insurance",
-        "/resources/questions-to-ask-before-choosing-insurance/"
-      ],
       [
         "Business Records Organization",
         "/resources/business-records-organization/"
