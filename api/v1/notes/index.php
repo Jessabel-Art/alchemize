@@ -34,21 +34,19 @@ try {
     $database = alchemize_database($config['database']);
     $repository = new AlchemizeNoteRepository($database);
 
-    $user = alchemize_session_user();
-    if (!is_array($user) || empty($user['user_id'])) {
-        throw new AlchemizeRequestException(401, 'UNAUTHORIZED', 'Authentication required.');
-    }
-
     $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
     $path = trim($_SERVER['PATH_INFO'] ?? ($_SERVER['REQUEST_URI'] ?? ''), '/');
     $parts = array_values(array_filter(explode('/', $path), static fn (string $value): bool => $value !== ''));
 
     if ($method === 'GET' && count($parts) === 2 && in_array($parts[0], ['lead','client','engagement'], true)) {
+        alchemize_require_read_only_or_higher();
         $notes = $repository->listByEntity($parts[0], $parts[1]);
         alchemize_json_response(['data' => $notes], 200);
     }
 
     if ($method === 'POST' && $parts === []) {
+        $user = alchemize_require_staff_or_admin();
+        alchemize_require_csrf();
         $payload = alchemize_read_json_request();
         $entityType = trim((string) ($payload['entity_type'] ?? ''));
         $entityId = trim((string) ($payload['entity_id'] ?? ''));

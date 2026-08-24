@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { adminStore } from "../../../js/data/admin-store.js";
+import { portalAdmin } from "../../services/admin-api.js";
 import "./admin.css";
 
 const activityTone = {
@@ -47,7 +49,8 @@ const isWithinDays = (value, limitDays) => {
 };
 
 const getClientName = (snapshot, clientId) =>
-  snapshot.clients.find((client) => client.id === clientId)?.displayName || "Client";
+  snapshot.clients.find((client) => client.id === clientId)?.displayName ||
+  "Client";
 
 const getLeadStatusPriority = (status) => {
   const order = {
@@ -65,9 +68,57 @@ const getLeadStatusPriority = (status) => {
 function AdminDashboardPage() {
   const snapshot = adminStore.getSnapshot();
   const needs = adminStore.getNeedsAttention();
+  const [portalAttention, setPortalAttention] = useState({
+    items: [],
+    loading: true,
+    error: "",
+  });
+  const [portalReplies, setPortalReplies] = useState({});
+  const loadPortalAttention = async () => {
+    try {
+      const data = await portalAdmin.attention();
+      setPortalAttention({
+        items: data?.items || [],
+        loading: false,
+        error: "",
+      });
+    } catch (error) {
+      setPortalAttention({ items: [], loading: false, error: error.message });
+    }
+  };
+  useEffect(() => {
+    loadPortalAttention();
+  }, []);
+  const resolvePortalItem = async (item, decision) => {
+    const type = {
+      task_action: "task",
+      document_submission: "document",
+      appointment_request: "appointment",
+      profile_change: "profile",
+      message: "message",
+      access_request: "access",
+    }[item.kind];
+    if (!type) return;
+    try {
+      await portalAdmin.resolve(type, item.id, decision);
+      await loadPortalAttention();
+    } catch (error) {
+      setPortalAttention((current) => ({ ...current, error: error.message }));
+    }
+  };
+  const replyToPortalMessage = async (item) => {
+    try {
+      await portalAdmin.reply(item.id, portalReplies[item.id] || "");
+      setPortalReplies((current) => ({ ...current, [item.id]: "" }));
+      await loadPortalAttention();
+    } catch (error) {
+      setPortalAttention((current) => ({ ...current, error: error.message }));
+    }
+  };
 
   const openLeadCount = snapshot.leads.filter(
-    (lead) => !["Converted", "Closed / Not Moving Forward"].includes(lead.status),
+    (lead) =>
+      !["Converted", "Closed / Not Moving Forward"].includes(lead.status),
   ).length;
 
   const attentionItems = [
@@ -121,7 +172,9 @@ function AdminDashboardPage() {
         to: "/admin/billing",
       })),
     ...snapshot.clients
-      .filter((client) => ["Onboarding", "Waiting on Client", "Paused"].includes(client.status))
+      .filter((client) =>
+        ["Onboarding", "Waiting on Client", "Paused"].includes(client.status),
+      )
       .slice(0, 2)
       .map((client) => ({
         key: `client-${client.id}`,
@@ -135,16 +188,22 @@ function AdminDashboardPage() {
       })),
   ]
     .sort((left, right) => {
-      const leftValue = left.due ? new Date(left.due).getTime() : Number.MAX_SAFE_INTEGER;
-      const rightValue = right.due ? new Date(right.due).getTime() : Number.MAX_SAFE_INTEGER;
+      const leftValue = left.due
+        ? new Date(left.due).getTime()
+        : Number.MAX_SAFE_INTEGER;
+      const rightValue = right.due
+        ? new Date(right.due).getTime()
+        : Number.MAX_SAFE_INTEGER;
       const delta = leftValue - rightValue;
       if (delta !== 0) return delta;
-      return getLeadStatusPriority(left.status) - getLeadStatusPriority(right.status);
+      return (
+        getLeadStatusPriority(left.status) - getLeadStatusPriority(right.status)
+      );
     })
     .slice(0, 8);
 
-  const needsAttentionCount = new Set(
-    [
+  const needsAttentionCount =
+    new Set([
       ...needs.leads.map((lead) => `lead:${lead.id}`),
       ...needs.tasks.map((task) => `task:${task.id}`),
       ...needs.documents.map((document) => `document:${document.id}`),
@@ -152,10 +211,11 @@ function AdminDashboardPage() {
         .filter((invoice) => ["Open", "Past Due"].includes(invoice.status))
         .map((invoice) => `invoice:${invoice.id}`),
       ...snapshot.clients
-        .filter((client) => ["Onboarding", "Waiting on Client", "Paused"].includes(client.status))
+        .filter((client) =>
+          ["Onboarding", "Waiting on Client", "Paused"].includes(client.status),
+        )
         .map((client) => `client:${client.id}`),
-    ],
-  ).size;
+    ]).size + portalAttention.items.length;
 
   const openInvoiceRows = snapshot.invoices.filter(
     (invoice) => !["Paid", "Cancelled"].includes(invoice.status),
@@ -171,27 +231,50 @@ function AdminDashboardPage() {
         !["Completed", "Cancelled"].includes(appointment.status) &&
         isWithinDays(appointment.date, 7),
     )
-    .sort((left, right) => new Date(left.date).getTime() - new Date(right.date).getTime())
+    .sort(
+      (left, right) =>
+        new Date(left.date).getTime() - new Date(right.date).getTime(),
+    )
     .slice(0, 5);
 
   const leadQueue = snapshot.leads
-    .filter((lead) => ["New", "Contacted", "Consultation Scheduled"].includes(lead.status))
-    .sort((left, right) => new Date(right.receivedAt || 0).getTime() - new Date(left.receivedAt || 0).getTime())
+    .filter((lead) =>
+      ["New", "Contacted", "Consultation Scheduled"].includes(lead.status),
+    )
+    .sort(
+      (left, right) =>
+        new Date(right.receivedAt || 0).getTime() -
+        new Date(left.receivedAt || 0).getTime(),
+    )
     .slice(0, 5);
 
   const activeServiceWork = snapshot.engagements
-    .filter((engagement) => !["Completed", "Archived"].includes(engagement.status))
-    .sort((left, right) => new Date(left.targetDate || 0).getTime() - new Date(right.targetDate || 0).getTime())
+    .filter(
+      (engagement) => !["Completed", "Archived"].includes(engagement.status),
+    )
+    .sort(
+      (left, right) =>
+        new Date(left.targetDate || 0).getTime() -
+        new Date(right.targetDate || 0).getTime(),
+    )
     .slice(0, 5);
 
   const documentActions = snapshot.documents
     .filter((document) => !["Archive"].includes(document.status))
-    .sort((left, right) => new Date(right.requestedAt || right.receivedAt || 0).getTime() - new Date(left.requestedAt || left.receivedAt || 0).getTime())
+    .sort(
+      (left, right) =>
+        new Date(right.requestedAt || right.receivedAt || 0).getTime() -
+        new Date(left.requestedAt || left.receivedAt || 0).getTime(),
+    )
     .slice(0, 5);
 
   const billingWatch = openInvoiceRows
     .filter((invoice) => ["Open", "Past Due"].includes(invoice.status))
-    .sort((left, right) => new Date(left.dueAt || 0).getTime() - new Date(right.dueAt || 0).getTime())
+    .sort(
+      (left, right) =>
+        new Date(left.dueAt || 0).getTime() -
+        new Date(right.dueAt || 0).getTime(),
+    )
     .slice(0, 5);
 
   const recentActivity = snapshot.activity.slice(0, 5);
@@ -211,7 +294,8 @@ function AdminDashboardPage() {
     },
     {
       label: "Active clients",
-      value: snapshot.clients.filter((client) => client.status === "Active").length,
+      value: snapshot.clients.filter((client) => client.status === "Active")
+        .length,
       detail: "Current client relationships",
       to: "/admin/clients",
     },
@@ -237,14 +321,22 @@ function AdminDashboardPage() {
           <h1>Operations dashboard</h1>
         </div>
         <p>
-          A working view of the current operating queue: incoming leads, client needs,
-          due work, appointments, and the items that require owner attention this day.
+          A working view of the current operating queue: incoming leads, client
+          needs, due work, appointments, and the items that require owner
+          attention this day.
         </p>
       </header>
 
-      <section className="admin-metrics dashboard-metrics" aria-label="Summary metrics">
+      <section
+        className="admin-metrics dashboard-metrics"
+        aria-label="Summary metrics"
+      >
         {dashboardMetrics.map((metric) => (
-          <Link key={metric.label} to={metric.to} className="admin-metric-card metric-link-card">
+          <Link
+            key={metric.label}
+            to={metric.to}
+            className="admin-metric-card metric-link-card"
+          >
             <span>{metric.label}</span>
             <strong>{metric.value}</strong>
             <small>{metric.detail}</small>
@@ -254,10 +346,130 @@ function AdminDashboardPage() {
 
       <section className="dashboard-operations-grid">
         <div className="dashboard-main-column">
+          <article className="dashboard-panel portal-client-attention">
+            <div className="panel-heading">
+              <h2>Client Portal activity</h2>
+            </div>
+            {portalAttention.error ? (
+              <p className="dashboard-empty-state" role="alert">
+                {portalAttention.error}
+              </p>
+            ) : null}
+            {portalAttention.loading ? (
+              <div className="dashboard-empty-state">
+                Loading client actions…
+              </div>
+            ) : null}
+            {!portalAttention.loading && portalAttention.items.length ? (
+              <ul className="attention-list">
+                {portalAttention.items.map((item) => (
+                  <li
+                    key={`${item.kind}-${item.id}`}
+                    className="attention-item"
+                  >
+                    <div className="attention-item-copy">
+                      <div className="attention-item-topline">
+                        <span className="attention-kind">
+                          {item.kind.replaceAll("_", " ")}
+                        </span>
+                        <span className="status-pill info">{item.status}</span>
+                      </div>
+                      <strong>{item.title}</strong>
+                      <small>{item.client_name}</small>
+                      {item.detail ? <p>{item.detail}</p> : null}
+                    </div>
+                    <div className="portal-admin-actions">
+                      {item.kind === "document_submission" ? (
+                        <a href={portalAdmin.documentDownloadUrl(item.id)}>
+                          Download securely
+                        </a>
+                      ) : null}
+                      {item.kind === "appointment_request" ||
+                      item.kind === "profile_change" ||
+                      item.kind === "access_request" ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => resolvePortalItem(item, "approved")}
+                          >
+                            Approve
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => resolvePortalItem(item, "rejected")}
+                          >
+                            Reject
+                          </button>
+                        </>
+                      ) : null}
+                      {item.kind === "document_submission" ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => resolvePortalItem(item, "accept")}
+                          >
+                            Accept
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              resolvePortalItem(item, "replacement")
+                            }
+                          >
+                            Request replacement
+                          </button>
+                        </>
+                      ) : null}
+                      {item.kind === "task_action" ||
+                      item.kind === "message" ? (
+                        <button
+                          type="button"
+                          onClick={() => resolvePortalItem(item, "reviewed")}
+                        >
+                          Mark reviewed
+                        </button>
+                      ) : null}
+                    </div>
+                    {item.kind === "message" ? (
+                      <div className="portal-admin-reply">
+                        <label htmlFor={`reply-${item.id}`}>
+                          Reply to client
+                        </label>
+                        <textarea
+                          id={`reply-${item.id}`}
+                          maxLength={5000}
+                          value={portalReplies[item.id] || ""}
+                          onChange={(event) =>
+                            setPortalReplies((current) => ({
+                              ...current,
+                              [item.id]: event.target.value,
+                            }))
+                          }
+                        />
+                        <button
+                          type="button"
+                          onClick={() => replyToPortalMessage(item)}
+                        >
+                          Send reply
+                        </button>
+                      </div>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            {!portalAttention.loading && !portalAttention.items.length ? (
+              <div className="dashboard-empty-state">
+                No client portal actions need review.
+              </div>
+            ) : null}
+          </article>
           <article id="attention" className="dashboard-panel">
             <div className="panel-heading">
               <h2>Today / Needs your attention</h2>
-              <Link to="/admin/leads" className="dashboard-view-link">View all</Link>
+              <Link to="/admin/leads" className="dashboard-view-link">
+                View all
+              </Link>
             </div>
             {attentionItems.length ? (
               <ul className="attention-list">
@@ -266,7 +478,9 @@ function AdminDashboardPage() {
                     <div className="attention-item-copy">
                       <div className="attention-item-topline">
                         <span className="attention-kind">{item.type}</span>
-                        <span className={`status-pill ${item.status === "Past Due" || item.reason?.includes("Past Due") ? "warning" : "info"}`}>
+                        <span
+                          className={`status-pill ${item.status === "Past Due" || item.reason?.includes("Past Due") ? "warning" : "info"}`}
+                        >
                           {item.status || "Active"}
                         </span>
                       </div>
@@ -274,15 +488,21 @@ function AdminDashboardPage() {
                       <small>{item.summary}</small>
                       <div className="attention-meta-row">
                         <span>{item.reason}</span>
-                        <span>{item.due ? formatDate(item.due) : "No date"}</span>
+                        <span>
+                          {item.due ? formatDate(item.due) : "No date"}
+                        </span>
                       </div>
                     </div>
-                    <Link to={item.to} className="dashboard-action-link">View</Link>
+                    <Link to={item.to} className="dashboard-action-link">
+                      View
+                    </Link>
                   </li>
                 ))}
               </ul>
             ) : (
-              <div className="dashboard-empty-state">Nothing currently requires immediate action.</div>
+              <div className="dashboard-empty-state">
+                Nothing currently requires immediate action.
+              </div>
             )}
           </article>
         </div>
@@ -291,29 +511,44 @@ function AdminDashboardPage() {
           <article className="dashboard-panel">
             <div className="panel-heading">
               <h2>Upcoming schedule</h2>
-              <Link to="/admin/appointments" className="dashboard-view-link">View calendar</Link>
+              <Link to="/admin/appointments" className="dashboard-view-link">
+                View calendar
+              </Link>
             </div>
             {upcomingAppointments.length ? (
               <ul className="schedule-list">
                 {upcomingAppointments.map((appointment) => (
                   <li key={appointment.id} className="schedule-item">
                     <div className="schedule-date-block">
-                      <span>{new Date(appointment.date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>
+                      <span>
+                        {new Date(appointment.date).toLocaleDateString(
+                          undefined,
+                          { month: "short", day: "numeric" },
+                        )}
+                      </span>
                     </div>
                     <div className="schedule-copy">
                       <strong>{appointment.title}</strong>
                       <small>{appointment.time}</small>
-                      <small>{getClientName(snapshot, appointment.clientId)}</small>
-                      <small>{appointment.type} · {appointment.serviceName}</small>
+                      <small>
+                        {getClientName(snapshot, appointment.clientId)}
+                      </small>
+                      <small>
+                        {appointment.type} · {appointment.serviceName}
+                      </small>
                     </div>
-                    <span className={`status-pill ${appointment.status === "Confirmed" ? "success" : "info"}`}>
+                    <span
+                      className={`status-pill ${appointment.status === "Confirmed" ? "success" : "info"}`}
+                    >
                       {appointment.status}
                     </span>
                   </li>
                 ))}
               </ul>
             ) : (
-              <div className="dashboard-empty-state">No appointments scheduled in the next 7 days.</div>
+              <div className="dashboard-empty-state">
+                No appointments scheduled in the next 7 days.
+              </div>
             )}
           </article>
         </div>
@@ -323,7 +558,9 @@ function AdminDashboardPage() {
         <article className="dashboard-panel">
           <div className="panel-heading">
             <h2>Leads awaiting response</h2>
-            <Link to="/admin/leads" className="dashboard-view-link">View all</Link>
+            <Link to="/admin/leads" className="dashboard-view-link">
+              View all
+            </Link>
           </div>
           {leadQueue.length ? (
             <ul className="mini-list">
@@ -331,7 +568,9 @@ function AdminDashboardPage() {
                 <li key={lead.id}>
                   <div>
                     <strong>{lead.name}</strong>
-                    <small>{lead.audience} · {lead.serviceInterest}</small>
+                    <small>
+                      {lead.audience} · {lead.serviceInterest}
+                    </small>
                   </div>
                   <div className="mini-meta">
                     <span>{formatDate(lead.receivedAt)}</span>
@@ -341,14 +580,18 @@ function AdminDashboardPage() {
               ))}
             </ul>
           ) : (
-            <div className="dashboard-empty-state">No leads are currently waiting for follow-up.</div>
+            <div className="dashboard-empty-state">
+              No leads are currently waiting for follow-up.
+            </div>
           )}
         </article>
 
         <article className="dashboard-panel">
           <div className="panel-heading">
             <h2>Active service work</h2>
-            <Link to="/admin/services" className="dashboard-view-link">View all</Link>
+            <Link to="/admin/services" className="dashboard-view-link">
+              View all
+            </Link>
           </div>
           {activeServiceWork.length ? (
             <ul className="mini-list">
@@ -356,17 +599,25 @@ function AdminDashboardPage() {
                 <li key={engagement.id}>
                   <div>
                     <strong>{engagement.serviceName}</strong>
-                    <small>{getClientName(snapshot, engagement.clientId)}</small>
+                    <small>
+                      {getClientName(snapshot, engagement.clientId)}
+                    </small>
                   </div>
                   <div className="mini-meta">
                     <span>{engagement.status}</span>
-                    <span>{engagement.targetDate ? formatDate(engagement.targetDate) : "No target"}</span>
+                    <span>
+                      {engagement.targetDate
+                        ? formatDate(engagement.targetDate)
+                        : "No target"}
+                    </span>
                   </div>
                 </li>
               ))}
             </ul>
           ) : (
-            <div className="dashboard-empty-state">No active service work is currently tracked.</div>
+            <div className="dashboard-empty-state">
+              No active service work is currently tracked.
+            </div>
           )}
         </article>
       </section>
@@ -375,7 +626,9 @@ function AdminDashboardPage() {
         <article className="dashboard-panel">
           <div className="panel-heading">
             <h2>Documents requiring action</h2>
-            <Link to="/admin/documents" className="dashboard-view-link">View all</Link>
+            <Link to="/admin/documents" className="dashboard-view-link">
+              View all
+            </Link>
           </div>
           {documentActions.length ? (
             <ul className="mini-list">
@@ -383,24 +636,35 @@ function AdminDashboardPage() {
                 <li key={document.id}>
                   <div>
                     <strong>{document.name}</strong>
-                    <small>{getClientName(snapshot, document.clientId)} · {document.serviceName}</small>
+                    <small>
+                      {getClientName(snapshot, document.clientId)} ·{" "}
+                      {document.serviceName}
+                    </small>
                   </div>
                   <div className="mini-meta">
                     <span>{document.status}</span>
-                    <span>{document.requestedAt ? formatDate(document.requestedAt) : "No date"}</span>
+                    <span>
+                      {document.requestedAt
+                        ? formatDate(document.requestedAt)
+                        : "No date"}
+                    </span>
                   </div>
                 </li>
               ))}
             </ul>
           ) : (
-            <div className="dashboard-empty-state">No documents currently require action.</div>
+            <div className="dashboard-empty-state">
+              No documents currently require action.
+            </div>
           )}
         </article>
 
         <article className="dashboard-panel">
           <div className="panel-heading">
             <h2>Billing watch</h2>
-            <Link to="/admin/billing" className="dashboard-view-link">View billing</Link>
+            <Link to="/admin/billing" className="dashboard-view-link">
+              View billing
+            </Link>
           </div>
           <div className="billing-summary-row">
             <div>
@@ -409,7 +673,16 @@ function AdminDashboardPage() {
             </div>
             <div>
               <span className="dashboard-kicker">Past due</span>
-              <strong>{formatCurrency(billingWatch.filter((invoice) => invoice.status === "Past Due").reduce((total, invoice) => total + Number(invoice.amount || 0), 0))}</strong>
+              <strong>
+                {formatCurrency(
+                  billingWatch
+                    .filter((invoice) => invoice.status === "Past Due")
+                    .reduce(
+                      (total, invoice) => total + Number(invoice.amount || 0),
+                      0,
+                    ),
+                )}
+              </strong>
             </div>
           </div>
           {billingWatch.length ? (
@@ -437,26 +710,33 @@ function AdminDashboardPage() {
         <article className="dashboard-panel">
           <div className="panel-heading">
             <h2>Recent activity</h2>
-            <Link to="/admin/reports" className="dashboard-view-link">View activity</Link>
+            <Link to="/admin/reports" className="dashboard-view-link">
+              View activity
+            </Link>
           </div>
           {recentActivity.length ? (
             <ul className="activity-list">
               {recentActivity.map((entry) => (
                 <li key={entry.id}>
-                  <span className={`status-pill ${activityTone[entry.type] || "info"}`}>
+                  <span
+                    className={`status-pill ${activityTone[entry.type] || "info"}`}
+                  >
                     {entry.type || "Update"}
                   </span>
                   <div>
                     <strong>{entry.summary || entry.eventType}</strong>
                     <small>
-                      {entry.actorName || "System"} · {formatDate(entry.timestamp)}
+                      {entry.actorName || "System"} ·{" "}
+                      {formatDate(entry.timestamp)}
                     </small>
                   </div>
                 </li>
               ))}
             </ul>
           ) : (
-            <div className="dashboard-empty-state">No recent operational activity.</div>
+            <div className="dashboard-empty-state">
+              No recent operational activity.
+            </div>
           )}
         </article>
 
@@ -465,12 +745,24 @@ function AdminDashboardPage() {
             <h2>Quick actions</h2>
           </div>
           <div className="quick-actions-grid">
-            <Link to="/admin/leads" className="quick-action-link">Open leads</Link>
-            <Link to="/admin/clients" className="quick-action-link">Open clients</Link>
-            <Link to="/admin/appointments" className="quick-action-link">Appointments</Link>
-            <Link to="/admin/billing" className="quick-action-link">Billing</Link>
-            <Link to="/admin/documents" className="quick-action-link">Documents</Link>
-            <Link to="/admin/services" className="quick-action-link">Service work</Link>
+            <Link to="/admin/leads" className="quick-action-link">
+              Open leads
+            </Link>
+            <Link to="/admin/clients" className="quick-action-link">
+              Open clients
+            </Link>
+            <Link to="/admin/appointments" className="quick-action-link">
+              Appointments
+            </Link>
+            <Link to="/admin/billing" className="quick-action-link">
+              Billing
+            </Link>
+            <Link to="/admin/documents" className="quick-action-link">
+              Documents
+            </Link>
+            <Link to="/admin/services" className="quick-action-link">
+              Service work
+            </Link>
           </div>
         </aside>
       </section>

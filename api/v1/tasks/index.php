@@ -34,20 +34,18 @@ try {
     $database = alchemize_database($config['database']);
     $repository = new AlchemizeTaskRepository($database);
 
-    $user = alchemize_session_user();
-    if (!is_array($user) || empty($user['user_id'])) {
-        throw new AlchemizeRequestException(401, 'UNAUTHORIZED', 'Authentication required.');
-    }
-
     $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
     $path = trim($_SERVER['PATH_INFO'] ?? ($_SERVER['REQUEST_URI'] ?? ''), '/');
     $parts = array_values(array_filter(explode('/', $path), static fn (string $value): bool => $value !== ''));
 
     if ($method === 'GET' && $parts === []) {
+        alchemize_require_read_only_or_higher();
         alchemize_json_response(['data' => $repository->listAll()], 200);
     }
 
     if ($method === 'POST' && $parts === []) {
+        alchemize_require_staff_or_admin();
+        alchemize_require_csrf();
         $payload = alchemize_read_json_request();
         $title = trim((string) ($payload['title'] ?? ''));
         if ($title === '') {
@@ -65,6 +63,7 @@ try {
             'priority' => in_array((string) ($payload['priority'] ?? 'normal'), ['low','normal','high','urgent'], true) ? (string) $payload['priority'] : 'normal',
             'due_date' => trim((string) ($payload['due_date'] ?? '')) !== '' ? trim((string) ($payload['due_date']) ) : null,
             'status' => in_array((string) ($payload['status'] ?? 'not_started'), ['not_started','in_progress','waiting_on_client','waiting_on_alchemize','completed','archived'], true) ? (string) $payload['status'] : 'not_started',
+            'visibility' => in_array((string) ($payload['visibility'] ?? 'admin'), ['admin','client','both'], true) ? (string) $payload['visibility'] : 'admin',
             'dependency_task_id' => isset($payload['dependency_task_id']) && $payload['dependency_task_id'] !== '' ? (int) $payload['dependency_task_id'] : null,
             'internal_notes' => trim((string) ($payload['internal_notes'] ?? '')) !== '' ? trim((string) ($payload['internal_notes'] ?? '')) : null,
         ]);

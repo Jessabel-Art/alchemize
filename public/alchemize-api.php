@@ -51,6 +51,8 @@ $allowedRoutes = [
     'invoices',
     'payments',
     'notes',
+    'portal',
+    'portal-admin',
 ];
 
 $route = trim((string) ($_GET['route'] ?? ''));

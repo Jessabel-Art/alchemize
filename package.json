@@ -42,6 +42,9 @@
     "php:lint": "node scripts/php-lint.js",
     "php:test": "php tests/php/run.php",
     "test:contact": "node --test tests/contact-form.test.js",
+    "test:communication": "node --test tests/communication-security.test.js",
+    "test:intake": "node --test tests/intake-security.test.js",
+    "test:portal": "node --test tests/portal-security.test.js",
     "migrations:check": "node scripts/check-migrations.js",
     "predeploy": "node scripts/predeploy.js",
     "check": "npm run lint && npm run format:check && npm run validate:html && npm run routes:check && npm run metadata:check && npm run check:links && npm run check:assets && npm run check:security && npm run build"

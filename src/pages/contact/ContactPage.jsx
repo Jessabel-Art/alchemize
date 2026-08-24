@@ -9,11 +9,7 @@ import { contactContent } from "./contactContent.js";
 import "./contact.css";
 import "./contact-integration.css";
 
-const individualValues = [
-  "individual-tax",
-  "individual-insurance",
-  "individual-notary",
-];
+const individualValues = ["individual-tax", "individual-notary"];
 const businessValues = [
   "business-advisory",
   "business-operations",
@@ -65,6 +61,7 @@ function ContactPage() {
       >
         <section className="contact-layout">
           <form className="contact-form" data-contact-form noValidate>
+            <input type="hidden" name="languagePreference" value={language} />
             <header>
               <span className="section-kicker">{content.form.kicker}</span>
               <h2>{content.form.title}</h2>

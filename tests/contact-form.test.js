@@ -1,13 +1,11 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import test from "node:test";
 import {
   canonicalServiceKeys,
   normalizeServiceKey,
 } from "../js/contact-form.js";
-import {
-  businessContact,
-  contactRouting,
-} from "../src/data/contactInfo.js";
+import { businessContact, contactRouting } from "../src/data/contactInfo.js";
 import { getSitemapRoutes } from "../scripts/lib/react-routes.js";
 
 test("exposes exactly the nine canonical service keys", () => {
@@ -64,4 +62,17 @@ test("uses the canonical React sitemap routes for the migrated app", () => {
   assert.ok(routes.includes("/contact"));
   assert.ok(routes.includes("/faq"));
   assert.ok(routes.length >= 18);
+});
+
+test("submits only to the persisted lead API without creating a local demo lead", () => {
+  const source = fs.readFileSync(
+    new URL("../js/contact-form.js", import.meta.url),
+    "utf8",
+  );
+  assert.match(source, /\/alchemize-api\.php\?route=leads/);
+  assert.doesNotMatch(
+    source,
+    /adminStore|createLeadFromContact|alchemize:lead-created/,
+  );
+  assert.match(source, /language_preference/);
 });

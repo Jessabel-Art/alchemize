@@ -72,9 +72,9 @@ try {
         alchemize_json_response(['data' => $leadService->create($validation['data'])], 201);
     }
 
-    if (!is_array($sessionUser) || empty($sessionUser['user_id'])) {
-        throw new AlchemizeRequestException(401, 'UNAUTHORIZED', 'Authentication required.');
-    }
+    $sessionUser = $method === 'GET'
+        ? alchemize_require_read_only_or_higher()
+        : alchemize_require_staff_or_admin();
 
     if ($method === 'GET' && $parts === []) {
         alchemize_json_response(['data' => $leadAdminService->listLeads()], 200);

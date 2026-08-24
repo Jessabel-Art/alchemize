@@ -4,7 +4,6 @@ import {
   FileCheck2,
   Landmark,
   MonitorCog,
-  ShieldCheck,
   Workflow,
   ClipboardCheck,
 } from "lucide-react";
@@ -97,108 +96,16 @@ const individual = [
       ],
     ],
     related: [
-      ["Insurance Solutions", "/services/individuals/insurance"],
       [
         "Notary & Document Services",
         "/services/individuals/notary-document-services",
+      ],
+      [
+        "Business Advisory & Optimization",
+        "/services/businesses/advisory-optimization",
       ],
     ],
     cta: "Ready to organize the filing process?",
-  },
-  {
-    audience: "individuals",
-    audienceLabel: "Individual Services",
-    slug: "insurance",
-    serviceKey: "individual-insurance",
-    title: "Insurance Solutions",
-    Icon: ShieldCheck,
-    statement:
-      "Understand the protection decision before choosing the product.",
-    hero: "Understand the protection decision before choosing the product.",
-    overview:
-      "Insurance decisions are easier to evaluate when the need, coverage structure, cost, exclusions, and available options are understood together.",
-    capabilities: [
-      "Life insurance",
-      "Health insurance",
-      "Accident insurance",
-      "Coverage organization",
-    ],
-    for: [
-      "Families with new protection responsibilities",
-      "People evaluating existing coverage",
-      "Clients facing employment or benefit changes",
-      "People approaching Medicare eligibility who need education",
-    ],
-    situations: [
-      "A new family or income responsibility changes protection needs",
-      "Existing coverage is difficult to understand",
-      "Premium, deductible, or beneficiary questions need clarification",
-      "Medicare coverage paths need educational review",
-    ],
-    helps: [
-      "Coverage-needs discussion",
-      "Existing coverage review",
-      "Insurance terminology explanation",
-      "Life insurance options",
-      "Health insurance options",
-      "Accident coverage",
-      "Beneficiary and coverage-document organization",
-      "Enrollment or application support where authorized",
-    ],
-    process: [
-      [
-        "Identify",
-        "Clarify the people, responsibilities, and financial exposure the coverage should address.",
-      ],
-      [
-        "Organize",
-        "Bring current coverage, household context, goals, and questions into one picture.",
-      ],
-      [
-        "Explore",
-        "Review available product structures and terminology where licensed and appointed.",
-      ],
-      [
-        "Decide",
-        "Compare the relevant factors and determine the appropriate next step without pressure.",
-      ],
-    ],
-    prepare: [
-      "Current policy information",
-      "Household and employment context",
-      "Protection goals",
-      "Budget considerations",
-      "Preferred providers and prescriptions where relevant",
-      "Upcoming life or coverage changes",
-      "Questions about terms or exclusions",
-    ],
-    boundary:
-      "Coverage availability, pricing, eligibility, underwriting, plan availability, carrier participation, and enrollment rules depend on the product, carrier, jurisdiction, appointments, and client circumstances. Alchemize is not affiliated with or endorsed by the U.S. government or Medicare.",
-    status: {
-      label: "Medicare",
-      value: serviceStatuses.medicare,
-      text: "Medicare education is available through the resource library. Plan-comparison and enrollment assistance will be offered only after required certification and carrier or agency authorization are active.",
-    },
-    checklist: [
-      "Insurance Consultation Checklist",
-      "/assets/downloads/insurance-consultation-checklist.pdf",
-    ],
-    resources: [
-      ["Medicare Basics", "/resources/medicare-basics-coverage-choices"],
-      ["Medicare Enrollment Periods", "/resources/medicare-enrollment-periods"],
-      [
-        "Understanding Insurance Coverage",
-        "/resources/understanding-insurance-coverage",
-      ],
-    ],
-    related: [
-      [
-        "Notary & Document Services",
-        "/services/individuals/notary-document-services",
-      ],
-      ["Tax Preparation", "/services/individuals/tax-preparation"],
-    ],
-    cta: "Ready to understand the coverage decision?",
   },
   {
     audience: "individuals",
@@ -793,7 +700,6 @@ export const legacyServiceRoutes = {
   "administration-operations": "/services/businesses/operations-implementation",
   "business-tax": "/services/businesses/financial-tax-support",
   "business-advisory": "/services/businesses/advisory-optimization",
-  "business-insurance": "/services/individuals/insurance",
   "notary-administrative-services":
     "/services/individuals/notary-document-services",
 };

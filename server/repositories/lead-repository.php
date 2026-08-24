@@ -36,9 +36,9 @@ final class AlchemizeLeadRepository
     {
         $statement = $this->database->prepare(
             'INSERT INTO leads
-                (public_id, full_name, email, phone, audience, service_key, message, preferred_contact, status, source)
+                (public_id, full_name, email, phone, audience, service_key, message, preferred_contact, language_preference, status, source)
              VALUES
-                (:public_id, :full_name, :email, :phone, :audience, :service_key, :message, :preferred_contact, :status, :source)',
+                (:public_id, :full_name, :email, :phone, :audience, :service_key, :message, :preferred_contact, :language_preference, :status, :source)',
         );
         $statement->execute($lead);
         return (int) $this->database->lastInsertId();

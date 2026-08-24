@@ -8,7 +8,6 @@ function PortalShell({ title, navItems, children }) {
   const [navOpen, setNavOpen] = useState(false);
 
   useEffect(() => {
-    if (!isAdminShell) return undefined;
     const handleResize = () => {
       if (window.innerWidth > 1023) setNavOpen(false);
     };
@@ -16,31 +15,35 @@ function PortalShell({ title, navItems, children }) {
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, [isAdminShell]);
+  }, []);
 
   return (
-    <div className={isAdminShell && navOpen ? "portal-shell admin-nav-open" : "portal-shell"}>
-      {isAdminShell ? (
+    <div className={navOpen ? "portal-shell portal-nav-open" : "portal-shell"}>
+      {
         <>
           <button
             type="button"
             className="portal-sidebar-toggle"
-            aria-label="Toggle admin navigation"
+            aria-label={`Toggle ${isAdminShell ? "admin" : "client portal"} navigation`}
             aria-expanded={navOpen}
-            aria-controls="admin-sidebar-nav"
+            aria-controls="portal-sidebar-nav"
             onClick={() => setNavOpen((open) => !open)}
           >
             Menu
           </button>
           <div
-            className={navOpen ? "portal-sidebar-backdrop active" : "portal-sidebar-backdrop"}
+            className={
+              navOpen
+                ? "portal-sidebar-backdrop active"
+                : "portal-sidebar-backdrop"
+            }
             onClick={() => setNavOpen(false)}
             aria-hidden="true"
           />
         </>
-      ) : null}
+      }
 
-      <aside className="portal-sidebar" id={isAdminShell ? "admin-sidebar-nav" : undefined}>
+      <aside className="portal-sidebar" id="portal-sidebar-nav">
         <div className="portal-brand">
           <Logo surface="dark" />
           <span>{title}</span>
@@ -56,7 +59,15 @@ function PortalShell({ title, navItems, children }) {
                 isActive ? "portal-nav-item active" : "portal-nav-item"
               }
             >
-              {item.label}
+              <span>{item.label}</span>
+              {item.count > 0 ? (
+                <span
+                  className="portal-nav-badge"
+                  aria-label={`${item.count} ${item.label.toLowerCase()} items need attention`}
+                >
+                  {item.count}
+                </span>
+              ) : null}
             </NavLink>
           ))}
         </nav>

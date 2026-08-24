@@ -4,7 +4,7 @@ export const homeContent = {
       title:
         "Alchemize Business Services | Practical Support for What Comes Next",
       description:
-        "Business advisory, operations, technology, tax, insurance, notary, and professional support for individuals, entrepreneurs, and small businesses.",
+        "Business advisory, operations, technology, tax, digital support, and professional services for individuals, entrepreneurs, and small businesses.",
     },
     hero: {
       eyebrow: "Alchemize Business Services",
@@ -22,7 +22,7 @@ export const homeContent = {
       individualLabel: "For me",
       individualTitle: "Individual Services",
       individualCopy:
-        "Personal tax preparation, insurance solutions, and notary and document support.",
+        "Personal tax preparation, notary and document support, and practical guidance for important responsibilities.",
       individualLink: "Explore individual services",
       businessLabel: "Entrepreneurs · Freelancers · Businesses",
       businessTitle: "Business Services",
@@ -102,7 +102,7 @@ export const homeContent = {
     metadata: {
       title: "Alchemize Business Services | Apoyo profesional en español",
       description:
-        "Asesoría empresarial, operaciones, tecnología, impuestos, seguros, notaría y apoyo profesional para personas, emprendedores y pequeñas empresas.",
+        "Asesoría empresarial, operaciones, tecnología, impuestos, apoyo digital y servicios profesionales para personas, emprendedores y pequeñas empresas.",
     },
     hero: {
       eyebrow: "Alchemize Business Services",
@@ -120,7 +120,7 @@ export const homeContent = {
       individualLabel: "Para mí",
       individualTitle: "Servicios para personas",
       individualCopy:
-        "Preparación de impuestos personales, soluciones de seguros y servicios de notaría y documentos.",
+        "Preparación de impuestos personales, servicios de notaría y documentos, y orientación práctica para responsabilidades importantes.",
       individualLink: "Explorar servicios para personas",
       businessLabel: "Emprendedores · Profesionales independientes · Empresas",
       businessTitle: "Servicios para empresas",

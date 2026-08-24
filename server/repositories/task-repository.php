@@ -17,10 +17,10 @@ final class AlchemizeTaskRepository
         $statement = $this->database->prepare(
             'INSERT INTO tasks (
                 public_id, client_id, engagement_id, service_id, title, description,
-                owner_user_id, priority, due_date, status, dependency_task_id, internal_notes
+                owner_user_id, priority, due_date, status, visibility, dependency_task_id, internal_notes
             ) VALUES (
                 :public_id, :client_id, :engagement_id, :service_id, :title, :description,
-                :owner_user_id, :priority, :due_date, :status, :dependency_task_id, :internal_notes
+                :owner_user_id, :priority, :due_date, :status, :visibility, :dependency_task_id, :internal_notes
             )'
         );
         $statement->execute($row);

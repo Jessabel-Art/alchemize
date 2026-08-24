@@ -17,12 +17,12 @@ final class AlchemizeAppointmentRepository
         $statement = $this->database->prepare(
             'INSERT INTO appointments (
                 public_id, client_id, lead_id, engagement_id, appointment_type, service_id,
-                scheduled_at, end_at, timezone, location_type, status, preparation_required,
-                follow_up_required, internal_notes, owner_user_id
+                scheduled_at, end_at, timezone, location_type, status, visibility,
+                client_instructions, preparation_required, follow_up_required, internal_notes, owner_user_id
             ) VALUES (
                 :public_id, :client_id, :lead_id, :engagement_id, :appointment_type, :service_id,
-                :scheduled_at, :end_at, :timezone, :location_type, :status, :preparation_required,
-                :follow_up_required, :internal_notes, :owner_user_id
+                :scheduled_at, :end_at, :timezone, :location_type, :status, :visibility,
+                :client_instructions, :preparation_required, :follow_up_required, :internal_notes, :owner_user_id
             )'
         );
         $statement->execute($row);

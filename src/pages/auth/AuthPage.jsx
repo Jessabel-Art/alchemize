@@ -15,8 +15,13 @@ function AuthPage({ title, buttonLabel }) {
 
   const [session, setSession] = useState(null);
 
+  const authenticatedDestination = (user) =>
+    ["client", "business-authorized-user"].includes(user?.role_slug)
+      ? "/client-portal/dashboard"
+      : "/admin/dashboard";
+
   if (session?.authenticated) {
-    return <Navigate to="/admin/dashboard" replace />;
+    return <Navigate to={authenticatedDestination(session.user)} replace />;
   }
 
   const handleSubmit = async (event) => {
@@ -28,7 +33,7 @@ function AuthPage({ title, buttonLabel }) {
       if (login) {
         const sessionData = await auth.login({ email, password });
         setSession({ authenticated: true, user: sessionData?.user || null });
-        navigate("/admin/dashboard", { replace: true });
+        navigate(authenticatedDestination(sessionData?.user), { replace: true });
         return;
       }
 

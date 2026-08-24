@@ -40,22 +40,21 @@ try {
     $path = trim($_SERVER['PATH_INFO'] ?? ($_SERVER['REQUEST_URI'] ?? ''), '/');
     $parts = array_values(array_filter(explode('/', $path), static fn (string $value): bool => $value !== ''));
 
-    $user = alchemize_session_user();
-    if (!is_array($user) || empty($user['user_id'])) {
-        throw new AlchemizeRequestException(401, 'UNAUTHORIZED', 'Authentication required.');
-    }
-
     if ($method === 'GET' && $parts === []) {
+        alchemize_require_read_only_or_higher();
         alchemize_json_response(['data' => $repository->listAll()], 200);
     }
 
     if ($method === 'POST' && $parts === []) {
+        alchemize_require_staff_or_admin();
+        alchemize_require_csrf();
         $payload = alchemize_read_json_request();
         $data = $service->create($payload);
         alchemize_json_response(['data' => $data], 201);
     }
 
     if ($method === 'GET' && count($parts) === 1 && ctype_digit((string) $parts[0])) {
+        alchemize_require_read_only_or_higher();
         $id = (int) $parts[0];
         $client = $repository->findById($id);
         if ($client === null) {

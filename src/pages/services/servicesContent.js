@@ -3,7 +3,7 @@ export const servicesContent = {
     metadata: {
       title: "Services | Alchemize Business Services",
       description:
-        "Explore professional services for individuals and businesses, including tax, insurance, notary, advisory, operations, technology, readiness, and financial support.",
+        "Explore professional services for individuals and businesses, including tax, notary, advisory, operations, technology, readiness, and financial support.",
     },
     hero: {
       eyebrow: "Services",
@@ -17,7 +17,7 @@ export const servicesContent = {
       individuals: {
         short: "For me",
         title: "Individual Services",
-        text: "Personal tax preparation, insurance, notary, and document support for responsibilities that affect you and your household.",
+        text: "Personal tax preparation, notary, and document support for responsibilities that affect you and your household.",
       },
       businesses: {
         short: "For my business",

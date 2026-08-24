@@ -14,15 +14,20 @@ import AdminLayout from "../layouts/AdminLayout.jsx";
 import ClientPortalLayout from "../layouts/ClientPortalLayout.jsx";
 import HomePage from "../pages/home/HomePage.jsx";
 import ServicesPage from "../pages/services/ServicesPage.jsx";
+import WebDigitalPage from "../pages/web-digital/WebDigitalPage.jsx";
 import ContactPage from "../pages/contact/ContactPage.jsx";
 import FaqPage from "../pages/faq/FaqPage.jsx";
 import WhyAlchemizePage from "../pages/why-alchemize/WhyAlchemizePage.jsx";
 import ResourcesPage from "../pages/resources/ResourcesPage.jsx";
+import MeetTheFounderPage from "../pages/resources/MeetTheFounderPage.jsx";
 import ResourceDetailPage from "../pages/resources/ResourceDetailPage.jsx";
 import ResourceRoutePage from "../pages/resources/ResourceRoutePage.jsx";
 import LegalPage from "../pages/legal/LegalPage.jsx";
 import AuthPage from "../pages/auth/AuthPage.jsx";
 import AdminDashboardPage from "../pages/admin/AdminDashboardPage.jsx";
+import AdminCommunicationsPage from "../pages/admin/AdminCommunicationsPage.jsx";
+import AdminIntakePage from "../pages/admin/AdminIntakePage.jsx";
+import ClientIntakePage from "../pages/portal/ClientIntakePage.jsx";
 import {
   LeadManagementPage,
   ClientManagementPage,
@@ -83,8 +88,14 @@ function ProtectedAdminRoute({ children }) {
       .then((payload) => {
         if (!active) return;
         const authenticated = Boolean(payload?.authenticated);
-        setStatus(authenticated ? "authorized" : "redirect");
-        if (!authenticated) {
+        const internalRole = [
+          "owner-admin",
+          "administrator",
+          "staff",
+          "read-only",
+        ].includes(payload?.user?.role_slug);
+        setStatus(authenticated && internalRole ? "authorized" : "redirect");
+        if (!authenticated || !internalRole) {
           navigate("/login", { replace: true });
         }
       })
@@ -123,6 +134,7 @@ function App() {
             element={<Navigate to="/es/why-alchemize" replace />}
           />
           <Route path="services" element={<ServicesPage />} />
+          <Route path="web-digital" element={<WebDigitalPage />} />
           <Route
             path="services/individuals"
             element={<ServiceCategoryPage audience="individuals" />}
@@ -137,6 +149,14 @@ function App() {
           />
           <Route path="contact" element={<ContactPage />} />
           <Route path="resources" element={<ResourcesPage />} />
+          <Route
+            path="resources/client-resources"
+            element={<ResourcesPage />}
+          />
+          <Route
+            path="resources/meet-the-founder"
+            element={<MeetTheFounderPage />}
+          />
           <Route
             path="resources/documents-to-bring-to-a-consultation"
             element={
@@ -157,6 +177,7 @@ function App() {
             element={<Navigate to="/why-alchemize" replace />}
           />
           <Route path="/services" element={<ServicesPage />} />
+          <Route path="/web-digital" element={<WebDigitalPage />} />
           <Route
             path="/services/individuals"
             element={<ServiceCategoryPage audience="individuals" />}
@@ -171,6 +192,14 @@ function App() {
           />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/resources" element={<ResourcesPage />} />
+          <Route
+            path="/resources/client-resources"
+            element={<ResourcesPage />}
+          />
+          <Route
+            path="/resources/meet-the-founder"
+            element={<MeetTheFounderPage />}
+          />
           <Route
             path="/resources/documents-to-bring-to-a-consultation"
             element={
@@ -308,10 +337,6 @@ function App() {
                     title: "Questions Before Choosing Insurance",
                     href: "/resources/questions-to-ask-before-choosing-insurance/",
                   },
-                  {
-                    title: "Insurance Solutions",
-                    href: "/services/individuals/insurance",
-                  },
                 ]}
               />
             }
@@ -426,9 +451,11 @@ function App() {
           <Route path="leads" element={<LeadManagementPage />} />
           <Route path="clients" element={<ClientManagementPage />} />
           <Route path="clients/:clientId" element={<ClientManagementPage />} />
+          <Route path="intakes" element={<AdminIntakePage />} />
           <Route path="services" element={<ServiceManagementPage />} />
           <Route path="tasks" element={<TaskManagementPage />} />
           <Route path="documents" element={<DocumentManagementPage />} />
+          <Route path="communications" element={<AdminCommunicationsPage />} />
           <Route path="appointments" element={<AppointmentManagementPage />} />
           <Route path="billing" element={<BillingManagementPage />} />
           <Route
@@ -441,203 +468,22 @@ function App() {
         </Route>
 
         <Route path="/client-portal/*" element={<ClientPortalLayout />}>
-          <Route index element={<ClientPortalPage />} />
+          <Route
+            index
+            element={<Navigate to="/client-portal/dashboard" replace />}
+          />
           <Route path="dashboard" element={<ClientPortalDashboardPage />} />
+          <Route path="services" element={<ClientPortalPage />} />
+          <Route path="intake" element={<ClientIntakePage />} />
+          <Route path="tasks" element={<ClientPortalPage />} />
+          <Route path="documents" element={<ClientPortalPage />} />
+          <Route path="appointments" element={<ClientPortalPage />} />
+          <Route path="messages" element={<ClientPortalPage />} />
+          <Route path="billing" element={<ClientPortalPage />} />
+          <Route path="profile" element={<ClientPortalPage />} />
           <Route
-            path="services"
-            element={
-              <ClientPortalPage
-                eyebrow="My services"
-                title="My services"
-                summary="Review the services active in your account and the status of each current engagement."
-                cards={[
-                  {
-                    title: "Tax preparation",
-                    text: "Current planning, document collection, and filing support.",
-                  },
-                  {
-                    title: "Insurance guidance",
-                    text: "Risk review and coverage conversations for your current needs.",
-                  },
-                  {
-                    title: "Business operations",
-                    text: "Administrative structure and process support for the business.",
-                  },
-                  {
-                    title: "Consultation",
-                    text: "Upcoming guidance and follow-up planning for service work.",
-                  },
-                ]}
-              />
-            }
-          />
-          <Route
-            path="tasks"
-            element={
-              <ClientPortalPage
-                eyebrow="Tasks"
-                title="Tasks"
-                summary="See the action items, documents, and next steps connected to your active service work."
-                cards={[
-                  {
-                    title: "Waiting on you",
-                    text: "Action items that need your review, response, or information.",
-                  },
-                  {
-                    title: "In progress",
-                    text: "Work already moving forward with an assigned next step.",
-                  },
-                  {
-                    title: "Soon",
-                    text: "Upcoming deadlines and follow-up items coming up soon.",
-                  },
-                  {
-                    title: "Completed",
-                    text: "The latest items already finished and recorded.",
-                  },
-                ]}
-              />
-            }
-          />
-          <Route
-            path="documents"
-            element={
-              <ClientPortalPage
-                eyebrow="Documents"
-                title="Documents"
-                summary="Access the shared files, requests, and records that support your service workflow."
-                cards={[
-                  {
-                    title: "Requested",
-                    text: "Documents that still need to be supplied or reviewed.",
-                  },
-                  {
-                    title: "Shared",
-                    text: "Files provided to your team for the active engagement.",
-                  },
-                  {
-                    title: "Awaiting review",
-                    text: "Items in process and waiting on evaluation.",
-                  },
-                  {
-                    title: "Archive",
-                    text: "Completed record sets kept for future reference.",
-                  },
-                ]}
-              />
-            }
-          />
-          <Route
-            path="appointments"
-            element={
-              <ClientPortalPage
-                eyebrow="Appointments"
-                title="Appointments"
-                summary="Keep your upcoming consultations and check-ins organized in one place."
-                cards={[
-                  {
-                    title: "Upcoming",
-                    text: "Scheduled meetings and touchpoints on the calendar.",
-                  },
-                  {
-                    title: "Confirmed",
-                    text: "Appointments already agreed and scheduled in the plan.",
-                  },
-                  {
-                    title: "Reschedule",
-                    text: "Meetings that may need a timing adjustment.",
-                  },
-                  {
-                    title: "Follow-up",
-                    text: "Next-step meetings after review or delivery.",
-                  },
-                ]}
-              />
-            }
-          />
-          <Route
-            path="messages"
-            element={
-              <ClientPortalPage
-                eyebrow="Messages"
-                title="Messages"
-                summary="Review notes, updates, and service communication from the team."
-                cards={[
-                  {
-                    title: "Unread",
-                    text: "New communication that needs review.",
-                  },
-                  {
-                    title: "Action needed",
-                    text: "Messages with a response or next-step requirement.",
-                  },
-                  {
-                    title: "Archived",
-                    text: "Older communication retained for reference.",
-                  },
-                  {
-                    title: "Templates",
-                    text: "Shared guidance and standard follow-up language.",
-                  },
-                ]}
-              />
-            }
-          />
-          <Route
-            path="billing"
-            element={
-              <ClientPortalPage
-                eyebrow="Billing"
-                title="Billing"
-                summary="Review invoices, account balance, and payment cadence for your services."
-                cards={[
-                  {
-                    title: "Open invoices",
-                    text: "Amounts still awaiting payment or review.",
-                  },
-                  {
-                    title: "Paid",
-                    text: "Completed payment activity for current work.",
-                  },
-                  {
-                    title: "Past due",
-                    text: "Outstanding balances requiring attention.",
-                  },
-                  {
-                    title: "Schedule",
-                    text: "Recurring or planned service charges for your account.",
-                  },
-                ]}
-              />
-            }
-          />
-          <Route
-            path="profile"
-            element={
-              <ClientPortalPage
-                eyebrow="Profile"
-                title="Profile"
-                summary="Keep the simplest and most accurate details available for future service and communication."
-                cards={[
-                  {
-                    title: "Business details",
-                    text: "Primary service details and account context.",
-                  },
-                  {
-                    title: "Contact info",
-                    text: "Current communication preferences and reachability.",
-                  },
-                  {
-                    title: "Documents",
-                    text: "Reference records and business information currently on file.",
-                  },
-                  {
-                    title: "Preferences",
-                    text: "General settings tied to portal communication and service flow.",
-                  },
-                ]}
-              />
-            }
+            path="*"
+            element={<Navigate to="/client-portal/dashboard" replace />}
           />
         </Route>
       </Routes>

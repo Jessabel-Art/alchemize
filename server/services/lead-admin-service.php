@@ -167,6 +167,7 @@ final class AlchemizeLeadAdminService
                 'primary_email' => trim((string) ($payload['primary_email'] ?? $lead['email'] ?? '')) !== '' ? strtolower(trim((string) ($payload['primary_email'] ?? $lead['email']))) : null,
                 'primary_phone' => trim((string) ($payload['primary_phone'] ?? $lead['phone'] ?? '')) !== '' ? trim((string) ($payload['primary_phone'] ?? $lead['phone'])) : null,
                 'preferred_contact_method' => in_array((string) ($payload['preferred_contact_method'] ?? 'email'), ['email', 'phone', 'either'], true) ? (string) $payload['preferred_contact_method'] : 'email',
+                'language_preference' => in_array((string) ($payload['language_preference'] ?? $lead['language_preference'] ?? 'en'), ['en', 'es'], true) ? (string) ($payload['language_preference'] ?? $lead['language_preference']) : 'en',
                 'status' => 'active',
                 'portal_status' => 'pending',
                 'source' => 'lead_conversion',

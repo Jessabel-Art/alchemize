@@ -1,5 +1,3 @@
-import { adminStore } from "./data/admin-store.js";
-
 const canonicalServiceKeys = new Set([
   "individual-tax",
   "individual-insurance",
@@ -133,6 +131,8 @@ function buildPayload(form) {
     message: String(data.get("message") ?? "").trim(),
     preferred_contact: String(data.get("contactMethod") ?? "").trim() || null,
     preferredContact: String(data.get("contactMethod") ?? "").trim() || null,
+    language_preference:
+      String(data.get("languagePreference") ?? "en").trim() || "en",
     website: String(data.get("website") ?? "").trim(),
   };
 }
@@ -216,43 +216,11 @@ export function initContactForm(messages = {}) {
         );
       }
 
-      const reference = result?.data?.leadId;
-      const leadPayload = buildPayload(form);
-      const localLead = adminStore?.createLeadFromContact
-        ? adminStore.createLeadFromContact({
-            id: reference || undefined,
-            name:
-              leadPayload.full_name ||
-              `${leadPayload.firstName} ${leadPayload.lastName}`.trim() ||
-              "New lead",
-            firstName: leadPayload.firstName,
-            lastName: leadPayload.lastName,
-            email: leadPayload.email,
-            phone: leadPayload.phone,
-            audience:
-              leadPayload.audience === "business" ? "Business" : "Individual",
-            serviceInterest: leadPayload.serviceInterest,
-            message: leadPayload.message,
-            preferredContact: leadPayload.preferredContact,
-            source: "Website Contact Form",
-            receivedAt: new Date().toISOString(),
-            status: "New",
-            leadSource: "Website Contact Form",
-            internalNotes: "Website inquiry created from contact form.",
-          })
-        : null;
-
-      if (localLead) {
-        const event = new window.CustomEvent("alchemize:lead-created", {
-          detail: { leadId: localLead.id },
-        });
-        window.dispatchEvent(event);
-      }
-
       form.reset();
       setStatus(
         status,
-        `${messages.success ?? "Your request has been received. Alchemize will review the information and follow up using the contact information provided."}${reference ? ` ${messages.reference ?? "Reference"}: ${reference}` : ""}`,
+        messages.success ??
+          "Thank you for contacting Alchemize. We will follow up shortly.",
         "success",
       );
     } catch (error) {

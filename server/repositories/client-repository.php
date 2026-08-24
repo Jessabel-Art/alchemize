@@ -32,10 +32,10 @@ final class AlchemizeClientRepository
         $statement = $this->database->prepare(
             'INSERT INTO clients (
                 public_id, client_type, display_name, legal_name, preferred_name, primary_email,
-                primary_phone, preferred_contact_method, status, portal_status, source, origin_lead_id
+                primary_phone, preferred_contact_method, language_preference, status, portal_status, source, origin_lead_id
             ) VALUES (
                 :public_id, :client_type, :display_name, :legal_name, :preferred_name, :primary_email,
-                :primary_phone, :preferred_contact_method, :status, :portal_status, :source, :origin_lead_id
+                :primary_phone, :preferred_contact_method, :language_preference, :status, :portal_status, :source, :origin_lead_id
             )'
         );
         $statement->execute($row);

@@ -75,10 +75,7 @@ function AboutPage() {
             <Reveal as="article">
               <span>Individuals</span>
               <h3>Preparation and support for personal responsibilities.</h3>
-              <p>
-                Tax preparation, insurance solutions, and notary and document
-                services.
-              </p>
+              <p>Tax preparation, notary, and document support services.</p>
               <Link className="text-link" to="/services/individuals">
                 Individual services
               </Link>
@@ -90,8 +87,8 @@ function AboutPage() {
                 business.
               </h3>
               <p>
-                Formation, operations, technology, tax, readiness, advisory,
-                insurance, and administrative support.
+                Formation, operations, technology, tax, readiness, advisory, and
+                administrative support.
               </p>
               <Link className="text-link" to="/services/businesses">
                 Business services

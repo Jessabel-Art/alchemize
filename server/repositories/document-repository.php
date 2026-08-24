@@ -17,11 +17,11 @@ final class AlchemizeDocumentRepository
         $statement = $this->database->prepare(
             'INSERT INTO documents_metadata (
                 public_id, client_id, engagement_id, service_id, document_name, document_type,
-                status, visibility, requested_date, received_date, reviewed_date, owner_user_id,
+                status, visibility, requested_date, due_date, client_instructions, received_date, reviewed_date, owner_user_id,
                 internal_notes, storage_key, mime_type
             ) VALUES (
                 :public_id, :client_id, :engagement_id, :service_id, :document_name, :document_type,
-                :status, :visibility, :requested_date, :received_date, :reviewed_date, :owner_user_id,
+                :status, :visibility, :requested_date, :due_date, :client_instructions, :received_date, :reviewed_date, :owner_user_id,
                 :internal_notes, :storage_key, :mime_type
             )'
         );

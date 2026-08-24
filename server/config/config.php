@@ -21,6 +21,10 @@ function alchemize_config(): array
     $localDatabase = is_array($local['database'] ?? null) ? $local['database'] : [];
     $config = [
         'app_env' => (string) $env('ALCHEMIZE_APP_ENV', $local['app_env'] ?? 'production'),
+        'document_storage_root' => (string) $env(
+            'ALCHEMIZE_DOCUMENT_STORAGE_ROOT',
+            $local['document_storage_root'] ?? dirname(__DIR__) . '/storage/client-documents',
+        ),
         'database' => [
             'host' => (string) $env('ALCHEMIZE_DB_HOST', $localDatabase['host'] ?? ''),
             'port' => (int) $env('ALCHEMIZE_DB_PORT', $localDatabase['port'] ?? 3306),

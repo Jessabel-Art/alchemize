@@ -26,6 +26,7 @@ final class AlchemizeClientService
             'primary_email' => trim((string) ($payload['primary_email'] ?? '')) !== '' ? strtolower(trim((string) ($payload['primary_email'] ?? ''))) : null,
             'primary_phone' => trim((string) ($payload['primary_phone'] ?? '')) !== '' ? trim((string) ($payload['primary_phone'] ?? '')) : null,
             'preferred_contact_method' => in_array((string) ($payload['preferred_contact_method'] ?? 'email'), ['email', 'phone', 'either'], true) ? (string) $payload['preferred_contact_method'] : 'email',
+            'language_preference' => in_array((string) ($payload['language_preference'] ?? 'en'), ['en', 'es'], true) ? (string) $payload['language_preference'] : 'en',
             'status' => in_array((string) ($payload['status'] ?? 'prospective'), ['prospective', 'active', 'inactive', 'archived'], true) ? (string) $payload['status'] : 'prospective',
             'portal_status' => in_array((string) ($payload['portal_status'] ?? 'pending'), ['active', 'disabled', 'pending', 'archived'], true) ? (string) $payload['portal_status'] : 'pending',
             'source' => trim((string) ($payload['source'] ?? 'website')) !== '' ? trim((string) ($payload['source'] ?? 'website')) : 'website',

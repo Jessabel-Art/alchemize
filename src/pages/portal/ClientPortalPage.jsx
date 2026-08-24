@@ -1,22 +1,25 @@
-import PortalSectionPage from "../../components/ui/PortalSectionPage.jsx";
-import "./portal.css";
+import { Navigate, useLocation } from "react-router-dom";
+import PortalRecordsPage from "./PortalRecordsPage.jsx";
 
-const defaultCards = [
-  { title: "Dashboard", text: "Overview of active items, upcoming milestones, and current status." },
-  { title: "Documents", text: "Shared records, uploads, and important business documents." },
-  { title: "Appointments", text: "Consultations, check-ins, and scheduling context for your work." },
-  { title: "Messages", text: "Service updates and direct communication from your Alchemize team." },
-  { title: "Billing", text: "Invoices, payment status, and outstanding balance information." },
-  { title: "Profile", text: "Keep your account, business, and contact details up to date." },
-];
+const resources = new Set([
+  "services",
+  "tasks",
+  "documents",
+  "appointments",
+  "messages",
+  "billing",
+  "profile",
+]);
 
-function ClientPortalPage({
-  eyebrow = "Client portal",
-  title = "Your business workspace",
-  summary = "A focused place to review your service delivery, upcoming priorities, and essential account details.",
-  cards = defaultCards,
-}) {
-  return <PortalSectionPage eyebrow={eyebrow} title={title} summary={summary} cards={cards} />;
+function ClientPortalPage() {
+  const location = useLocation();
+  const resource = location.pathname.split("/").filter(Boolean).at(-1);
+
+  if (!resources.has(resource)) {
+    return <Navigate to="/client-portal/dashboard" replace />;
+  }
+
+  return <PortalRecordsPage resource={resource} />;
 }
 
 export default ClientPortalPage;

@@ -49,6 +49,7 @@ function alchemize_validate_lead(array $payload): array
     $serviceKey = alchemize_string_value($payload, 'service_key');
     $message = alchemize_string_value($payload, 'message');
     $preferredContact = alchemize_string_value($payload, 'preferred_contact');
+    $languagePreference = alchemize_string_value($payload, 'language_preference') ?? 'en';
     $website = alchemize_string_value($payload, 'website');
 
     if ($fullName === null || $fullName === '') {
@@ -97,6 +98,10 @@ function alchemize_validate_lead(array $payload): array
         $errors['phone'] = 'Enter a phone number when phone is the preferred contact method.';
     }
 
+    if (!in_array($languagePreference, ['en', 'es'], true)) {
+        $errors['language_preference'] = 'Select a valid language preference.';
+    }
+
     return [
         'valid' => $errors === [],
         'spam' => $website !== null && $website !== '',
@@ -109,6 +114,7 @@ function alchemize_validate_lead(array $payload): array
             'service_key' => $serviceKey,
             'message' => $message,
             'preferred_contact' => $preferredContact !== '' ? $preferredContact : null,
+            'language_preference' => $languagePreference,
         ],
     ];
 }

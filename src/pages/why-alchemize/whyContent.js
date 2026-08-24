@@ -12,13 +12,13 @@ export const whyContent = {
       copy: "Your financial, business, and administrative decisions do not exist in isolation. Neither should the support behind them.",
       primary: "Schedule a Consultation",
       secondary: "See the difference",
-      orbit: ["Taxes", "Insurance", "Documents", "Business"],
+      orbit: ["Taxes", "Digital", "Documents", "Business"],
     },
     problem: {
       eyebrow: "The reality",
       title: "Important responsibilities rarely arrive one at a time.",
       paragraphs: [
-        "A tax question can affect a business decision. A new business creates administrative responsibilities. Insurance decisions connect to family and financial priorities.",
+        "A tax question can affect a business decision. A new business creates administrative responsibilities. A web project, policy update, or operational challenge can also connect to business priorities and timing.",
         "Yet these needs are commonly handled through disconnected providers, systems, and conversations.",
       ],
       sequence: [
@@ -32,7 +32,7 @@ export const whyContent = {
       individual: {
         eyebrow: "For individuals",
         title: "Personal responsibilities deserve a clear process.",
-        copy: "Taxes. Insurance. Notary. Documents. Preparation. Organization.",
+        copy: "Taxes. Notary. Documents. Preparation. Organization.",
         link: "Explore individual services",
       },
       principle: {
@@ -89,19 +89,6 @@ export const whyContent = {
         ["Professional continuity", "Support built to evolve with the need."],
       ],
     },
-    founder: {
-      eyebrow: "The founder",
-      role: "Founder",
-      credentials: "MBA · 15+ Years of Professional Experience",
-      alt: "Jessy Santos, founder of Alchemize Business Services",
-      positioning:
-        "Business experience is most valuable when it can turn complexity into clear decisions and practical action.",
-      paragraphs: [
-        "Jessy Santos brings more than 15 years of professional experience across business operations, administration, client service, financial responsibilities, organization, and practical problem-solving, supported by an MBA and a hands-on understanding of how businesses operate behind the scenes.",
-        "Her experience has required more than completing individual tasks. It has involved managing competing priorities, working through operational challenges, organizing information, supporting financial and administrative responsibilities, and determining what needs to happen next when the path is not immediately clear.",
-        "She founded Alchemize Business Services to bring that same practical, organized approach to individuals, entrepreneurs, and small businesses that need more than information. They need someone who can understand the situation, create structure around it, and help move the responsibility forward.",
-      ],
-    },
     continuity: {
       eyebrow: "One relationship. Changing needs.",
       title: "Your needs will change. The support can evolve with them.",
@@ -112,7 +99,7 @@ export const whyContent = {
           "individuals",
           [
             "Tax preparation",
-            "Insurance",
+            "Digital presence",
             "Documents",
             "Preparation & organization",
           ],
@@ -124,7 +111,7 @@ export const whyContent = {
             "Startup",
             "Operations",
             "Taxes",
-            "Insurance",
+            "Digital support",
             "Administration & advisory",
           ],
         ],
@@ -152,13 +139,13 @@ export const whyContent = {
       copy: "Sus decisiones financieras, empresariales y administrativas no existen de forma aislada. El apoyo que las respalda tampoco debería estar fragmentado.",
       primary: "Programar una consulta",
       secondary: "Conocer la diferencia",
-      orbit: ["Impuestos", "Seguros", "Documentos", "Empresa"],
+      orbit: ["Impuestos", "Digital", "Documentos", "Empresa"],
     },
     problem: {
       eyebrow: "La realidad",
       title: "Las responsabilidades importantes rara vez llegan de una en una.",
       paragraphs: [
-        "Una pregunta tributaria puede afectar una decisión empresarial. Una nueva empresa crea responsabilidades administrativas. Las decisiones sobre seguros se relacionan con prioridades familiares y financieras.",
+        "Una pregunta tributaria puede afectar una decisión empresarial. Una nueva empresa crea responsabilidades administrativas. Un proyecto digital, una actualización de proceso o un desafío operativo también pueden relacionarse con prioridades y plazos empresariales.",
         "Sin embargo, estas necesidades suelen manejarse mediante proveedores, sistemas y conversaciones desconectados.",
       ],
       sequence: [
@@ -232,19 +219,6 @@ export const whyContent = {
         ],
       ],
     },
-    founder: {
-      eyebrow: "La fundadora",
-      role: "Fundadora",
-      credentials: "MBA · Más de 15 años de experiencia profesional",
-      alt: "Jessy Santos, fundadora de Alchemize Business Services",
-      positioning:
-        "La experiencia empresarial es más valiosa cuando convierte la complejidad en decisiones claras y acciones prácticas.",
-      paragraphs: [
-        "Jessy Santos cuenta con más de 15 años de experiencia profesional en operaciones empresariales, administración, servicio al cliente, responsabilidades financieras, organización y resolución práctica de problemas. Su MBA complementa una comprensión directa de cómo funcionan las empresas detrás de escena.",
-        "Su experiencia ha requerido mucho más que completar tareas individuales. Ha incluido manejar prioridades simultáneas, resolver desafíos operativos, organizar información, apoyar responsabilidades financieras y administrativas, y determinar qué debe suceder después cuando el camino no es evidente.",
-        "Fundó Alchemize Business Services para ofrecer ese mismo enfoque práctico y organizado a personas, emprendedores y pequeñas empresas que necesitan más que información. Necesitan a alguien que comprenda la situación, cree estructura y ayude a hacer avanzar la responsabilidad.",
-      ],
-    },
     continuity: {
       eyebrow: "Una relación. Necesidades que cambian.",
       title: "Sus necesidades cambiarán. El apoyo puede evolucionar con ellas.",
@@ -255,7 +229,7 @@ export const whyContent = {
           "individuals",
           [
             "Preparación de impuestos",
-            "Seguros",
+            "Presencia digital",
             "Documentos",
             "Preparación y organización",
           ],
@@ -267,7 +241,7 @@ export const whyContent = {
             "Inicio",
             "Operaciones",
             "Impuestos",
-            "Seguros",
+            "Soporte digital",
             "Administración y asesoría",
           ],
         ],

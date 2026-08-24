@@ -7,9 +7,11 @@ const navItems = [
   { label: "Dashboard", to: "/admin/dashboard" },
   { label: "Leads", to: "/admin/leads" },
   { label: "Clients", to: "/admin/clients" },
+  { label: "Intake", to: "/admin/intakes" },
   { label: "Services", to: "/admin/services" },
   { label: "Tasks", to: "/admin/tasks" },
   { label: "Documents", to: "/admin/documents" },
+  { label: "Communications", to: "/admin/communications" },
   { label: "Appointments", to: "/admin/appointments" },
   { label: "Billing", to: "/admin/billing" },
   { label: "Content", to: "/admin/content" },
@@ -20,7 +22,9 @@ const navItems = [
 function AdminLayout() {
   useEffect(() => {
     window.adminStore = adminStore;
-    return () => { delete window.adminStore; };
+    return () => {
+      delete window.adminStore;
+    };
   }, []);
   return (
     <PortalShell title="Alchemize Admin" navItems={navItems}>

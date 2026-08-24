@@ -13,7 +13,7 @@ const faqCategories = [
       {
         question: "What does Alchemize Business Services do?",
         answer:
-          "Alchemize provides professional support for individuals, entrepreneurs, and small businesses across administrative, tax-related, insurance, business, organizational, and operational responsibilities. The goal is to help clients understand what needs attention, organize the information around it, and determine practical next steps. In some cases, a licensed or specialized professional may be the more appropriate provider for a specific service or requirement.",
+          "Alchemize provides professional support for individuals, entrepreneurs, and small businesses across administrative, tax-related, business, organizational, and operational responsibilities. The goal is to help clients understand what needs attention, organize the information around it, and determine practical next steps. In some cases, a licensed or specialized professional may be the more appropriate provider for a specific service or requirement.",
       },
       {
         question: "Who does Alchemize work with?",
@@ -50,12 +50,12 @@ const faqCategories = [
   {
     category: "Individual Services",
     description:
-      "Common questions for personal tax, insurance, and document support.",
+      "Common questions for personal tax, document support, and practical guidance.",
     items: [
       {
         question: "What services are available for individuals?",
         answer:
-          "Individual services may include tax preparation support, insurance-related assistance, notary and document services, preparation guidance, and help organizing information connected to an important personal responsibility. The final scope depends on the specific request, applicable requirements, and service availability.",
+          "Individual services may include tax preparation support, notary and document services, preparation guidance, and help organizing information connected to an important personal responsibility. The final scope depends on the specific request, applicable requirements, and service availability.",
       },
       {
         question: "What should I prepare before contacting Alchemize?",
@@ -76,7 +76,7 @@ const faqCategories = [
       {
         question: "Should I send sensitive documents with my first inquiry?",
         answer:
-          "No. Do not send Social Security numbers, full tax returns, banking information, identity documents, medical records, insurance records, confidential business records, or other sensitive information through an ordinary contact form or unsecured email. Alchemize will provide instructions when secure document handling is required.",
+          "No. Do not send Social Security numbers, full tax returns, banking information, identity documents, medical records, confidential business records, or other sensitive information through an ordinary contact form or unsecured email. Alchemize will provide instructions when secure document handling is required.",
       },
       {
         question:
@@ -232,7 +232,7 @@ function FaqPage() {
             `Showing ${answers} ${answers === 1 ? "answer" : "answers"} across ${count} ${count === 1 ? "category" : "categories"}.`,
           emptyTitle: "No matching answers found.",
           emptyText:
-            "Try a broader keyword such as “consultation,” “tax,” “notary,” “insurance,” or “organization.”",
+            "Try a broader keyword such as “consultation,” “tax,” “notary,” “digital,” or “organization.”",
           clearSearch: "Clear search",
         };
   const [query, setQuery] = useState("");

@@ -66,7 +66,6 @@ const translations = {
     boundary:
       "El tratamiento tributario depende de las circunstancias de cada persona. Alchemize no brinda asesoría legal ni servicios de representación. Los tipos de declaraciones y las jurisdicciones admitidas deben confirmarse antes de contratar el servicio; algunos asuntos pueden requerir un CPA, abogado, agente registrado u otro profesional calificado.",
     related: [
-      ["Soluciones de seguros", "/services/individuals/insurance"],
       [
         "Servicios notariales y de documentos",
         "/services/individuals/notary-document-services",
@@ -90,102 +89,6 @@ const translations = {
     checklist: [
       "Lista de preparación de impuestos (PDF en inglés)",
       "/assets/downloads/individual-tax-preparation-checklist.pdf",
-    ],
-  },
-  insurance: {
-    title: "Soluciones de seguros",
-    hero: "Comprenda la decisión de protección antes de elegir el producto.",
-    overview:
-      "Las decisiones sobre seguros son más fáciles de evaluar cuando se comprenden en conjunto la necesidad, la estructura de cobertura, el costo, las exclusiones y las opciones disponibles.",
-    statement:
-      "Comprenda la decisión de protección antes de elegir el producto.",
-    capabilities: [
-      "Seguro de vida",
-      "Seguro de salud",
-      "Seguro contra accidentes",
-      "Organización de cobertura",
-    ],
-    for: [
-      "Familias con nuevas responsabilidades de protección",
-      "Personas que evalúan su cobertura actual",
-      "Clientes ante cambios laborales o de beneficios",
-      "Personas próximas a ser elegibles para Medicare que necesitan orientación educativa",
-    ],
-    helps: [
-      "Conversación sobre necesidades de cobertura",
-      "Revisión de cobertura existente",
-      "Explicación de términos de seguros",
-      "Opciones de seguro de vida",
-      "Opciones de seguro de salud",
-      "Cobertura contra accidentes",
-      "Organización de beneficiarios y documentos",
-      "Apoyo con solicitudes o inscripciones cuando esté autorizado",
-    ],
-    situations: [
-      "Una nueva responsabilidad familiar o de ingresos cambia las necesidades de protección",
-      "La cobertura actual es difícil de entender",
-      "Es necesario aclarar primas, deducibles o beneficiarios",
-      "Las opciones de Medicare requieren una revisión educativa",
-    ],
-    process: [
-      [
-        "Identificar",
-        "Aclare las personas, responsabilidades y exposición financiera que la cobertura debe atender.",
-      ],
-      [
-        "Organizar",
-        "Reúna la cobertura actual, el contexto del hogar, las metas y las preguntas.",
-      ],
-      [
-        "Explorar",
-        "Revise estructuras de productos y terminología disponibles cuando existan las licencias y autorizaciones necesarias.",
-      ],
-      [
-        "Decidir",
-        "Compare los factores pertinentes y determine el siguiente paso sin presión.",
-      ],
-    ],
-    prepare: [
-      "Información de pólizas actuales",
-      "Contexto familiar y laboral",
-      "Metas de protección",
-      "Consideraciones de presupuesto",
-      "Proveedores y medicamentos preferidos cuando corresponda",
-      "Próximos cambios personales o de cobertura",
-      "Preguntas sobre términos o exclusiones",
-    ],
-    status: {
-      label: "Medicare",
-      value: "planificado",
-      text: "La biblioteca de recursos ofrece educación sobre Medicare. La comparación de planes y la asistencia de inscripción solo se ofrecerán cuando estén vigentes las certificaciones y autorizaciones requeridas de la agencia o las aseguradoras.",
-    },
-    boundary:
-      "La disponibilidad, el precio, la elegibilidad, la evaluación de riesgo, los planes, la participación de aseguradoras y las reglas de inscripción dependen del producto, la aseguradora, la jurisdicción, las autorizaciones y las circunstancias del cliente. Alchemize no está afiliada ni respaldada por el gobierno de Estados Unidos ni por Medicare.",
-    related: [
-      [
-        "Servicios notariales y de documentos",
-        "/services/individuals/notary-document-services",
-      ],
-      ["Preparación de impuestos", "/services/individuals/tax-preparation"],
-    ],
-    resources: [
-      [
-        "Conceptos básicos de Medicare",
-        "/resources/medicare-basics-coverage-choices",
-      ],
-      [
-        "Períodos de inscripción de Medicare",
-        "/resources/medicare-enrollment-periods",
-      ],
-      [
-        "Cómo entender la cobertura de seguros",
-        "/resources/understanding-insurance-coverage",
-      ],
-    ],
-    cta: "¿Listo para comprender la decisión de cobertura?",
-    checklist: [
-      "Lista para la consulta de seguros (PDF en inglés)",
-      "/assets/downloads/insurance-consultation-checklist.pdf",
     ],
   },
   "notary-document-services": {

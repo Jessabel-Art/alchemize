@@ -37,7 +37,6 @@ export const contactContent = {
     },
     services: {
       "individual-tax": "Tax Preparation",
-      "individual-insurance": "Insurance Solutions",
       "individual-notary": "Notary & Document Services",
       "business-advisory": "Business Advisory & Optimization",
       "business-operations": "Business Operations & Implementation",
@@ -74,10 +73,9 @@ export const contactContent = {
     formMessages: {
       submitting: "Submitting…",
       submittingStatus: "Submitting your request securely…",
-      failure: "Your request could not be submitted.",
-      fallback: "We couldn't submit your request. Please try again.",
-      success:
-        "Your request has been received. Alchemize will review the information and follow up using the contact information provided.",
+      failure: "We were unable to submit your request. Please try again.",
+      fallback: "We were unable to submit your request. Please try again.",
+      success: "Thank you for contacting Alchemize. We will follow up shortly.",
       reference: "Reference",
       required: "Please complete this required field.",
       email: "Please enter a valid email address.",
@@ -124,7 +122,6 @@ export const contactContent = {
     },
     services: {
       "individual-tax": "Preparación de impuestos",
-      "individual-insurance": "Soluciones de seguros",
       "individual-notary": "Servicios de notaría y documentos",
       "business-advisory": "Asesoría y optimización empresarial",
       "business-operations": "Operaciones e implementación",
@@ -161,10 +158,10 @@ export const contactContent = {
     formMessages: {
       submitting: "Enviando…",
       submittingStatus: "Enviando su solicitud de forma segura…",
-      failure: "No se pudo enviar su solicitud.",
+      failure: "No pudimos enviar su solicitud. Inténtelo de nuevo.",
       fallback: "No pudimos enviar su solicitud. Inténtelo de nuevo.",
       success:
-        "Hemos recibido su solicitud. Alchemize revisará la información y se comunicará con usted mediante los datos proporcionados.",
+        "Gracias por comunicarse con Alchemize. Nos pondremos en contacto pronto.",
       reference: "Referencia",
       required: "Complete este campo obligatorio.",
       email: "Ingrese un correo electrónico válido.",

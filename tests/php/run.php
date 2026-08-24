@@ -29,6 +29,7 @@ function valid_payload(): array
         'service_key' => 'individual-tax',
         'message' => 'I would like help preparing and organizing for tax season.',
         'preferred_contact' => 'email',
+        'language_preference' => 'en',
         'website' => '',
     ];
 }
@@ -80,6 +81,29 @@ test('detects the honeypot', function (): void {
     $payload = valid_payload();
     $payload['website'] = 'https://spam.example';
     expect(alchemize_validate_lead($payload)['spam'] === true);
+});
+
+test('accepts a supported language preference', function (): void {
+    $payload = valid_payload();
+    $payload['language_preference'] = 'es';
+    expect(alchemize_validate_lead($payload)['data']['language_preference'] === 'es');
+});
+
+test('rejects an unsupported language preference', function (): void {
+    $payload = valid_payload();
+    $payload['language_preference'] = 'fr';
+    expect(isset(alchemize_validate_lead($payload)['errors']['language_preference']));
+});
+
+test('does not project public admin fields into lead creation data', function (): void {
+    $payload = valid_payload();
+    $payload['status'] = 'converted';
+    $payload['source'] = 'forged';
+    $payload['assigned_owner'] = 'attacker';
+    $data = alchemize_validate_lead($payload)['data'];
+    expect(!array_key_exists('status', $data));
+    expect(!array_key_exists('source', $data));
+    expect(!array_key_exists('assigned_owner', $data));
 });
 
 test('rejects invalid JSON', function (): void {

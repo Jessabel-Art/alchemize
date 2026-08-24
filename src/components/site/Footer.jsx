@@ -9,7 +9,6 @@ const groups = {
       "Individuals",
       [
         ["Tax Preparation", "/services/individuals/tax-preparation"],
-        ["Insurance Solutions", "/services/individuals/insurance"],
         [
           "Notary & Documents",
           "/services/individuals/notary-document-services",
@@ -45,6 +44,7 @@ const groups = {
       "Company",
       [
         ["Why Alchemize", "/why-alchemize"],
+        ["Web & Digital Solutions", "/web-digital"],
         ["Resources", "/resources"],
         ["FAQ", "/faq"],
         ["Contact", "/contact"],
@@ -65,7 +65,6 @@ const groups = {
       "Personas",
       [
         ["Preparación de impuestos", "/services/individuals/tax-preparation"],
-        ["Soluciones de seguros", "/services/individuals/insurance"],
         [
           "Notaría y documentos",
           "/services/individuals/notary-document-services",
@@ -98,6 +97,7 @@ const groups = {
       "Empresa",
       [
         ["Por qué Alchemize", "/why-alchemize"],
+        ["Web y soluciones digitales", "/web-digital"],
         ["Recursos", "/resources"],
         ["Preguntas frecuentes", "/faq"],
         ["Contacto", "/contact"],

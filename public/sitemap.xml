@@ -13,16 +13,16 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://getalchemize.com/services" />
   </url>
   <url>
+    <loc>https://getalchemize.com/web-digital</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://getalchemize.com/web-digital" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://getalchemize.com/es/web-digital" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getalchemize.com/web-digital" />
+  </url>
+  <url>
     <loc>https://getalchemize.com/services/individuals/tax-preparation</loc>
     <xhtml:link rel="alternate" hreflang="en" href="https://getalchemize.com/services/individuals/tax-preparation" />
     <xhtml:link rel="alternate" hreflang="es" href="https://getalchemize.com/es/services/individuals/tax-preparation" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://getalchemize.com/services/individuals/tax-preparation" />
-  </url>
-  <url>
-    <loc>https://getalchemize.com/services/individuals/insurance</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://getalchemize.com/services/individuals/insurance" />
-    <xhtml:link rel="alternate" hreflang="es" href="https://getalchemize.com/es/services/individuals/insurance" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://getalchemize.com/services/individuals/insurance" />
   </url>
   <url>
     <loc>https://getalchemize.com/services/individuals/notary-document-services</loc>
@@ -71,6 +71,12 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://getalchemize.com/resources" />
     <xhtml:link rel="alternate" hreflang="es" href="https://getalchemize.com/es/resources" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://getalchemize.com/resources" />
+  </url>
+  <url>
+    <loc>https://getalchemize.com/resources/meet-the-founder</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://getalchemize.com/resources/meet-the-founder" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://getalchemize.com/es/resources/meet-the-founder" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getalchemize.com/resources/meet-the-founder" />
   </url>
   <url>
     <loc>https://getalchemize.com/resources/preparing-for-tax-season</loc>
@@ -187,16 +193,16 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://getalchemize.com/services" />
   </url>
   <url>
+    <loc>https://getalchemize.com/es/web-digital</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://getalchemize.com/web-digital" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://getalchemize.com/es/web-digital" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getalchemize.com/web-digital" />
+  </url>
+  <url>
     <loc>https://getalchemize.com/es/services/individuals/tax-preparation</loc>
     <xhtml:link rel="alternate" hreflang="en" href="https://getalchemize.com/services/individuals/tax-preparation" />
     <xhtml:link rel="alternate" hreflang="es" href="https://getalchemize.com/es/services/individuals/tax-preparation" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://getalchemize.com/services/individuals/tax-preparation" />
-  </url>
-  <url>
-    <loc>https://getalchemize.com/es/services/individuals/insurance</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://getalchemize.com/services/individuals/insurance" />
-    <xhtml:link rel="alternate" hreflang="es" href="https://getalchemize.com/es/services/individuals/insurance" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://getalchemize.com/services/individuals/insurance" />
   </url>
   <url>
     <loc>https://getalchemize.com/es/services/individuals/notary-document-services</loc>
@@ -245,6 +251,12 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://getalchemize.com/resources" />
     <xhtml:link rel="alternate" hreflang="es" href="https://getalchemize.com/es/resources" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://getalchemize.com/resources" />
+  </url>
+  <url>
+    <loc>https://getalchemize.com/es/resources/meet-the-founder</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://getalchemize.com/resources/meet-the-founder" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://getalchemize.com/es/resources/meet-the-founder" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getalchemize.com/resources/meet-the-founder" />
   </url>
   <url>
     <loc>https://getalchemize.com/es/resources/preparing-for-tax-season</loc>

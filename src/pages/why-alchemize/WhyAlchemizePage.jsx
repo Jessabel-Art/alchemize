@@ -164,37 +164,6 @@ function WhyAlchemizePage() {
         </div>
       </section>
 
-      <section className="why-founder">
-        <div className="content-shell why-founder-shell">
-          <div className="why-founder-grid">
-            <Reveal className="why-founder-identity">
-              <span className="eyebrow">{content.founder.eyebrow}</span>
-              <h2>Jessy Santos</h2>
-              <p className="why-founder-title">
-                {content.founder.role}
-                <br />
-                Alchemize Business Services LLC
-                <strong>{content.founder.credentials}</strong>
-              </p>
-            </Reveal>
-            <figure className="why-founder-portrait">
-              <img
-                src="/assets/images/about/founder-image.png"
-                alt={content.founder.alt}
-              />
-            </figure>
-            <Reveal className="why-founder-narrative">
-              <p className="why-founder-positioning">
-                {content.founder.positioning}
-              </p>
-              {content.founder.paragraphs.map((text) => (
-                <p key={text}>{text}</p>
-              ))}
-            </Reveal>
-          </div>
-        </div>
-      </section>
-
       <section className="why-continuity">
         <div className="why-continuity-watermark" aria-hidden="true">
           ALCHEMIZE
