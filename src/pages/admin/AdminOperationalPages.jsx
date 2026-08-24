@@ -1162,7 +1162,10 @@ function ClientManagementPage() {
   const [communicationThreads, setCommunicationThreads] = useState([]);
 
   useEffect(() => {
-    portalAdmin.messages().then((data) => setCommunicationThreads(data?.items || [])).catch(() => setCommunicationThreads([]));
+    portalAdmin
+      .messages()
+      .then((data) => setCommunicationThreads(data?.items || []))
+      .catch(() => setCommunicationThreads([]));
   }, []);
 
   const rows = snapshot.clients;
@@ -1236,8 +1239,10 @@ function ClientManagementPage() {
       )
     : [];
   const clientCommunications = selectedClient
-    ? communicationThreads.filter((thread) =>
-        thread.client_id === selectedClient.id || thread.client_name === selectedClient.displayName,
+    ? communicationThreads.filter(
+        (thread) =>
+          thread.client_id === selectedClient.id ||
+          thread.client_name === selectedClient.displayName,
       )
     : [];
   const clientEngagements = selectedClient
@@ -1973,19 +1978,36 @@ function ClientManagementPage() {
             <div className="detail-block">
               <div className="note-header">
                 <h3>Communication</h3>
-                <Link to="/admin/communications" className="secondary-button">Open communication center</Link>
+                <Link to="/admin/communications" className="secondary-button">
+                  Open communication center
+                </Link>
               </div>
               {clientCommunications.length ? (
                 <ul className="detail-list">
                   {clientCommunications.slice(0, 8).map((thread) => (
                     <li key={thread.id}>
-                      <div className="note-header"><strong>{thread.subject}</strong><AdminStatusBadge status={toTitleCase(String(thread.status).replaceAll("_", " "))} tone={Number(thread.unread_count) ? "warning" : "neutral"} /></div>
+                      <div className="note-header">
+                        <strong>{thread.subject}</strong>
+                        <AdminStatusBadge
+                          status={toTitleCase(
+                            String(thread.status).replaceAll("_", " "),
+                          )}
+                          tone={
+                            Number(thread.unread_count) ? "warning" : "neutral"
+                          }
+                        />
+                      </div>
                       <p>{thread.latest_message}</p>
-                      <small>{Number(thread.unread_count) || 0} unread · Last communication {formatDate(thread.last_message_at)}</small>
+                      <small>
+                        {Number(thread.unread_count) || 0} unread · Last
+                        communication {formatDate(thread.last_message_at)}
+                      </small>
                     </li>
                   ))}
                 </ul>
-              ) : <p>No client conversations are currently listed.</p>}
+              ) : (
+                <p>No client conversations are currently listed.</p>
+              )}
             </div>
           ) : null}
 

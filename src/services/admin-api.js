@@ -245,7 +245,13 @@ export const intakeAdmin = {
       method: "PUT",
       body: JSON.stringify(payload),
     }),
-  reviewRequirement: (assignmentId, requirementId, decision, payload = {}) => apiRequest(buildApiUrl(`portal-admin/intakes/${assignmentId}/requirements/${requirementId}/${decision}`), { method: "POST", body: JSON.stringify(payload) }),
+  reviewRequirement: (assignmentId, requirementId, decision, payload = {}) =>
+    apiRequest(
+      buildApiUrl(
+        `portal-admin/intakes/${assignmentId}/requirements/${requirementId}/${decision}`,
+      ),
+      { method: "POST", body: JSON.stringify(payload) },
+    ),
 };
 
 export const leads = {

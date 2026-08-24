@@ -1839,5 +1839,7 @@
 }
 
 @media (max-width: 800px) {
-  .admin-workspace-grid { grid-template-columns: 1fr; }
+  .admin-workspace-grid {
+    grid-template-columns: 1fr;
+  }
 }

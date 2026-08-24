@@ -67,12 +67,36 @@ export const portalApi = {
       method: "POST",
       body: JSON.stringify({}),
     }),
-  saveProfileAddress: (id, payload) => portalRequest(`intakes/profile/addresses${id ? `/${id}` : ""}`, { method: id ? "PUT" : "POST", body: JSON.stringify(payload) }),
-  removeProfileAddress: (id) => portalRequest(`intakes/profile/addresses/${id}/remove`, { method: "POST", body: JSON.stringify({}) }),
-  saveProfilePerson: (id, payload) => portalRequest(`intakes/profile/people${id ? `/${id}` : ""}`, { method: id ? "PUT" : "POST", body: JSON.stringify(payload) }),
-  removeProfilePerson: (id) => portalRequest(`intakes/profile/people/${id}/remove`, { method: "POST", body: JSON.stringify({}) }),
-  prepareRequirementUpload: (assignmentId, requirementId) => portalRequest(`intakes/${assignmentId}/requirements/${requirementId}/upload-handoff`, { method: "POST", body: JSON.stringify({}) }),
-  useExistingForRequirement: (assignmentId, requirementId, documentId) => portalRequest(`intakes/${assignmentId}/requirements/${requirementId}/use-existing`, { method: "POST", body: JSON.stringify({ document_id: documentId }) }),
+  saveProfileAddress: (id, payload) =>
+    portalRequest(`intakes/profile/addresses${id ? `/${id}` : ""}`, {
+      method: id ? "PUT" : "POST",
+      body: JSON.stringify(payload),
+    }),
+  removeProfileAddress: (id) =>
+    portalRequest(`intakes/profile/addresses/${id}/remove`, {
+      method: "POST",
+      body: JSON.stringify({}),
+    }),
+  saveProfilePerson: (id, payload) =>
+    portalRequest(`intakes/profile/people${id ? `/${id}` : ""}`, {
+      method: id ? "PUT" : "POST",
+      body: JSON.stringify(payload),
+    }),
+  removeProfilePerson: (id) =>
+    portalRequest(`intakes/profile/people/${id}/remove`, {
+      method: "POST",
+      body: JSON.stringify({}),
+    }),
+  prepareRequirementUpload: (assignmentId, requirementId) =>
+    portalRequest(
+      `intakes/${assignmentId}/requirements/${requirementId}/upload-handoff`,
+      { method: "POST", body: JSON.stringify({}) },
+    ),
+  useExistingForRequirement: (assignmentId, requirementId, documentId) =>
+    portalRequest(
+      `intakes/${assignmentId}/requirements/${requirementId}/use-existing`,
+      { method: "POST", body: JSON.stringify({ document_id: documentId }) },
+    ),
   billing: () => getPortalResource("billing"),
   profile: () => getPortalResource("profile"),
   activity: () => getPortalResource("activity"),

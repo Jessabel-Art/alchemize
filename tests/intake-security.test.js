@@ -10,7 +10,9 @@ const repository = read("server/repositories/intake-repository.php");
 const service = read("server/services/intake-service.php");
 const admin = read("server/services/intake-admin-service.php");
 const portalApi = read("api/v1/portal/index.php");
-const phaseTwoMigration = read("migrations/018_add_structured_intake_profile_references.sql");
+const phaseTwoMigration = read(
+  "migrations/018_add_structured_intake_profile_references.sql",
+);
 const clientUi = read("src/pages/portal/ClientIntakePage.jsx");
 const documentUi = read("src/pages/portal/PortalRecordsPage.jsx");
 
@@ -74,8 +76,14 @@ test("stores engagement profile references as immutable snapshots", () => {
 });
 
 test("scopes address and person mutations to the authenticated client", () => {
-  assert.match(repository, /client_addresses[\s\S]*public_id=:id AND client_id=:client/);
-  assert.match(repository, /client_business_people[\s\S]*public_id=:id AND client_id=:client/);
+  assert.match(
+    repository,
+    /client_addresses[\s\S]*public_id=:id AND client_id=:client/,
+  );
+  assert.match(
+    repository,
+    /client_business_people[\s\S]*public_id=:id AND client_id=:client/,
+  );
   assert.match(service, /PROFILE_REFERENCE_INVALID/);
   assert.match(portalApi, /alchemize_require_csrf/);
 });
@@ -92,7 +100,10 @@ test("rejects cross-client or internal existing-document references", () => {
   assert.match(repository, /public_id=:id AND client_id=:client/);
   assert.match(repository, /visibility IN \('client','shared'\)/);
   assert.match(repository, /status='accepted'/);
-  assert.match(service, /authorizedDocument\(\$documentId,\(int\)\$access\['client_id'\],true\)/);
+  assert.match(
+    service,
+    /authorizedDocument\(\$documentId,\(int\)\$access\['client_id'\],true\)/,
+  );
 });
 
 test("keeps replacement history without overwriting prior versions", () => {

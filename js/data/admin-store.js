@@ -111,15 +111,19 @@ export function createAdminStore(initialData = emptyAdminData) {
   const findServiceById = (id) =>
     state.services.find((service) => service.id === id) || null;
   const findServiceByCode = (serviceCode) =>
-    state.services.find((service) => service.serviceCode === serviceCode) || null;
+    state.services.find((service) => service.serviceCode === serviceCode) ||
+    null;
 
   const normalizeServiceRecord = (service = {}) => {
     const trimmedCode = String(service.serviceCode || "").trim();
     const name = String(service.serviceName || "").trim();
     const billingType = service.billingType || "Fixed Fee";
-    const defaultPrice = service.defaultPrice == null || service.defaultPrice === "" || service.defaultPrice === "Custom"
-      ? null
-      : Number(service.defaultPrice);
+    const defaultPrice =
+      service.defaultPrice == null ||
+      service.defaultPrice === "" ||
+      service.defaultPrice === "Custom"
+        ? null
+        : Number(service.defaultPrice);
 
     return {
       ...service,
@@ -132,28 +136,43 @@ export function createAdminStore(initialData = emptyAdminData) {
       defaultDuration: Number(service.defaultDuration || 60),
       defaultOwner: service.defaultOwner || "Owner / Administrator",
       defaultTaskTemplate: service.defaultTaskTemplate || "",
-      defaultPreparationRequirements: service.defaultPreparationRequirements || "",
+      defaultPreparationRequirements:
+        service.defaultPreparationRequirements || "",
       billingType,
       defaultPrice,
       currency: service.currency || "USD",
       taxable: Boolean(service.taxable),
       depositRequired: Boolean(service.depositRequired),
-      defaultDepositAmount: service.defaultDepositAmount == null || service.defaultDepositAmount === "" ? null : Number(service.defaultDepositAmount),
-      minimumCharge: service.minimumCharge == null || service.minimumCharge === "" ? null : Number(service.minimumCharge),
+      defaultDepositAmount:
+        service.defaultDepositAmount == null ||
+        service.defaultDepositAmount === ""
+          ? null
+          : Number(service.defaultDepositAmount),
+      minimumCharge:
+        service.minimumCharge == null || service.minimumCharge === ""
+          ? null
+          : Number(service.minimumCharge),
       defaultBillingDescription: service.defaultBillingDescription || "",
       internalPricingNotes: service.internalPricingNotes || "",
-      addOns: Array.isArray(service.addOns) ? service.addOns.map((addOn) => ({
-        id: addOn.id || `addon-${Date.now().toString().slice(-6)}-${Math.random().toString(36).slice(2,6)}`,
-        addOnCode: String(addOn.addOnCode || "").trim(),
-        addOnName: String(addOn.addOnName || "").trim(),
-        description: addOn.description || "",
-        defaultPrice: addOn.defaultPrice == null || addOn.defaultPrice === "" ? null : Number(addOn.defaultPrice),
-        billingType: addOn.billingType || billingType,
-        active: addOn.active !== false,
-        required: Boolean(addOn.required),
-        optional: addOn.optional !== false,
-        internalNotes: addOn.internalNotes || "",
-      })) : [],
+      addOns: Array.isArray(service.addOns)
+        ? service.addOns.map((addOn) => ({
+            id:
+              addOn.id ||
+              `addon-${Date.now().toString().slice(-6)}-${Math.random().toString(36).slice(2, 6)}`,
+            addOnCode: String(addOn.addOnCode || "").trim(),
+            addOnName: String(addOn.addOnName || "").trim(),
+            description: addOn.description || "",
+            defaultPrice:
+              addOn.defaultPrice == null || addOn.defaultPrice === ""
+                ? null
+                : Number(addOn.defaultPrice),
+            billingType: addOn.billingType || billingType,
+            active: addOn.active !== false,
+            required: Boolean(addOn.required),
+            optional: addOn.optional !== false,
+            internalNotes: addOn.internalNotes || "",
+          }))
+        : [],
     };
   };
 
@@ -176,12 +195,16 @@ export function createAdminStore(initialData = emptyAdminData) {
     notes,
   } = {}) => {
     const trimmedName = String(displayName || "").trim();
-    const trimmedBusinessName = String(businessName || legalBusinessName || "").trim();
+    const trimmedBusinessName = String(
+      businessName || legalBusinessName || "",
+    ).trim();
     const requiredName = trimmedName || trimmedBusinessName;
 
     if (!clientType) throw new Error("Client type is required.");
-    if (!requiredName) throw new Error("Client name or business name is required.");
-    if (!email && !phone) throw new Error("Provide either an email or a phone number.");
+    if (!requiredName)
+      throw new Error("Client name or business name is required.");
+    if (!email && !phone)
+      throw new Error("Provide either an email or a phone number.");
     if (!status) throw new Error("Client status is required.");
 
     const normalizedAuthorizedUsers = Array.isArray(authorizedUsers)
@@ -191,7 +214,9 @@ export function createAdminStore(initialData = emptyAdminData) {
           .map((entry) => entry.trim())
           .filter(Boolean);
 
-    const primaryRepresentative = String(representative || trimmedName || trimmedBusinessName || "").trim();
+    const primaryRepresentative = String(
+      representative || trimmedName || trimmedBusinessName || "",
+    ).trim();
     const client = {
       id: `client-${Date.now().toString().slice(-6)}`,
       displayName: trimmedName || trimmedBusinessName,
@@ -210,8 +235,11 @@ export function createAdminStore(initialData = emptyAdminData) {
       activeServices: 0,
       lastActivity: new Date().toISOString().slice(0, 10),
       nextAction: "Complete intake and assign service scope",
-      authorizedUsers: normalizedAuthorizedUsers.length ? normalizedAuthorizedUsers : [primaryRepresentative || trimmedName || trimmedBusinessName],
-      representative: primaryRepresentative || trimmedName || trimmedBusinessName,
+      authorizedUsers: normalizedAuthorizedUsers.length
+        ? normalizedAuthorizedUsers
+        : [primaryRepresentative || trimmedName || trimmedBusinessName],
+      representative:
+        primaryRepresentative || trimmedName || trimmedBusinessName,
       notes: notes || "",
     };
 
@@ -235,12 +263,18 @@ export function createAdminStore(initialData = emptyAdminData) {
     if (!normalized.audience) throw new Error("Service audience is required.");
     if (!normalized.status) throw new Error("Service status is required.");
     if (!normalized.billingType) throw new Error("Billing type is required.");
-    if (normalized.billingType !== "Custom / Scope of Work" && (normalized.defaultPrice == null || Number.isNaN(normalized.defaultPrice))) {
+    if (
+      normalized.billingType !== "Custom / Scope of Work" &&
+      (normalized.defaultPrice == null || Number.isNaN(normalized.defaultPrice))
+    ) {
       throw new Error("Default price is required for standard billing types.");
     }
-    if (normalized.defaultDuration <= 0) throw new Error("Default duration must be greater than zero.");
+    if (normalized.defaultDuration <= 0)
+      throw new Error("Default duration must be greater than zero.");
     if (findServiceByCode(normalized.serviceCode)) {
-      throw new Error(`Service code ${normalized.serviceCode} is already in use.`);
+      throw new Error(
+        `Service code ${normalized.serviceCode} is already in use.`,
+      );
     }
 
     const created = { ...normalized, addOns: normalized.addOns || [] };
@@ -279,7 +313,10 @@ export function createAdminStore(initialData = emptyAdminData) {
       addOnCode: String(addOn.addOnCode || "").trim(),
       addOnName: String(addOn.addOnName || "").trim(),
       description: addOn.description || "",
-      defaultPrice: addOn.defaultPrice == null || addOn.defaultPrice === "" ? null : Number(addOn.defaultPrice),
+      defaultPrice:
+        addOn.defaultPrice == null || addOn.defaultPrice === ""
+          ? null
+          : Number(addOn.defaultPrice),
       billingType: addOn.billingType || service.billingType || "Fixed Fee",
       active: addOn.active !== false,
       required: Boolean(addOn.required),
@@ -302,17 +339,31 @@ export function createAdminStore(initialData = emptyAdminData) {
   const updateServiceAddOn = (serviceId, addOnId, updates = {}) => {
     const service = findServiceById(serviceId);
     if (!service) return null;
-    const index = (service.addOns || []).findIndex((addOn) => addOn.id === addOnId);
+    const index = (service.addOns || []).findIndex(
+      (addOn) => addOn.id === addOnId,
+    );
     if (index === -1) return null;
 
     service.addOns[index] = {
       ...service.addOns[index],
       ...updates,
       id: addOnId,
-      defaultPrice: updates.defaultPrice == null || updates.defaultPrice === "" ? null : Number(updates.defaultPrice),
-      active: updates.active !== undefined ? Boolean(updates.active) : service.addOns[index].active,
-      required: updates.required !== undefined ? Boolean(updates.required) : service.addOns[index].required,
-      optional: updates.optional !== undefined ? Boolean(updates.optional) : service.addOns[index].optional,
+      defaultPrice:
+        updates.defaultPrice == null || updates.defaultPrice === ""
+          ? null
+          : Number(updates.defaultPrice),
+      active:
+        updates.active !== undefined
+          ? Boolean(updates.active)
+          : service.addOns[index].active,
+      required:
+        updates.required !== undefined
+          ? Boolean(updates.required)
+          : service.addOns[index].required,
+      optional:
+        updates.optional !== undefined
+          ? Boolean(updates.optional)
+          : service.addOns[index].optional,
     };
 
     return service.addOns[index];
@@ -335,7 +386,8 @@ export function createAdminStore(initialData = emptyAdminData) {
     };
 
     Object.assign(client, nextProfile);
-    client.lastActivity = client.lastActivity || new Date().toISOString().slice(0, 10);
+    client.lastActivity =
+      client.lastActivity || new Date().toISOString().slice(0, 10);
     client.representative = client.representative || client.displayName;
 
     addActivity({
@@ -399,61 +451,118 @@ export function createAdminStore(initialData = emptyAdminData) {
   };
 
   const normalizeLeadInput = (leadInput = {}) => {
-    const firstName = String(leadInput.firstName || leadInput.first_name || "").trim();
-    const lastName = String(leadInput.lastName || leadInput.last_name || "").trim();
-    const name = String(leadInput.name || [firstName, lastName].filter(Boolean).join(" ") || "Unassigned lead").trim();
-    const email = String(leadInput.email || "").trim().toLowerCase();
+    const firstName = String(
+      leadInput.firstName || leadInput.first_name || "",
+    ).trim();
+    const lastName = String(
+      leadInput.lastName || leadInput.last_name || "",
+    ).trim();
+    const name = String(
+      leadInput.name ||
+        [firstName, lastName].filter(Boolean).join(" ") ||
+        "Unassigned lead",
+    ).trim();
+    const email = String(leadInput.email || "")
+      .trim()
+      .toLowerCase();
     const phone = String(leadInput.phone || leadInput.phoneNumber || "").trim();
-    const audience = leadInput.audience === "business" ? "Business" : "Individual";
-    const source = String(leadInput.source || leadInput.leadSource || "Website Contact Form").trim();
-    const requestedService = String(leadInput.serviceInterest || leadInput.serviceName || leadInput.requestedService || "General consultation").trim();
-    const description = String(leadInput.message || leadInput.inquiry || leadInput.description || "").trim();
+    const audience =
+      leadInput.audience === "business" ? "Business" : "Individual";
+    const source = String(
+      leadInput.source || leadInput.leadSource || "Website Contact Form",
+    ).trim();
+    const requestedService = String(
+      leadInput.serviceInterest ||
+        leadInput.serviceName ||
+        leadInput.requestedService ||
+        "General consultation",
+    ).trim();
+    const description = String(
+      leadInput.message || leadInput.inquiry || leadInput.description || "",
+    ).trim();
 
     return {
-      id: leadInput.id || leadInput.leadId || `lead-${Date.now().toString().slice(-6)}`,
+      id:
+        leadInput.id ||
+        leadInput.leadId ||
+        `lead-${Date.now().toString().slice(-6)}`,
       name,
       firstName,
       lastName,
       email,
       phone,
-      businessName: String(leadInput.businessName || leadInput.business_name || "").trim(),
+      businessName: String(
+        leadInput.businessName || leadInput.business_name || "",
+      ).trim(),
       audience,
       source,
       serviceInterest: requestedService,
       message: description,
-      preferredContact: String(leadInput.preferredContact || leadInput.preferred_contact || "").trim(),
+      preferredContact: String(
+        leadInput.preferredContact || leadInput.preferred_contact || "",
+      ).trim(),
       status: leadInput.status || "New",
-      assignedTo: leadInput.assignedTo || leadInput.owner || "Owner / Administrator",
-      nextAction: leadInput.nextAction || leadInput.next_action || "Review inquiry",
-      receivedAt: leadInput.receivedAt || leadInput.createdAt || leadInput.dateReceived || new Date().toISOString(),
-      lastActivityAt: leadInput.lastActivityAt || leadInput.lastContact || leadInput.receivedAt || leadInput.createdAt || new Date().toISOString(),
+      assignedTo:
+        leadInput.assignedTo || leadInput.owner || "Owner / Administrator",
+      nextAction:
+        leadInput.nextAction || leadInput.next_action || "Review inquiry",
+      receivedAt:
+        leadInput.receivedAt ||
+        leadInput.createdAt ||
+        leadInput.dateReceived ||
+        new Date().toISOString(),
+      lastActivityAt:
+        leadInput.lastActivityAt ||
+        leadInput.lastContact ||
+        leadInput.receivedAt ||
+        leadInput.createdAt ||
+        new Date().toISOString(),
       interests: Array.isArray(leadInput.interests) ? leadInput.interests : [],
-      internalNotes: String(leadInput.internalNotes || leadInput.notes || "").trim(),
-      contactAttempts: Array.isArray(leadInput.contactAttempts) ? leadInput.contactAttempts : [],
-      statusHistory: Array.isArray(leadInput.statusHistory) ? leadInput.statusHistory : [],
+      internalNotes: String(
+        leadInput.internalNotes || leadInput.notes || "",
+      ).trim(),
+      contactAttempts: Array.isArray(leadInput.contactAttempts)
+        ? leadInput.contactAttempts
+        : [],
+      statusHistory: Array.isArray(leadInput.statusHistory)
+        ? leadInput.statusHistory
+        : [],
     };
   };
 
   const findMatchingLead = (leadInput = {}) => {
     const normalized = normalizeLeadInput(leadInput);
     const emailKey = normalized.email ? normalized.email.toLowerCase() : "";
-    const phoneKey = normalized.phone ? normalized.phone.replace(/\D+/g, "") : "";
+    const phoneKey = normalized.phone
+      ? normalized.phone.replace(/\D+/g, "")
+      : "";
 
-    return state.leads.find((lead) => {
-      const current = normalizeLeadInput(lead);
-      const currentEmail = current.email ? current.email.toLowerCase() : "";
-      const currentPhone = current.phone ? current.phone.replace(/\D+/g, "") : "";
-      const sameEmail = emailKey && currentEmail && emailKey === currentEmail;
-      const samePhone = phoneKey && currentPhone && phoneKey === currentPhone;
-      const sameBusiness =
-        normalized.businessName &&
-        current.businessName &&
-        normalized.businessName.toLowerCase() === current.businessName.toLowerCase();
+    return (
+      state.leads.find((lead) => {
+        const current = normalizeLeadInput(lead);
+        const currentEmail = current.email ? current.email.toLowerCase() : "";
+        const currentPhone = current.phone
+          ? current.phone.replace(/\D+/g, "")
+          : "";
+        const sameEmail = emailKey && currentEmail && emailKey === currentEmail;
+        const samePhone = phoneKey && currentPhone && phoneKey === currentPhone;
+        const sameBusiness =
+          normalized.businessName &&
+          current.businessName &&
+          normalized.businessName.toLowerCase() ===
+            current.businessName.toLowerCase();
 
-      if (sameEmail || samePhone) return true;
-      if (sameBusiness && normalized.name && current.name && normalized.name.toLowerCase() === current.name.toLowerCase()) return true;
-      return false;
-    }) || null;
+        if (sameEmail || samePhone) return true;
+        if (
+          sameBusiness &&
+          normalized.name &&
+          current.name &&
+          normalized.name.toLowerCase() === current.name.toLowerCase()
+        )
+          return true;
+        return false;
+      }) || null
+    );
   };
 
   const createLeadFromContact = (leadInput = {}) => {
@@ -468,7 +577,13 @@ export function createAdminStore(initialData = emptyAdminData) {
         lastActivityAt: new Date().toISOString(),
         lastContact: new Date().toISOString(),
         status: existing.status || normalized.status || "New",
-        internalNotes: [existing.internalNotes, normalized.internalNotes].filter(Boolean).join("\n").trim() || existing.internalNotes || "",
+        internalNotes:
+          [existing.internalNotes, normalized.internalNotes]
+            .filter(Boolean)
+            .join("\n")
+            .trim() ||
+          existing.internalNotes ||
+          "",
         message: existing.message || normalized.message || "",
         source: existing.source || normalized.source || "Website Contact Form",
       });
@@ -496,11 +611,19 @@ export function createAdminStore(initialData = emptyAdminData) {
       id: normalized.id || `lead-${Date.now().toString().slice(-6)}`,
       status: normalized.status || "New",
       receivedAt: normalized.receivedAt || new Date().toISOString(),
-      lastActivityAt: normalized.lastActivityAt || normalized.receivedAt || new Date().toISOString(),
-      lastContact: normalized.lastActivityAt || normalized.receivedAt || new Date().toISOString(),
+      lastActivityAt:
+        normalized.lastActivityAt ||
+        normalized.receivedAt ||
+        new Date().toISOString(),
+      lastContact:
+        normalized.lastActivityAt ||
+        normalized.receivedAt ||
+        new Date().toISOString(),
       source: normalized.source || "Website Contact Form",
       internalNotes: normalized.internalNotes || "",
-      interests: Array.isArray(normalized.interests) ? normalized.interests : [],
+      interests: Array.isArray(normalized.interests)
+        ? normalized.interests
+        : [],
       contactAttempts: [],
       statusHistory: [
         {
@@ -612,7 +735,8 @@ export function createAdminStore(initialData = emptyAdminData) {
     lead.contactAttempts = [entry, ...(lead.contactAttempts || [])];
     lead.lastContact = entry.date;
     lead.lastActivityAt = new Date().toISOString();
-    lead.nextAction = attempt.nextAction || lead.nextAction || "Review follow-up results";
+    lead.nextAction =
+      attempt.nextAction || lead.nextAction || "Review follow-up results";
     addActivity({
       type: "lead_contact_attempted",
       actorType: "admin",
@@ -769,26 +893,35 @@ export function createAdminStore(initialData = emptyAdminData) {
     if (!client) return null;
 
     const catalogService = serviceId ? findServiceById(serviceId) : null;
-    const resolvedServiceName = serviceName || (catalogService ? catalogService.serviceName : "General admin support");
-    const resolvedServiceCode = serviceCode || (catalogService ? catalogService.serviceCode : null);
-    const resolvedSelectedServices = Array.isArray(selectedServices) && selectedServices.length
-      ? selectedServices
-      : [{
-          serviceId: serviceId || catalogService?.id || null,
-          serviceCode: resolvedServiceCode,
-          serviceName: resolvedServiceName,
-          billingType: catalogService?.billingType || "Fixed Fee",
-          defaultPrice: catalogService?.defaultPrice ?? null,
-          chosenPrice: catalogService?.defaultPrice ?? null,
-          quantity: 1,
-          addOns: catalogService?.addOns?.filter((addOn) => addOn.active && addOn.required).map((addOn) => ({
-            addOnId: addOn.id,
-            addOnCode: addOn.addOnCode,
-            addOnName: addOn.addOnName,
-            defaultPrice: addOn.defaultPrice,
-            chosenPrice: addOn.defaultPrice,
-          })) || [],
-        }];
+    const resolvedServiceName =
+      serviceName ||
+      (catalogService ? catalogService.serviceName : "General admin support");
+    const resolvedServiceCode =
+      serviceCode || (catalogService ? catalogService.serviceCode : null);
+    const resolvedSelectedServices =
+      Array.isArray(selectedServices) && selectedServices.length
+        ? selectedServices
+        : [
+            {
+              serviceId: serviceId || catalogService?.id || null,
+              serviceCode: resolvedServiceCode,
+              serviceName: resolvedServiceName,
+              billingType: catalogService?.billingType || "Fixed Fee",
+              defaultPrice: catalogService?.defaultPrice ?? null,
+              chosenPrice: catalogService?.defaultPrice ?? null,
+              quantity: 1,
+              addOns:
+                catalogService?.addOns
+                  ?.filter((addOn) => addOn.active && addOn.required)
+                  .map((addOn) => ({
+                    addOnId: addOn.id,
+                    addOnCode: addOn.addOnCode,
+                    addOnName: addOn.addOnName,
+                    defaultPrice: addOn.defaultPrice,
+                    chosenPrice: addOn.defaultPrice,
+                  })) || [],
+            },
+          ];
 
     const engagement = {
       id: `eng-${Date.now().toString().slice(-6)}`,
@@ -821,7 +954,10 @@ export function createAdminStore(initialData = emptyAdminData) {
       summary: `${client.displayName} is now beginning the ${resolvedServiceName} workflow.`,
       notes: `Admin-only note: ${resolvedServiceName} onboarding is beginning in the prototype workflow.`,
       selectedServices: resolvedSelectedServices,
-      lineItems: Array.isArray(lineItems) && lineItems.length ? lineItems : resolvedSelectedServices,
+      lineItems:
+        Array.isArray(lineItems) && lineItems.length
+          ? lineItems
+          : resolvedSelectedServices,
       pricingOverrides: [],
     };
 
@@ -1072,7 +1208,9 @@ export function createAdminStore(initialData = emptyAdminData) {
   const generateInvoiceNumber = (existing = []) => {
     const year = new Date().getFullYear();
     const numbers = existing
-      .map((invoice) => getInvoiceNumberSeed(invoice.invoiceNumber || invoice.id))
+      .map((invoice) =>
+        getInvoiceNumberSeed(invoice.invoiceNumber || invoice.id),
+      )
       .filter((value) => Number.isFinite(value));
 
     const nextNumber = numbers.length ? Math.max(...numbers) + 1 : 1;
@@ -1080,10 +1218,19 @@ export function createAdminStore(initialData = emptyAdminData) {
   };
 
   const deriveInvoiceStatus = (invoice, paymentList = []) => {
-    const outstanding = paymentList.reduce((sum, payment) => sum + parseMoney(payment.amount), 0);
+    const outstanding = paymentList.reduce(
+      (sum, payment) => sum + parseMoney(payment.amount),
+      0,
+    );
     const baseline = parseMoney(invoice.subtotal || invoice.amount || 0);
-    const invoiceTotal = baseline + parseMoney(invoice.adjustments || 0) - parseMoney(invoice.creditsApplied || 0);
-    const paidAmount = Math.min(parseMoney(invoice.paidAmount || outstanding), invoiceTotal);
+    const invoiceTotal =
+      baseline +
+      parseMoney(invoice.adjustments || 0) -
+      parseMoney(invoice.creditsApplied || 0);
+    const paidAmount = Math.min(
+      parseMoney(invoice.paidAmount || outstanding),
+      invoiceTotal,
+    );
     const remaining = Math.max(invoiceTotal - paidAmount, 0);
     const today = new Date();
     const due = invoice.dueAt ? new Date(`${invoice.dueAt}T23:59:59`) : null;
@@ -1091,22 +1238,28 @@ export function createAdminStore(initialData = emptyAdminData) {
     if (invoice.status === "Void") return "Void";
     if (invoice.status === "Draft") return "Draft";
     if (paidAmount >= invoiceTotal && invoiceTotal > 0) return "Paid";
-    if (remaining > 0 && paidAmount > 0 && paidAmount < invoiceTotal) return "Partially Paid";
+    if (remaining > 0 && paidAmount > 0 && paidAmount < invoiceTotal)
+      return "Partially Paid";
     if (due && today > due && remaining > 0) return "Past Due";
-    if (invoice.status === "Issued" || invoice.status === "Open") return "Issued";
+    if (invoice.status === "Issued" || invoice.status === "Open")
+      return "Issued";
     if (!invoice.status) return remaining > 0 ? "Issued" : "Paid";
     return invoice.status;
   };
 
   const normalizeInvoiceLineItem = (lineItem = {}, index = 0) => {
     const quantity = Number(lineItem.quantity || 1);
-    const unitPrice = parseMoney(lineItem.unitPrice ?? lineItem.rate ?? lineItem.amount ?? 0);
+    const unitPrice = parseMoney(
+      lineItem.unitPrice ?? lineItem.rate ?? lineItem.amount ?? 0,
+    );
     const amount = parseMoney(lineItem.amount ?? quantity * unitPrice);
 
     return {
       id: lineItem.id || `line-${Date.now()}-${index}`,
       serviceCode: String(lineItem.serviceCode || "").trim(),
-      description: String(lineItem.description || lineItem.serviceName || "Custom line item").trim(),
+      description: String(
+        lineItem.description || lineItem.serviceName || "Custom line item",
+      ).trim(),
       quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : 1,
       unitPrice,
       amount,
@@ -1138,10 +1291,15 @@ export function createAdminStore(initialData = emptyAdminData) {
     issueType = "manual",
   }) => {
     const normalizedLines = Array.isArray(lineItems)
-      ? lineItems.map((lineItem, index) => normalizeInvoiceLineItem(lineItem, index))
+      ? lineItems.map((lineItem, index) =>
+          normalizeInvoiceLineItem(lineItem, index),
+        )
       : [];
 
-    const subtotal = normalizedLines.reduce((sum, lineItem) => sum + parseMoney(lineItem.amount), 0);
+    const subtotal = normalizedLines.reduce(
+      (sum, lineItem) => sum + parseMoney(lineItem.amount),
+      0,
+    );
     const requestedAmount = parseMoney(amount);
     const totalAmount = Math.max(
       subtotal + parseMoney(adjustments) - parseMoney(creditsApplied),
@@ -1150,7 +1308,11 @@ export function createAdminStore(initialData = emptyAdminData) {
     );
     const invoiceId = `inv-${Date.now().toString().slice(-6)}`;
     const number = invoiceNumber || generateInvoiceNumber(state.invoices);
-    const dueDateValue = dueDate || new Date(Date.now() + 1000 * 60 * 60 * 24 * 14).toISOString().slice(0, 10);
+    const dueDateValue =
+      dueDate ||
+      new Date(Date.now() + 1000 * 60 * 60 * 24 * 14)
+        .toISOString()
+        .slice(0, 10);
 
     const invoice = {
       id: invoiceId,
@@ -1195,14 +1357,22 @@ export function createAdminStore(initialData = emptyAdminData) {
   };
 
   const recordPayment = (invoiceId, payment = {}) => {
-    const invoice = state.invoices.find((item) => item.id === invoiceId || item.invoiceNumber === invoiceId);
+    const invoice = state.invoices.find(
+      (item) => item.id === invoiceId || item.invoiceNumber === invoiceId,
+    );
     if (!invoice) return null;
 
     const amount = parseMoney(payment.amount);
-    if (!amount || amount <= 0) throw new Error("Payment amount must be greater than zero.");
+    if (!amount || amount <= 0)
+      throw new Error("Payment amount must be greater than zero.");
 
-    const existingPayments = state.payments.filter((entry) => entry.invoiceId === invoice.id);
-    const paidAlready = existingPayments.reduce((sum, entry) => sum + parseMoney(entry.amount), 0);
+    const existingPayments = state.payments.filter(
+      (entry) => entry.invoiceId === invoice.id,
+    );
+    const paidAlready = existingPayments.reduce(
+      (sum, entry) => sum + parseMoney(entry.amount),
+      0,
+    );
     const invoiceTotal = parseMoney(invoice.amount || invoice.subtotal || 0);
     const totalRemaining = Math.max(invoiceTotal - paidAlready, 0);
 
@@ -1215,7 +1385,8 @@ export function createAdminStore(initialData = emptyAdminData) {
       invoiceId: invoice.id,
       amount,
       date: payment.date || new Date().toISOString().slice(0, 10),
-      methodLabel: payment.methodLabel || payment.paymentMethod || "Manual payment",
+      methodLabel:
+        payment.methodLabel || payment.paymentMethod || "Manual payment",
       reference: payment.reference || "",
       note: payment.note || "",
       createdAt: new Date().toISOString(),
@@ -1224,7 +1395,12 @@ export function createAdminStore(initialData = emptyAdminData) {
     state.payments.unshift(entry);
     invoice.paidAmount = paidAlready + amount;
     invoice.payments = invoice.paidAmount;
-    invoice.status = deriveInvoiceStatus(invoice, state.payments.filter((paymentEntry) => paymentEntry.invoiceId === invoice.id));
+    invoice.status = deriveInvoiceStatus(
+      invoice,
+      state.payments.filter(
+        (paymentEntry) => paymentEntry.invoiceId === invoice.id,
+      ),
+    );
 
     addActivity({
       type: "payment_recorded",
@@ -1240,7 +1416,9 @@ export function createAdminStore(initialData = emptyAdminData) {
   };
 
   const setInvoiceStatus = (invoiceId, status) => {
-    const invoice = state.invoices.find((item) => item.id === invoiceId || item.invoiceNumber === invoiceId);
+    const invoice = state.invoices.find(
+      (item) => item.id === invoiceId || item.invoiceNumber === invoiceId,
+    );
     if (!invoice) return null;
     invoice.status = status;
     addActivity({

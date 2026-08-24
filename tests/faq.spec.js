@@ -10,10 +10,10 @@ test.describe("FAQ page", () => {
     await expect(page.locator(".faq-category-nav a")).toHaveCount(5);
     await expect(page.locator(".faq-category-nav")).toContainText("General");
     await expect(page.locator(".faq-category-nav")).toContainText(
-      "Business Services"
+      "Business Services",
     );
     await expect(page.locator(".faq-category-nav")).toContainText(
-      "Working With Alchemize"
+      "Working With Alchemize",
     );
 
     const search = page.locator("#faq-query");

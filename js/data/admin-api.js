@@ -22,7 +22,10 @@ async function fetchJson(url, options = {}) {
   };
 
   const csrfToken = window.__ALCHEMIZE_CSRF_TOKEN__ || "";
-  if (options.method && !["GET", "HEAD"].includes(options.method.toUpperCase())) {
+  if (
+    options.method &&
+    !["GET", "HEAD"].includes(options.method.toUpperCase())
+  ) {
     headers["X-CSRF-Token"] = csrfToken;
   }
 
@@ -33,7 +36,9 @@ async function fetchJson(url, options = {}) {
   });
 
   const contentType = response.headers.get("content-type") || "";
-  const payload = contentType.includes("application/json") ? await response.json() : null;
+  const payload = contentType.includes("application/json")
+    ? await response.json()
+    : null;
 
   if (!response.ok) {
     throw new Error(payload?.error?.message || "Request failed.");

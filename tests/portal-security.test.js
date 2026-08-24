@@ -24,7 +24,10 @@ test("login routes portal roles to the canonical client dashboard", () => {
     /\["client", "business-authorized-user"\]\.includes\(user\?\.role_slug\)/,
   );
   assert.match(loginPage, /"\/client-portal\/dashboard"/);
-  assert.match(loginPage, /navigate\(authenticatedDestination\(sessionData\?\.user\)/);
+  assert.match(
+    loginPage,
+    /navigate\(authenticatedDestination\(sessionData\?\.user\)/,
+  );
 });
 
 test("all portal record families are scoped by the resolved client", () => {
@@ -257,7 +260,9 @@ test("Phase 3 attention, onboarding, and badges derive from scoped persisted rec
 });
 
 test("Phase 3 authorized-user requests require primary contact and Admin approval", () => {
-  const migration = read("migrations/012_create_client_portal_phase_3_operations.sql");
+  const migration = read(
+    "migrations/012_create_client_portal_phase_3_operations.sql",
+  );
   const service = read("server/services/portal-action-service.php");
   const admin = read("server/repositories/portal-admin-repository.php");
   assert.match(migration, /CREATE TABLE authorized_user_requests/);
@@ -269,9 +274,15 @@ test("Phase 3 authorized-user requests require primary contact and Admin approva
 });
 
 test("Phase 3 preserves separate message reads and explicit client action state", () => {
-  const migration = read("migrations/012_create_client_portal_phase_3_operations.sql");
-  const clientRepository = read("server/repositories/portal-action-repository.php");
-  const adminRepository = read("server/repositories/portal-admin-repository.php");
+  const migration = read(
+    "migrations/012_create_client_portal_phase_3_operations.sql",
+  );
+  const clientRepository = read(
+    "server/repositories/portal-action-repository.php",
+  );
+  const adminRepository = read(
+    "server/repositories/portal-admin-repository.php",
+  );
   assert.match(migration, /client_action_required/);
   assert.match(clientRepository, /read_by_client_at/);
   assert.match(adminRepository, /read_by_admin_at/);
@@ -280,7 +291,9 @@ test("Phase 3 preserves separate message reads and explicit client action state"
 });
 
 test("Phase 3 document replacement keeps submissions and exposes only client guidance", () => {
-  const migration = read("migrations/012_create_client_portal_phase_3_operations.sql");
+  const migration = read(
+    "migrations/012_create_client_portal_phase_3_operations.sql",
+  );
   const repository = read("server/repositories/portal-repository.php");
   const admin = read("server/repositories/portal-admin-repository.php");
   assert.match(migration, /client_visible_review_note/);
@@ -293,7 +306,10 @@ test("Phase 4 stores versioned files outside public paths with content validatio
   const migration = read("migrations/013_create_secure_document_versions.sql");
   const storage = read("server/services/document-storage-service.php");
   assert.match(migration, /version_number INT UNSIGNED/);
-  assert.match(migration, /UNIQUE KEY uq_document_submissions_document_version/);
+  assert.match(
+    migration,
+    /UNIQUE KEY uq_document_submissions_document_version/,
+  );
   assert.match(migration, /archived_at TIMESTAMP/);
   assert.match(storage, /finfo\(FILEINFO_MIME_TYPE\)/);
   assert.match(storage, /is_uploaded_file/);
@@ -306,7 +322,10 @@ test("Phase 4 client downloads bind both document and session-resolved client", 
   const endpoint = read("api/v1/portal/index.php");
   const repository = read("server/repositories/portal-action-repository.php");
   assert.match(endpoint, /sendClientDownload\(\$access, \$sessionUser/);
-  assert.match(repository, /d\.public_id = :document_id AND d\.client_id = :client_id/);
+  assert.match(
+    repository,
+    /d\.public_id = :document_id AND d\.client_id = :client_id/,
+  );
   assert.match(repository, /d\.visibility IN \(\\'client\\', \\'shared\\'\)/);
   assert.match(repository, /ds\.archived_at IS NULL/);
   assert.doesNotMatch(endpoint, /\$_(?:GET|POST|REQUEST)\[['"]client_id['"]\]/);
@@ -324,7 +343,9 @@ test("Phase 4 Admin downloads and version history remain staff-authorized", () =
 test("Phase 4 separates client guidance from internal review notes", () => {
   const migration = read("migrations/013_create_secure_document_versions.sql");
   const clientRepository = read("server/repositories/portal-repository.php");
-  const adminRepository = read("server/repositories/portal-admin-repository.php");
+  const adminRepository = read(
+    "server/repositories/portal-admin-repository.php",
+  );
   assert.match(migration, /internal_review_notes/);
   assert.match(adminRepository, /internal_review_notes/);
   assert.doesNotMatch(clientRepository, /internal_review_notes/);

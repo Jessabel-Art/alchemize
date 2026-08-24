@@ -17,4 +17,3 @@ if (resourceRoutes.length === 0) {
     console.log();
   }
 }
-

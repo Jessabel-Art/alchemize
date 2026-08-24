@@ -30,5 +30,16 @@
   --transition-base: 240ms ease;
   --transition-slow: 420ms ease;
 }
-@media (min-width:1600px){:root{--page-max:1520px;--content-max:1360px}}
-@media (min-width:2000px){:root{--page-max:1680px;--content-max:1480px;--page-gutter:clamp(2rem,4vw,6rem)}}
+@media (min-width: 1600px) {
+  :root {
+    --page-max: 1520px;
+    --content-max: 1360px;
+  }
+}
+@media (min-width: 2000px) {
+  :root {
+    --page-max: 1680px;
+    --content-max: 1480px;
+    --page-gutter: clamp(2rem, 4vw, 6rem);
+  }
+}

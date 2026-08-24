@@ -32,8 +32,8 @@ const privacySections = [
         </ul>
         <p>
           Website systems may also receive limited technical information such as
-          browser type, device information, IP address, referring pages, requested
-          pages, and similar server or security data.
+          browser type, device information, IP address, referring pages,
+          requested pages, and similar server or security data.
         </p>
       </>
     ),
@@ -130,16 +130,29 @@ const privacySections = [
           Alchemize does not sell personal information simply because a visitor
           submits a website inquiry.
         </p>
-        <p>
-          Information may be disclosed where reasonably necessary to:
-        </p>
+        <p>Information may be disclosed where reasonably necessary to:</p>
         <ul>
-          <li>operate website, hosting, email, storage, scheduling, payment, or other service infrastructure</li>
+          <li>
+            operate website, hosting, email, storage, scheduling, payment, or
+            other service infrastructure
+          </li>
           <li>perform a service requested by the client</li>
-          <li>work with authorized vendors or professional service providers</li>
-          <li>comply with law, regulation, court order, subpoena, licensing requirement, or government request</li>
-          <li>protect the rights, security, systems, clients, or operations of Alchemize</li>
-          <li>complete a business transaction such as a reorganization, financing, merger, or transfer of business assets, subject to applicable requirements</li>
+          <li>
+            work with authorized vendors or professional service providers
+          </li>
+          <li>
+            comply with law, regulation, court order, subpoena, licensing
+            requirement, or government request
+          </li>
+          <li>
+            protect the rights, security, systems, clients, or operations of
+            Alchemize
+          </li>
+          <li>
+            complete a business transaction such as a reorganization, financing,
+            merger, or transfer of business assets, subject to applicable
+            requirements
+          </li>
         </ul>
         <p>
           Information related to tax preparation, insurance, Medicare, or other
@@ -155,14 +168,15 @@ const privacySections = [
     content: (
       <>
         <p>
-          Alchemize uses reasonable administrative, technical, and organizational
-          measures intended to protect information appropriate to the nature of
-          the information and the systems involved.
+          Alchemize uses reasonable administrative, technical, and
+          organizational measures intended to protect information appropriate to
+          the nature of the information and the systems involved.
         </p>
         <p>
-          Security practices may include measures such as access controls, secure
-          credentials, protected hosting, limited access, software maintenance,
-          data minimization, and appropriate service-provider controls.
+          Security practices may include measures such as access controls,
+          secure credentials, protected hosting, limited access, software
+          maintenance, data minimization, and appropriate service-provider
+          controls.
         </p>
         <p>
           No website, email system, internet transmission, or electronic storage
@@ -203,9 +217,7 @@ const privacySections = [
     title: "Your choices",
     content: (
       <>
-        <p>
-          Individuals may contact Alchemize to:
-        </p>
+        <p>Individuals may contact Alchemize to:</p>
         <ul>
           <li>update basic contact information</li>
           <li>correct inaccurate information provided through an inquiry</li>
@@ -218,7 +230,10 @@ const privacySections = [
           professional recordkeeping obligations.
         </p>
         <p>
-          Requests may be sent to: <a href={contactRouting.support.mailto}>{contactRouting.support.email}</a>
+          Requests may be sent to:{" "}
+          <a href={contactRouting.support.mailto}>
+            {contactRouting.support.email}
+          </a>
         </p>
       </>
     ),
@@ -233,12 +248,15 @@ const privacySections = [
           businesses and are not directed to children under 13.
         </p>
         <p>
-          Alchemize does not knowingly use the public website to solicit personal
-          information from children under 13.
+          Alchemize does not knowingly use the public website to solicit
+          personal information from children under 13.
         </p>
         <p>
-          If information is believed to have been submitted by a child through the
-          public website, contact: <a href={contactRouting.general.mailto}>{contactRouting.general.email}</a>
+          If information is believed to have been submitted by a child through
+          the public website, contact:{" "}
+          <a href={contactRouting.general.mailto}>
+            {contactRouting.general.email}
+          </a>
         </p>
       </>
     ),
@@ -258,8 +276,8 @@ const privacySections = [
         </p>
         <p>
           Material changes affecting existing client relationships may also be
-          communicated through an appropriate additional method where required or
-          appropriate.
+          communicated through an appropriate additional method where required
+          or appropriate.
         </p>
       </>
     ),
@@ -271,7 +289,10 @@ const privacySections = [
       <>
         <p>
           Questions about this Privacy Policy or Alchemize's handling of website
-          information may be sent to: <a href={contactRouting.general.mailto}>{contactRouting.general.email}</a>
+          information may be sent to:{" "}
+          <a href={contactRouting.general.mailto}>
+            {contactRouting.general.email}
+          </a>
         </p>
         <p>
           Do not include sensitive personal, tax, financial, identity, health,
@@ -297,8 +318,8 @@ const termsSections = [
         <p>
           The Alchemize Business Services website is provided for general
           informational, educational, and business-development purposes. You may
-          use the website for lawful personal or business purposes consistent with
-          these Terms of Service.
+          use the website for lawful personal or business purposes consistent
+          with these Terms of Service.
         </p>
         <p>
           Access to the public website does not by itself create a client
@@ -326,10 +347,10 @@ const termsSections = [
         </p>
         <p>
           Information may address tax preparation, insurance, Medicare, notary
-          services, business operations, technology, administrative organization,
-          financial processes, and related topics. General website information is
-          not a substitute for advice based on a person's or business's specific
-          facts and circumstances.
+          services, business operations, technology, administrative
+          organization, financial processes, and related topics. General website
+          information is not a substitute for advice based on a person's or
+          business's specific facts and circumstances.
         </p>
         <p>
           External laws, regulations, programs, deadlines, carrier requirements,
@@ -362,8 +383,9 @@ const termsSections = [
           qualified professional.
         </p>
         <p>
-          A service relationship is established only when scope, responsibilities,
-          pricing, and any required engagement terms are confirmed.
+          A service relationship is established only when scope,
+          responsibilities, pricing, and any required engagement terms are
+          confirmed.
         </p>
       </>
     ),
@@ -381,8 +403,8 @@ const termsSections = [
           and are protected by applicable intellectual-property laws.
         </p>
         <p>
-          Users may view, download, or print materials made available for personal
-          or internal business use unless a resource states otherwise.
+          Users may view, download, or print materials made available for
+          personal or internal business use unless a resource states otherwise.
         </p>
         <p>
           Users may not reproduce, republish, sell, license, distribute, modify,
@@ -407,9 +429,10 @@ const termsSections = [
           resources, or other third-party websites and services.
         </p>
         <p>
-          External links are provided for convenience or reference. Alchemize does
-          not control third-party websites and is not responsible for their
-          availability, security, accuracy, privacy practices, terms, or content.
+          External links are provided for convenience or reference. Alchemize
+          does not control third-party websites and is not responsible for their
+          availability, security, accuracy, privacy practices, terms, or
+          content.
         </p>
         <p>
           A link does not necessarily constitute endorsement of a third party or
@@ -428,18 +451,23 @@ const termsSections = [
     title: "Prohibited use",
     content: (
       <>
-        <p>
-          Users may not use the website or its systems to:
-        </p>
+        <p>Users may not use the website or its systems to:</p>
         <ul>
           <li>violate applicable law</li>
-          <li>attempt unauthorized access to accounts, systems, servers, or data</li>
+          <li>
+            attempt unauthorized access to accounts, systems, servers, or data
+          </li>
           <li>interfere with website operation or security</li>
           <li>transmit malware, malicious code, or automated abuse</li>
           <li>submit fraudulent, misleading, unlawful, or abusive requests</li>
           <li>impersonate another person or organization</li>
-          <li>scrape, copy, or systematically extract protected website content for unauthorized commercial use</li>
-          <li>use forms or communication channels to transmit unlawful content</li>
+          <li>
+            scrape, copy, or systematically extract protected website content
+            for unauthorized commercial use
+          </li>
+          <li>
+            use forms or communication channels to transmit unlawful content
+          </li>
         </ul>
       </>
     ),
@@ -459,14 +487,17 @@ const termsSections = [
           service agreement, the website and public materials are provided on an
           "as available" basis.
         </p>
-        <p>
-          Alchemize does not guarantee that:
-        </p>
+        <p>Alchemize does not guarantee that:</p>
         <ul>
           <li>website content will always be complete or current</li>
           <li>the website will operate without interruption</li>
-          <li>every visitor will qualify for or benefit from a particular service</li>
-          <li>a particular tax, insurance, Medicare, business, funding, certification, or administrative outcome will occur</li>
+          <li>
+            every visitor will qualify for or benefit from a particular service
+          </li>
+          <li>
+            a particular tax, insurance, Medicare, business, funding,
+            certification, or administrative outcome will occur
+          </li>
         </ul>
         <p>
           Specific service obligations are governed by the applicable engagement
@@ -489,8 +520,8 @@ const termsSections = [
           this page with an updated "Last updated" date.
         </p>
         <p>
-          Continued use of the public website after an update means the website is
-          being used under the version then in effect. Separate client
+          Continued use of the public website after an update means the website
+          is being used under the version then in effect. Separate client
           agreements remain governed by their own terms unless amended according
           to those agreements.
         </p>
@@ -554,7 +585,11 @@ function LegalPage({ title, summary }) {
 
           <article className="legal-document">
             {sections.map((section) => (
-              <section id={section.id} key={section.id} className="legal-section">
+              <section
+                id={section.id}
+                key={section.id}
+                className="legal-section"
+              >
                 <div className="legal-section-copy">
                   <h2>{section.title}</h2>
                   {section.content}
@@ -569,9 +604,13 @@ function LegalPage({ title, summary }) {
                   ? "Questions about this Privacy Policy or Alchemize's handling of website information may be sent to:"
                   : "Questions about these Terms of Service or website use may be sent to:"}
                 <br />
-                <a href={contactRouting.general.mailto}>{contactRouting.general.email}</a>
+                <a href={contactRouting.general.mailto}>
+                  {contactRouting.general.email}
+                </a>
                 <br />
-                <a href={businessContact.phone.href}>{businessContact.phone.display}</a>
+                <a href={businessContact.phone.href}>
+                  {businessContact.phone.display}
+                </a>
               </p>
             </div>
           </article>

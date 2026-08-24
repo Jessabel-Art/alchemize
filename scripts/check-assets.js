@@ -77,7 +77,9 @@ walk(rootDir, files);
 const activeFiles = files.filter((file) => {
   const relative = path.relative(rootDir, file).replace(/\\/g, "/");
   return (
-    (relative.startsWith("src/") || relative.startsWith("public/") || file === path.join(rootDir, "index.html")) &&
+    (relative.startsWith("src/") ||
+      relative.startsWith("public/") ||
+      file === path.join(rootDir, "index.html")) &&
     (file.endsWith(".js") || file.endsWith(".css") || file.endsWith(".html"))
   );
 });
@@ -146,4 +148,6 @@ if (problems.length > 0) {
   process.exit(1);
 }
 
-console.log(`Checked ${activeFiles.length} active frontend files. No missing or zero-byte local assets detected.`);
+console.log(
+  `Checked ${activeFiles.length} active frontend files. No missing or zero-byte local assets detected.`,
+);

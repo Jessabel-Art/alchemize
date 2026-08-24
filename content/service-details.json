@@ -713,9 +713,7 @@
       "What if I need help in more than one business area?",
       "What happens during a consultation?"
     ],
-    "resources": [
-      ["Consultation preparation questions", "/faq/"]
-    ],
+    "resources": [["Consultation preparation questions", "/faq/"]],
     "related": [
       [
         "Administration & Operations",

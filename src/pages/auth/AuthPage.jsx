@@ -33,11 +33,15 @@ function AuthPage({ title, buttonLabel }) {
       if (login) {
         const sessionData = await auth.login({ email, password });
         setSession({ authenticated: true, user: sessionData?.user || null });
-        navigate(authenticatedDestination(sessionData?.user), { replace: true });
+        navigate(authenticatedDestination(sessionData?.user), {
+          replace: true,
+        });
         return;
       }
 
-      setError("Account creation is not enabled in this phase. Please request access from the team.");
+      setError(
+        "Account creation is not enabled in this phase. Please request access from the team.",
+      );
     } catch (caughtError) {
       setError(caughtError.message || "The request could not be completed.");
     } finally {
@@ -108,7 +112,11 @@ function AuthPage({ title, buttonLabel }) {
               </label>
             )}
             {error && <p role="alert">{error}</p>}
-            <button className="button button-primary" type="submit" disabled={loading}>
+            <button
+              className="button button-primary"
+              type="submit"
+              disabled={loading}
+            >
               {loading ? "Please wait..." : buttonLabel}
             </button>
           </form>

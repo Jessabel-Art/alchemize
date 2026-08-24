@@ -77,7 +77,10 @@ function Header() {
   const closeResourcesSoon = () => {
     if (!window.matchMedia("(min-width: 1231px)").matches) return;
     window.clearTimeout(closeTimerRef.current);
-    closeTimerRef.current = window.setTimeout(() => setResourceOpen(false), 180);
+    closeTimerRef.current = window.setTimeout(
+      () => setResourceOpen(false),
+      180,
+    );
   };
 
   useEffect(() => setOpen(false), [location.pathname]);
@@ -160,7 +163,9 @@ function Header() {
                         aria-controls="why-menu"
                         aria-label={`${resourceOpen ? "Close" : "Open"} ${label} submenu`}
                         onClick={() => {
-                          if (window.matchMedia("(max-width: 1230px)").matches) {
+                          if (
+                            window.matchMedia("(max-width: 1230px)").matches
+                          ) {
                             setResourceOpen((value) => !value);
                           } else {
                             openResources();

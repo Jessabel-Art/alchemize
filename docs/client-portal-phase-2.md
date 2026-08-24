@@ -4,16 +4,16 @@ Phase 2 adds secured client mutations to the Phase 1 session-derived client boun
 
 ## Write-back map
 
-| Client action | Canonical persisted destination | Admin destination |
-| --- | --- | --- |
-| Complete/respond to task | `tasks` + `task_client_actions` | Tasks and Client Portal activity queue |
-| Upload requested document | `documents_metadata` + `document_submissions` + private file storage | Documents and Client Portal activity queue |
-| Send message | `message_threads` + `messages` | Client Portal activity queue with staff reply |
-| Confirm appointment | `appointments` | Appointments and client activity |
-| Request reschedule/cancellation | `appointment_change_requests` | Client Portal activity queue; approval updates `appointments` |
-| Edit contact preferences | `clients` | Client profile and audit/activity history |
-| Propose sensitive profile change | `profile_change_requests` | Client Portal activity queue; approval updates `clients` or `business_profiles` |
-| Acknowledge service/invoice | `record_acknowledgements` | Activity history |
+| Client action                    | Canonical persisted destination                                      | Admin destination                                                               |
+| -------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Complete/respond to task         | `tasks` + `task_client_actions`                                      | Tasks and Client Portal activity queue                                          |
+| Upload requested document        | `documents_metadata` + `document_submissions` + private file storage | Documents and Client Portal activity queue                                      |
+| Send message                     | `message_threads` + `messages`                                       | Client Portal activity queue with staff reply                                   |
+| Confirm appointment              | `appointments`                                                       | Appointments and client activity                                                |
+| Request reschedule/cancellation  | `appointment_change_requests`                                        | Client Portal activity queue; approval updates `appointments`                   |
+| Edit contact preferences         | `clients`                                                            | Client profile and audit/activity history                                       |
+| Propose sensitive profile change | `profile_change_requests`                                            | Client Portal activity queue; approval updates `clients` or `business_profiles` |
+| Acknowledge service/invoice      | `record_acknowledgements`                                            | Activity history                                                                |
 
 Internal `notes`, task `internal_notes`, document `internal_notes`, invoice `internal_notes`, and audit request metadata never enter portal responses.
 

@@ -13,7 +13,9 @@ export function AdminPageHeader({ eyebrow, title, summary, actions = [] }) {
               <button
                 key={action.label}
                 type="button"
-                className={action.primary ? "primary-button" : "secondary-button"}
+                className={
+                  action.primary ? "primary-button" : "secondary-button"
+                }
                 onClick={action.onClick}
               >
                 {action.label}
@@ -84,14 +86,18 @@ export function AdminToolbar({
       </div>
 
       <div className="admin-toolbar-side">
-        {extraControls ? <div className="admin-toolbar-extra">{extraControls}</div> : null}
+        {extraControls ? (
+          <div className="admin-toolbar-extra">{extraControls}</div>
+        ) : null}
         {actions.length ? (
           <div className="admin-toolbar-actions">
             {actions.map((action) => (
               <button
                 key={action.label}
                 type="button"
-                className={action.primary ? "primary-button" : "secondary-button"}
+                className={
+                  action.primary ? "primary-button" : "secondary-button"
+                }
                 onClick={action.onClick}
               >
                 {action.label}
@@ -128,7 +134,10 @@ export function AdminDetailDrawer({ open, title, children, onClose }) {
 
   return (
     <div className="admin-detail-overlay" onClick={onClose}>
-      <aside className="admin-detail-drawer" onClick={(event) => event.stopPropagation()}>
+      <aside
+        className="admin-detail-drawer"
+        onClick={(event) => event.stopPropagation()}
+      >
         <div className="admin-detail-header">
           <h2>{title}</h2>
           <button type="button" className="secondary-button" onClick={onClose}>
@@ -171,7 +180,9 @@ export function AdminSection({ title, children, actions = [] }) {
               <button
                 key={action.label}
                 type="button"
-                className={action.primary ? "primary-button" : "secondary-button"}
+                className={
+                  action.primary ? "primary-button" : "secondary-button"
+                }
                 onClick={action.onClick}
               >
                 {action.label}

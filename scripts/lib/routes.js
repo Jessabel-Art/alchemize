@@ -117,7 +117,7 @@ export function validateSlug(slug) {
 
 export function buildContentIndex(routes) {
   return routes
-    .filter((route) => route.type === "resource" )
+    .filter((route) => route.type === "resource")
     .map((route) => ({
       type: route.type,
       title: route.title,
