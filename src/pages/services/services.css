@@ -18,6 +18,15 @@
   color: var(--white);
 }
 
+.services-hero .reveal,
+.services-choice-header.reveal {
+  opacity: 1;
+}
+
+.services-hero .eyebrow--gold {
+  color: var(--gold);
+}
+
 .services-hero h1 {
   max-width: 980px;
   margin: 0.7rem 0 0.9rem;
@@ -44,6 +53,10 @@
   grid-template-columns: minmax(220px, 0.34fr) minmax(0, 1fr);
   gap: 1.5rem 2rem;
   align-items: end;
+}
+
+.services-choice .eyebrow {
+  color: var(--emerald-forest);
 }
 
 .services-choice h2,
