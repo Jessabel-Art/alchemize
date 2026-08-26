@@ -23,6 +23,7 @@ foreach ($bootstrapCandidates as $candidate) {
 }
 
 if ($bootstrap === null) {
+    error_log('API bootstrap unavailable: no configured bootstrap file was found.');
     http_response_code(500);
     header('Content-Type: application/json; charset=utf-8');
     header('Cache-Control: no-store');

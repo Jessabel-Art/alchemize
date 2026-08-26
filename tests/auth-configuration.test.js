@@ -39,6 +39,30 @@ test("PHP config loads dotenv and supports conventional integration keys", () =>
   }
 });
 
+test("production auth diagnostics are CLI-only and never print configuration values", () => {
+  const diagnostic = read("scripts/production-auth-diagnostics.php");
+  assert.match(diagnostic, /PHP_SAPI !== 'cli'/);
+  for (const status of [
+    "DATABASE_CONFIG",
+    "DATABASE_CONNECTION",
+    "PDO_DRIVER",
+    "COMPOSER_AUTOLOAD",
+    "SESSION_WRITE",
+    "AUTH_REPOSITORY",
+  ]) {
+    assert.match(diagnostic, new RegExp(status));
+  }
+  assert.doesNotMatch(diagnostic, /echo[^;]*(host|password|user|dsn)/i);
+});
+
+test("auth failures log safe stages while returning one production-safe response", () => {
+  const endpoint = read("api/v1/auth/index.php");
+  assert.match(endpoint, /bootstrap unavailable/);
+  assert.match(endpoint, /failure at %s \[%s\]/);
+  assert.doesNotMatch(endpoint, /failure \[%s\]: %s/);
+  assert.match(endpoint, /Authentication is temporarily unavailable\./);
+});
+
 test("Google provider boundaries keep SDK calls out of controllers", () => {
   const factory = read("server/services/google-client-factory.php");
   const drive = read("server/services/google-drive-service.php");

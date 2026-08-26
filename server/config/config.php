@@ -135,11 +135,11 @@ function alchemize_config(): array
             'reply_to_email' => (string) $env('SES_REPLY_TO_EMAIL', ''),
         ],
         'database' => [
-            'host' => (string) $env('ALCHEMIZE_DB_HOST', $localDatabase['host'] ?? $env('DB_HOST', '')),
-            'port' => (int) $env('ALCHEMIZE_DB_PORT', $localDatabase['port'] ?? $env('DB_PORT', 3306)),
-            'name' => (string) $env('ALCHEMIZE_DB_NAME', $localDatabase['name'] ?? $env('DB_NAME', '')),
-            'user' => (string) $env('ALCHEMIZE_DB_USER', $localDatabase['user'] ?? $env('DB_USER', '')),
-            'password' => (string) $env('ALCHEMIZE_DB_PASSWORD', $localDatabase['password'] ?? $env('DB_PASSWORD', '')),
+            'host' => (string) $env(['ALCHEMIZE_DB_HOST', 'DB_HOST'], $localDatabase['host'] ?? ''),
+            'port' => (int) $env(['ALCHEMIZE_DB_PORT', 'DB_PORT'], $localDatabase['port'] ?? 3306),
+            'name' => (string) $env(['ALCHEMIZE_DB_NAME', 'DB_NAME'], $localDatabase['name'] ?? ''),
+            'user' => (string) $env(['ALCHEMIZE_DB_USER', 'DB_USER'], $localDatabase['user'] ?? ''),
+            'password' => (string) $env(['ALCHEMIZE_DB_PASSWORD', 'DB_PASSWORD'], $localDatabase['password'] ?? ''),
         ],
     ];
 

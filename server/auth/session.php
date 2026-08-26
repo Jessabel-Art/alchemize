@@ -18,7 +18,10 @@ function alchemize_session_start(): void
         'samesite' => 'Lax',
     ]);
     session_name('alchemize_sid');
-    session_start();
+    if (!session_start()) {
+        error_log('Alchemize session initialization failed.');
+        throw new RuntimeException('Session storage is unavailable.');
+    }
 }
 
 function alchemize_session_user(): ?array
@@ -31,7 +34,10 @@ function alchemize_session_user(): ?array
 function alchemize_set_session_user(array $user): void
 {
     alchemize_session_start();
-    session_regenerate_id(true);
+    if (!session_regenerate_id(true)) {
+        error_log('Alchemize session identifier regeneration failed.');
+        throw new RuntimeException('Session storage is unavailable.');
+    }
     $_SESSION['alchemize_user'] = $user;
 }
 

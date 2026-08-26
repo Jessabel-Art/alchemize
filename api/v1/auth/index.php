@@ -22,6 +22,7 @@ foreach ($bootstrapCandidates as $candidate) {
 }
 
 if ($bootstrap === null) {
+    error_log('Auth endpoint bootstrap unavailable: no configured bootstrap file was found.');
     http_response_code(500);
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode(['error' => ['code' => 'INTERNAL_ERROR', 'message' => 'Authentication is temporarily unavailable.']]);
@@ -29,17 +30,29 @@ if ($bootstrap === null) {
 }
 
 $bootstrapPath = getenv('ALCHEMIZE_SERVER_BOOTSTRAP') ?: $bootstrap;
-$config = require $bootstrapPath;
+try {
+    $config = require $bootstrapPath;
+} catch (Throwable $error) {
+    error_log(sprintf('Auth endpoint bootstrap failure [%s].', get_class($error)));
+    http_response_code(500);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['error' => ['code' => 'INTERNAL_ERROR', 'message' => 'Authentication is temporarily unavailable.']]);
+    exit;
+}
 $serverRoot = dirname($bootstrapPath);
 
+$authStage = 'dependencies';
 try {
     require_once $serverRoot . '/auth/session.php';
     require_once $serverRoot . '/repositories/role-repository.php';
     require_once $serverRoot . '/repositories/user-repository.php';
     require_once $serverRoot . '/services/auth-service.php';
 
+    $authStage = 'configuration';
     $appConfig = alchemize_config();
+    $authStage = 'database';
     $database = alchemize_database($appConfig['database']);
+    $authStage = 'repositories';
     $auth = new AlchemizeAuthService(
         new AlchemizeUserRepository($database),
         new AlchemizeRoleRepository($database),
@@ -57,6 +70,7 @@ try {
     $parts = array_values(array_filter(explode('/', $path), static fn (string $value): bool => $value !== ''));
 
     if ($method === 'GET' && $parts === ['session']) {
+        $authStage = 'session';
         $user = alchemize_session_user();
         $csrfToken = alchemize_csrf_token();
         alchemize_json_response([
@@ -69,6 +83,7 @@ try {
     }
 
     if ($method === 'POST' && $parts === ['login']) {
+        $authStage = 'request';
         $payload = alchemize_read_json_request();
         $email = trim((string) ($payload['email'] ?? ''));
         $password = (string) ($payload['password'] ?? '');
@@ -77,7 +92,9 @@ try {
             throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Email and password are required.');
         }
 
+        $authStage = 'credentials';
         $sessionUser = $auth->login($email, $password);
+        $authStage = 'session';
         alchemize_set_session_user($sessionUser);
         alchemize_json_response([
             'data' => [
@@ -112,6 +129,6 @@ try {
     }
     alchemize_error_response($error->httpStatus, $error->errorCode, $error->getMessage());
 } catch (Throwable $error) {
-    error_log(sprintf('Auth endpoint failure [%s]: %s', get_class($error), $error->getMessage()));
+    error_log(sprintf('Auth endpoint failure at %s [%s].', $authStage, get_class($error)));
     alchemize_error_response(500, 'INTERNAL_ERROR', 'Authentication is temporarily unavailable.');
 }
