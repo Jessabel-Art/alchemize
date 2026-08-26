@@ -17,6 +17,7 @@
   },
   "scripts": {
     "dev": "vite",
+    "pretest:e2e": "npm run build",
     "build": "npm run generate:sitemap && vite build",
     "preview": "vite preview",
     "lint": "eslint .",
@@ -46,6 +47,7 @@
     "test:intake": "node --test tests/intake-security.test.js",
     "test:portal": "node --test tests/portal-security.test.js",
     "migrations:check": "node scripts/check-migrations.js",
+    "config:check": "php scripts/config-diagnostics.php",
     "predeploy": "node scripts/predeploy.js",
     "check": "npm run lint && npm run format:check && npm run validate:html && npm run routes:check && npm run metadata:check && npm run check:links && npm run check:assets && npm run check:security && npm run build"
   },

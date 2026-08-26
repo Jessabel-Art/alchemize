@@ -114,6 +114,64 @@ export const faqCategoriesEs = [
     ],
   },
   {
+    category: "Soluciones web y digitales",
+    description:
+      "Preguntas sobre sitios web, herramientas digitales y presencia online.",
+    items: [
+      {
+        question: "¿Qué tipos de sitios web crea Alchemize?",
+        answer:
+          "Alchemize crea sitios web profesionales para pequeñas empresas, proveedores de servicios, emprendedores y organizaciones que necesitan una presencia en línea clara y creíble. Los proyectos pueden incluir sitios informativos, sitios orientados a servicios, sitios para captar clientes, portales para clientes, bibliotecas de recursos y otras experiencias web enfocadas en negocios.",
+      },
+      {
+        question: "¿Puede Alchemize rediseñar un sitio web existente?",
+        answer:
+          "Sí. Los sitios existentes pueden revisarse para estructura, usabilidad, capacidad móvil, organización del contenido, consistencia de marca, flujo de conversión y problemas técnicos. Dependiendo del estado del sitio actual, Alchemize puede recomendar mejorar la versión existente o reconstruir partes del sitio.",
+      },
+      {
+        question: "¿Brindan apoyo de SEO?",
+        answer:
+          "Sí. Los proyectos web pueden incluir optimización básica para búsquedas como estructura de páginas, metadatos, encabezados, enlaces internos, usabilidad móvil, consideraciones de rendimiento y organización del contenido para búsquedas. El SEO más avanzado o continuo puede definirse por separado según las necesidades del negocio.",
+      },
+      {
+        question: "¿Pueden ayudar con anuncios de Google o publicidad pagada?",
+        answer:
+          "Alchemize puede crear o mejorar el sitio web y la experiencia de página de aterrizaje necesarios para apoyar campañas publicitarias y puede ayudar con la preparación técnica y orientada a conversiones de esas páginas. La gestión de publicidad solo debe incluirse como servicio cuando se defina explícitamente en el alcance.",
+      },
+      {
+        question: "¿Mi sitio web funcionará en teléfonos y tabletas?",
+        answer:
+          "Sí. Los sitios web de Alchemize están diseñados y probados para uso responsivo en computadoras, tabletas y teléfonos móviles. La usabilidad móvil se considera parte del desarrollo principal y no una mejora opcional.",
+      },
+      {
+        question:
+          "¿Puede Alchemize agregar formularios, agendamiento, pagos o portales para clientes?",
+        answer:
+          "Sí. Dependiendo del proyecto, los sitios pueden incluir formularios de contacto y captación de clientes, programación de consultas, funcionalidad de pagos, áreas seguras para clientes, flujos de documentos, formularios de ingreso e integraciones con sistemas externos.",
+      },
+      {
+        question: "¿Pueden conectar mi sitio web con herramientas que ya uso?",
+        answer:
+          "En muchos casos, sí. Alchemize puede evaluar integraciones con procesadores de pagos, calendarios, plataformas de correo, almacenamiento en la nube, herramientas CRM o de flujo de trabajo, analítica y otros sistemas empresariales. La disponibilidad depende de la API o opciones de conexión del proveedor.",
+      },
+      {
+        question: "¿Brindan alojamiento o registro de dominio?",
+        answer:
+          "Alchemize puede ayudar a configurar y conectar dominios, alojamiento, DNS, SSL y entornos de implementación como parte de un proyecto web. La propiedad de cuentas críticas para el negocio debe mantenerse con el cliente cuando sea práctico.",
+      },
+      {
+        question: "¿Podré actualizar mi sitio web después de construirlo?",
+        answer:
+          "Depende de la plataforma y del alcance del proyecto. Cuando procede, Alchemize puede ofrecer un flujo administrativo o de gestión de contenido para actualizaciones rutinarias. Para sistemas personalizados, también puede definirse mantenimiento o actualizaciones gestionadas.",
+      },
+      {
+        question: "¿Qué sucede después del lanzamiento del sitio web?",
+        answer:
+          "El trabajo posterior al lanzamiento puede incluir pruebas, solución de problemas, revisión del rendimiento, configuración de analítica, actualizaciones de contenido, mantenimiento, actualizaciones de seguridad o desarrollo futuro según el alcance. El soporte continuo debe documentarse antes o en el momento del lanzamiento.",
+      },
+    ],
+  },
+  {
     category: "Consultas",
     description: "Qué esperar antes, durante y después de una consulta.",
     items: [
@@ -146,6 +204,77 @@ export const faqCategoriesEs = [
         question: "¿Qué sucede después de la consulta?",
         answer:
           "Alchemize puede confirmar el alcance, solicitar información adicional, proponer el siguiente paso o indicar que otro proveedor sería más apropiado.",
+      },
+    ],
+  },
+  {
+    category: "Servicios notariales y de documentos",
+    description:
+      "Preguntas sobre notaría y servicios documentales en Carolina del Norte.",
+    items: [
+      {
+        question:
+          "¿Qué tipos de actos notariales puede realizar un notario de Carolina del Norte?",
+        answer:
+          "Los notarios de Carolina del Norte pueden realizar reconocimientos, administrar juramentos y afirmaciones, y llevar a cabo verificaciones o pruebas cuando se cumplen los requisitos legales aplicables. El documento o la parte solicitante debe indicar el acto notarial requerido. Referencia: Capítulo 10B de N.C.G.S.",
+      },
+      {
+        question: "¿Necesito comparecer en persona para una notaría?",
+        answer:
+          "Para una notaría tradicional en Carolina del Norte, el firmante u otra persona requerida debe comparecer personalmente ante el notario al momento del acto notarial. También se deben cumplir la identificación y demás requisitos estatutarios.",
+      },
+      {
+        question: "¿Qué identificación debo llevar?",
+        answer:
+          "Cuando el firmante no es conocido personalmente por el notario, generalmente necesita prueba satisfactoria de identidad. La ley de Carolina del Norte reconoce un documento de identificación vigente emitido por una agencia del gobierno federal, estatal o tribal reconocida federal o estatal que incluya fotografía y firma o descripción física. En circunstancias permitidas por la ley también puede usarse un testigo creíble calificado.",
+      },
+      {
+        question: "¿Puede el notario decirme qué tipo de notaría necesito?",
+        answer:
+          "No. Un notario de Carolina del Norte que no sea abogado no puede elegir el acto notarial o certificado para un cliente cuando el documento no indica lo que se requiere. El firmante, el preparador del documento, la agencia receptora o un abogado debe determinar cuál certificado o acto notarial es necesario.",
+      },
+      {
+        question:
+          "¿Puede Alchemize ayudarme a completar o interpretar el documento que se va a notarizar?",
+        answer:
+          "No como parte del acto notarial. Un notario que no es abogado no puede brindar asesoría legal ni ayudar a una persona a redactar, completar, seleccionar o entender un documento o transacción cuando ello constituiría la práctica no autorizada del derecho. La asistencia administrativa que sea permitida por separado no debe presentarse como orientación legal.",
+      },
+      {
+        question: "¿Cuánto cuesta la notaría en Carolina del Norte?",
+        answer:
+          "North Carolina actualmente permite que un notario cobre hasta $10 por firma principal notarial para reconocimientos, juramentos, verificaciones o pruebas tradicionales, y hasta $10 por persona para ciertos juramentos o afirmaciones sin firma. Existen topes legales distintos para notarizaciones electrónicas y remotas autorizadas.",
+      },
+      {
+        question: "¿Hay un cargo por viaje para servicio móvil?",
+        answer:
+          "La ley de Carolina del Norte permite el reembolso por millaje real a la tasa federal de millaje del negocio para viajes relacionados con un acto notarial cuando el principal acuerda el reembolso por escrito antes de que ocurra el viaje. Los términos del servicio móvil deben confirmarse antes de la cita.",
+      },
+      {
+        question:
+          "¿Un documento ya puede estar firmado antes de reunirme con el notario?",
+        answer:
+          "Depende del acto notarial. Algunos reconocimientos pueden incluir una firma hecha antes y luego reconocida ante el notario, mientras que otros actos exigen firmar o prestar un juramento en presencia del notario. El notario no puede elegir el acto requerido para el firmante.",
+      },
+      {
+        question: "¿Puede un notario rechazar una notaría?",
+        answer:
+          "Sí. Un notario debe declinar cuando no se cumplen los requisitos legales, incluyendo identificación insuficiente, falta de comparecencia personal requerida, conflictos de interés prohibidos, sospecha de fraude u otras descalificaciones legales.",
+      },
+      {
+        question:
+          "¿Puede Alchemize notarizar un documento si Jessy es parte o beneficiaria del mismo?",
+        answer:
+          "No. Un notario de Carolina del Norte generalmente no puede notarizar un documento cuando es firmante, parte o beneficiario del mismo, sujeto a excepciones legales limitadas que no deben generalizarse en contenido público de preguntas frecuentes. Un notario no puede realizar un acto notarial cuando esté legalmente descalificado por un interés en el documento o la transacción.",
+      },
+      {
+        question: "¿Ofrecen notaría electrónica o remota?",
+        answer:
+          "Los métodos notariales disponibles dependerán de la autorización del notario y de la tecnología disponible en el momento del servicio. Carolina del Norte regula por separado la notaría tradicional, electrónica y remota. El proceso de cita identificará qué métodos de servicio están disponibles actualmente.",
+      },
+      {
+        question: "¿Qué debo llevar a una cita notarial?",
+        answer:
+          "Traiga el documento completo que requiere notarización, identificación aceptable si se requiere, y cualquier testigo o persona adicional requerida por el documento o la entidad receptora. No firme secciones que deben firmarse en presencia del notario a menos que el documento o la parte apropiada lo indique.",
       },
     ],
   },

@@ -14,10 +14,18 @@ final class AlchemizeNotificationRepository
         )->fetchAll(PDO::FETCH_COLUMN));
     }
 
+    public function staffRecipients(): array
+    {
+        return $this->database->query(
+            "SELECT u.id, u.email FROM users u INNER JOIN roles r ON r.id = u.role_id
+             WHERE u.status = 'active' AND r.slug IN ('owner-admin','administrator','staff')"
+        )->fetchAll();
+    }
+
     public function clientRecipients(int $clientId): array
     {
         $statement = $this->database->prepare(
-            "SELECT DISTINCT u.id, COALESCE(c.language_preference, 'en') AS language_preference
+            "SELECT DISTINCT u.id, u.email, COALESCE(c.language_preference, 'en') AS language_preference
              FROM client_access_grants cag
              INNER JOIN users u ON u.id = cag.user_id AND u.status = 'active'
              INNER JOIN clients c ON c.id = cag.client_id

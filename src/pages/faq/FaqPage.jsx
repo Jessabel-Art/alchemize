@@ -125,6 +125,64 @@ const faqCategories = [
     ],
   },
   {
+    category: "Web & Digital Solutions",
+    description:
+      "Questions about websites, digital tools, and online business needs.",
+    items: [
+      {
+        question: "What types of websites does Alchemize build?",
+        answer:
+          "Alchemize builds professional websites for small businesses, service providers, entrepreneurs, and organizations that need a clear, credible online presence. Projects may include informational websites, service-based sites, lead-generation sites, client portals, resource libraries, and other business-focused web experiences.",
+      },
+      {
+        question: "Can Alchemize redesign an existing website?",
+        answer:
+          "Yes. Existing websites can be reviewed for structure, usability, mobile responsiveness, content organization, branding consistency, conversion flow, and technical issues. Depending on the condition of the current site, Alchemize may recommend improving the existing build or rebuilding portions of it.",
+      },
+      {
+        question: "Do you provide SEO support?",
+        answer:
+          "Yes. Web projects can include foundational search optimization such as page structure, metadata, headings, internal linking, mobile usability, performance considerations, and search-friendly content organization. More advanced or ongoing SEO work can be scoped separately based on the business's needs.",
+      },
+      {
+        question: "Can you help with Google Ads or paid advertising?",
+        answer:
+          "Alchemize can build or improve the website and landing-page experience needed to support advertising campaigns and can assist with the technical and conversion-focused preparation of those pages. Advertising management itself should only be represented as an included service when specifically scoped in the engagement.",
+      },
+      {
+        question: "Will my website work on phones and tablets?",
+        answer:
+          "Yes. Alchemize websites are designed and tested for responsive use across common desktop, tablet, and mobile screen sizes. Mobile usability is treated as part of the core build rather than an optional add-on.",
+      },
+      {
+        question:
+          "Can Alchemize add forms, scheduling, payments, or client portals?",
+        answer:
+          "Yes. Depending on the project, websites can include contact and lead forms, consultation scheduling, payment functionality, secure client-facing areas, document workflows, intake forms, and integrations with external business systems.",
+      },
+      {
+        question: "Can you connect my website to tools I already use?",
+        answer:
+          "In many cases, yes. Alchemize can evaluate integrations with payment processors, calendars, email platforms, cloud storage, CRM or workflow tools, analytics, and other business systems. Integration availability depends on the provider's API or supported connection options.",
+      },
+      {
+        question: "Do you provide hosting or domain registration?",
+        answer:
+          "Alchemize can help configure and connect domains, hosting, DNS, SSL, and deployment environments as part of a web engagement. Ownership of business-critical accounts should remain with the client whenever practical.",
+      },
+      {
+        question: "Will I be able to update my website after it is built?",
+        answer:
+          "That depends on the platform and project scope. Where appropriate, Alchemize can provide an administrative or content-management workflow for routine updates. For custom-built systems, ongoing maintenance or managed updates can also be scoped.",
+      },
+      {
+        question: "What happens after a website launches?",
+        answer:
+          "Post-launch work may include testing, troubleshooting, performance review, analytics setup, content updates, maintenance, security updates, or future feature development depending on the engagement. The exact ongoing support arrangement should be documented before or at launch.",
+      },
+    ],
+  },
+  {
     category: "Consultations",
     description: "What to expect before, during, and after a conversation.",
     items: [
@@ -159,6 +217,76 @@ const faqCategories = [
         question: "What happens after the consultation?",
         answer:
           "The next step depends on the situation. You may receive a recommended service path, a request for additional information, preparation instructions, a proposed scope of work, or guidance that another type of professional or provider is more appropriate.",
+      },
+    ],
+  },
+  {
+    category: "Notary & Document Services",
+    description: "North Carolina notary and document service questions.",
+    items: [
+      {
+        question:
+          "What types of notarial acts can a North Carolina notary perform?",
+        answer:
+          "North Carolina notaries may perform acknowledgments, administer oaths and affirmations, and perform verifications or proofs when the applicable legal requirements are met. The document or requesting party should indicate the notarial act required. Reference intent: N.C.G.S. Chapter 10B.",
+      },
+      {
+        question: "Do I need to appear in person for a notarization?",
+        answer:
+          "For a traditional North Carolina notarization, the signer or other required individual must personally appear before the notary at the time of the notarial act. Identification and other statutory requirements must also be satisfied.",
+      },
+      {
+        question: "What identification should I bring?",
+        answer:
+          "A signer who is not personally known to the notary generally needs satisfactory evidence of identity. North Carolina law recognizes a current identification document issued by a federal, state, or federally or state-recognized tribal government agency that includes a photograph and either a signature or physical description. A qualifying credible witness may also be used in circumstances permitted by law.",
+      },
+      {
+        question: "Can the notary tell me which type of notarization I need?",
+        answer:
+          "No. A North Carolina notary who is not a licensed attorney cannot select the notarial act or certificate for a client when the document does not indicate what is required. The signer, document preparer, receiving agency, or an attorney should determine which certificate or notarial act is needed.",
+      },
+      {
+        question:
+          "Can Alchemize help me fill out or interpret the document being notarized?",
+        answer:
+          "Not as part of the notarial act. A non-attorney notary cannot provide legal advice or assist a person in drafting, completing, selecting, or understanding a document or transaction when doing so would constitute the unauthorized practice of law. Administrative assistance that is separately permissible should not be represented as legal guidance.",
+      },
+      {
+        question: "How much does notarization cost in North Carolina?",
+        answer:
+          "North Carolina currently permits a notary to charge up to $10 per notarized principal signature for traditional acknowledgments, jurats, verifications, or proofs, and up to $10 per person for certain oaths or affirmations without a signature. Different statutory maximums apply to authorized electronic and remote notarizations.",
+      },
+      {
+        question: "Is there a travel fee for mobile notary service?",
+        answer:
+          "North Carolina law permits actual mileage at the federal business mileage rate for travel connected to a notarial act when the reimbursement is agreed to by the principal in writing before the travel occurs. Any mobile-service terms should therefore be confirmed before the appointment.",
+      },
+      {
+        question:
+          "Can a document already be signed before I meet with the notary?",
+        answer:
+          "It depends on the notarial act. Some acknowledgments may involve a signature that was made earlier and is later acknowledged before the notary, while other acts require signing or an oath in the notary's presence. The notary cannot choose the required act for the signer.",
+      },
+      {
+        question: "Can a notary refuse to notarize a document?",
+        answer:
+          "Yes. A notary must decline when statutory requirements are not satisfied, including situations involving inadequate identification, lack of required personal appearance, prohibited conflicts of interest, suspected fraud, or other legal disqualifications.",
+      },
+      {
+        question:
+          "Can Alchemize notarize a document if Jessy is a party to or beneficiary of it?",
+        answer:
+          "No. A North Carolina notary generally may not notarize a record when the notary is a signer, party, or beneficiary of that record, subject to limited statutory exceptions that should not be generalized in public-facing FAQ copy. A notary cannot perform a notarial act when legally disqualified by an interest in the document or transaction.",
+      },
+      {
+        question: "Do you offer electronic or remote online notarization?",
+        answer:
+          "Alchemize's available notary methods will depend on the notary authorization and technology in place at the time of service. North Carolina regulates traditional, electronic, and remote electronic notarization separately. The appointment process will identify which service methods are currently available.",
+      },
+      {
+        question: "What should I bring to a notary appointment?",
+        answer:
+          "Bring the complete document requiring notarization, acceptable identification if required, and any witnesses or additional individuals required by the document or receiving party. Do not sign portions that must be signed in the notary's presence unless instructed by the document or appropriate requesting party.",
       },
     ],
   },

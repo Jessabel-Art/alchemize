@@ -2,6 +2,11 @@
 
 declare(strict_types=1);
 
+$composerAutoload = dirname(__DIR__) . '/vendor/autoload.php';
+if (is_file($composerAutoload)) {
+    require_once $composerAutoload;
+}
+
 require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/database/connection.php';
 require_once __DIR__ . '/http/request.php';
@@ -40,11 +45,15 @@ require_once __DIR__ . '/services/auth-service.php';
 require_once __DIR__ . '/services/client-service.php';
 require_once __DIR__ . '/services/portal-service.php';
 require_once __DIR__ . '/services/stripe-webhook-service.php';
+require_once __DIR__ . '/services/google-client-factory.php';
+require_once __DIR__ . '/services/google-drive-service.php';
+require_once __DIR__ . '/services/google-calendar-service.php';
 require_once __DIR__ . '/services/portal-account-service.php';
 require_once __DIR__ . '/services/document-storage-service.php';
 require_once __DIR__ . '/services/portal-action-service.php';
 require_once __DIR__ . '/services/portal-admin-service.php';
 require_once __DIR__ . '/services/notification-service.php';
+require_once __DIR__ . '/services/ses-email-provider.php';
 require_once __DIR__ . '/services/intake-service.php';
 require_once __DIR__ . '/services/intake-admin-service.php';
 

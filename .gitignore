@@ -1,5 +1,6 @@
 # Dependencies / build output
 node_modules/
+vendor/
 .venv/
 dist/
 

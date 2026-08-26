@@ -44,9 +44,13 @@ try {
             throw new AlchemizeRequestException(400, 'INVALID_REQUEST', 'The webhook payload is empty.');
         }
 
-        $secret = (string) (getenv('ALCHEMIZE_STRIPE_WEBHOOK_SECRET') ?: ($config['stripe']['webhook_secret'] ?? ''));
+        $secret = (string) ($config['stripe']['webhook_secret'] ?? '');
+        if ($secret === '') {
+            error_log('Stripe webhook rejected because its signing secret is not configured.');
+            throw new AlchemizeRequestException(503, 'INTEGRATION_UNAVAILABLE', 'The webhook integration is not configured.');
+        }
         $signature = $_SERVER['HTTP_STRIPE_SIGNATURE'] ?? '';
-        if ($secret === '' || !alchemize_stripe_verify_signed_payload($rawBody, $signature, $secret)) {
+        if (!alchemize_stripe_verify_signed_payload($rawBody, $signature, $secret)) {
             http_response_code(400);
             header('Content-Type: text/plain; charset=utf-8');
             echo 'Webhook signature verification failed.';

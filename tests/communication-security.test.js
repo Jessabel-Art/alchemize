@@ -16,6 +16,7 @@ const notificationRepository = read(
   "server/repositories/notification-repository.php",
 );
 const notificationService = read("server/services/notification-service.php");
+const sesProvider = read("server/services/ses-email-provider.php");
 
 test("extends the existing message system with operational states and relationships", () => {
   assert.match(migration, /waiting_on_client/);
@@ -71,4 +72,13 @@ test("creates deduplicated internal notifications behind an email provider bound
   assert.match(notificationService, /interface AlchemizeEmailProvider/);
   assert.match(notificationService, /AlchemizeNullEmailProvider/);
   assert.doesNotMatch(notificationService, /smtp|sendgrid|mailgun|amazon ses/i);
+});
+
+test("configures SES through the existing provider boundary without raw SMTP", () => {
+  assert.match(sesProvider, /implements AlchemizeEmailProvider/);
+  assert.match(sesProvider, /PHPMailer/);
+  assert.match(sesProvider, /ENCRYPTION_STARTTLS/);
+  assert.match(sesProvider, /Port = 587/);
+  assert.match(sesProvider, /SMTPAuth = true/);
+  assert.doesNotMatch(sesProvider, /fsockopen|stream_socket_client/);
 });

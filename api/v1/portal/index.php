@@ -50,7 +50,7 @@ try {
         new AlchemizeActivityRepository($database),
         new AlchemizeAuditEventRepository($database),
         new AlchemizeDocumentStorageService((string) $config['document_storage_root']),
-        new AlchemizeNotificationService(new AlchemizeNotificationRepository($database)),
+        new AlchemizeNotificationService(new AlchemizeNotificationRepository($database), alchemize_email_provider($config)),
     );
     $intakes = new AlchemizeIntakeService(new AlchemizeIntakeRepository($database), new AlchemizeActivityRepository($database));
 

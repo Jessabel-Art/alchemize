@@ -27,7 +27,7 @@ try {
         new AlchemizePortalAdminRepository($database),
         new AlchemizeActivityRepository($database),
         new AlchemizeAuditEventRepository($database),
-        new AlchemizeNotificationService(new AlchemizeNotificationRepository($database)),
+        new AlchemizeNotificationService(new AlchemizeNotificationRepository($database), alchemize_email_provider($config)),
     );
     $repository = new AlchemizePortalAdminRepository($database);
     $intakes = new AlchemizeIntakeAdminService(new AlchemizeIntakeRepository($database), new AlchemizeActivityRepository($database));
