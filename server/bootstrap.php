@@ -2,9 +2,16 @@
 
 declare(strict_types=1);
 
-$composerAutoload = dirname(__DIR__) . '/vendor/autoload.php';
-if (is_file($composerAutoload)) {
-    require_once $composerAutoload;
+$composerAutoloadCandidates = [
+    dirname(__DIR__) . '/vendor/autoload.php',
+    __DIR__ . '/vendor/autoload.php',
+];
+
+foreach ($composerAutoloadCandidates as $composerAutoload) {
+    if (is_file($composerAutoload)) {
+        require_once $composerAutoload;
+        break;
+    }
 }
 
 require_once __DIR__ . '/config/config.php';
