@@ -19,12 +19,17 @@ function alchemize_config(): array
         (($value = getenv($key)) !== false && $value !== '') ? $value : $fallback;
 
     $localDatabase = is_array($local['database'] ?? null) ? $local['database'] : [];
+    $localStripe = is_array($local['stripe'] ?? null) ? $local['stripe'] : [];
     $config = [
         'app_env' => (string) $env('ALCHEMIZE_APP_ENV', $local['app_env'] ?? 'production'),
+        'app_url' => (string) $env('ALCHEMIZE_APP_URL', $local['app_url'] ?? 'http://localhost:5173'),
         'document_storage_root' => (string) $env(
             'ALCHEMIZE_DOCUMENT_STORAGE_ROOT',
             $local['document_storage_root'] ?? dirname(__DIR__) . '/storage/client-documents',
         ),
+        'stripe' => [
+            'webhook_secret' => (string) $env('ALCHEMIZE_STRIPE_WEBHOOK_SECRET', $localStripe['webhook_secret'] ?? ''),
+        ],
         'database' => [
             'host' => (string) $env('ALCHEMIZE_DB_HOST', $localDatabase['host'] ?? ''),
             'port' => (int) $env('ALCHEMIZE_DB_PORT', $localDatabase['port'] ?? 3306),

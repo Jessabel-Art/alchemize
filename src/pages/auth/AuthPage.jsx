@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import Logo from "../../components/brand/Logo.jsx";
 import { auth } from "../../services/admin-api.js";
 import "./auth.css";
@@ -142,3 +142,92 @@ function AuthPage({ title, buttonLabel }) {
   );
 }
 export default AuthPage;
+
+export function SetPasswordPage() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const [password, setPassword] = useState("");
+  const [confirmation, setConfirmation] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const token = searchParams.get("token") || "";
+  const purpose = searchParams.get("purpose") || "invitation";
+
+  const submit = async (event) => {
+    event.preventDefault();
+    setError("");
+    if (!token) {
+      setError("This setup link is invalid or expired.");
+      return;
+    }
+    if (password !== confirmation) {
+      setError("Passwords do not match.");
+      return;
+    }
+    setLoading(true);
+    try {
+      await auth.setPassword({ token, purpose, password });
+      navigate("/login", {
+        replace: true,
+        state: { message: "Password set. You can now log in." },
+      });
+    } catch (caughtError) {
+      setError(caughtError.message || "The password could not be set.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <main className="auth-page">
+      <section className="auth-brand-panel">
+        <Link to="/">
+          <Logo surface="dark" />
+        </Link>
+        <div>
+          <span>Secure access</span>
+          <h1>Set your password.</h1>
+          <p>This one-time link establishes or restores your portal access.</p>
+        </div>
+      </section>
+      <section className="auth-form-panel">
+        <div className="auth-card">
+          <span className="eyebrow">Account security</span>
+          <h2>Choose a password</h2>
+          <form onSubmit={submit}>
+            <label>
+              New password
+              <input
+                type="password"
+                autoComplete="new-password"
+                minLength="12"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                required
+              />
+            </label>
+            <label>
+              Confirm password
+              <input
+                type="password"
+                autoComplete="new-password"
+                minLength="12"
+                value={confirmation}
+                onChange={(event) => setConfirmation(event.target.value)}
+                required
+              />
+            </label>
+            {error ? <p role="alert">{error}</p> : null}
+            <button
+              className="button button-primary"
+              type="submit"
+              disabled={loading}
+            >
+              {loading ? "Saving…" : "Set password"}
+            </button>
+          </form>
+        </div>
+      </section>
+    </main>
+  );
+}

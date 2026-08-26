@@ -30,6 +30,75 @@ test("login routes portal roles to the canonical client dashboard", () => {
   );
 });
 
+test("client provisioning uses passwordless invited accounts and hashed one-time tokens", () => {
+  const migration = read("migrations/019_create_portal_account_tokens.sql");
+  const service = read("server/services/portal-account-service.php");
+  const clientEndpoint = read("api/v1/clients/index.php");
+  assert.match(migration, /password_hash VARCHAR\(255\) NULL/);
+  assert.match(migration, /purpose ENUM\('invitation','password_reset'\)/);
+  assert.match(migration, /token_hash CHAR\(64\)/);
+  assert.match(migration, /used_at TIMESTAMP/);
+  assert.match(migration, /invalidated_at TIMESTAMP/);
+  assert.match(service, /'password_hash' => null/);
+  assert.match(service, /random_bytes\(32\)/);
+  assert.match(service, /hash\('sha256', \$raw\)/);
+  assert.doesNotMatch(service, /default.{0,20}password/i);
+  assert.match(clientEndpoint, /\$database->beginTransaction\(\)/);
+  assert.match(clientEndpoint, /\$accountService->provision/);
+});
+
+test("invitation and reset consumption activates access and rejects expired or used tokens", () => {
+  const repository = read("server/repositories/portal-account-repository.php");
+  const service = read("server/services/portal-account-service.php");
+  assert.match(repository, /expires_at > CURRENT_TIMESTAMP\(6\)/);
+  assert.match(repository, /used_at IS NULL AND pat\.invalidated_at IS NULL/);
+  assert.match(repository, /SET used_at = CURRENT_TIMESTAMP\(6\)/);
+  assert.match(repository, /SET password_hash = :hash, status = \\'active\\'/);
+  assert.match(repository, /client_access_grants SET status = 'active'/);
+  assert.match(service, /password_hash\(\$password, PASSWORD_DEFAULT\)/);
+  assert.match(service, /TOKEN_EXPIRED_OR_USED/);
+});
+
+test("portal account admin actions are authorized and never return password material", () => {
+  const endpoint = read("api/v1/clients/index.php");
+  const frontend = read("src/pages/admin/AdminOperationalPages.jsx");
+  assert.match(
+    endpoint,
+    /in_array\(\$parts\[1\], \['portal-invitation', 'password-reset'\]/,
+  );
+  assert.match(endpoint, /alchemize_require_admin\(\)/);
+  assert.match(endpoint, /alchemize_require_csrf\(\)/);
+  assert.match(endpoint, /unset\(\$status\['password_hash'\]\)/);
+  assert.match(frontend, /Send Portal Invitation/);
+  assert.match(frontend, /Resend Portal Invitation/);
+  assert.match(frontend, /Send Password Reset/);
+});
+
+test("admin clients and appointments use persistent API sources", () => {
+  const layout = read("src/layouts/AdminLayout.jsx");
+  const page = read("src/pages/admin/AdminOperationalPages.jsx");
+  assert.match(layout, /clients\.list\(\)/);
+  assert.match(layout, /appointments\.list\(\)/);
+  assert.match(page, /await clientApi\.create\(payload\)/);
+  assert.match(page, /await appointmentApi\.create/);
+  assert.match(page, /appointmentError/);
+  assert.match(
+    page,
+    /snapshot\.services\.map\(\(service\) => service\.serviceName\)[\s\S]{0,250}\.filter\(Boolean\)/,
+  );
+});
+
+test("settings and CMS do not present demo or inert production controls", () => {
+  const page = read("src/pages/admin/AdminOperationalPages.jsx");
+  assert.doesNotMatch(
+    page,
+    /owner@alchemize\.example|jordan@alchemize\.example/,
+  );
+  assert.match(page, /clientApi\.team\(\)/);
+  assert.match(page, /New Page — unavailable/);
+  assert.match(page, /settings-unavailable/);
+});
+
 test("all portal record families are scoped by the resolved client", () => {
   const repository = read("server/repositories/portal-repository.php");
   for (const table of [

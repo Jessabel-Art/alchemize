@@ -53,6 +53,7 @@ $allowedRoutes = [
     'notes',
     'portal',
     'portal-admin',
+    'webhooks',
 ];
 
 $route = trim((string) ($_GET['route'] ?? ''));
@@ -70,7 +71,7 @@ if ($segments === [] || !in_array($segments[0], $allowedRoutes, true)) {
 
 $resource = $segments[0];
 $remaining = array_slice($segments, 1);
-$allowedAuthRoutes = ['session', 'login', 'logout'];
+$allowedAuthRoutes = ['session', 'login', 'logout', 'set-password'];
 if ($resource === 'auth' && !in_array($remaining[0] ?? '', $allowedAuthRoutes, true)) {
     alchemize_error_response(404, 'NOT_FOUND', 'The requested authentication route was not found.');
 }

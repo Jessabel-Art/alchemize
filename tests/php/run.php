@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__, 2) . '/server/http/request.php';
 require_once dirname(__DIR__, 2) . '/server/validation/lead-validator.php';
+require_once dirname(__DIR__, 2) . '/server/services/stripe-webhook-service.php';
 
 $tests = [];
 function test(string $name, Closure $test): void
@@ -122,6 +123,30 @@ test('rejects wrong method', function (): void {
     } catch (AlchemizeRequestException $error) {
         expect($error->httpStatus === 405);
     }
+});
+
+test('verifies a valid Stripe signature using the webhook secret', function (): void {
+    $payload = '{"id":"evt_test_123","type":"invoice.payment_succeeded"}';
+    $secret = 'whsec_test_secret';
+    $timestamp = (string) time();
+    $signature = 't=' . $timestamp . ',v1=' . hash_hmac('sha256', $timestamp . '.' . $payload, $secret);
+    expect(alchemize_stripe_verify_signed_payload($payload, $signature, $secret) === true);
+});
+
+test('rejects a tampered Stripe payload', function (): void {
+    $payload = '{"id":"evt_test_123","type":"invoice.payment_succeeded"}';
+    $secret = 'whsec_test_secret';
+    $timestamp = (string) time();
+    $tampered = '{"id":"evt_test_123","type":"invoice.payment_failed"}';
+    $signature = 't=' . $timestamp . ',v1=' . hash_hmac('sha256', $timestamp . '.' . $payload, $secret);
+    expect(alchemize_stripe_verify_signed_payload($tampered, $signature, $secret) === false);
+});
+
+test('supports a safe no-op path for unsupported Stripe events', function (): void {
+    $payload = ['id' => 'evt_test_456', 'type' => 'customer.subscription.deleted', 'data' => ['object' => []]];
+    $result = alchemize_stripe_process_event_payload($payload, $payload['type']);
+    expect($result['status'] === 'ignored');
+    expect($result['handled'] === true);
 });
 
 $failed = 0;

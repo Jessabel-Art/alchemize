@@ -12,6 +12,94 @@ final class AlchemizePortalActionService
         private readonly AlchemizeNotificationService $notifications,
     ) {}
 
+    public function requestService(array $access, array $user, array $payload): array
+    {
+        $this->requireMutationAccess($access, ['primary_contact', 'authorized_user']);
+        $allowed = ['individual-tax','individual-insurance','individual-notary','business-formation','business-operations','business-tax','business-advisory','business-insurance','business-notary'];
+        $serviceKey = (string) ($payload['service_key'] ?? '');
+        $message = trim((string) ($payload['message'] ?? ''));
+        if (!in_array($serviceKey, $allowed, true) || $message === '') {
+            throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Select a service and describe what you need.');
+        }
+        $database = $this->repository->database();
+        $database->beginTransaction();
+        try {
+            $publicId = alchemize_uuid_v4();
+            $leadId = $this->repository->createServiceRequest([
+                'public_id' => $publicId, 'full_name' => (string) $access['display_name'],
+                'email' => (string) $access['primary_email'], 'phone' => $access['primary_phone'] ?: null,
+                'audience' => $access['client_type'] === 'business' ? 'business' : 'individual',
+                'service_key' => $serviceKey, 'message' => $message,
+                'preferred_contact' => $access['preferred_contact_method'] ?: 'email',
+                'language_preference' => $access['language_preference'] ?: 'en',
+            ]);
+            $this->activities->create([
+                'public_id' => alchemize_uuid_v4(), 'event_type' => 'client.service.requested',
+                'actor_type' => 'client', 'actor_user_id' => $user['user_id'], 'entity_type' => 'lead',
+                'entity_id' => $publicId, 'lead_id' => $leadId, 'client_id' => $access['client_id'],
+                'summary' => 'Client requested a new service.', 'visibility' => 'both',
+            ]);
+            $database->commit();
+            return ['id' => $publicId, 'status' => 'new'];
+        } catch (Throwable $error) {
+            if ($database->inTransaction()) $database->rollBack();
+            throw $error;
+        }
+    }
+
+    public function requestAppointment(array $access, array $user, array $payload): array
+    {
+        $this->requireMutationAccess($access, ['primary_contact', 'authorized_user']);
+        $scheduledAt = trim((string) ($payload['preferred_at'] ?? ''));
+        if ($scheduledAt === '' || strtotime($scheduledAt) === false || strtotime($scheduledAt) <= time()) {
+            throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Choose a future preferred appointment time.');
+        }
+        $engagementId = !empty($payload['engagement_id'])
+            ? $this->repository->authorizedEngagementId((string) $payload['engagement_id'], (int) $access['client_id']) : null;
+        $publicId = alchemize_uuid_v4();
+        $this->repository->createAppointmentRequest([
+            'public_id' => $publicId, 'client_id' => $access['client_id'], 'engagement_id' => $engagementId,
+            'appointment_type' => trim((string) ($payload['appointment_type'] ?? 'Consultation')) ?: 'Consultation',
+            'scheduled_at' => date('Y-m-d H:i:s', strtotime($scheduledAt)),
+            'timezone' => trim((string) ($payload['timezone'] ?? 'UTC')) ?: 'UTC',
+            'location_type' => trim((string) ($payload['location_type'] ?? 'virtual')) ?: 'virtual',
+            'client_instructions' => $this->optionalText($payload['reason'] ?? null, 2000),
+        ]);
+        $this->activity($access, $user, 'client.appointment.requested', 'appointment', $publicId, 'Client requested an appointment.', $engagementId);
+        return ['id' => $publicId, 'status' => 'requested'];
+    }
+
+    public function uploadGeneralDocument(array $access, array $user, array $file, array $payload): array
+    {
+        $this->requireMutationAccess($access, ['primary_contact', 'authorized_user', 'document_contact']);
+        $engagementId = !empty($payload['engagement_id'])
+            ? $this->repository->authorizedEngagementId((string) $payload['engagement_id'], (int) $access['client_id']) : null;
+        $publicId = alchemize_uuid_v4();
+        $name = trim((string) ($payload['document_name'] ?? pathinfo((string) ($file['name'] ?? 'Document'), PATHINFO_FILENAME))) ?: 'Client document';
+        $documentId = $this->repository->createGeneralDocument([
+            'public_id' => $publicId, 'client_id' => $access['client_id'], 'engagement_id' => $engagementId,
+            'document_name' => $name, 'client_instructions' => $this->optionalText($payload['comment'] ?? null, 2000),
+        ]);
+        $stored = null;
+        try {
+            $stored = $this->storage->store($file, (int) $access['client_id'], $documentId, 1, $engagementId);
+            $this->repository->createDocumentSubmission([
+                'public_id' => alchemize_uuid_v4(), 'document_id' => $documentId, 'client_id' => $access['client_id'],
+                'version_number' => 1, 'submitted_by_user_id' => $user['user_id'],
+                'original_filename' => $stored['original_filename'], 'storage_key' => $stored['storage_key'],
+                'mime_type' => $stored['mime_type'], 'file_extension' => $stored['file_extension'],
+                'file_size_bytes' => $stored['file_size_bytes'], 'sha256' => $stored['sha256'],
+                'client_comment' => $this->optionalText($payload['comment'] ?? null, 2000),
+            ]);
+        } catch (Throwable $error) {
+            if (is_array($stored)) $this->storage->discard((string) ($stored['absolute_path'] ?? ''));
+            $this->repository->deleteGeneralDocument($documentId, (int) $access['client_id']);
+            throw $error;
+        }
+        $this->activity($access, $user, 'client.document.uploaded_general', 'document', $publicId, 'Client uploaded a general document.', $engagementId);
+        return ['id' => $publicId, 'status' => 'received'];
+    }
+
     public function task(array $access, array $user, string $taskId, string $action, array $payload): array
     {
         $this->requireMutationAccess($access, ['primary_contact', 'authorized_user', 'document_contact']);

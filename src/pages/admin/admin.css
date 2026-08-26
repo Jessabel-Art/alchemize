@@ -619,10 +619,23 @@
 }
 
 .admin-table-wrap {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-inline: contain;
   overflow-x: auto;
   border: 1px solid rgba(6, 43, 43, 0.08);
   border-radius: 0.9rem;
   background: rgba(255, 255, 255, 0.42);
+}
+
+.settings-unavailable {
+  margin: 0;
+  border: 1px solid rgba(6, 43, 43, 0.1);
+  border-radius: 0.8rem;
+  padding: 1rem;
+  opacity: 0.72;
 }
 
 .admin-table {

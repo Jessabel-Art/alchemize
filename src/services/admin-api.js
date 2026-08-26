@@ -87,6 +87,11 @@ export const auth = {
     delete window.__ALCHEMIZE_CSRF_TOKEN__;
     return data;
   },
+  setPassword: (payload) =>
+    apiRequest(buildApiUrl("auth/set-password"), {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
 };
 
 export const clients = {
@@ -102,6 +107,15 @@ export const clients = {
       method: "PUT",
       body: JSON.stringify(payload),
     }),
+  portalAccount: (id) =>
+    apiRequest(buildApiUrl(`clients/${id}/portal-account`)),
+  sendInvitation: (id) =>
+    apiRequest(buildApiUrl(`clients/${id}/portal-invitation`), {
+      method: "POST",
+    }),
+  sendPasswordReset: (id) =>
+    apiRequest(buildApiUrl(`clients/${id}/password-reset`), { method: "POST" }),
+  team: () => apiRequest(buildApiUrl("clients/team")),
 };
 
 export const services = {

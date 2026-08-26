@@ -14,7 +14,12 @@ final class AlchemizeClientRepository
     public function listAll(): array
     {
         $statement = $this->database->query(
-            'SELECT * FROM clients ORDER BY created_at DESC'
+            "SELECT c.*, u.status AS portal_user_status, cag.status AS portal_access_status,
+                    CASE WHEN u.password_hash IS NOT NULL THEN 1 ELSE 0 END AS portal_password_set
+             FROM clients c
+             LEFT JOIN client_access_grants cag ON cag.client_id = c.id AND cag.is_default = 1
+             LEFT JOIN users u ON u.id = cag.user_id
+             ORDER BY c.created_at DESC"
         );
         return $statement->fetchAll();
     }

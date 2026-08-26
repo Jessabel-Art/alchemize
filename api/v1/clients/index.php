@@ -35,6 +35,11 @@ try {
     $repository = new AlchemizeClientRepository($database);
     $activityRepo = new AlchemizeActivityRepository($database);
     $service = new AlchemizeClientService($repository, $activityRepo);
+    $userRepository = new AlchemizeUserRepository($database);
+    $accountRepository = new AlchemizePortalAccountRepository($database);
+    $accountService = new AlchemizePortalAccountService(
+        $database, $userRepository, new AlchemizeRoleRepository($database), $accountRepository, $config
+    );
 
     $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
     $path = trim($_SERVER['PATH_INFO'] ?? ($_SERVER['REQUEST_URI'] ?? ''), '/');
@@ -46,11 +51,47 @@ try {
     }
 
     if ($method === 'POST' && $parts === []) {
-        alchemize_require_staff_or_admin();
+        $actor = alchemize_require_staff_or_admin();
         alchemize_require_csrf();
         $payload = alchemize_read_json_request();
-        $data = $service->create($payload);
+        $database->beginTransaction();
+        try {
+            $data = $service->create($payload);
+            $email = trim((string) ($payload['primary_email'] ?? ''));
+            if ($email !== '') {
+                $data['portal'] = $accountService->provision(
+                    (int) $data['id'], $email, (string) $data['display_name'], (int) ($actor['user_id'] ?? 0) ?: null
+                );
+            }
+            $database->commit();
+        } catch (Throwable $error) {
+            if ($database->inTransaction()) $database->rollBack();
+            throw $error;
+        }
         alchemize_json_response(['data' => $data], 201);
+    }
+
+    if ($method === 'GET' && $parts === ['team']) {
+        alchemize_require_admin();
+        alchemize_json_response(['data' => $userRepository->listInternalUsers()], 200);
+    }
+
+    if ($method === 'GET' && count($parts) === 2 && ctype_digit((string) $parts[0]) && $parts[1] === 'portal-account') {
+        alchemize_require_read_only_or_higher();
+        $status = $accountRepository->statusForClient((int) $parts[0]);
+        if ($status === null) throw new AlchemizeRequestException(404, 'NOT_FOUND', 'Client was not found.');
+        unset($status['password_hash']);
+        $status['password_set'] = ($status['user_status'] ?? null) === 'active';
+        alchemize_json_response(['data' => $status], 200);
+    }
+
+    if ($method === 'POST' && count($parts) === 2 && ctype_digit((string) $parts[0])
+        && in_array($parts[1], ['portal-invitation', 'password-reset'], true)) {
+        $actor = alchemize_require_admin();
+        alchemize_require_csrf();
+        $purpose = $parts[1] === 'portal-invitation' ? 'invitation' : 'password_reset';
+        $data = $accountService->issueForClient((int) $parts[0], $purpose, (int) ($actor['user_id'] ?? 0) ?: null);
+        alchemize_json_response(['data' => $data], 200);
     }
 
     if ($method === 'GET' && count($parts) === 1 && ctype_digit((string) $parts[0])) {

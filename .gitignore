@@ -36,3 +36,7 @@ secrets.php
 # OS/editor
 .DS_Store
 Thumbs.db
+
+# Private credentials
+private/
+*service-account*.json

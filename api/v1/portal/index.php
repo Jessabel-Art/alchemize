@@ -72,7 +72,7 @@ try {
     }
 
     if ($method === 'GET' && $resource === 'messages' && count($parts) === 2) {
-        alchemize_json_response(['data' => $actions->thread($access, $parts[1])], 200);
+        alchemize_json_response(['data' => $actions->thread($access, $parts[1], true)], 200);
     }
     if ($method === 'GET' && $resource === 'intakes' && count($parts) === 2) {
         alchemize_json_response(['data' => $intakes->get($access, $parts[1])], 200);
@@ -93,6 +93,11 @@ try {
         $data = $actions->uploadDocument($access, $sessionUser, $parts[1], $file, $_POST['comment'] ?? null);
         alchemize_json_response(['data' => $data], 201);
     }
+    if ($method === 'POST' && $resource === 'documents' && count($parts) === 2 && $parts[1] === 'upload') {
+        $file = $_FILES['document'] ?? null;
+        if (!is_array($file)) throw new AlchemizeRequestException(422, 'UPLOAD_REQUIRED', 'Select a document to upload.');
+        alchemize_json_response(['data' => $actions->uploadGeneralDocument($access, $sessionUser, $file, $_POST)], 201);
+    }
 
     $payload = alchemize_read_json_request($method);
     if ($resource === 'intakes' && ($parts[1] ?? '') === 'profile' && in_array(($parts[2] ?? ''), ['addresses','people'], true)) {
@@ -105,6 +110,12 @@ try {
     if($method==='POST'&&$resource==='intakes'&&count($parts)===5&&$parts[2]==='requirements'&&$parts[4]==='use-existing')alchemize_json_response(['data'=>$intakes->useExisting($access,$sessionUser,$parts[1],$parts[3],(string)($payload['document_id']??''))],200);
     if ($method === 'POST' && $resource === 'tasks' && count($parts) === 3) {
         alchemize_json_response(['data' => $actions->task($access, $sessionUser, $parts[1], $parts[2], $payload)], 200);
+    }
+    if ($method === 'POST' && $resource === 'services' && count($parts) === 2 && $parts[1] === 'request') {
+        alchemize_json_response(['data' => $actions->requestService($access, $sessionUser, $payload)], 201);
+    }
+    if ($method === 'POST' && $resource === 'appointments' && count($parts) === 2 && $parts[1] === 'request') {
+        alchemize_json_response(['data' => $actions->requestAppointment($access, $sessionUser, $payload)], 201);
     }
     if ($method === 'POST' && $resource === 'messages' && count($parts) === 1) {
         alchemize_json_response(['data' => $actions->sendMessage($access, $sessionUser, null, $payload)], 201);

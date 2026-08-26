@@ -18,7 +18,9 @@ function PortalShell({ title, navItems, children }) {
   }, []);
 
   return (
-    <div className={navOpen ? "portal-shell portal-nav-open" : "portal-shell"}>
+    <div
+      className={`${navOpen ? "portal-shell portal-nav-open" : "portal-shell"}${isAdminShell ? " admin-portal-shell" : ""}`}
+    >
       {
         <>
           <button
@@ -71,12 +73,19 @@ function PortalShell({ title, navItems, children }) {
             </NavLink>
           ))}
         </nav>
+        {isAdminShell ? (
+          <a className="portal-mobile-return" href="/">
+            Return to website
+          </a>
+        ) : null}
       </aside>
 
       <main className="portal-main">
         <div className="portal-topbar">
           <span>Workspace</span>
-          <a href="/">Return to website</a>
+          <a className="portal-topbar-return" href="/">
+            Return to website
+          </a>
         </div>
         {children}
       </main>

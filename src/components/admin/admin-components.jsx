@@ -17,6 +17,7 @@ export function AdminPageHeader({ eyebrow, title, summary, actions = [] }) {
                   action.primary ? "primary-button" : "secondary-button"
                 }
                 onClick={action.onClick}
+                disabled={action.disabled}
               >
                 {action.label}
               </button>
@@ -99,6 +100,7 @@ export function AdminToolbar({
                   action.primary ? "primary-button" : "secondary-button"
                 }
                 onClick={action.onClick}
+                disabled={action.disabled}
               >
                 {action.label}
               </button>
@@ -184,6 +186,7 @@ export function AdminSection({ title, children, actions = [] }) {
                   action.primary ? "primary-button" : "secondary-button"
                 }
                 onClick={action.onClick}
+                disabled={action.disabled}
               >
                 {action.label}
               </button>

@@ -11,6 +11,46 @@ final class AlchemizePortalActionRepository
         return $this->database;
     }
 
+    public function createServiceRequest(array $row): int
+    {
+        $statement = $this->database->prepare(
+            "INSERT INTO leads (public_id, full_name, email, phone, audience, service_key, message,
+                                preferred_contact, language_preference, status, source)
+             VALUES (:public_id, :full_name, :email, :phone, :audience, :service_key, :message,
+                     :preferred_contact, :language_preference, 'new', 'client_portal')"
+        );
+        $statement->execute($row);
+        return (int) $this->database->lastInsertId();
+    }
+
+    public function createGeneralDocument(array $row): int
+    {
+        $statement = $this->database->prepare(
+            "INSERT INTO documents_metadata
+                (public_id, client_id, engagement_id, document_name, document_type, status,
+                 visibility, received_date, client_instructions)
+             VALUES (:public_id, :client_id, :engagement_id, :document_name, 'client_upload',
+                     'received', 'shared', CURRENT_DATE, :client_instructions)"
+        );
+        $statement->execute($row);
+        return (int) $this->database->lastInsertId();
+    }
+
+    public function deleteGeneralDocument(int $documentId, int $clientId): void
+    {
+        $statement = $this->database->prepare("DELETE FROM documents_metadata WHERE id = :id AND client_id = :client_id AND document_type = 'client_upload'");
+        $statement->execute(['id' => $documentId, 'client_id' => $clientId]);
+    }
+
+    public function authorizedEngagementId(string $publicId, int $clientId): int
+    {
+        $statement = $this->database->prepare('SELECT id FROM engagements WHERE public_id = :id AND client_id = :client_id AND archived_at IS NULL LIMIT 1');
+        $statement->execute(['id' => $publicId, 'client_id' => $clientId]);
+        $id = $statement->fetchColumn();
+        if ($id === false) throw new AlchemizeRequestException(404, 'NOT_FOUND', 'The related service was not found.');
+        return (int) $id;
+    }
+
     public function findTask(string $publicId, int $clientId, bool $lock = false): ?array
     {
         return $this->one(

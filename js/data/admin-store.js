@@ -1482,11 +1482,24 @@ export function createAdminStore(initialData = emptyAdminData) {
     return getSnapshot();
   };
 
+  const replaceCollections = (collections = {}) => {
+    for (const [name, rows] of Object.entries(collections)) {
+      if (
+        Object.prototype.hasOwnProperty.call(state, name) &&
+        Array.isArray(rows)
+      ) {
+        state[name] = clone(rows);
+      }
+    }
+    return getSnapshot();
+  };
+
   ensureState();
 
   return {
     getSnapshot,
     reset,
+    replaceCollections,
     addActivity,
     addInternalNote,
     addLeadNote,

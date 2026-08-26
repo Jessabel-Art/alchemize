@@ -125,7 +125,7 @@ test("the dashboard renders authenticated client summaries and intentional empty
 test("service and task pages render only API records", async ({ page }) => {
   await page.goto("/client-portal/services/");
   await expect(
-    page.getByText("Business formation", { exact: true }),
+    page.getByRole("strong").filter({ hasText: "Business formation" }),
   ).toBeVisible();
   await expect(page.getByText("Insurance guidance")).toHaveCount(0);
 

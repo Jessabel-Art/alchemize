@@ -44,6 +44,13 @@ try {
         new AlchemizeUserRepository($database),
         new AlchemizeRoleRepository($database),
     );
+    $accountService = new AlchemizePortalAccountService(
+        $database,
+        new AlchemizeUserRepository($database),
+        new AlchemizeRoleRepository($database),
+        new AlchemizePortalAccountRepository($database),
+        $appConfig,
+    );
 
     $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
     $path = trim($_SERVER['PATH_INFO'] ?? ($_SERVER['REQUEST_URI'] ?? ''), '/');
@@ -79,6 +86,16 @@ try {
                 'csrf_token' => alchemize_csrf_token(),
             ],
         ], 200);
+    }
+
+    if ($method === 'POST' && $parts === ['set-password']) {
+        $payload = alchemize_read_json_request();
+        $accountService->setPassword(
+            (string) ($payload['token'] ?? ''),
+            (string) ($payload['purpose'] ?? 'invitation'),
+            (string) ($payload['password'] ?? '')
+        );
+        alchemize_json_response(['data' => ['completed' => true]], 200);
     }
 
     if ($method === 'POST' && $parts === ['logout']) {

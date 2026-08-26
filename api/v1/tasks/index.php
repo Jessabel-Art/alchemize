@@ -33,6 +33,7 @@ $config = require $bootstrap;
 try {
     $database = alchemize_database($config['database']);
     $repository = new AlchemizeTaskRepository($database);
+    $activities = new AlchemizeActivityRepository($database);
 
     $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
     $path = trim($_SERVER['PATH_INFO'] ?? ($_SERVER['REQUEST_URI'] ?? ''), '/');
@@ -44,7 +45,7 @@ try {
     }
 
     if ($method === 'POST' && $parts === []) {
-        alchemize_require_staff_or_admin();
+        $actor = alchemize_require_staff_or_admin();
         alchemize_require_csrf();
         $payload = alchemize_read_json_request();
         $title = trim((string) ($payload['title'] ?? ''));
@@ -52,10 +53,13 @@ try {
             throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Task title is required.');
         }
 
+        $publicId = alchemize_uuid_v4();
+        $clientId = isset($payload['client_id']) && $payload['client_id'] !== '' ? (int) $payload['client_id'] : null;
+        $engagementId = isset($payload['engagement_id']) && $payload['engagement_id'] !== '' ? (int) $payload['engagement_id'] : null;
         $id = $repository->create([
-            'public_id' => alchemize_uuid_v4(),
-            'client_id' => isset($payload['client_id']) && $payload['client_id'] !== '' ? (int) $payload['client_id'] : null,
-            'engagement_id' => isset($payload['engagement_id']) && $payload['engagement_id'] !== '' ? (int) $payload['engagement_id'] : null,
+            'public_id' => $publicId,
+            'client_id' => $clientId,
+            'engagement_id' => $engagementId,
             'service_id' => isset($payload['service_id']) && $payload['service_id'] !== '' ? (int) $payload['service_id'] : null,
             'title' => $title,
             'description' => trim((string) ($payload['description'] ?? '')) !== '' ? trim((string) ($payload['description'] ?? '')) : null,
@@ -67,8 +71,18 @@ try {
             'dependency_task_id' => isset($payload['dependency_task_id']) && $payload['dependency_task_id'] !== '' ? (int) $payload['dependency_task_id'] : null,
             'internal_notes' => trim((string) ($payload['internal_notes'] ?? '')) !== '' ? trim((string) ($payload['internal_notes'] ?? '')) : null,
         ]);
+        if ($clientId !== null) $activities->create(['public_id'=>alchemize_uuid_v4(),'event_type'=>'admin.task.created','actor_type'=>'staff','actor_user_id'=>$actor['user_id'],'entity_type'=>'task','entity_id'=>$publicId,'client_id'=>$clientId,'engagement_id'=>$engagementId,'summary'=>'Alchemize assigned a client task.','visibility'=>(($payload['visibility'] ?? 'admin') === 'admin' ? 'admin' : 'both')]);
 
         alchemize_json_response(['data' => ['id' => $id, 'title' => $title]], 201);
+    }
+
+    if ($method === 'PUT' && count($parts) === 1 && ctype_digit((string) $parts[0])) {
+        alchemize_require_staff_or_admin(); alchemize_require_csrf();
+        $payload = alchemize_read_json_request('PUT'); $values=[];
+        foreach(['title','description','due_date','visibility'] as $field) if(array_key_exists($field,$payload)) $values[$field]=trim((string)$payload[$field])?:null;
+        if(isset($payload['status'])&&in_array($payload['status'],['not_started','in_progress','waiting_on_client','waiting_on_alchemize','completed','archived'],true))$values['status']=$payload['status'];
+        if(isset($payload['priority'])&&in_array($payload['priority'],['low','normal','high','urgent'],true))$values['priority']=$payload['priority'];
+        $repository->update((int)$parts[0],$values); alchemize_json_response(['data'=>['id'=>(int)$parts[0]]],200);
     }
 
     throw new AlchemizeRequestException(404, 'NOT_FOUND', 'The requested task route was not found.');

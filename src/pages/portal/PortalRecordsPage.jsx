@@ -257,42 +257,99 @@ function ResourceContent(props) {
 }
 
 function Services({ items, empty, busy, run }) {
-  if (!items.length) return <EmptyState>{empty}</EmptyState>;
+  const [request, setRequest] = useState({ service_key: "", message: "" });
   return (
-    <ul className="portal-record-list">
-      {items.map((item) => (
-        <li key={item.id}>
-          <div>
-            <strong>{item.title}</strong>
-            <p>
-              {item.description ||
-                item.service_names?.join(" · ") ||
-                "Service details will appear as the engagement progresses."}
-            </p>
-            <small>{item.service_names?.join(" · ")}</small>
-          </div>
-          <div className="portal-record-meta">
-            <span>{labelFor(item.status)}</span>
-            <small>Started {formatDate(item.start_date)}</small>
-            {item.assigned_contact ? (
-              <small>Contact: {item.assigned_contact}</small>
-            ) : null}
-            <ActionButton
-              busy={busy === item.id}
-              onClick={() =>
-                run(
-                  item.id,
-                  () => portalApi.acknowledge("engagement", item.id),
-                  "Service update acknowledged.",
-                )
-              }
-            >
-              Acknowledge update
-            </ActionButton>
-          </div>
-        </li>
-      ))}
-    </ul>
+    <>
+      <form
+        className="portal-composer"
+        onSubmit={(event) => {
+          event.preventDefault();
+          run(
+            "service-request",
+            () => portalApi.requestService(request),
+            "Service request sent for Admin review.",
+          );
+        }}
+      >
+        <h2>Request a service</h2>
+        <label>
+          <span>Service area</span>
+          <select
+            required
+            value={request.service_key}
+            onChange={(event) =>
+              setRequest({ ...request, service_key: event.target.value })
+            }
+          >
+            <option value="">Select a service</option>
+            <option value="individual-tax">Individual tax</option>
+            <option value="individual-insurance">Individual insurance</option>
+            <option value="individual-notary">Individual notary</option>
+            <option value="business-formation">Business formation</option>
+            <option value="business-operations">Business operations</option>
+            <option value="business-tax">Business tax</option>
+            <option value="business-advisory">Business advisory</option>
+            <option value="business-insurance">Business insurance</option>
+            <option value="business-notary">Business notary</option>
+          </select>
+        </label>
+        <label>
+          <span>What do you need?</span>
+          <textarea
+            required
+            maxLength="5000"
+            value={request.message}
+            onChange={(event) =>
+              setRequest({ ...request, message: event.target.value })
+            }
+          />
+        </label>
+        <button
+          className="portal-action-button"
+          disabled={busy === "service-request"}
+        >
+          {busy === "service-request" ? "Sending…" : "Request service"}
+        </button>
+      </form>
+      {!items.length ? (
+        <EmptyState>{empty}</EmptyState>
+      ) : (
+        <ul className="portal-record-list">
+          {items.map((item) => (
+            <li key={item.id}>
+              <div>
+                <strong>{item.title}</strong>
+                <p>
+                  {item.description ||
+                    item.service_names?.join(" · ") ||
+                    "Service details will appear as the engagement progresses."}
+                </p>
+                <small>{item.service_names?.join(" · ")}</small>
+              </div>
+              <div className="portal-record-meta">
+                <span>{labelFor(item.status)}</span>
+                <small>Started {formatDate(item.start_date)}</small>
+                {item.assigned_contact ? (
+                  <small>Contact: {item.assigned_contact}</small>
+                ) : null}
+                <ActionButton
+                  busy={busy === item.id}
+                  onClick={() =>
+                    run(
+                      item.id,
+                      () => portalApi.acknowledge("engagement", item.id),
+                      "Service update acknowledged.",
+                    )
+                  }
+                >
+                  Acknowledge update
+                </ActionButton>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
   );
 }
 
@@ -396,9 +453,10 @@ function Documents({ groups, empty, busy, run }) {
   const focusedId = params.get("upload");
   const returnTo = params.get("return");
   const uploadContext = params.get("context");
-  if (!groups.length) return <EmptyState>{empty}</EmptyState>;
   return (
     <div className="portal-group-stack">
+      <GeneralDocumentUpload busy={busy} run={run} />
+      {!groups.length ? <EmptyState>{empty}</EmptyState> : null}
       {focusedId ? (
         <div className="portal-pending-note" role="status">
           <strong>Upload requested document</strong>
@@ -474,6 +532,66 @@ function Documents({ groups, empty, busy, run }) {
     </div>
   );
 }
+function GeneralDocumentUpload({ busy, run }) {
+  const [file, setFile] = useState(null);
+  const [documentName, setDocumentName] = useState("");
+  const [comment, setComment] = useState("");
+  return (
+    <form
+      className="portal-composer"
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (file)
+          run(
+            "general-upload",
+            () =>
+              portalApi.uploadGeneralDocument(file, {
+                document_name: documentName,
+                comment,
+              }),
+            "Document uploaded and visible to Alchemize.",
+          );
+      }}
+    >
+      <h2>Upload a document</h2>
+      <p>
+        Use this for a general document that was not specifically requested.
+      </p>
+      <label>
+        <span>Document name</span>
+        <input
+          value={documentName}
+          maxLength="180"
+          onChange={(event) => setDocumentName(event.target.value)}
+        />
+      </label>
+      <label>
+        <span>Choose document</span>
+        <input
+          required
+          type="file"
+          accept=".pdf,.jpg,.jpeg,.png,.webp,.docx,.xlsx"
+          onChange={(event) => setFile(event.target.files?.[0] || null)}
+        />
+      </label>
+      <label>
+        <span>Note (optional)</span>
+        <input
+          value={comment}
+          maxLength="2000"
+          onChange={(event) => setComment(event.target.value)}
+        />
+      </label>
+      <button
+        className="portal-action-button"
+        disabled={!file || busy === "general-upload"}
+      >
+        {busy === "general-upload" ? "Uploading…" : "Upload securely"}
+      </button>
+      <small>PDF, JPG, PNG, WebP, DOCX, or XLSX. Maximum 15 MB.</small>
+    </form>
+  );
+}
 function DocumentUpload({ item, busy, run }) {
   const [file, setFile] = useState(null);
   const [comment, setComment] = useState("");
@@ -520,147 +638,233 @@ function DocumentUpload({ item, busy, run }) {
 
 function Appointments({ items, empty, busy, run }) {
   const [requests, setRequests] = useState({});
-  if (!items.length) return <EmptyState>{empty}</EmptyState>;
+  const [newRequest, setNewRequest] = useState({
+    preferred_at: "",
+    appointment_type: "Consultation",
+    location_type: "virtual",
+    reason: "",
+  });
   return (
-    <ul className="portal-record-list">
-      {items.map((item) => (
-        <li key={item.id}>
-          <div>
-            <strong>{item.appointment_type}</strong>
-            <p>
-              {item.client_instructions ||
-                item.engagement_title ||
-                "Appointment details"}
-            </p>
-            <small>
-              {item.location_type
-                ? labelFor(item.location_type)
-                : "Method to be confirmed"}
-            </small>
-            {item.pending_request ? (
-              <p className="portal-pending-note">
-                Your {labelFor(item.pending_request)} request is awaiting
-                Alchemize review.
-              </p>
-            ) : null}
-            {!["completed", "cancelled"].includes(item.status) &&
-            !item.pending_request ? (
-              <div className="portal-appointment-request">
-                <label>
-                  <span>Preferred new date and time</span>
-                  <input
-                    type="datetime-local"
-                    value={requests[item.id]?.date || ""}
-                    onChange={(event) =>
-                      setRequests({
-                        ...requests,
-                        [item.id]: {
-                          ...requests[item.id],
-                          date: event.target.value,
-                        },
-                      })
-                    }
-                  />
-                </label>
-                <label>
-                  <span>Reason (optional)</span>
-                  <input
-                    maxLength={2000}
-                    value={requests[item.id]?.reason || ""}
-                    onChange={(event) =>
-                      setRequests({
-                        ...requests,
-                        [item.id]: {
-                          ...requests[item.id],
-                          reason: event.target.value,
-                        },
-                      })
-                    }
-                  />
-                </label>
-              </div>
-            ) : null}
-          </div>
-          <div className="portal-record-meta">
-            <span>{labelFor(item.status)}</span>
-            <small>{formatDate(item.scheduled_at, true)}</small>
-            <div className="portal-action-group">
-              {item.client_instructions ? (
-                <ActionButton
-                  busy={busy === `${item.id}-acknowledge`}
-                  onClick={() =>
-                    run(
-                      `${item.id}-acknowledge`,
-                      () => portalApi.appointmentAction(item.id, "acknowledge"),
-                      "Appointment instructions acknowledged.",
-                    )
-                  }
-                >
-                  Acknowledge instructions
-                </ActionButton>
-              ) : null}
-              {["requested", "scheduled"].includes(item.status) &&
-              !item.pending_request ? (
-                <ActionButton
-                  busy={busy === `${item.id}-confirm`}
-                  onClick={() =>
-                    run(
-                      `${item.id}-confirm`,
-                      () => portalApi.appointmentAction(item.id, "confirm"),
-                      "Appointment confirmed.",
-                    )
-                  }
-                >
-                  Confirm
-                </ActionButton>
-              ) : null}
-              {!["completed", "cancelled"].includes(item.status) &&
-              !item.pending_request ? (
-                <>
-                  <ActionButton
-                    busy={busy === `${item.id}-reschedule`}
-                    onClick={() =>
-                      run(
-                        `${item.id}-reschedule`,
-                        () =>
-                          portalApi.appointmentAction(
-                            item.id,
-                            "request-reschedule",
-                            {
-                              requested_at: requests[item.id]?.date,
-                              reason: requests[item.id]?.reason,
+    <>
+      <form
+        className="portal-composer"
+        onSubmit={(event) => {
+          event.preventDefault();
+          run(
+            "appointment-request",
+            () =>
+              portalApi.requestAppointment({
+                ...newRequest,
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+              }),
+            "Appointment request sent for scheduling review.",
+          );
+        }}
+      >
+        <h2>Request an appointment</h2>
+        <label>
+          <span>Preferred date and time</span>
+          <input
+            required
+            type="datetime-local"
+            value={newRequest.preferred_at}
+            onChange={(event) =>
+              setNewRequest({ ...newRequest, preferred_at: event.target.value })
+            }
+          />
+        </label>
+        <label>
+          <span>Appointment type</span>
+          <input
+            required
+            maxLength="80"
+            value={newRequest.appointment_type}
+            onChange={(event) =>
+              setNewRequest({
+                ...newRequest,
+                appointment_type: event.target.value,
+              })
+            }
+          />
+        </label>
+        <label>
+          <span>Meeting method</span>
+          <select
+            value={newRequest.location_type}
+            onChange={(event) =>
+              setNewRequest({
+                ...newRequest,
+                location_type: event.target.value,
+              })
+            }
+          >
+            <option value="virtual">Virtual</option>
+            <option value="phone">Phone</option>
+            <option value="in_person">In person</option>
+          </select>
+        </label>
+        <label>
+          <span>Reason (optional)</span>
+          <textarea
+            maxLength="2000"
+            value={newRequest.reason}
+            onChange={(event) =>
+              setNewRequest({ ...newRequest, reason: event.target.value })
+            }
+          />
+        </label>
+        <button
+          className="portal-action-button"
+          disabled={busy === "appointment-request"}
+        >
+          {busy === "appointment-request" ? "Sending…" : "Request appointment"}
+        </button>
+      </form>
+      {!items.length ? (
+        <EmptyState>{empty}</EmptyState>
+      ) : (
+        <ul className="portal-record-list">
+          {items.map((item) => (
+            <li key={item.id}>
+              <div>
+                <strong>{item.appointment_type}</strong>
+                <p>
+                  {item.client_instructions ||
+                    item.engagement_title ||
+                    "Appointment details"}
+                </p>
+                <small>
+                  {item.location_type
+                    ? labelFor(item.location_type)
+                    : "Method to be confirmed"}
+                </small>
+                {item.pending_request ? (
+                  <p className="portal-pending-note">
+                    Your {labelFor(item.pending_request)} request is awaiting
+                    Alchemize review.
+                  </p>
+                ) : null}
+                {!["completed", "cancelled"].includes(item.status) &&
+                !item.pending_request ? (
+                  <div className="portal-appointment-request">
+                    <label>
+                      <span>Preferred new date and time</span>
+                      <input
+                        type="datetime-local"
+                        value={requests[item.id]?.date || ""}
+                        onChange={(event) =>
+                          setRequests({
+                            ...requests,
+                            [item.id]: {
+                              ...requests[item.id],
+                              date: event.target.value,
                             },
-                          ),
-                        "Reschedule request sent.",
-                      )
-                    }
-                  >
-                    Request reschedule
-                  </ActionButton>
-                  <ActionButton
-                    busy={busy === `${item.id}-cancel`}
-                    onClick={() =>
-                      run(
-                        `${item.id}-cancel`,
-                        () =>
-                          portalApi.appointmentAction(
-                            item.id,
-                            "request-cancellation",
-                            { reason: requests[item.id]?.reason },
-                          ),
-                        "Cancellation request sent.",
-                      )
-                    }
-                  >
-                    Request cancellation
-                  </ActionButton>
-                </>
-              ) : null}
-            </div>
-          </div>
-        </li>
-      ))}
-    </ul>
+                          })
+                        }
+                      />
+                    </label>
+                    <label>
+                      <span>Reason (optional)</span>
+                      <input
+                        maxLength={2000}
+                        value={requests[item.id]?.reason || ""}
+                        onChange={(event) =>
+                          setRequests({
+                            ...requests,
+                            [item.id]: {
+                              ...requests[item.id],
+                              reason: event.target.value,
+                            },
+                          })
+                        }
+                      />
+                    </label>
+                  </div>
+                ) : null}
+              </div>
+              <div className="portal-record-meta">
+                <span>{labelFor(item.status)}</span>
+                <small>{formatDate(item.scheduled_at, true)}</small>
+                <div className="portal-action-group">
+                  {item.client_instructions ? (
+                    <ActionButton
+                      busy={busy === `${item.id}-acknowledge`}
+                      onClick={() =>
+                        run(
+                          `${item.id}-acknowledge`,
+                          () =>
+                            portalApi.appointmentAction(item.id, "acknowledge"),
+                          "Appointment instructions acknowledged.",
+                        )
+                      }
+                    >
+                      Acknowledge instructions
+                    </ActionButton>
+                  ) : null}
+                  {["requested", "scheduled"].includes(item.status) &&
+                  !item.pending_request ? (
+                    <ActionButton
+                      busy={busy === `${item.id}-confirm`}
+                      onClick={() =>
+                        run(
+                          `${item.id}-confirm`,
+                          () => portalApi.appointmentAction(item.id, "confirm"),
+                          "Appointment confirmed.",
+                        )
+                      }
+                    >
+                      Confirm
+                    </ActionButton>
+                  ) : null}
+                  {!["completed", "cancelled"].includes(item.status) &&
+                  !item.pending_request ? (
+                    <>
+                      <ActionButton
+                        busy={busy === `${item.id}-reschedule`}
+                        onClick={() =>
+                          run(
+                            `${item.id}-reschedule`,
+                            () =>
+                              portalApi.appointmentAction(
+                                item.id,
+                                "request-reschedule",
+                                {
+                                  requested_at: requests[item.id]?.date,
+                                  reason: requests[item.id]?.reason,
+                                },
+                              ),
+                            "Reschedule request sent.",
+                          )
+                        }
+                      >
+                        Request reschedule
+                      </ActionButton>
+                      <ActionButton
+                        busy={busy === `${item.id}-cancel`}
+                        onClick={() =>
+                          run(
+                            `${item.id}-cancel`,
+                            () =>
+                              portalApi.appointmentAction(
+                                item.id,
+                                "request-cancellation",
+                                { reason: requests[item.id]?.reason },
+                              ),
+                            "Cancellation request sent.",
+                          )
+                        }
+                      >
+                        Request cancellation
+                      </ActionButton>
+                    </>
+                  ) : null}
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
   );
 }
 
@@ -671,8 +875,10 @@ function Messages({ items, empty, busy, run }) {
   const [opened, setOpened] = useState(null);
   const [threadError, setThreadError] = useState("");
   const [filter, setFilter] = useState("all");
+  const [readIds, setReadIds] = useState(() => new Set());
   const filteredItems = items.filter((thread) => {
-    if (filter === "unread") return Number(thread.unread_count) > 0;
+    if (filter === "unread")
+      return !readIds.has(thread.id) && Number(thread.unread_count) > 0;
     if (filter === "action") return Number(thread.client_action_required) > 0;
     if (filter === "archived") return thread.status === "archived";
     return thread.status !== "archived";
@@ -680,7 +886,9 @@ function Messages({ items, empty, busy, run }) {
   const openThread = async (id) => {
     setThreadError("");
     try {
-      setOpened(await portalApi.markThreadRead(id));
+      setOpened(await portalApi.thread(id));
+      setReadIds((current) => new Set([...current, id]));
+      window.dispatchEvent(new CustomEvent("alchemize:portal-refresh"));
     } catch (error) {
       setThreadError(error.message);
     }
@@ -787,7 +995,7 @@ function Messages({ items, empty, busy, run }) {
                 <p>{thread.latest_message}</p>
                 <small>
                   {formatDate(thread.last_message_at, true)} ·{" "}
-                  {thread.unread_count || 0} unread
+                  {readIds.has(thread.id) ? 0 : thread.unread_count || 0} unread
                 </small>
                 {Number(thread.client_action_required) ? (
                   <p className="portal-pending-note">

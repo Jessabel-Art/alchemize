@@ -113,7 +113,8 @@
   line-height: 1.65;
 }
 .portal-sidebar-toggle,
-.portal-sidebar-backdrop {
+.portal-sidebar-backdrop,
+.portal-mobile-return {
   display: none;
 }
 @media (max-width: 1023px) {
@@ -145,6 +146,23 @@
     text-align: left;
     border-left: 2px solid transparent;
     border-radius: 0.7rem;
+  }
+  .portal-mobile-return {
+    display: flex;
+    min-height: 2.75rem;
+    margin-top: 1rem;
+    padding: 0.75rem 0.8rem;
+    align-items: center;
+    color: var(--white);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 0.7rem;
+  }
+  .admin-portal-shell .portal-topbar-return {
+    display: none;
+  }
+  .admin-portal-shell .portal-topbar {
+    min-height: 3.75rem;
+    padding-left: 4.8rem;
   }
   .portal-page-header {
     grid-template-columns: 1fr;

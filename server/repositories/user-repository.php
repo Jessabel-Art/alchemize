@@ -51,4 +51,16 @@ final class AlchemizeUserRepository
         );
         $statement->execute(['id' => $userId]);
     }
+
+    public function listInternalUsers(): array
+    {
+        $statement = $this->database->query(
+            "SELECT u.public_id AS id, u.display_name, u.email, u.status, u.last_login_at,
+                    r.name AS role_name, r.slug AS role_slug
+             FROM users u INNER JOIN roles r ON r.id = u.role_id
+             WHERE r.slug IN ('owner-admin','administrator','staff','read-only')
+               AND u.status <> 'archived' ORDER BY u.display_name ASC"
+        );
+        return $statement->fetchAll();
+    }
 }

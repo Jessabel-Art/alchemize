@@ -50,6 +50,11 @@ async function portalRequest(resource, options = {}) {
 export const portalApi = {
   dashboard: () => getPortalResource("dashboard"),
   services: () => getPortalResource("services"),
+  requestService: (payload) =>
+    portalRequest("services/request", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
   tasks: () => getPortalResource("tasks"),
   documents: () => getPortalResource("documents"),
   documentDownloadUrl: (id) => buildApiUrl(`portal/documents/${id}/download`),
@@ -121,6 +126,14 @@ export const portalApi = {
     if (comment) body.append("comment", comment);
     return portalRequest(`documents/${id}/upload`, { method: "POST", body });
   },
+  uploadGeneralDocument: (file, payload = {}) => {
+    const body = new window.FormData();
+    body.append("document", file);
+    Object.entries(payload).forEach(([key, value]) => {
+      if (value) body.append(key, value);
+    });
+    return portalRequest("documents/upload", { method: "POST", body });
+  },
   thread: (id) => getPortalResource(`messages/${id}`),
   createThread: (payload) =>
     portalRequest("messages", {
@@ -144,6 +157,11 @@ export const portalApi = {
     }),
   appointmentAction: (id, action, payload = {}) =>
     portalRequest(`appointments/${id}/${action}`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  requestAppointment: (payload) =>
+    portalRequest("appointments/request", {
       method: "POST",
       body: JSON.stringify(payload),
     }),

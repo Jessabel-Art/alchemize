@@ -23,6 +23,13 @@ function ClientPortalLayout() {
 
   useEffect(() => {
     let active = true;
+    const refreshCounts = () =>
+      portalApi
+        .dashboard()
+        .then(
+          (dashboard) => active && setCounts(dashboard.navigation_counts || {}),
+        )
+        .catch(() => {});
     auth
       .session()
       .then((session) => {
@@ -42,13 +49,8 @@ function ClientPortalLayout() {
         }
         setAccess(authorized ? "authorized" : "denied");
         if (authorized) {
-          portalApi
-            .dashboard()
-            .then(
-              (dashboard) =>
-                active && setCounts(dashboard.navigation_counts || {}),
-            )
-            .catch(() => {});
+          refreshCounts();
+          window.addEventListener("alchemize:portal-refresh", refreshCounts);
         }
       })
       .catch((error) => {
@@ -64,6 +66,7 @@ function ClientPortalLayout() {
       });
     return () => {
       active = false;
+      window.removeEventListener("alchemize:portal-refresh", refreshCounts);
     };
   }, []);
 

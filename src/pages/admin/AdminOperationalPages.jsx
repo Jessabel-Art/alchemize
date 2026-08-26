@@ -15,7 +15,15 @@ import {
   serviceStageCatalog,
   staffOptions,
 } from "../../../js/data/admin-store.js";
-import { leads as leadApi, portalAdmin } from "../../services/admin-api.js";
+import {
+  appointments as appointmentApi,
+  clients as clientApi,
+  documents as documentApi,
+  engagements as engagementApi,
+  leads as leadApi,
+  portalAdmin,
+  tasks as taskApi,
+} from "../../services/admin-api.js";
 
 const leadStatuses = [
   "New",
@@ -1160,6 +1168,8 @@ function ClientManagementPage() {
   const [clientSavedMessage, setClientSavedMessage] = useState("");
   const [printMode, setPrintMode] = useState(null);
   const [communicationThreads, setCommunicationThreads] = useState([]);
+  const [portalActionMessage, setPortalActionMessage] = useState("");
+  const [portalActionPending, setPortalActionPending] = useState(false);
 
   useEffect(() => {
     portalAdmin
@@ -1317,40 +1327,78 @@ function ClientManagementPage() {
     refreshClientState();
   };
 
-  const handleCreateClient = () => {
+  const handleCreateClient = async () => {
     try {
       const payload = {
-        clientType: newClientForm.clientType,
-        displayName: newClientForm.displayName,
-        businessName:
+        client_type: String(
+          newClientForm.clientType || "individual",
+        ).toLowerCase(),
+        display_name: newClientForm.displayName || newClientForm.businessName,
+        legal_name:
           newClientForm.clientType === "Business"
             ? newClientForm.businessName || newClientForm.legalBusinessName
             : newClientForm.businessName,
-        legalBusinessName: newClientForm.legalBusinessName,
-        dbaName: newClientForm.dbaName,
-        email: newClientForm.email,
-        phone: newClientForm.phone,
-        businessEmail: newClientForm.businessEmail,
-        businessPhone: newClientForm.businessPhone,
-        preferredContactMethod: newClientForm.preferredContactMethod,
-        status: newClientForm.status,
-        portalStatus: newClientForm.portalStatus,
-        representative: newClientForm.representative,
-        authorizedUsers: newClientForm.authorizedUsers,
-        businessAddress: newClientForm.businessAddress,
-        notes: newClientForm.notes,
+        primary_email: newClientForm.email || newClientForm.businessEmail,
+        primary_phone: newClientForm.phone || newClientForm.businessPhone,
+        preferred_contact_method: String(
+          newClientForm.preferredContactMethod || "email",
+        ).toLowerCase(),
+        status: ["active", "inactive", "archived"].includes(
+          String(newClientForm.status).toLowerCase(),
+        )
+          ? String(newClientForm.status).toLowerCase()
+          : "prospective",
+        portal_status: "pending",
       };
-
-      const createdClient = adminStore.createClient(payload);
-      setClientSavedMessage(`Client added: ${createdClient.displayName}`);
+      const created = await clientApi.create(payload);
+      const rows = await clientApi.list();
+      const mapped = rows.map((row) => ({
+        id: String(row.id),
+        displayName: row.display_name,
+        clientType: toTitleCase(row.client_type),
+        businessName: row.legal_name || "",
+        email: row.primary_email || "",
+        phone: row.primary_phone || "",
+        preferredContactMethod: toTitleCase(row.preferred_contact_method),
+        status: toTitleCase(row.status),
+        portalStatus: toTitleCase(row.portal_status),
+        portalUserStatus: row.portal_user_status,
+        portalPasswordSet: Boolean(Number(row.portal_password_set)),
+        lastActivity: row.updated_at || row.created_at,
+      }));
+      adminStore.replaceCollections({ clients: mapped });
+      setClientSavedMessage(
+        `Client added: ${created.display_name}${created.portal?.development_url ? ` — development invitation: ${created.portal.development_url}` : ""}`,
+      );
       setClientFormError("");
       setNewClientForm(createEmptyClientForm());
       setIsAddClientOpen(false);
       refreshClientState();
-      navigate(`/admin/clients/${createdClient.id}`);
+      navigate(`/admin/clients/${created.id}`);
     } catch (error) {
       setClientFormError(error.message || "Unable to create this client.");
       setClientSavedMessage("");
+    }
+  };
+
+  const runPortalAction = async (kind) => {
+    if (!selectedClient || portalActionPending) return;
+    setPortalActionPending(true);
+    setPortalActionMessage("");
+    try {
+      const result =
+        kind === "reset"
+          ? await clientApi.sendPasswordReset(selectedClient.id)
+          : await clientApi.sendInvitation(selectedClient.id);
+      setPortalActionMessage(
+        `${kind === "reset" ? "Password reset" : "Portal invitation"} queued.${result?.development_url ? ` Development link: ${result.development_url}` : ""}`,
+      );
+    } catch (error) {
+      setPortalActionMessage(
+        error.message || "The portal action could not be completed.",
+      );
+    } finally {
+      setPortalActionPending(false);
     }
   };
 
@@ -1669,6 +1717,34 @@ function ClientManagementPage() {
                   <dd>{selectedClient.portalStatus || "Active"}</dd>
                 </div>
               </dl>
+              <div className="admin-header-actions">
+                {!selectedClient.portalPasswordSet ? (
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    disabled={portalActionPending}
+                    onClick={() => runPortalAction("invite")}
+                  >
+                    {selectedClient.portalUserStatus === "invited"
+                      ? "Resend Portal Invitation"
+                      : "Send Portal Invitation"}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    disabled={portalActionPending}
+                    onClick={() => runPortalAction("reset")}
+                  >
+                    Send Password Reset
+                  </button>
+                )}
+              </div>
+              {portalActionMessage ? (
+                <p className="admin-feedback" role="status">
+                  {portalActionMessage}
+                </p>
+              ) : null}
             </div>
           </div>
 
@@ -2660,6 +2736,52 @@ function ServiceManagementPage() {
   const [serviceSavedMessage, setServiceSavedMessage] = useState("");
   const [editingServiceId, setEditingServiceId] = useState(null);
   const [serviceDraft, setServiceDraft] = useState(null);
+  const [isNewEngagementOpen, setIsNewEngagementOpen] = useState(false);
+  const [engagementForm, setEngagementForm] = useState({
+    client_id: "",
+    title: "",
+    description: "",
+    status: "preparing",
+    start_date: "",
+    target_date: "",
+  });
+
+  const createEngagement = async (event) => {
+    event.preventDefault();
+    setServiceError("");
+    try {
+      await engagementApi.create(engagementForm);
+      const rows = await engagementApi.list();
+      adminStore.replaceCollections({
+        engagements: rows.map((row) => ({
+          id: String(row.id),
+          publicId: row.public_id,
+          clientId: String(row.client_id),
+          serviceName: row.title,
+          title: row.title,
+          description: row.description || "",
+          status: toTitleCase(row.status.replaceAll("_", " ")),
+          startedAt: row.start_date,
+          targetDate: row.target_date,
+          assignedTo: "Owner / Administrator",
+        })),
+      });
+      setServiceSavedMessage(
+        "Engagement assigned and available in the Client Portal.",
+      );
+      setIsNewEngagementOpen(false);
+      setEngagementForm({
+        client_id: "",
+        title: "",
+        description: "",
+        status: "preparing",
+        start_date: "",
+        target_date: "",
+      });
+    } catch (error) {
+      setServiceError(error.message || "Unable to assign this engagement.");
+    }
+  };
 
   const catalog = (snapshot.services || []).map((service) => ({
     ...service,
@@ -2981,9 +3103,12 @@ function ServiceManagementPage() {
         summary="Review the service catalog and active client engagements across the delivery pipeline."
         actions={[
           {
-            label: "+ New Service",
+            label: tab === "catalog" ? "+ New Service" : "+ Assign Engagement",
             primary: true,
-            onClick: () => setIsNewServiceOpen(true),
+            onClick: () =>
+              tab === "catalog"
+                ? setIsNewServiceOpen(true)
+                : setIsNewEngagementOpen(true),
           },
         ]}
       />
@@ -3000,6 +3125,125 @@ function ServiceManagementPage() {
       >
         {tab === "catalog" ? renderCatalog() : renderEngagements()}
       </AdminSection>
+
+      {isNewEngagementOpen ? (
+        <div
+          className="admin-detail-overlay"
+          onClick={() => setIsNewEngagementOpen(false)}
+        >
+          <aside
+            className="admin-detail-drawer"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="admin-detail-header">
+              <h2>Assign engagement</h2>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => setIsNewEngagementOpen(false)}
+              >
+                Close
+              </button>
+            </div>
+            <form
+              className="admin-detail-body client-detail-editor-grid"
+              onSubmit={createEngagement}
+            >
+              <label>
+                <span>Client</span>
+                <select
+                  required
+                  value={engagementForm.client_id}
+                  onChange={(event) =>
+                    setEngagementForm({
+                      ...engagementForm,
+                      client_id: event.target.value,
+                    })
+                  }
+                >
+                  <option value="">Select client</option>
+                  {snapshot.clients.map((client) => (
+                    <option key={client.id} value={client.id}>
+                      {client.displayName}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span>Service / engagement title</span>
+                <input
+                  required
+                  value={engagementForm.title}
+                  onChange={(event) =>
+                    setEngagementForm({
+                      ...engagementForm,
+                      title: event.target.value,
+                    })
+                  }
+                />
+              </label>
+              <label className="full-span">
+                <span>Client-visible description</span>
+                <textarea
+                  value={engagementForm.description}
+                  onChange={(event) =>
+                    setEngagementForm({
+                      ...engagementForm,
+                      description: event.target.value,
+                    })
+                  }
+                />
+              </label>
+              <label>
+                <span>Status</span>
+                <select
+                  value={engagementForm.status}
+                  onChange={(event) =>
+                    setEngagementForm({
+                      ...engagementForm,
+                      status: event.target.value,
+                    })
+                  }
+                >
+                  <option value="preparing">Preparing</option>
+                  <option value="waiting_on_client">Waiting on client</option>
+                  <option value="in_progress">In progress</option>
+                  <option value="review">Review</option>
+                </select>
+              </label>
+              <label>
+                <span>Start date</span>
+                <input
+                  type="date"
+                  value={engagementForm.start_date}
+                  onChange={(event) =>
+                    setEngagementForm({
+                      ...engagementForm,
+                      start_date: event.target.value,
+                    })
+                  }
+                />
+              </label>
+              <label>
+                <span>Target date</span>
+                <input
+                  type="date"
+                  value={engagementForm.target_date}
+                  onChange={(event) =>
+                    setEngagementForm({
+                      ...engagementForm,
+                      target_date: event.target.value,
+                    })
+                  }
+                />
+              </label>
+              <button className="primary-button full-span">
+                Assign engagement
+              </button>
+            </form>
+          </aside>
+        </div>
+      ) : null}
 
       {isNewServiceOpen ? (
         <div
@@ -3531,6 +3775,18 @@ function TaskManagementPage() {
   const [ownerFilter, setOwnerFilter] = useState("All");
   const [priorityFilter, setPriorityFilter] = useState("All");
   const [rows, setRows] = useState(snapshot.tasks);
+  const [taskFormOpen, setTaskFormOpen] = useState(false);
+  const [taskFeedback, setTaskFeedback] = useState("");
+  const [taskForm, setTaskForm] = useState({
+    client_id: "",
+    engagement_id: "",
+    title: "",
+    description: "",
+    due_date: "",
+    priority: "normal",
+    status: "waiting_on_client",
+    visibility: "both",
+  });
 
   const filteredRows = useMemo(() => {
     return rows.filter((task) => {
@@ -3566,12 +3822,49 @@ function TaskManagementPage() {
     ...Array.from(new Set(rows.map((task) => task.assignedTo).filter(Boolean))),
   ];
 
-  const updateStatus = (taskId, nextStatus) => {
-    setRows((current) =>
-      current.map((task) =>
-        task.id === taskId ? { ...task, status: nextStatus } : task,
-      ),
-    );
+  const updateStatus = async (taskId, nextStatus) => {
+    try {
+      const normalized = nextStatus.toLowerCase().replaceAll(" ", "_");
+      await taskApi.update(taskId, { status: normalized });
+      setRows((current) =>
+        current.map((task) =>
+          task.id === taskId ? { ...task, status: nextStatus } : task,
+        ),
+      );
+    } catch (error) {
+      setTaskFeedback(error.message);
+    }
+  };
+  const createTask = async (event) => {
+    event.preventDefault();
+    setTaskFeedback("");
+    try {
+      const created = await taskApi.create({
+        ...taskForm,
+        client_id: Number(taskForm.client_id),
+        engagement_id: taskForm.engagement_id
+          ? Number(taskForm.engagement_id)
+          : null,
+      });
+      const row = {
+        id: String(created.id),
+        clientId: taskForm.client_id,
+        engagementId: taskForm.engagement_id,
+        title: taskForm.title,
+        description: taskForm.description,
+        priority: toTitleCase(taskForm.priority),
+        dueDate: taskForm.due_date,
+        status: toTitleCase(taskForm.status.replaceAll("_", " ")),
+        visibility: taskForm.visibility,
+        assignedTo: "Owner / Administrator",
+      };
+      setRows((current) => [row, ...current]);
+      adminStore.replaceCollections({ tasks: [row, ...rows] });
+      setTaskFormOpen(false);
+      setTaskFeedback("Task created and assigned.");
+    } catch (error) {
+      setTaskFeedback(error.message || "Unable to create task.");
+    }
   };
 
   return (
@@ -3580,8 +3873,19 @@ function TaskManagementPage() {
         eyebrow="Task management"
         title="Task management"
         summary="Manage action items, service dependencies, and completion status across client work."
-        actions={[{ label: "+ New Task", primary: true, onClick: () => null }]}
+        actions={[
+          {
+            label: "+ New Task",
+            primary: true,
+            onClick: () => setTaskFormOpen(true),
+          },
+        ]}
       />
+      {taskFeedback ? (
+        <p className="admin-feedback" role="status">
+          {taskFeedback}
+        </p>
+      ) : null}
       <AdminToolbar
         searchValue={search}
         onSearchChange={setSearch}
@@ -3690,10 +3994,138 @@ function TaskManagementPage() {
             title="No tasks due in this view."
             description="Adjust the filters or create a new work item."
             actionLabel="New Task"
-            onAction={() => null}
+            onAction={() => setTaskFormOpen(true)}
           />
         )}
       </AdminSection>
+      {taskFormOpen ? (
+        <div
+          className="admin-detail-overlay"
+          onClick={() => setTaskFormOpen(false)}
+        >
+          <aside
+            className="admin-detail-drawer"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="admin-detail-header">
+              <h2>Create client task</h2>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => setTaskFormOpen(false)}
+              >
+                Close
+              </button>
+            </div>
+            <form
+              className="admin-detail-body client-detail-editor-grid"
+              onSubmit={createTask}
+            >
+              <label>
+                <span>Client</span>
+                <select
+                  required
+                  value={taskForm.client_id}
+                  onChange={(event) =>
+                    setTaskForm({
+                      ...taskForm,
+                      client_id: event.target.value,
+                      engagement_id: "",
+                    })
+                  }
+                >
+                  <option value="">Select client</option>
+                  {snapshot.clients.map((client) => (
+                    <option key={client.id} value={client.id}>
+                      {client.displayName}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span>Engagement</span>
+                <select
+                  value={taskForm.engagement_id}
+                  onChange={(event) =>
+                    setTaskForm({
+                      ...taskForm,
+                      engagement_id: event.target.value,
+                    })
+                  }
+                >
+                  <option value="">No engagement</option>
+                  {snapshot.engagements
+                    .filter((item) => item.clientId === taskForm.client_id)
+                    .map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.title || item.serviceName}
+                      </option>
+                    ))}
+                </select>
+              </label>
+              <label className="full-span">
+                <span>Task title</span>
+                <input
+                  required
+                  value={taskForm.title}
+                  onChange={(event) =>
+                    setTaskForm({ ...taskForm, title: event.target.value })
+                  }
+                />
+              </label>
+              <label className="full-span">
+                <span>Client instructions</span>
+                <textarea
+                  value={taskForm.description}
+                  onChange={(event) =>
+                    setTaskForm({
+                      ...taskForm,
+                      description: event.target.value,
+                    })
+                  }
+                />
+              </label>
+              <label>
+                <span>Due date</span>
+                <input
+                  type="date"
+                  value={taskForm.due_date}
+                  onChange={(event) =>
+                    setTaskForm({ ...taskForm, due_date: event.target.value })
+                  }
+                />
+              </label>
+              <label>
+                <span>Priority</span>
+                <select
+                  value={taskForm.priority}
+                  onChange={(event) =>
+                    setTaskForm({ ...taskForm, priority: event.target.value })
+                  }
+                >
+                  <option value="low">Low</option>
+                  <option value="normal">Normal</option>
+                  <option value="high">High</option>
+                  <option value="urgent">Urgent</option>
+                </select>
+              </label>
+              <label>
+                <span>Visibility</span>
+                <select
+                  value={taskForm.visibility}
+                  onChange={(event) =>
+                    setTaskForm({ ...taskForm, visibility: event.target.value })
+                  }
+                >
+                  <option value="both">Admin and client</option>
+                  <option value="admin">Admin only</option>
+                </select>
+              </label>
+              <button className="primary-button full-span">Create task</button>
+            </form>
+          </aside>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -3706,7 +4138,55 @@ function DocumentManagementPage() {
   const [serviceFilter, setServiceFilter] = useState("All");
   const [visibilityFilter, setVisibilityFilter] = useState("All");
 
-  const rows = snapshot.documents;
+  const [rows, setRows] = useState(snapshot.documents);
+  const [documentFormOpen, setDocumentFormOpen] = useState(false);
+  const [documentFeedback, setDocumentFeedback] = useState("");
+  const [documentForm, setDocumentForm] = useState({
+    client_id: "",
+    engagement_id: "",
+    document_name: "",
+    document_type: "",
+    due_date: "",
+    client_instructions: "",
+    status: "awaiting_upload",
+    visibility: "shared",
+    requested_date: new Date().toISOString().slice(0, 10),
+  });
+  const createDocumentRequest = async (event) => {
+    event.preventDefault();
+    setDocumentFeedback("");
+    try {
+      const created = await documentApi.create({
+        ...documentForm,
+        client_id: Number(documentForm.client_id),
+        engagement_id: documentForm.engagement_id
+          ? Number(documentForm.engagement_id)
+          : null,
+      });
+      const row = {
+        id: String(created.id),
+        clientId: documentForm.client_id,
+        engagementId: documentForm.engagement_id,
+        name: documentForm.document_name,
+        category: documentForm.document_type || "Document",
+        status: "Requested",
+        visibility: "Client Visible",
+        requestedAt: documentForm.requested_date,
+        receivedAt: null,
+        instructions: documentForm.client_instructions,
+      };
+      setRows((current) => [row, ...current]);
+      adminStore.replaceCollections({ documents: [row, ...rows] });
+      setDocumentFormOpen(false);
+      setDocumentFeedback(
+        "Document request created and visible to the client.",
+      );
+    } catch (error) {
+      setDocumentFeedback(
+        error.message || "Unable to create document request.",
+      );
+    }
+  };
 
   const filteredRows = useMemo(() => {
     return rows.filter((document) => {
@@ -3760,10 +4240,19 @@ function DocumentManagementPage() {
         title="Document control"
         summary="Track requested records, received files, active review work, and record visibility."
         actions={[
-          { label: "+ Register Document", primary: true, onClick: () => null },
-          { label: "+ Request Document", onClick: () => null },
+          { label: "+ Register Document — unavailable", disabled: true },
+          {
+            label: "+ Request Document",
+            primary: true,
+            onClick: () => setDocumentFormOpen(true),
+          },
         ]}
       />
+      {documentFeedback ? (
+        <p className="admin-feedback" role="status">
+          {documentFeedback}
+        </p>
+      ) : null}
       <AdminToolbar
         searchValue={search}
         onSearchChange={setSearch}
@@ -3862,11 +4351,134 @@ function DocumentManagementPage() {
           <AdminEmptyState
             title="No documents are awaiting review."
             description="There are no records matching the current controls."
-            actionLabel="Register Document"
-            onAction={() => null}
+            actionLabel="Request Document"
+            onAction={() => setDocumentFormOpen(true)}
           />
         )}
       </AdminSection>
+      {documentFormOpen ? (
+        <div
+          className="admin-detail-overlay"
+          onClick={() => setDocumentFormOpen(false)}
+        >
+          <aside
+            className="admin-detail-drawer"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="admin-detail-header">
+              <h2>Request document</h2>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => setDocumentFormOpen(false)}
+              >
+                Close
+              </button>
+            </div>
+            <form
+              className="admin-detail-body client-detail-editor-grid"
+              onSubmit={createDocumentRequest}
+            >
+              <label>
+                <span>Client</span>
+                <select
+                  required
+                  value={documentForm.client_id}
+                  onChange={(event) =>
+                    setDocumentForm({
+                      ...documentForm,
+                      client_id: event.target.value,
+                      engagement_id: "",
+                    })
+                  }
+                >
+                  <option value="">Select client</option>
+                  {snapshot.clients.map((client) => (
+                    <option key={client.id} value={client.id}>
+                      {client.displayName}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span>Engagement</span>
+                <select
+                  value={documentForm.engagement_id}
+                  onChange={(event) =>
+                    setDocumentForm({
+                      ...documentForm,
+                      engagement_id: event.target.value,
+                    })
+                  }
+                >
+                  <option value="">No engagement</option>
+                  {snapshot.engagements
+                    .filter((item) => item.clientId === documentForm.client_id)
+                    .map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.title || item.serviceName}
+                      </option>
+                    ))}
+                </select>
+              </label>
+              <label className="full-span">
+                <span>Document name</span>
+                <input
+                  required
+                  value={documentForm.document_name}
+                  onChange={(event) =>
+                    setDocumentForm({
+                      ...documentForm,
+                      document_name: event.target.value,
+                    })
+                  }
+                />
+              </label>
+              <label>
+                <span>Document type</span>
+                <input
+                  value={documentForm.document_type}
+                  onChange={(event) =>
+                    setDocumentForm({
+                      ...documentForm,
+                      document_type: event.target.value,
+                    })
+                  }
+                />
+              </label>
+              <label>
+                <span>Due date</span>
+                <input
+                  type="date"
+                  value={documentForm.due_date}
+                  onChange={(event) =>
+                    setDocumentForm({
+                      ...documentForm,
+                      due_date: event.target.value,
+                    })
+                  }
+                />
+              </label>
+              <label className="full-span">
+                <span>Client instructions</span>
+                <textarea
+                  required
+                  value={documentForm.client_instructions}
+                  onChange={(event) =>
+                    setDocumentForm({
+                      ...documentForm,
+                      client_instructions: event.target.value,
+                    })
+                  }
+                />
+              </label>
+              <button className="primary-button full-span">
+                Create request
+              </button>
+            </form>
+          </aside>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -3901,6 +4513,8 @@ function AppointmentManagementPage() {
   const [formMode, setFormMode] = useState("create");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState("Client requested");
+  const [appointmentError, setAppointmentError] = useState("");
+  const [appointmentSaving, setAppointmentSaving] = useState(false);
 
   const clientOptions = [
     "All",
@@ -4268,30 +4882,71 @@ function AppointmentManagementPage() {
     setDraftState((current) => ({ ...current, [field]: value }));
   };
 
-  const saveAppointment = () => {
+  const saveAppointment = async () => {
+    setAppointmentError("");
     if (!draftState.clientId) {
+      setAppointmentError("Select a client before creating the appointment.");
+      return;
+    }
+    if (!draftState.date || !draftState.startTime) {
+      setAppointmentError("Date and start time are required.");
       return;
     }
 
     if (formMode === "create") {
-      const nextAppointment = {
-        id: `appt-${Date.now()}`,
-        clientId: draftState.clientId,
-        title: `${snapshot.clients.find((client) => client.id === draftState.clientId)?.displayName || "Client"} ${draftState.type}`,
-        type: draftState.type,
-        serviceName: draftState.serviceName,
-        date: draftState.date,
-        time: formatDisplayTime(draftState.startTime),
-        duration: Number(draftState.duration) || 60,
-        deliveryMethod: draftState.location,
-        status: draftState.status,
-        assignedTo: draftState.assignedTo,
-        notes: draftState.notes,
-        needsPreparation: draftState.needsPreparation,
-        followUpRequired: draftState.followUpRequired,
-      };
-      setAppointments((current) => [nextAppointment, ...current]);
-      setSelectedAppointmentId(nextAppointment.id);
+      setAppointmentSaving(true);
+      try {
+        const start = new Date(`${draftState.date}T${draftState.startTime}:00`);
+        const end = new Date(
+          start.getTime() + (Number(draftState.duration) || 60) * 60000,
+        );
+        const created = await appointmentApi.create({
+          client_id: Number(draftState.clientId),
+          appointment_type: String(draftState.type)
+            .toLowerCase()
+            .replaceAll(" ", "_"),
+          scheduled_at: `${draftState.date} ${draftState.startTime}:00`,
+          end_at: `${toDateString(end)} ${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}:00`,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          location_type: String(draftState.location)
+            .toLowerCase()
+            .replaceAll(" ", "_"),
+          status: String(draftState.status).toLowerCase().replaceAll(" ", "_"),
+          visibility: "admin",
+          preparation_required: draftState.needsPreparation,
+          follow_up_required: draftState.followUpRequired,
+          internal_notes: draftState.notes,
+        });
+        const nextAppointment = {
+          id: String(created.id),
+          clientId: draftState.clientId,
+          title: `${snapshot.clients.find((client) => client.id === draftState.clientId)?.displayName || "Client"} ${draftState.type}`,
+          type: draftState.type,
+          serviceName: draftState.serviceName,
+          date: draftState.date,
+          time: formatDisplayTime(draftState.startTime),
+          duration: Number(draftState.duration) || 60,
+          deliveryMethod: draftState.location,
+          status: draftState.status,
+          assignedTo: draftState.assignedTo,
+          notes: draftState.notes,
+          needsPreparation: draftState.needsPreparation,
+          followUpRequired: draftState.followUpRequired,
+        };
+        setAppointments((current) => [nextAppointment, ...current]);
+        adminStore.replaceCollections({
+          appointments: [nextAppointment, ...appointments],
+        });
+        setSelectedAppointmentId(nextAppointment.id);
+        setIsFormOpen(false);
+      } catch (error) {
+        setAppointmentError(
+          error.message || "The appointment could not be created.",
+        );
+      } finally {
+        setAppointmentSaving(false);
+      }
+      return;
     }
 
     if (formMode === "edit") {
@@ -5187,11 +5842,15 @@ function AppointmentManagementPage() {
                         snapshot.engagements
                           .map((engagement) => engagement.serviceName)
                           .concat(
+                            snapshot.services.map(
+                              (service) => service.serviceName,
+                            ),
                             appointments.map(
                               (appointment) => appointment.serviceName,
                             ),
-                          ),
-                      ).filter(Boolean),
+                          )
+                          .filter(Boolean),
+                      ),
                     ).map((value) => (
                       <option key={value} value={value}>
                         {value}
@@ -5308,6 +5967,11 @@ function AppointmentManagementPage() {
                   />
                 </label>
                 <div className="scheduler-action-row full-span">
+                  {appointmentError ? (
+                    <p className="admin-feedback error" role="alert">
+                      {appointmentError}
+                    </p>
+                  ) : null}
                   <button
                     type="button"
                     className="secondary-button"
@@ -5319,10 +5983,15 @@ function AppointmentManagementPage() {
                     type="button"
                     className="primary-button"
                     onClick={saveAppointment}
+                    disabled={
+                      appointmentSaving || snapshot.clients.length === 0
+                    }
                   >
-                    {formMode === "create"
-                      ? "Create Appointment"
-                      : "Save Changes"}
+                    {appointmentSaving
+                      ? "Saving…"
+                      : formMode === "create"
+                        ? "Create Appointment"
+                        : "Save Changes"}
                   </button>
                 </div>
               </div>
@@ -6604,8 +7273,13 @@ function ContentManagementPage() {
                 <td>{row.editor}</td>
                 <td>
                   <div className="table-actions">
-                    <button type="button" className="link-button">
-                      Preview
+                    <button
+                      type="button"
+                      className="link-button"
+                      disabled
+                      title="Content editing is not available yet"
+                    >
+                      Unavailable
                     </button>
                   </div>
                 </td>
@@ -6644,11 +7318,11 @@ function ContentManagementPage() {
                 <td>{row.updated}</td>
                 <td>
                   <div className="table-actions">
-                    <button type="button" className="link-button">
+                    <button type="button" className="link-button" disabled>
                       View
                     </button>
-                    <button type="button" className="link-button">
-                      Edit
+                    <button type="button" className="link-button" disabled>
+                      Edit unavailable
                     </button>
                   </div>
                 </td>
@@ -6710,8 +7384,8 @@ function ContentManagementPage() {
                 </td>
                 <td>
                   <div className="table-actions">
-                    <button type="button" className="link-button">
-                      Edit metadata
+                    <button type="button" className="link-button" disabled>
+                      Metadata unavailable
                     </button>
                   </div>
                 </td>
@@ -6751,8 +7425,8 @@ function ContentManagementPage() {
                 <td>{row.end}</td>
                 <td>
                   <div className="table-actions">
-                    <button type="button" className="link-button">
-                      Edit
+                    <button type="button" className="link-button" disabled>
+                      Edit unavailable
                     </button>
                   </div>
                 </td>
@@ -6770,7 +7444,9 @@ function ContentManagementPage() {
         eyebrow="Content management"
         title="Content management"
         summary="Review page health, resource configuration, featured placements, and notice scheduling."
-        actions={[{ label: "+ New Page", primary: true, onClick: () => null }]}
+        actions={[
+          { label: "+ New Page — unavailable", primary: true, disabled: true },
+        ]}
       />
       <AdminTabs tabs={contentTabs} activeTab={tab} onChange={setTab} />
       <AdminSection
@@ -8542,6 +9218,17 @@ function ReportsPage() {
 
 function SettingsPage() {
   const [tab, setTab] = useState("team");
+  const [teamUsers, setTeamUsers] = useState([]);
+  const [settingsError, setSettingsError] = useState("");
+
+  useEffect(() => {
+    clientApi
+      .team()
+      .then((rows) => setTeamUsers(rows || []))
+      .catch((error) =>
+        setSettingsError(error.message || "Team access could not be loaded."),
+      );
+  }, []);
 
   const settingsTabs = [
     { id: "team", label: "Team Access" },
@@ -8566,24 +9253,31 @@ function SettingsPage() {
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td>Owner / Administrator</td>
-              <td>owner@alchemize.example</td>
-              <td>Owner</td>
-              <td>
-                <AdminStatusBadge status="Active" tone="success" />
-              </td>
-              <td>Today</td>
-            </tr>
-            <tr>
-              <td>Jordan Martin</td>
-              <td>jordan@alchemize.example</td>
-              <td>Operations</td>
-              <td>
-                <AdminStatusBadge status="Active" tone="success" />
-              </td>
-              <td>2 days ago</td>
-            </tr>
+            {teamUsers.map((user) => (
+              <tr key={user.id}>
+                <td>{user.display_name}</td>
+                <td>{user.email}</td>
+                <td>{user.role_name}</td>
+                <td>
+                  <AdminStatusBadge
+                    status={toTitleCase(user.status)}
+                    tone={user.status === "active" ? "success" : "neutral"}
+                  />
+                </td>
+                <td>
+                  {user.last_login_at
+                    ? formatDate(user.last_login_at)
+                    : "Never"}
+                </td>
+              </tr>
+            ))}
+            {!teamUsers.length ? (
+              <tr>
+                <td colSpan="5">
+                  {settingsError || "No authorized team accounts found."}
+                </td>
+              </tr>
+            ) : null}
           </tbody>
         </table>
       </div>
@@ -8701,7 +9395,18 @@ function SettingsPage() {
           settingsTabs.find((item) => item.id === tab)?.label || "Settings"
         }
       >
-        {settingsContent[tab] || null}
+        {tab === "team" ? (
+          settingsContent[tab]
+        ) : (
+          <fieldset className="settings-unavailable" disabled>
+            <legend>Unavailable</legend>
+            <p>
+              These controls are not connected to persisted configuration and
+              are disabled.
+            </p>
+            {settingsContent[tab] || null}
+          </fieldset>
+        )}
       </AdminSection>
     </div>
   );

@@ -23,7 +23,7 @@ import MeetTheFounderPage from "../pages/resources/MeetTheFounderPage.jsx";
 import ResourceDetailPage from "../pages/resources/ResourceDetailPage.jsx";
 import ResourceRoutePage from "../pages/resources/ResourceRoutePage.jsx";
 import LegalPage from "../pages/legal/LegalPage.jsx";
-import AuthPage from "../pages/auth/AuthPage.jsx";
+import AuthPage, { SetPasswordPage } from "../pages/auth/AuthPage.jsx";
 import AdminDashboardPage from "../pages/admin/AdminDashboardPage.jsx";
 import AdminCommunicationsPage from "../pages/admin/AdminCommunicationsPage.jsx";
 import AdminIntakePage from "../pages/admin/AdminIntakePage.jsx";
@@ -370,6 +370,7 @@ function App() {
             path="/register"
             element={<AuthPage title="Register" buttonLabel="Create account" />}
           />
+          <Route path="/set-password" element={<SetPasswordPage />} />
         </Route>
 
         <Route

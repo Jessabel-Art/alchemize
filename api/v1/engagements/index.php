@@ -33,6 +33,7 @@ $config = require $bootstrap;
 try {
     $database = alchemize_database($config['database']);
     $repository = new AlchemizeEngagementRepository($database);
+    $activities = new AlchemizeActivityRepository($database);
 
     $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
     $path = trim($_SERVER['PATH_INFO'] ?? ($_SERVER['REQUEST_URI'] ?? ''), '/');
@@ -44,7 +45,7 @@ try {
     }
 
     if ($method === 'POST' && $parts === []) {
-        alchemize_require_staff_or_admin();
+        $actor = alchemize_require_staff_or_admin();
         alchemize_require_csrf();
         $payload = alchemize_read_json_request();
         $clientId = isset($payload['client_id']) && $payload['client_id'] !== '' ? (int) $payload['client_id'] : null;
@@ -53,8 +54,9 @@ try {
             throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Client and title are required.');
         }
 
+        $publicId = alchemize_uuid_v4();
         $id = $repository->create([
-            'public_id' => alchemize_uuid_v4(),
+            'public_id' => $publicId,
             'engagement_number' => trim((string) ($payload['engagement_number'] ?? 'ENG-' . $clientId . '-' . time())),
             'client_id' => $clientId,
             'title' => $title,
@@ -69,7 +71,29 @@ try {
             'pricing_notes' => trim((string) ($payload['pricing_notes'] ?? '')) !== '' ? trim((string) ($payload['pricing_notes'] ?? '')) : null,
         ]);
 
+        $activities->create([
+            'public_id' => alchemize_uuid_v4(), 'event_type' => 'admin.engagement.assigned',
+            'actor_type' => 'staff', 'actor_user_id' => $actor['user_id'], 'entity_type' => 'engagement',
+            'entity_id' => $publicId, 'client_id' => $clientId, 'engagement_id' => $id,
+            'summary' => 'Alchemize assigned a service engagement.', 'visibility' => 'both',
+        ]);
+
         alchemize_json_response(['data' => ['id' => $id, 'client_id' => $clientId, 'title' => $title]], 201);
+    }
+
+    if ($method === 'PUT' && count($parts) === 1 && ctype_digit((string) $parts[0])) {
+        alchemize_require_staff_or_admin();
+        alchemize_require_csrf();
+        $id = (int) $parts[0];
+        if ($repository->findById($id) === null) throw new AlchemizeRequestException(404, 'NOT_FOUND', 'Engagement was not found.');
+        $payload = alchemize_read_json_request('PUT');
+        $values = [];
+        foreach (['title','description','start_date','target_date','completion_date','billing_arrangement'] as $field) {
+            if (array_key_exists($field, $payload)) $values[$field] = trim((string) $payload[$field]) ?: null;
+        }
+        if (isset($payload['status']) && in_array($payload['status'], ['preparing','waiting_on_client','waiting_on_alchemize','scheduled','in_progress','review','ready_for_client','completed','archived'], true)) $values['status'] = $payload['status'];
+        $repository->update($id, $values);
+        alchemize_json_response(['data' => $repository->findById($id)], 200);
     }
 
     if ($method === 'GET' && count($parts) === 1 && ctype_digit((string) $parts[0])) {
