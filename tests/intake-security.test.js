@@ -11,7 +11,7 @@ const service = read("server/services/intake-service.php");
 const admin = read("server/services/intake-admin-service.php");
 const portalApi = read("api/v1/portal/index.php");
 const phaseTwoMigration = read(
-  "migrations/018_add_structured_intake_profile_references.sql",
+  "migrations/019_add_structured_intake_profile_references.sql",
 );
 const clientUi = read("src/pages/portal/ClientIntakePage.jsx");
 const documentUi = read("src/pages/portal/PortalRecordsPage.jsx");

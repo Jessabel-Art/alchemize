@@ -31,7 +31,7 @@ test("login routes portal roles to the canonical client dashboard", () => {
 });
 
 test("client provisioning uses passwordless invited accounts and hashed one-time tokens", () => {
-  const migration = read("migrations/019_create_portal_account_tokens.sql");
+  const migration = read("migrations/020_create_portal_account_tokens.sql");
   const service = read("server/services/portal-account-service.php");
   const clientEndpoint = read("api/v1/clients/index.php");
   assert.match(migration, /password_hash VARCHAR\(255\) NULL/);
@@ -84,8 +84,17 @@ test("admin clients and appointments use persistent API sources", () => {
   assert.match(page, /appointmentError/);
   assert.match(
     page,
-    /snapshot\.services\.map\(\(service\) => service\.serviceName\)[\s\S]{0,250}\.filter\(Boolean\)/,
+    /snapshot\.engagements\s*\.\s*map\s*\(\s*\(\s*engagement\s*\)\s*=>\s*engagement\.serviceName\s*,?\s*\)/,
   );
+  assert.match(
+    page,
+    /snapshot\.services\s*\.\s*map\s*\(\s*\(\s*service\s*\)\s*=>\s*service\.serviceName\s*,?\s*\)/,
+  );
+  assert.match(
+    page,
+    /appointments\s*\.\s*map\s*\(\s*\(\s*appointment\s*\)\s*=>\s*appointment\.serviceName\s*,?\s*\)/,
+  );
+  assert.match(page, /\.filter\s*\(\s*Boolean\s*\)/);
 });
 
 test("settings and CMS do not present demo or inert production controls", () => {
@@ -94,7 +103,7 @@ test("settings and CMS do not present demo or inert production controls", () => 
     page,
     /owner@alchemize\.example|jordan@alchemize\.example/,
   );
-  assert.match(page, /clientApi\.team\(\)/);
+  assert.match(page, /clientApi\s*\.\s*team\s*\(\s*\)/);
   assert.match(page, /New Page — unavailable/);
   assert.match(page, /settings-unavailable/);
 });
