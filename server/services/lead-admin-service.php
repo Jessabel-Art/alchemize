@@ -141,23 +141,16 @@ final class AlchemizeLeadAdminService
 
     public function convertLead(int $leadId, array $payload, ?int $actorUserId): array
     {
-        $lead = $this->leads->findByIdForUpdate($leadId);
-        if ($lead === null) {
-            throw new AlchemizeRequestException(404, 'NOT_FOUND', 'Lead was not found.');
-        }
-
-        if ((string) ($lead['status'] ?? '') === 'converted') {
-            throw new AlchemizeRequestException(409, 'LEAD_ALREADY_CONVERTED', 'This lead has already been converted.');
-        }
-
-        $displayName = trim((string) ($payload['display_name'] ?? $lead['full_name'] ?? ''));
-        if ($displayName === '') {
-            throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Client display name is required.');
-        }
-
         $this->clients->getDatabase()->beginTransaction();
 
         try {
+            $lead = $this->leads->findByIdForUpdate($leadId);
+            if ($lead === null) throw new AlchemizeRequestException(404, 'NOT_FOUND', 'Lead was not found.');
+            if ((string) ($lead['status'] ?? '') === 'converted' || !empty($lead['client_id'])) {
+                throw new AlchemizeRequestException(409, 'LEAD_ALREADY_CONVERTED', 'This lead has already been converted.');
+            }
+            $displayName = trim((string) ($payload['display_name'] ?? $lead['full_name'] ?? ''));
+            if ($displayName === '') throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Client display name is required.');
             $clientId = $this->clients->create([
                 'public_id' => alchemize_uuid_v4(),
                 'client_type' => in_array((string) ($payload['client_type'] ?? 'business'), ['individual', 'business', 'organization'], true) ? (string) $payload['client_type'] : 'business',

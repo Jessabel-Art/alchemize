@@ -32,15 +32,7 @@ export const serviceStageCatalog = {
   "Operations Support": ["Map", "Structure", "Document", "Maintain"],
 };
 
-export const staffOptions = [
-  "Owner / Administrator",
-  "Jordan Martin",
-  "Taylor Nguyen",
-  "Alex Rosen",
-  "Ruben Shaw",
-  "Support",
-  "Staff",
-];
+export const staffOptions = ["Owner / Administrator"];
 
 export function createAdminStore(initialData = emptyAdminData) {
   let state = clone(initialData);

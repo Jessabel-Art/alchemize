@@ -28,6 +28,8 @@ try {
         new AlchemizeActivityRepository($database),
         new AlchemizeAuditEventRepository($database),
         new AlchemizeNotificationService(new AlchemizeNotificationRepository($database), alchemize_email_provider($config)),
+        new AlchemizePortalAccountService($database,new AlchemizeUserRepository($database),new AlchemizeRoleRepository($database),new AlchemizePortalAccountRepository($database),$config),
+        alchemize_external_integrations($database, $config),
     );
     $repository = new AlchemizePortalAdminRepository($database);
     $intakes = new AlchemizeIntakeAdminService(new AlchemizeIntakeRepository($database), new AlchemizeActivityRepository($database));
@@ -35,6 +37,12 @@ try {
     $parts = array_values(array_filter(explode('/', trim($_SERVER['PATH_INFO'] ?? '', '/'))));
     if ($method === 'GET' && $parts === ['attention']) {
         alchemize_json_response(['data' => $service->attention()], 200);
+    }
+    if ($method === 'GET' && $parts === ['access']) {
+        alchemize_json_response(['data' => $service->accessGrants(isset($_GET['client_id']) ? (int) $_GET['client_id'] : null)], 200);
+    }
+    if ($method === 'PUT' && count($parts) === 2 && $parts[0] === 'access') {
+        alchemize_require_csrf(); alchemize_json_response(['data'=>$service->updateAccessGrant($parts[1],$user,alchemize_read_json_request('PUT'))],200);
     }
     if ($method === 'GET' && $parts === ['messages']) {
         alchemize_json_response(['data' => $service->threads()], 200);

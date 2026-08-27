@@ -47,6 +47,11 @@ final class AlchemizeSesSmtpEmailProvider implements AlchemizeEmailProvider
 
     public function queue(array $notification): void
     {
+        $this->deliver($notification);
+    }
+
+    public function deliver(array $notification): string
+    {
         try {
             $recipient = (string) ($notification['recipient_email'] ?? '');
             if (filter_var($recipient, FILTER_VALIDATE_EMAIL) === false) {
@@ -55,12 +60,18 @@ final class AlchemizeSesSmtpEmailProvider implements AlchemizeEmailProvider
 
             $mailer = $this->initialize();
             $mailer->addAddress($recipient);
-            $mailer->Subject = (string) ($notification['title'] ?? 'Alchemize notification');
+            $mailer->Subject = 'Alchemize | ' . (string) ($notification['title'] ?? 'Account notification');
             $plainText = trim((string) ($notification['message_body'] ?? ''));
             $mailer->isHTML(true);
-            $mailer->Body = '<p>' . nl2br(htmlspecialchars($plainText, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')) . '</p>';
-            $mailer->AltBody = $plainText;
+            $safeTitle = htmlspecialchars((string) ($notification['title'] ?? 'Account notification'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+            $safeBody = nl2br(htmlspecialchars($plainText, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'));
+            $mailer->Body = '<div style="font-family:Arial,sans-serif;max-width:600px;color:#202020">'
+                . '<div style="border-bottom:3px solid #8b6f47;padding:16px 0;font-size:20px;font-weight:700">Alchemize Business Services</div>'
+                . '<h1 style="font-size:20px;margin:24px 0 12px">' . $safeTitle . '</h1><p style="line-height:1.6">' . $safeBody . '</p>'
+                . '<p style="margin-top:28px;color:#666;font-size:13px">This transactional notice contains no document contents or password information.</p></div>';
+            $mailer->AltBody = "Alchemize Business Services\n\n" . (string) ($notification['title'] ?? 'Account notification') . "\n\n" . $plainText;
             $mailer->send();
+            return 'sent';
         } catch (Throwable $error) {
             $notificationId = preg_replace('/[^A-Za-z0-9-]/', '', (string) ($notification['public_id'] ?? 'unknown'));
             error_log(sprintf(
@@ -68,6 +79,9 @@ final class AlchemizeSesSmtpEmailProvider implements AlchemizeEmailProvider
                 $notificationId !== '' ? $notificationId : 'unknown',
                 get_class($error),
             ));
+            return in_array(false, $this->configurationStatus(), true) || !class_exists(PHPMailer::class)
+                ? 'unavailable'
+                : 'failed';
         }
     }
 }

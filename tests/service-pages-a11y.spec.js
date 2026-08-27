@@ -9,7 +9,7 @@ const routes = [
   "/services/businesses/operations-implementation/",
   "/services/businesses/digital-business-technology/",
   "/services/businesses/readiness-growth/",
-  "/services/businesses/financial-tax-support/",
+  "/services/businesses/business-tax-support/",
 ];
 
 test.describe("Service detail accessibility checks", () => {

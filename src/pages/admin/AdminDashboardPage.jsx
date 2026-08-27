@@ -100,7 +100,15 @@ function AdminDashboardPage() {
     }[item.kind];
     if (!type) return;
     try {
-      await portalAdmin.resolve(type, item.id, decision);
+      const result = await portalAdmin.resolve(type, item.id, decision);
+      if (result?.setup_url) {
+        await navigator.clipboard.writeText(result.setup_url);
+        setPortalAttention((current) => ({
+          ...current,
+          error:
+            "Authorized-user setup link copied because email delivery was unavailable.",
+        }));
+      }
       await loadPortalAttention();
     } catch (error) {
       setPortalAttention((current) => ({ ...current, error: error.message }));

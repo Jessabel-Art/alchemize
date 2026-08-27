@@ -55,10 +55,10 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://getalchemize.com/services/businesses/readiness-growth" />
   </url>
   <url>
-    <loc>https://getalchemize.com/services/businesses/financial-tax-support</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://getalchemize.com/services/businesses/financial-tax-support" />
-    <xhtml:link rel="alternate" hreflang="es" href="https://getalchemize.com/es/services/businesses/financial-tax-support" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://getalchemize.com/services/businesses/financial-tax-support" />
+    <loc>https://getalchemize.com/services/businesses/business-tax-support</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://getalchemize.com/services/businesses/business-tax-support" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://getalchemize.com/es/services/businesses/business-tax-support" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getalchemize.com/services/businesses/business-tax-support" />
   </url>
   <url>
     <loc>https://getalchemize.com/contact</loc>
@@ -229,10 +229,10 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://getalchemize.com/services/businesses/readiness-growth" />
   </url>
   <url>
-    <loc>https://getalchemize.com/es/services/businesses/financial-tax-support</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://getalchemize.com/services/businesses/financial-tax-support" />
-    <xhtml:link rel="alternate" hreflang="es" href="https://getalchemize.com/es/services/businesses/financial-tax-support" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://getalchemize.com/services/businesses/financial-tax-support" />
+    <loc>https://getalchemize.com/es/services/businesses/business-tax-support</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://getalchemize.com/services/businesses/business-tax-support" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://getalchemize.com/es/services/businesses/business-tax-support" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getalchemize.com/services/businesses/business-tax-support" />
   </url>
   <url>
     <loc>https://getalchemize.com/es/contact</loc>

@@ -17,10 +17,22 @@ final class AlchemizeLeadService
         private readonly PDO $database,
         private readonly AlchemizeLeadRepository $leads,
         private readonly AlchemizeActivityRepository $activities,
+        private readonly ?AlchemizeExternalIntegrationRepository $integrations = null,
+        private readonly ?AlchemizeNotificationService $notifications = null,
     ) {}
 
-    public function create(array $data): array
+    public function create(array $data, array $requestContext = []): array
     {
+        $payloadFingerprint = hash('sha256', json_encode([
+            strtolower((string) ($data['email'] ?? '')), (string) ($data['service_key'] ?? ''),
+            trim((string) ($data['message'] ?? '')), (int) floor(time() / 600),
+        ], JSON_UNESCAPED_SLASHES));
+        $requestFingerprint = hash('sha256', (string) ($requestContext['remote_address'] ?? '') . '|' . (string) ($requestContext['user_agent'] ?? ''));
+        if ($this->integrations !== null) {
+            $guard = $this->integrations->registerPublicSubmission($requestFingerprint, $payloadFingerprint, 5, 3600);
+            if ($guard === 'limited') throw new AlchemizeRequestException(429, 'RATE_LIMITED', 'Please wait before sending another request.');
+            if ($guard === 'duplicate') return ['leadId' => alchemize_uuid_v4(), 'status' => 'received', 'duplicate' => true];
+        }
         $leadPublicId = alchemize_uuid_v4();
         $this->database->beginTransaction();
 
@@ -44,6 +56,15 @@ final class AlchemizeLeadService
             ]);
 
             $this->database->commit();
+            try {
+                $this->integrations?->attachLeadToSubmission($payloadFingerprint, $leadId);
+                $this->notifications?->notifyStaff(
+                    'lead.created', null, 'lead', $leadPublicId, 'New website inquiry',
+                    'A new inquiry was saved and is ready for review in Admin Leads.', 'lead-created:' . $leadPublicId,
+                );
+            } catch (Throwable $notificationError) {
+                error_log(sprintf('Lead notification bookkeeping failed [%s].', get_class($notificationError)));
+            }
             return ['leadId' => $leadPublicId, 'status' => 'new'];
         } catch (Throwable $error) {
             if ($this->database->inTransaction()) {

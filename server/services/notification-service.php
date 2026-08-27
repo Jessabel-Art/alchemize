@@ -5,11 +5,13 @@ declare(strict_types=1);
 interface AlchemizeEmailProvider
 {
     public function queue(array $notification): void;
+    public function deliver(array $notification): string;
 }
 
 final class AlchemizeNullEmailProvider implements AlchemizeEmailProvider
 {
     public function queue(array $notification): void {}
+    public function deliver(array $notification): string { return 'unavailable'; }
 }
 
 final class AlchemizeNotificationService
@@ -42,7 +44,13 @@ final class AlchemizeNotificationService
             'dedupe_key' => $dedupeKey,
         ];
         if ($this->repository->create($notification)) {
-            $this->emailProvider->queue($notification + ['recipient_email' => $recipientEmail]);
+            try {
+                $delivery = $this->emailProvider->deliver($notification + ['recipient_email' => $recipientEmail]);
+            } catch (Throwable $error) {
+                error_log(sprintf('Transactional notification delivery failed [%s].', get_class($error)));
+                $delivery = 'failed';
+            }
+            $this->repository->recordDelivery($notification['public_id'], $delivery);
         }
     }
 }

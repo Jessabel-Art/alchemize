@@ -58,7 +58,7 @@ try {
         try {
             $data = $service->create($payload);
             $email = trim((string) ($payload['primary_email'] ?? ''));
-            if ($email !== '') {
+            if ($email !== '' && ($payload['portal_access_requested'] ?? true) !== false) {
                 $data['portal'] = $accountService->provision(
                     (int) $data['id'], $email, (string) $data['display_name'], (int) ($actor['user_id'] ?? 0) ?: null
                 );
@@ -68,7 +68,17 @@ try {
             if ($database->inTransaction()) $database->rollBack();
             throw $error;
         }
+        $data['drive'] = alchemize_external_integrations($database, $config)->ensureClientFolder((int) $data['id']);
+        $delivery = $data['portal']['email_delivery'] ?? null;
+        $data['message'] = $delivery !== null && $delivery !== 'sent'
+            ? 'Client created successfully. The invitation email could not be delivered.'
+            : 'Client created successfully.';
         alchemize_json_response(['data' => $data], 201);
+    }
+
+    if ($method === 'POST' && count($parts) === 2 && ctype_digit((string) $parts[0]) && $parts[1] === 'drive-sync') {
+        alchemize_require_admin(); alchemize_require_csrf();
+        alchemize_json_response(['data' => alchemize_external_integrations($database, $config)->ensureClientFolder((int) $parts[0])], 200);
     }
 
     if ($method === 'GET' && $parts === ['team']) {
@@ -92,6 +102,36 @@ try {
         $purpose = $parts[1] === 'portal-invitation' ? 'invitation' : 'password_reset';
         $data = $accountService->issueForClient((int) $parts[0], $purpose, (int) ($actor['user_id'] ?? 0) ?: null);
         alchemize_json_response(['data' => $data], 200);
+    }
+
+    if ($method === 'POST' && count($parts) === 2 && ctype_digit((string) $parts[0])
+        && in_array($parts[1], ['setup-link', 'password-reset-link'], true)) {
+        $actor = alchemize_require_admin();
+        alchemize_require_csrf();
+        $purpose = $parts[1] === 'setup-link' ? 'invitation' : 'password_reset';
+        alchemize_json_response(['data' => $accountService->manualLinkForClient(
+            (int) $parts[0], $purpose, (int) ($actor['user_id'] ?? 0) ?: null
+        )], 200);
+    }
+
+    if ($method === 'POST' && count($parts) === 2 && ctype_digit((string) $parts[0]) && $parts[1] === 'portal-access') {
+        $actor = alchemize_require_admin(); alchemize_require_csrf();
+        $client = $repository->findById((int) $parts[0]);
+        if ($client === null) throw new AlchemizeRequestException(404, 'NOT_FOUND', 'Client was not found.');
+        alchemize_json_response(['data' => $accountService->provision(
+            (int) $client['id'], (string) $client['primary_email'], (string) $client['display_name'], (int) ($actor['user_id'] ?? 0) ?: null
+        )], 201);
+    }
+
+    if ($method === 'POST' && count($parts) === 2 && ctype_digit((string) $parts[0])
+        && in_array($parts[1], ['disable-portal', 'enable-portal'], true)) {
+        alchemize_require_admin(); alchemize_require_csrf();
+        alchemize_json_response(['data' => $accountService->setAccessState((int) $parts[0], $parts[1] === 'enable-portal')], 200);
+    }
+
+    if ($method === 'PUT' && count($parts) === 1 && ctype_digit((string) $parts[0])) {
+        alchemize_require_staff_or_admin(); alchemize_require_csrf();
+        alchemize_json_response(['data' => $service->update((int) $parts[0], alchemize_read_json_request('PUT'))], 200);
     }
 
     if ($method === 'GET' && count($parts) === 1 && ctype_digit((string) $parts[0])) {

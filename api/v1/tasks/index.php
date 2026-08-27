@@ -85,6 +85,12 @@ try {
         $repository->update((int)$parts[0],$values); alchemize_json_response(['data'=>['id'=>(int)$parts[0]]],200);
     }
 
+    if ($method === 'GET' && count($parts) === 1 && ctype_digit((string) $parts[0])) {
+        alchemize_require_read_only_or_higher(); $row=$repository->findById((int)$parts[0]);
+        if($row===null)throw new AlchemizeRequestException(404,'NOT_FOUND','Task was not found.');
+        alchemize_json_response(['data'=>$row],200);
+    }
+
     throw new AlchemizeRequestException(404, 'NOT_FOUND', 'The requested task route was not found.');
 } catch (AlchemizeRequestException $error) {
     alchemize_error_response($error->httpStatus, $error->errorCode, $error->getMessage());

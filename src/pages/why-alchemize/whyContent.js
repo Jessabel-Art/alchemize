@@ -3,13 +3,13 @@ export const whyContent = {
     metadata: {
       title: "Why Alchemize | Alchemize Business Services",
       description:
-        "Learn how Alchemize connects practical support, professional judgment, and organized follow-through for individuals and businesses.",
+        "Alchemize Business Services helps individuals and small businesses across taxes, documents, business operations, administration, and digital support."
     },
     hero: {
       eyebrow: "Why Alchemize",
       start: "Clarity across the responsibilities that",
       emphasis: "connect.",
-      copy: "Your financial, business, and administrative decisions do not exist in isolation. Neither should the support behind them.",
+      copy: "Alchemize Business Services provides practical professional support for individuals, entrepreneurs, and small businesses across taxes, business operations, documents, digital services, and administrative responsibilities. Instead of treating every responsibility as a separate problem, Alchemize helps organize the situation, identify what matters, and connect you with the right service or next step.",
       primary: "Schedule a Consultation",
       secondary: "See the difference",
       orbit: ["Taxes", "Digital", "Documents", "Business"],
@@ -18,8 +18,9 @@ export const whyContent = {
       eyebrow: "The reality",
       title: "Important responsibilities rarely arrive one at a time.",
       paragraphs: [
-        "A tax question can affect a business decision. A new business creates administrative responsibilities. A web project, policy update, or operational challenge can also connect to business priorities and timing.",
-        "Yet these needs are commonly handled through disconnected providers, systems, and conversations.",
+        "A tax question may connect to a business decision. Starting a company creates tax, administrative, operational, and digital responsibilities. A document may need notarization, translation, or apostille support. A growing business may need bookkeeping, payroll, website support, or stronger internal processes.",
+        "These responsibilities are often spread across different providers, systems, deadlines, and conversations. That can make a manageable task unnecessarily difficult to organize.",
+        "Alchemize is designed to help bring those responsibilities into a clearer process.",
       ],
       sequence: [
         "Start with the situation.",
@@ -32,7 +33,7 @@ export const whyContent = {
       individual: {
         eyebrow: "For individuals",
         title: "Personal responsibilities deserve a clear process.",
-        copy: "Taxes. Notary. Documents. Preparation. Organization.",
+        copy: "Tax preparation. Notary. Translation. Apostille support. Documents. Digital services. Preparation and organization.",
         link: "Explore individual services",
       },
       principle: {
@@ -42,7 +43,7 @@ export const whyContent = {
       business: {
         eyebrow: "For businesses",
         title: "Structure behind every stage of the business.",
-        copy: "Startup. Operations. Technology. Taxes. Readiness. Advisory.",
+        copy: "Startup. Bookkeeping. Payroll. Taxes. Operations. Digital services. Administration. Advisory.",
         link: "Explore business services",
       },
     },
@@ -52,19 +53,19 @@ export const whyContent = {
       items: [
         [
           "Understand",
-          "Start with the situation, responsibility, question, or goal.",
+          "Start with the situation, responsibility, question, or goal. Before deciding on a service, understand what is actually happening and what the client needs to accomplish.",
         ],
         [
           "Organize",
-          "Identify what information matters and what needs to be prepared.",
+          "Identify the information, records, documents, deadlines, and decisions that matter.",
         ],
         [
           "Clarify",
-          "Determine the appropriate service, options, and next steps.",
+          "Determine the appropriate service, available options, and practical next steps.",
         ],
         [
           "Move Forward",
-          "Take practical action with professional support where Alchemize can help.",
+          "Take action with professional support where Alchemize can help, and identify when another licensed or specialized professional is required.",
         ],
       ],
     },
@@ -75,44 +76,52 @@ export const whyContent = {
       items: [
         [
           "Clear guidance",
-          "Professional services should leave you with more clarity, not more questions.",
+          "Professional support should make the responsibility easier to understand. We focus on clear explanations, realistic expectations, and defined next steps.",
         ],
         [
           "Connected support",
-          "Support should recognize the whole responsibility, not just one piece of it.",
+          "A business or personal responsibility rarely exists by itself. When services overlap, Alchemize looks at how the pieces relate instead of treating each one as an isolated transaction.",
         ],
-        ["Practical solutions", "Useful answers. Clear actions."],
+        [
+          "Practical solutions",
+          "Useful support should lead somewhere. The focus is on organized information, practical actions, completed work, and a clear next step.",
+        ],
         [
           "Professional care",
-          "Treat every interaction and entrusted detail with appropriate discretion.",
+          "Financial records, business information, documents, and personal details deserve appropriate discretion, organization, and professional handling.",
         ],
-        ["Professional continuity", "Support built to evolve with the need."],
+        [
+          "Professional continuity",
+          "Needs change over time. Alchemize is structured so the relationship can evolve from one service to another as new responsibilities arise.",
+        ],
       ],
     },
     continuity: {
       eyebrow: "One relationship. Changing needs.",
       title: "Your needs will change. The support can evolve with them.",
-      copy: "An individual may begin with tax preparation. An entrepreneur may begin with formation. What comes next can require a different kind of support.",
+      copy: "An individual may begin with tax preparation and later need document, notary, translation, apostille, or digital support. An entrepreneur may begin with business formation and later need bookkeeping, payroll, taxes, operations support, or a stronger digital presence. Alchemize is built to support those changing needs without requiring every new responsibility to begin from zero.",
       paths: [
         [
           "For individuals",
           "individuals",
           [
-            "Tax preparation",
-            "Digital presence",
-            "Documents",
-            "Preparation & organization",
+            "Tax Preparation",
+            "Notary & Documents",
+            "Translation & Apostille",
+            "Digital Support",
+            "Preparation & Organization",
           ],
         ],
         [
           "For businesses",
           "businesses",
           [
-            "Startup",
-            "Operations",
-            "Taxes",
-            "Digital support",
-            "Administration & advisory",
+            "Startup Support",
+            "Bookkeeping & Payroll",
+            "Business Tax Support",
+            "Operations & Administration",
+            "Digital Support",
+            "Advisory",
           ],
         ],
       ],
@@ -121,7 +130,7 @@ export const whyContent = {
       eyebrow: "Start with what is in front of you",
       title:
         "You do not need to have everything figured out before the conversation starts.",
-      copy: "Tell us what you are working through, preparing for, or trying to accomplish. We can start by identifying the right next step.",
+      copy: "Tell us what you are working through, preparing for, or trying to accomplish. You do not need to know which service you need before reaching out. We can start with the situation, identify what matters, and determine the appropriate next step.",
       primary: "Schedule a Consultation",
       secondary: "Explore Services",
     },
@@ -130,13 +139,13 @@ export const whyContent = {
     metadata: {
       title: "Por qué Alchemize | Alchemize Business Services",
       description:
-        "Conozca cómo Alchemize integra apoyo práctico, criterio profesional y seguimiento organizado para personas y empresas.",
+        "Alchemize Business Services ayuda a personas y pequeñas empresas en impuestos, documentos, operaciones, administración y apoyo digital."
     },
     hero: {
       eyebrow: "Por qué Alchemize",
       start: "Claridad para las responsabilidades que están",
       emphasis: "conectadas.",
-      copy: "Sus decisiones financieras, empresariales y administrativas no existen de forma aislada. El apoyo que las respalda tampoco debería estar fragmentado.",
+      copy: "Alchemize Business Services ofrece apoyo profesional práctico para personas, emprendedores y pequeñas empresas en impuestos, operaciones comerciales, documentos, servicios digitales y responsabilidades administrativas. En lugar de tratar cada responsabilidad como un problema separado, Alchemize ayuda a organizar la situación, identificar lo que importa y conectar a la persona con el servicio o el próximo paso correcto.",
       primary: "Programar una consulta",
       secondary: "Conocer la diferencia",
       orbit: ["Impuestos", "Digital", "Documentos", "Empresa"],
@@ -145,8 +154,9 @@ export const whyContent = {
       eyebrow: "La realidad",
       title: "Las responsabilidades importantes rara vez llegan de una en una.",
       paragraphs: [
-        "Una pregunta tributaria puede afectar una decisión empresarial. Una nueva empresa crea responsabilidades administrativas. Un proyecto digital, una actualización de proceso o un desafío operativo también pueden relacionarse con prioridades y plazos empresariales.",
-        "Sin embargo, estas necesidades suelen manejarse mediante proveedores, sistemas y conversaciones desconectados.",
+        "Una pregunta tributaria puede conectarse con una decisión empresarial. El inicio de una empresa crea responsabilidades fiscales, administrativas, operativas y digitales. Un documento puede requerir notaría, traducción o apostilla. Un negocio en crecimiento puede necesitar contabilidad, nómina, apoyo web o procesos internos más sólidos.",
+        "Estas responsabilidades suelen distribuirse entre diferentes proveedores, sistemas, plazos y conversaciones. Eso puede hacer que una tarea manejable sea mucho más difícil de organizar.",
+        "Alchemize está diseñado para llevar esas responsabilidades a un proceso más claro.",
       ],
       sequence: [
         "Comience con la situación.",
@@ -159,7 +169,7 @@ export const whyContent = {
       individual: {
         eyebrow: "Para personas",
         title: "Las responsabilidades personales merecen un proceso claro.",
-        copy: "Impuestos. Seguros. Notaría. Documentos. Preparación. Organización.",
+        copy: "Preparación de impuestos. Notaría. Traducción. Apoyo de apostilla. Documentos. Servicios digitales. Preparación y organización.",
         link: "Explorar servicios para personas",
       },
       principle: {
@@ -169,7 +179,7 @@ export const whyContent = {
       business: {
         eyebrow: "Para empresas",
         title: "Estructura para cada etapa de la empresa.",
-        copy: "Inicio. Operaciones. Tecnología. Impuestos. Preparación. Asesoría.",
+        copy: "Inicio. Contabilidad. Nómina. Impuestos. Operaciones. Servicios digitales. Administración. Asesoría.",
         link: "Explorar servicios para empresas",
       },
     },
@@ -179,19 +189,19 @@ export const whyContent = {
       items: [
         [
           "Comprender",
-          "Comenzar con la situación, la responsabilidad, la pregunta o el objetivo.",
+          "Comience con la situación, la responsabilidad, la pregunta o el objetivo. Antes de decidir un servicio, entienda qué está ocurriendo realmente y qué necesita lograr la persona o empresa.",
         ],
         [
           "Organizar",
-          "Identificar qué información importa y qué debe prepararse.",
+          "Identifique la información, los registros, los documentos, los plazos y las decisiones que importan.",
         ],
         [
           "Aclarar",
-          "Determinar el servicio apropiado, las opciones y los próximos pasos.",
+          "Determine el servicio apropiado, las opciones disponibles y los próximos pasos prácticos.",
         ],
         [
           "Avanzar",
-          "Tomar medidas prácticas con apoyo profesional cuando Alchemize pueda ayudar.",
+          "Tome acción con apoyo profesional donde Alchemize pueda ayudar e identifique cuando se requiere otro profesional licenciado o especializado.",
         ],
       ],
     },
@@ -202,35 +212,39 @@ export const whyContent = {
       items: [
         [
           "Orientación clara",
-          "Los servicios profesionales deben dejarle más claridad, no más preguntas.",
+          "El apoyo profesional debe facilitar la comprensión de la responsabilidad. Nos enfocamos en explicaciones claras, expectativas realistas y próximos pasos definidos.",
         ],
         [
           "Apoyo conectado",
-          "El apoyo debe considerar la responsabilidad completa, no solamente una parte.",
+          "Una responsabilidad empresarial o personal rara vez existe por sí sola. Cuando los servicios se superponen, Alchemize observa cómo se relacionan las piezas en lugar de tratarlas como una transacción aislada.",
         ],
-        ["Soluciones prácticas", "Respuestas útiles. Acciones claras."],
+        [
+          "Soluciones prácticas",
+          "El apoyo útil debería conducir a algo. El enfoque está en la información organizada, las acciones prácticas, el trabajo realizado y el siguiente paso claro.",
+        ],
         [
           "Atención profesional",
-          "Cada interacción y cada detalle confiado se tratan con la discreción apropiada.",
+          "Los registros financieros, la información empresarial, los documentos y los detalles personales merecen la discreción, organización y trato profesional apropiados.",
         ],
         [
           "Continuidad profesional",
-          "Apoyo que puede evolucionar junto con la necesidad.",
+          "Las necesidades cambian con el tiempo. Alchemize está estructurado para que la relación evolucione de un servicio a otro a medida que surgen nuevas responsabilidades.",
         ],
       ],
     },
     continuity: {
       eyebrow: "Una relación. Necesidades que cambian.",
       title: "Sus necesidades cambiarán. El apoyo puede evolucionar con ellas.",
-      copy: "Una persona puede comenzar con la preparación de impuestos. Un emprendedor puede comenzar con la formación de su empresa. Lo que sigue puede requerir otro tipo de apoyo.",
+      copy: "Una persona puede comenzar con la preparación de impuestos y luego necesitar apoyo con documentos, notaría, traducción, apostilla o servicios digitales. Un emprendedor puede comenzar con la formación de la empresa y más adelante necesitar contabilidad, nómina, impuestos, apoyo operativo o una presencia digital más sólida. Alchemize está diseñado para apoyar esas necesidades cambiantes sin exigir que cada nueva responsabilidad empiece desde cero.",
       paths: [
         [
           "Para personas",
           "individuals",
           [
             "Preparación de impuestos",
-            "Presencia digital",
-            "Documentos",
+            "Notaría y documentos",
+            "Traducción y apostilla",
+            "Apoyo digital",
             "Preparación y organización",
           ],
         ],
@@ -239,10 +253,11 @@ export const whyContent = {
           "businesses",
           [
             "Inicio",
-            "Operaciones",
-            "Impuestos",
-            "Soporte digital",
-            "Administración y asesoría",
+            "Contabilidad y nómina",
+            "Impuestos empresariales",
+            "Operaciones y administración",
+            "Apoyo digital",
+            "Asesoría",
           ],
         ],
       ],
@@ -251,7 +266,7 @@ export const whyContent = {
       eyebrow: "Comience con lo que tiene por delante",
       title:
         "No necesita tenerlo todo resuelto antes de iniciar la conversación.",
-      copy: "Cuéntenos qué está atendiendo, para qué se está preparando o qué desea lograr. Podemos comenzar por identificar el próximo paso adecuado.",
+      copy: "Cuéntenos qué está resolviendo, qué está preparando o qué desea lograr. No necesita saber qué servicio necesita antes de comunicarse. Podemos comenzar con la situación, identificar lo que importa y determinar el próximo paso apropiado.",
       primary: "Programar una consulta",
       secondary: "Explorar servicios",
     },

@@ -74,6 +74,61 @@ test("portal account admin actions are authorized and never return password mate
   assert.match(frontend, /Send Password Reset/);
 });
 
+test("portal provisioning persists a hashed token before best-effort email delivery", () => {
+  const service = read("server/services/portal-account-service.php");
+  const clients = read("api/v1/clients/index.php");
+  assert.ok(
+    service.indexOf("createToken(") < service.indexOf("$this->deliver("),
+  );
+  assert.match(service, /hash\('sha256', \$raw\)/);
+  assert.match(service, /'email_delivery' => \$delivery/);
+  assert.match(service, /\$result\['setup_url'\] = \$url/);
+  assert.doesNotMatch(service, /EMAIL_NOT_CONFIGURED/);
+  assert.match(
+    clients,
+    /Client created successfully\. The invitation email could not be delivered\./,
+  );
+  assert.match(clients, /\$database->commit\(\)/);
+});
+
+test("manual setup and reset links rotate existing one-time token families behind Admin CSRF", () => {
+  const endpoint = read("api/v1/clients/index.php");
+  const service = read("server/services/portal-account-service.php");
+  assert.match(endpoint, /\['setup-link', 'password-reset-link'\]/);
+  assert.match(endpoint, /alchemize_require_admin\(\)/);
+  assert.match(endpoint, /alchemize_require_csrf\(\)/);
+  assert.match(service, /manualLinkForClient/);
+  assert.match(service, /invalidateTokens\(\$userId, \$purpose\)/);
+});
+
+test("P1 Admin detail and update callers have matching persistent handlers", () => {
+  const contracts = [
+    ["api/v1/clients/index.php", /\$method === 'PUT'/],
+    ["api/v1/services/index.php", /\$method === 'PUT'/],
+    ["api/v1/tasks/index.php", /\$method === 'GET'.*count\(\$parts\) === 1/s],
+    ["api/v1/appointments/index.php", /\$method === 'PUT'/],
+    ["api/v1/documents/index.php", /\$method === 'PUT'/],
+    ["api/v1/invoices/index.php", /\$method === 'PUT'/],
+  ];
+  for (const [path, pattern] of contracts) assert.match(read(path), pattern);
+});
+
+test("password reset is enumeration-safe and authenticated password changes require CSRF", () => {
+  const authEndpoint = read("api/v1/auth/index.php");
+  const accountService = read("server/services/portal-account-service.php");
+  assert.match(authEndpoint, /\['forgot-password'\]/);
+  assert.match(authEndpoint, /If the account is eligible/);
+  assert.match(
+    authEndpoint,
+    /\['change-password'\][\s\S]*alchemize_require_csrf\(\)/,
+  );
+  assert.match(accountService, /password_verify\(\$currentPassword/);
+  assert.match(
+    accountService,
+    /invalidateTokens\(\$userId, 'password_reset'\)/,
+  );
+});
+
 test("admin clients and appointments use persistent API sources", () => {
   const layout = read("src/layouts/AdminLayout.jsx");
   const page = read("src/pages/admin/AdminOperationalPages.jsx");

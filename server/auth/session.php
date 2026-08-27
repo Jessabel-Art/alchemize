@@ -31,6 +31,37 @@ function alchemize_session_user(): ?array
     return is_array($user) ? $user : null;
 }
 
+function alchemize_validated_session_user(): ?array
+{
+    $sessionUser = alchemize_session_user();
+    if (!is_array($sessionUser) || empty($sessionUser['user_id'])) return null;
+    try {
+        $config = alchemize_config();
+        $repository = new AlchemizeUserRepository(alchemize_database($config['database']));
+        $current = $repository->findById((int) $sessionUser['user_id']);
+        if ($current === null || (string) ($current['status'] ?? '') !== 'active') {
+            alchemize_clear_session_user();
+            return null;
+        }
+        $role = (string) ($current['role_slug'] ?? '');
+        if (in_array($role, ['client', 'business-authorized-user'], true)
+            && !$repository->hasActiveClientAccess((int) $current['id'])) {
+            alchemize_clear_session_user();
+            return null;
+        }
+        $validated = [
+            'user_id' => (int) $current['id'], 'public_id' => (string) $current['public_id'],
+            'email' => (string) $current['email'], 'display_name' => (string) $current['display_name'],
+            'role_slug' => $role, 'role_name' => (string) ($current['role_name'] ?? ''),
+        ];
+        $_SESSION['alchemize_user'] = $validated;
+        return $validated;
+    } catch (Throwable $error) {
+        error_log(sprintf('Session revalidation failed [%s].', get_class($error)));
+        throw new RuntimeException('Session validation is unavailable.');
+    }
+}
+
 function alchemize_set_session_user(array $user): void
 {
     alchemize_session_start();
@@ -61,7 +92,7 @@ function alchemize_clear_session_user(): void
 
 function alchemize_require_authenticated_user(): array
 {
-    $user = alchemize_session_user();
+    $user = alchemize_validated_session_user();
     if (!is_array($user) || empty($user['user_id'])) {
         throw new AlchemizeRequestException(401, 'UNAUTHORIZED', 'Authentication required.');
     }

@@ -39,7 +39,12 @@ export const homeContent = {
         "/services/businesses/digital-business-technology",
       ],
       ["Business Readiness & Growth", "/services/businesses/readiness-growth"],
-      ["Financial & Tax Support", "/services/businesses/financial-tax-support"],
+      [
+        "Bookkeeping & Financial Reporting",
+        "/services/businesses/bookkeeping-financial-reporting",
+      ],
+      ["Payroll Processing", "/services/businesses/payroll-processing"],
+      ["Business Tax Support", "/services/businesses/business-tax-support"],
     ],
     connect: {
       eyebrow: "Your responsibilities connect",
@@ -141,8 +146,13 @@ export const homeContent = {
         "/services/businesses/readiness-growth",
       ],
       [
-        "Apoyo financiero y fiscal",
-        "/services/businesses/financial-tax-support",
+        "Contabilidad y reportes financieros",
+        "/services/businesses/bookkeeping-financial-reporting",
+      ],
+      ["Procesamiento de nómina", "/services/businesses/payroll-processing"],
+      [
+        "Apoyo tributario para empresas",
+        "/services/businesses/business-tax-support",
       ],
     ],
     connect: {

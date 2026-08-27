@@ -1,14 +1,14 @@
 # Alchemize Portal Route and Functionality Audit
 
-Audit date: 2026-08-26
+Audit date: 2026-08-26; production-validation update: 2026-08-27
 
 ## 1. Executive summary
 
 The React application contains 89 catalogued concrete routes, including 58 canonical public/sitemap routes, 16 Admin routes, 10 Client Portal routes, and authentication routes. The PHP front controller exposes 14 API resource families with 73 method/path handler branches. Public content is broadly healthy and direct-load capable. The contact form persists real leads. Authentication, scoped Client Portal reads, intake, messaging, and secure document handoff have meaningful backend support.
 
-The largest operational risk is the split Admin implementation: initial lists hydrate from persistent APIs, but several edits, archives, reports, billing actions, and secondary selectors still use the process-local `adminStore`. Several frontend API methods also target backend routes that do not exist. External provider configuration is ready, but Google Drive, Google Calendar, Stripe checkout/payment creation, and SES portal-account delivery are not wired into the business workflows.
+The largest remaining operational risk is the split Admin implementation: initial lists hydrate from persistent APIs, but reports and several secondary workflows still use the process-local `adminStore`. The 2026-08-27 integration pass added persisted, failure-tolerant Drive document synchronization, Calendar appointment synchronization, SES delivery state, guarded lead notifications, and Stripe-hosted checkout/webhook reconciliation. These paths are implementation- and CI-verified only; live provider access still requires production verification.
 
-No P0 defect was confirmed in this audit. There are **25 tracked findings: 12 P1, 10 P2, and 3 P3**. Seven are direct missing/broken frontend/backend route contracts.
+No P0 defect was confirmed in this audit. The original audit recorded **25 tracked findings: 12 P1, 10 P2, and 3 P3**. The 2026-08-26 P1 remediation implemented the seven direct frontend/backend route contracts, best-effort portal provisioning/manual links, forgot/change password, and authorized-user grant controls. Remaining workflow and integration findings below are retained.
 
 ## 2. Public route inventory
 
@@ -69,18 +69,18 @@ Server fallback is an SPA rewrite (`.htaccess` to `index.html`). The API uses `/
 
 `ContactPage` → `js/contact-form.js` → `POST /alchemize-api.php?route=leads` → lead validator → `AlchemizeLeadService` → `leads` and `activity_events` → Admin Leads.
 
-| Check                                                             | Status                                                                                    |
-| ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| Frontend/backend endpoint and JSON contract                       | WORKING                                                                                   |
-| Required fields, email, audience, canonical service normalization | WORKING; React options include legacy aliases normalized by the shared integration script |
-| Honeypot                                                          | WORKING; returns a synthetic success without persistence to avoid teaching bots           |
-| Persistence and Admin visibility                                  | WORKING through the same `leads` table/repository                                         |
-| Malformed JSON / validation errors                                | WORKING safe 4xx responses                                                                |
-| False success on API failure                                      | Not present; success is shown only after `response.ok`                                    |
-| CSRF                                                              | Appropriate exemption for a public unauthenticated creation endpoint                      |
-| Rate limiting / replay / duplicate suppression                    | **MISSING [P1, BACKEND/SECURITY]**; honeypot is the only abuse control                    |
-| Admin email notification                                          | **UNWIRED [P2, SES]**; lead creation does not use `AlchemizeNotificationService`          |
-| Mobile                                                            | Form stacks at 560px; no browser-level mobile submit test exists **[P3, UX]**             |
+| Check                                                             | Status                                                                                                  |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Frontend/backend endpoint and JSON contract                       | WORKING                                                                                                 |
+| Required fields, email, audience, canonical service normalization | WORKING; React options include legacy aliases normalized by the shared integration script               |
+| Honeypot                                                          | WORKING; returns a synthetic success without persistence to avoid teaching bots                         |
+| Persistence and Admin visibility                                  | WORKING through the same `leads` table/repository                                                       |
+| Malformed JSON / validation errors                                | WORKING safe 4xx responses                                                                              |
+| False success on API failure                                      | Not present; success is shown only after `response.ok`                                                  |
+| CSRF                                                              | Appropriate exemption for a public unauthenticated creation endpoint                                    |
+| Rate limiting / replay / duplicate suppression                    | WORKING: hashed request/payload guards enforce an hourly limit and ten-minute replay window             |
+| Admin email notification                                          | WORKING through persisted deduplicated notification delivery; live SES delivery not production-verified |
+| Mobile                                                            | Form stacks at 560px; no browser-level mobile submit test exists **[P3, UX]**                           |
 
 ## 4. Authentication route inventory
 
@@ -91,11 +91,12 @@ Server fallback is an SPA rewrite (`.htaccess` to `index.html`). The API uses `/
 | Logout                         | Portal layouts                     | `POST auth/logout`                                       | WORKING; cookie removal repaired; backend does not enforce CSRF **[P2, AUTH]**                                 |
 | Invitation consumption         | `/set-password?purpose=invitation` | `POST auth/set-password`, hashed `portal_account_tokens` | WORKING; expiry/one-use                                                                                        |
 | Reset consumption              | Same page with reset purpose       | Same endpoint/table                                      | WORKING                                                                                                        |
-| Send/resend invitation         | Admin client detail                | `POST clients/:id/portal-invitation`                     | PARTIAL: token works, production SES delivery is not wired **[P1, SES/AUTH]**                                  |
-| Admin-triggered reset          | Admin client detail                | `POST clients/:id/password-reset`                        | PARTIAL for same reason                                                                                        |
-| User-requested forgot-password | None                               | None                                                     | **MISSING [P1, AUTH/FRONTEND/BACKEND]**                                                                        |
+| Send/resend invitation         | Admin client detail                | `POST clients/:id/portal-invitation`                     | WORKING: token persists before best-effort SES; manual link returned on failure                                |
+| Admin-triggered reset          | Admin client detail                | `POST clients/:id/password-reset`                        | WORKING with manual reset-link fallback                                                                        |
+| User-requested forgot-password | Login                              | `POST auth/forgot-password`                              | WORKING; enumeration-safe response                                                                             |
+| Authenticated change password  | Client Profile                     | `POST auth/change-password`                              | WORKING; current-password verification, CSRF, audit event                                                      |
 | Pending/disabled portal        | Login and account-status checks    | users/client/grant status                                | PARTIAL: login checks user status, but an existing session is not revalidated against DB status **[P1, AUTH]** |
-| Authorized user access         | Client request UI                  | request table/Admin review service                       | PARTIAL: request persists; full approval/permission-management UI is incomplete **[P2, AUTH]**                 |
+| Authorized user access         | Client request and Admin client UI | request/grant review services                            | WORKING: approve/reject, scoped role changes, revoke/re-enable                                                 |
 
 ## 5. Admin Portal route/function matrix
 
@@ -103,37 +104,37 @@ Server fallback is an SPA rewrite (`.htaccess` to `index.html`). The API uses `/
 | -------------------------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `/admin`, `/admin/dashboard`     | WORKING route; dashboard uses hydrated collections | Summary derives from store snapshot; not all collections are hydrated from APIs **PARTIAL [P2]**                                                                                          |
 | `/admin/leads`                   | Persistent lead API                                | List/detail/update/convert/notes largely WORKING; contact attempts/interests backend have limited/no UI callers                                                                           |
-| `/admin/clients`, `/:clientId`   | Persistent list/detail/create                      | Create and portal actions WORKING; edit calls missing `PUT clients/:id`; archive is local-only **BROKEN [P1]**                                                                            |
+| `/admin/clients`, `/:clientId`   | Persistent list/detail/create/update               | Create/edit/archive and state-aware portal actions persist; manual setup/reset links are one-time token rotations **WORKING**                                                             |
 | `/admin/intakes`                 | Persistent portal-admin intake API                 | Assign/review/update paths exist; selectors are real; advanced missing-information review is PARTIAL                                                                                      |
-| `/admin/services`                | Persistent service/engagement load and create      | Engagement create/update WORKING; service edit calls missing `PUT services/:id`; some catalog edits remain local **BROKEN [P1]**                                                          |
+| `/admin/services`                | Persistent service/engagement load/create/update   | Engagement and exposed service create/edit paths persist **WORKING**                                                                                                                      |
 | `/admin/tasks`                   | Persistent list/create/update                      | Core create/update WORKING; frontend declares nonexistent `GET tasks/:id`; completion UI/store paths are mixed **PARTIAL [P2]**                                                           |
 | `/admin/documents`               | Persistent list/request creation                   | Formal request works; declared detail/update routes are absent; Admin attach/register is explicitly disabled; review/download uses portal-admin submission routes **PARTIAL/BROKEN [P1]** |
 | `/admin/communications`          | Persistent portal-admin threads                    | Open/reply/read/archive/link routes WORKING; separate read states implemented                                                                                                             |
-| `/admin/appointments`            | Persistent list/create                             | Manual create works; frontend detail/update calls have no backend; cancel/reschedule edits are local-only **BROKEN [P1]**                                                                 |
-| `/admin/billing`, invoice detail | Invoice/payment create/list APIs                   | Create invoice/manual payment persist; detail/update callers have no backend; no Stripe checkout/payment links **PARTIAL [P1]**                                                           |
+| `/admin/appointments`            | Persistent list/create/detail/update               | Manual create, edit, cancel and reschedule use persistent API handlers **WORKING internally**                                                                                             |
+| `/admin/billing`, invoice detail | Invoice/payment create/list/detail/update APIs     | Invoice state persists; Stripe identifiers/reconciliation state are visible through persisted API data. Broader Admin retry/detail UX remains PARTIAL [P2, UX]                            |
 | `/admin/content`                 | Static configuration tables                        | All mutations clearly disabled; no CMS persistence/backend **PLACEHOLDER [P2]**                                                                                                           |
 | `/admin/reports`                 | Calculated from `adminStore`                       | Filters/export presentation are local snapshot logic, not a report API **PARTIAL [P2]**                                                                                                   |
 | `/admin/settings`                | Team list is real                                  | Other settings are disabled; no settings persistence model **PLACEHOLDER [P2]**                                                                                                           |
 
 Cross-cutting Admin findings:
 
-- `staffOptions` still contains fabricated names even though Team Access uses real users. **[P1, FRONTEND]**
+- Fabricated `staffOptions` names were removed; remaining generic owner assignment should be replaced by real Team Access IDs when assignment ownership is normalized. **RESOLVED for fake data**
 - Initial Admin hydration fetches clients/services/appointments/engagements/tasks/documents only. Leads, invoices, payments, activity, messages, reports, and notes may remain empty/local until page-specific behavior runs. **[P1, FRONTEND/BACKEND]**
-- The API client declares unsupported `GET/PUT` detail operations for services, tasks, appointments, documents, and invoices plus unsupported client update. **Seven broken contracts [P1].**
+- The previously unsupported client/service/task/appointment/document/invoice detail/update contracts now have CSRF-protected persistent handlers. Admin document binary attach remains explicitly unavailable pending its supported storage workflow.
 
 ## 6. Client Portal route/function matrix
 
-| Route                          | Reads                               | Actual client actions                                                  | Status                                                                            |
-| ------------------------------ | ----------------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| `/client-portal`, `/dashboard` | Scoped dashboard/activity/counts    | Action cards navigate                                                  | WORKING; counts are persisted/scoped                                              |
-| `/services`                    | Visible engagements                 | Request service creates a persisted lead-style request                 | WORKING/PARTIAL: request is persisted but Admin review presentation is indirect   |
-| `/intake`                      | Assigned engagement intake          | Save, resume, submit, structured profile references, secure handoff    | WORKING                                                                           |
-| `/tasks`                       | Visible tasks                       | Complete, acknowledge, respond                                         | WORKING; supporting-file association is not a task-specific workflow **[P2]**     |
-| `/documents`                   | Requests/shared docs/versions       | Requested and general upload, replace, download                        | WORKING local storage; Google Drive unwired                                       |
-| `/appointments`                | Visible appointments                | Request, confirm, request reschedule/cancel                            | WORKING internal workflow; Calendar unwired                                       |
-| `/messages`                    | Scoped threads/history              | Create, open/read, reply, archive                                      | WORKING; prior JSON-object error is corrected and tested                          |
-| `/billing`                     | Invoices/payments/open balance      | View only                                                              | PARTIAL; payment action intentionally unavailable pending Stripe **[P1, STRIPE]** |
-| `/profile`                     | Client/business/contact/access data | Edit allowed fields, sensitive change request, authorized-user request | PARTIAL; no client-initiated password-reset/change-password UI **[P1, AUTH]**     |
+| Route                          | Reads                               | Actual client actions                                                | Status                                                                                            |
+| ------------------------------ | ----------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `/client-portal`, `/dashboard` | Scoped dashboard/activity/counts    | Action cards navigate                                                | WORKING; counts are persisted/scoped                                                              |
+| `/services`                    | Visible engagements                 | Request service creates a persisted lead-style request               | WORKING/PARTIAL: request is persisted but Admin review presentation is indirect                   |
+| `/intake`                      | Assigned engagement intake          | Save, resume, submit, structured profile references, secure handoff  | WORKING                                                                                           |
+| `/tasks`                       | Visible tasks                       | Complete, acknowledge, respond                                       | WORKING; supporting-file association is not a task-specific workflow **[P2]**                     |
+| `/documents`                   | Requests/shared docs/versions       | Requested and general upload, replace, authenticated download        | WORKING local storage with best-effort Drive copy and persisted sync state                        |
+| `/appointments`                | Visible appointments                | Request, confirm, request reschedule/cancel                          | WORKING internal workflow; Calendar unwired                                                       |
+| `/messages`                    | Scoped threads/history              | Create, open/read, reply, archive                                    | WORKING; prior JSON-object error is corrected and tested                                          |
+| `/billing`                     | Invoices/payments/open balance      | View, acknowledge, Stripe-hosted payment for payable issued invoices | WORKING workflow; webhook remains authoritative for paid status; live Stripe verification pending |
+| `/profile`                     | Client/business/contact/access data | Edit fields, sensitive/authorized-user requests, change password     | WORKING for internal account management                                                           |
 
 All Client Portal ownership resolution uses the authenticated session/access grant rather than a frontend client ID. File storage validates type/size/content and stores outside public paths.
 
@@ -141,23 +142,23 @@ All Client Portal ownership resolution uses the authenticated session/access gra
 
 All URLs are dispatched as `/alchemize-api.php?route=<path>`; conceptual `/api/v1/**` paths below identify endpoint families. Admin mutations require staff/Admin plus CSRF unless noted. Portal mutations share a centralized authenticated-client/CSRF gate.
 
-| Method/path patterns                                                                                                                               | Auth/CSRF                                        | Service/repository and tables                                                                    | Frontend/status                                                      |
-| -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------- |
-| `GET auth/session`; `POST auth/login,set-password,logout`                                                                                          | Public/session; login/set-password no CSRF       | auth/account services; users, roles, tokens, grants                                              | WORKING; no forgot-password request                                  |
-| `POST leads`; `GET leads,leads/:id`; `PUT leads/:id`; `POST leads/:id/{convert,contact-attempts,notes,interests}`                                  | Create public; Admin reads; Admin mutations CSRF | lead services; leads, interests, attempts, notes, activity                                       | WORKING; some secondary routes have no caller                        |
-| `GET/POST clients`; `GET clients/team`; `GET clients/:id`; `GET clients/:id/portal-account`; `POST clients/:id/{portal-invitation,password-reset}` | staff/read-only/Admin; mutations CSRF            | client/account repositories; clients/users/grants/tokens                                         | WORKING except missing client PUT                                    |
-| `GET/POST services`; `GET services/:id`                                                                                                            | staff/read-only; POST CSRF                       | services                                                                                         | WORKING; frontend PUT missing backend                                |
-| `GET/POST engagements`; `GET/PUT engagements/:id`                                                                                                  | staff/read-only; mutations CSRF                  | engagements/services/clients/activity                                                            | WORKING                                                              |
-| `GET/POST tasks`; `PUT tasks/:id`                                                                                                                  | staff/read-only; mutations CSRF                  | tasks/activity                                                                                   | WORKING; declared frontend GET detail absent                         |
-| `GET/POST documents`                                                                                                                               | staff/read-only; POST CSRF                       | documents metadata                                                                               | PARTIAL; no Admin detail/update/file attach                          |
-| `GET/POST appointments`                                                                                                                            | staff/read-only; POST CSRF                       | appointments                                                                                     | PARTIAL; no Admin detail/update/cancel API                           |
-| `GET/POST invoices`; `GET/POST payments`                                                                                                           | staff/read-only; mutations CSRF                  | invoices/line items/payments                                                                     | PARTIAL; missing detail/update and Stripe creation                   |
-| `GET notes/{type}/{id}`; `POST notes`                                                                                                              | staff/read-only; POST CSRF                       | notes                                                                                            | WORKING; narrow callers                                              |
-| `GET portal/{9 resources}` plus scoped detail/download                                                                                             | authenticated client                             | portal repositories across engagements/intakes/tasks/docs/messages/appointments/invoices/profile | WORKING                                                              |
-| Portal task/document/intake/message/appointment/profile/onboarding/authorized-user/acknowledgement mutations                                       | authenticated client + CSRF                      | action/intake/storage services and activity/audit tables                                         | WORKING/PARTIAL as section 6                                         |
-| `GET portal-admin/{attention,messages,intakes,...}` and document downloads/versions                                                                | staff/Admin                                      | portal-admin/intake repositories                                                                 | WORKING                                                              |
-| `POST/PUT portal-admin/{resolve,messages,intakes,...}`                                                                                             | staff/Admin + CSRF                               | portal-admin/intake/notification services                                                        | WORKING                                                              |
-| `POST webhooks/stripe`                                                                                                                             | Stripe signature, no session/CSRF                | webhook service/repository; stripe events                                                        | WORKING signature/idempotency; business-state consumption incomplete |
+| Method/path patterns                                                                                                                               | Auth/CSRF                                        | Service/repository and tables                                                                    | Frontend/status                                                   |
+| -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------- |
+| `GET auth/session`; `POST auth/login,set-password,logout`                                                                                          | Public/session; login/set-password no CSRF       | auth/account services; users, roles, tokens, grants                                              | WORKING; no forgot-password request                               |
+| `POST leads`; `GET leads,leads/:id`; `PUT leads/:id`; `POST leads/:id/{convert,contact-attempts,notes,interests}`                                  | Create public; Admin reads; Admin mutations CSRF | lead services; leads, interests, attempts, notes, activity                                       | WORKING; some secondary routes have no caller                     |
+| `GET/POST clients`; `GET clients/team`; `GET clients/:id`; `GET clients/:id/portal-account`; `POST clients/:id/{portal-invitation,password-reset}` | staff/read-only/Admin; mutations CSRF            | client/account repositories; clients/users/grants/tokens                                         | WORKING except missing client PUT                                 |
+| `GET/POST services`; `GET services/:id`                                                                                                            | staff/read-only; POST CSRF                       | services                                                                                         | WORKING; frontend PUT missing backend                             |
+| `GET/POST engagements`; `GET/PUT engagements/:id`                                                                                                  | staff/read-only; mutations CSRF                  | engagements/services/clients/activity                                                            | WORKING                                                           |
+| `GET/POST tasks`; `PUT tasks/:id`                                                                                                                  | staff/read-only; mutations CSRF                  | tasks/activity                                                                                   | WORKING; declared frontend GET detail absent                      |
+| `GET/POST documents`                                                                                                                               | staff/read-only; POST CSRF                       | documents metadata                                                                               | PARTIAL; no Admin detail/update/file attach                       |
+| `GET/POST appointments`                                                                                                                            | staff/read-only; POST CSRF                       | appointments                                                                                     | PARTIAL; no Admin detail/update/cancel API                        |
+| `GET/POST invoices`; `GET/POST payments`                                                                                                           | staff/read-only; mutations CSRF                  | invoices/line items/payments                                                                     | PARTIAL; missing detail/update and Stripe creation                |
+| `GET notes/{type}/{id}`; `POST notes`                                                                                                              | staff/read-only; POST CSRF                       | notes                                                                                            | WORKING; narrow callers                                           |
+| `GET portal/{9 resources}` plus scoped detail/download                                                                                             | authenticated client                             | portal repositories across engagements/intakes/tasks/docs/messages/appointments/invoices/profile | WORKING                                                           |
+| Portal task/document/intake/message/appointment/profile/onboarding/authorized-user/acknowledgement mutations                                       | authenticated client + CSRF                      | action/intake/storage services and activity/audit tables                                         | WORKING/PARTIAL as section 6                                      |
+| `GET portal-admin/{attention,messages,intakes,...}` and document downloads/versions                                                                | staff/Admin                                      | portal-admin/intake repositories                                                                 | WORKING                                                           |
+| `POST/PUT portal-admin/{resolve,messages,intakes,...}`                                                                                             | staff/Admin + CSRF                               | portal-admin/intake/notification services                                                        | WORKING                                                           |
+| `POST webhooks/stripe`                                                                                                                             | Stripe signature, no session/CSRF                | webhook service/repository; stripe events, invoices, payments                                    | WORKING signature/idempotency and checkout/payment reconciliation |
 
 The 14 endpoint files contain **73 method/path handler branches**. There is no separate `/messages`, `/communications`, `/intakes`, or `/billing` top-level API; those concepts intentionally live under `portal`, `portal-admin`, and `invoices/payments`.
 
@@ -184,52 +185,43 @@ Malformed JSON is rejected by the shared request parser. The prior Messages Open
 
 ## 8. External integration readiness
 
-| Integration     | Ready                                                            | Gap                                                                                                                                                                                |
-| --------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Stripe          | Config, signature verification, idempotent event storage         | No customer/checkout/payment-link API; supported webhook events are recorded but do not reconcile invoices/payments **[P1, STRIPE]**                                               |
-| Google Drive    | SDK/config/factory and root verification boundary                | No client folder-ID column, no documents adapter wiring, no persisted provider file IDs **[P1, GOOGLE_DRIVE/DATABASE]**                                                            |
-| Google Calendar | SDK/config/service boundary                                      | No appointment event-ID column; create/update/cancel business methods are not wired **[P1, GOOGLE_CALENDAR/DATABASE]**                                                             |
-| SES             | PHPMailer SES provider behind deduplicated notification boundary | Portal invitation/reset service still logs development URLs and rejects production; no lead/template-specific delivery; notification emails are generic escaped text **[P1, SES]** |
+| Integration     | Ready                                                                                                           | Gap                                                                                                                                             |
+| --------------- | --------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Stripe          | Config, signed/idempotent webhook, idempotent customer mapping, hosted Checkout, invoice/payment reconciliation | IMPLEMENTED; live checkout and webhook delivery require production verification                                                                 |
+| Google Drive    | SDK/config/factory, stable client-folder lookup, version upload, persisted folder/file IDs and sync state       | IMPLEMENTED as a best-effort copy after local persistence; authenticated local download remains authoritative                                   |
+| Google Calendar | SDK/config/service, deterministic event IDs, confirmed create/update and cancellation synchronization           | IMPLEMENTED; appointment database remains authoritative and failures persist for retry visibility                                               |
+| SES             | PHPMailer SES provider, branded HTML/plain text, persisted deduplicated delivery status                         | Portal tokens, leads, appointments, documents, messages, authorized-user decisions, and issued invoices are wired; live delivery is not claimed |
 
 ## 9. Broken routes
 
-Seven confirmed frontend/backend contract failures exist. They are action routes rather than blank React pages.
+The seven frontend/backend contract failures found in the original audit were resolved in the P1 remediation. The stale route-catalog entry remains a tooling issue.
 
-| Frontend caller           | Missing backend handler                                                | Effect                                                 | Priority            |
-| ------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------ | ------------------- |
-| `clients.update`          | `PUT clients/:id`                                                      | Admin client edits cannot persist                      | P1 FRONTEND/BACKEND |
-| `services.update`         | `PUT services/:id`                                                     | Service edits cannot persist                           | P1 FRONTEND/BACKEND |
-| `tasks.get`               | `GET tasks/:id`                                                        | Declared detail caller returns 404                     | P2 FRONTEND/BACKEND |
-| `appointments.get/update` | `GET/PUT appointments/:id`                                             | Detail/edit/cancel/reschedule cannot persist           | P1 FRONTEND/BACKEND |
-| `documents.get/update`    | `GET/PUT documents/:id`                                                | Admin detail/status edit cannot persist                | P1 FRONTEND/BACKEND |
-| `invoices.get/update`     | `GET/PUT invoices/:id`                                                 | Invoice detail refresh/edit cannot persist through API | P1 FRONTEND/BACKEND |
-| Route catalog             | `/admin/messages` catalogued while router uses `/admin/communications` | Tooling validates a stale path                         | P2 FRONTEND         |
+| Frontend caller           | Missing backend handler                                                | Effect                                                    | Priority    |
+| ------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------- | ----------- |
+| `clients.update`          | `PUT clients/:id`                                                      | RESOLVED                                                  | WORKING     |
+| `services.update`         | `PUT services/:id`                                                     | RESOLVED                                                  | WORKING     |
+| `tasks.get`               | `GET tasks/:id`                                                        | RESOLVED                                                  | WORKING     |
+| `appointments.get/update` | `GET/PUT appointments/:id`                                             | RESOLVED                                                  | WORKING     |
+| `documents.get/update`    | `GET/PUT documents/:id`                                                | RESOLVED for metadata; binary Admin attach still disabled | PARTIAL     |
+| `invoices.get/update`     | `GET/PUT invoices/:id`                                                 | RESOLVED                                                  | WORKING     |
+| Route catalog             | `/admin/messages` catalogued while router uses `/admin/communications` | Tooling validates a stale path                            | P2 FRONTEND |
 
 ## 10. Missing routes
 
-- Public/Client forgot-password request UI and API. **P1 AUTH**
-- Client change-password/security route. **P1 AUTH**
-- Stripe checkout/payment-link/session route. **P1 STRIPE**
-- Google-backed document and appointment synchronization routes/actions. **P1 GOOGLE_DRIVE/GOOGLE_CALENDAR**
+- Public forgot-password and authenticated Client change-password routes are **RESOLVED**.
+- Provider retry controls are not yet exposed consistently on every Admin detail surface. **P2 UX/BACKEND**
 - Explicit Admin service-request review route/queue. **P2 BACKEND/FRONTEND**
 - CMS/settings/report persistence endpoints. **P2 BACKEND/DATABASE**
 - Dedicated public scheduling route is not present; contact is the current intended fallback. **P2 UX/GOOGLE_CALENDAR**
 
 ## 11. Missing backend functions
 
-- The six Admin resource detail/update handlers listed in section 9.
-- Lead throttling/idempotency; SES lead notification; SES portal-token delivery.
-- Stripe customer/payment-session creation and webhook reconciliation.
-- Google Drive folder/file lifecycle and Calendar event lifecycle methods wired to domain services.
 - Persisted CMS, settings, and reporting services.
 - Session revalidation against current user/grant status.
 
 ## 12. Missing frontend functions
 
-- Forgot/change password entry points for clients.
-- Persistent Admin client/service/appointment/document/invoice edits where controls currently use local state.
-- Complete authorized-user approval/scope management.
-- Stripe payment action/receipt workflow.
+- Complete receipt-link presentation and Admin provider retry controls.
 - Admin attach-document action and explicit service-request review queue.
 - Authenticated Admin mobile action coverage and mobile contact submission coverage.
 
@@ -243,15 +235,14 @@ Seven confirmed frontend/backend contract failures exist. They are action routes
 
 ## 14. Database/schema gaps
 
-| Gap                                                                       | Required for                                 | Priority/dependency         |
-| ------------------------------------------------------------------------- | -------------------------------------------- | --------------------------- |
-| `clients.google_drive_folder_id` (stable provider ID)                     | Client folder provisioning                   | P1 DATABASE/GOOGLE_DRIVE    |
-| Provider file ID/version mapping on documents/submissions                 | Drive upload/download/replace                | P1 DATABASE/GOOGLE_DRIVE    |
-| `appointments.google_calendar_event_id` plus sync status/error timestamps | Calendar create/update/cancel reconciliation | P1 DATABASE/GOOGLE_CALENDAR |
-| Stripe customer ID on client and provider invoice/payment/session IDs     | Checkout and webhook reconciliation          | P1 DATABASE/STRIPE          |
-| Email outbox/delivery attempts/template key                               | Reliable SES retries and observability       | P2 DATABASE/SES             |
-| CMS pages/resources/notices/SEO tables                                    | Content mutations                            | P2 DATABASE                 |
-| Namespaced persisted settings/audit history                               | Editable settings                            | P2 DATABASE                 |
+| Gap                                                        | Required for                                                | Priority/dependency |
+| ---------------------------------------------------------- | ----------------------------------------------------------- | ------------------- |
+| Drive client-folder and version-provider identifiers/state | RESOLVED by migration 021                                   | WORKING             |
+| Calendar event identifier and sync status/error timestamps | RESOLVED by migration 021                                   | WORKING             |
+| Stripe customer/invoice/payment/session identifiers        | RESOLVED by migration 021                                   | WORKING             |
+| Notification delivery state/attempt timestamps             | RESOLVED by migration 021; scheduled retry queue remains P2 | PARTIAL SES         |
+| CMS pages/resources/notices/SEO tables                     | Content mutations                                           | P2 DATABASE         |
+| Namespaced persisted settings/audit history                | Editable settings                                           | P2 DATABASE         |
 
 No engagement/client relationship migration is required: `engagements.client_id`, intake engagement references, and downstream optional engagement foreign keys already exist.
 
@@ -267,52 +258,128 @@ No engagement/client relationship migration is required: `engagements.client_id`
 
 ## 16. Security concerns
 
-- Public lead POST lacks rate limiting/replay control. **P1 BACKEND**
-- Existing authenticated sessions trust the session snapshot and do not re-check disabled user/grant state. **P1 AUTH**
+- Public lead POST uses hashed replay and request-rate guards. **WORKING**
+- Existing-session revalidation against active users and active client grants is **RESOLVED** by the Phase 4 request guard.
 - Logout is a state-changing POST without server-side CSRF enforcement. **P2 AUTH**
-- Portal token architecture is sound (hashed, expiring, one-use), but production delivery is unwired. **P1 SES/AUTH**
+- Portal token architecture is hashed, expiring, one-use, and best-effort SES delivery preserves manual fallback. **WORKING; live SES verification pending**
 - Portal object access is session-derived and cross-client checks are covered by security tests. **WORKING**
 - File validation/storage and Stripe signature verification are implemented with safe response boundaries. **WORKING**
 
 ### Consolidated priority register
 
-| Severity | Dependency               | Issue                                                                                      |
-| -------- | ------------------------ | ------------------------------------------------------------------------------------------ |
-| P1       | BACKEND/SECURITY         | Public lead creation has no rate limiting/replay control                                   |
-| P1       | AUTH                     | Forgot-password request flow is absent; sessions do not revalidate disabled accounts       |
-| P1       | SES/AUTH                 | Invitation/reset delivery is not connected to SES                                          |
-| P1       | FRONTEND/BACKEND         | Client update route contract is broken                                                     |
-| P1       | FRONTEND/BACKEND         | Service update route contract is broken                                                    |
-| P1       | FRONTEND/BACKEND         | Appointment detail/edit/cancel route contracts are missing                                 |
-| P1       | FRONTEND/BACKEND         | Document detail/update/Admin attach workflow is incomplete                                 |
-| P1       | FRONTEND/BACKEND/STRIPE  | Invoice detail/update/payment action is incomplete                                         |
-| P1       | FRONTEND                 | Admin hydration and several mutations still depend on in-memory store data                 |
-| P1       | FRONTEND                 | Production UI still contains fabricated staff selector names                               |
-| P1       | GOOGLE_DRIVE/DATABASE    | Client folder and provider-file IDs are not persisted/wired                                |
-| P1       | GOOGLE_CALENDAR/DATABASE | Appointment event IDs and synchronization are absent                                       |
-| P2       | FRONTEND/HOSTINGER       | Route discovery/check catalogs are incomplete/stale                                        |
-| P2       | AUTH                     | Logout lacks server CSRF enforcement; authorized-user approval scope is incomplete         |
-| P2       | FRONTEND                 | Task detail caller absent in backend; supporting-file task linkage incomplete              |
-| P2       | BACKEND                  | Service-request Admin review is indirect rather than an explicit queue                     |
-| P2       | FRONTEND/BACKEND         | Content is deliberately disabled; no CMS persistence                                       |
-| P2       | FRONTEND/BACKEND         | Reports are local calculations without report endpoints                                    |
-| P2       | DATABASE/BACKEND         | Editable settings lack a persisted settings model and remain disabled                      |
-| P2       | SES                      | Lead and domain-specific email templates/events are unwired                                |
-| P2       | STRIPE                   | Webhook events do not update operational invoice/payment state                             |
-| P2       | UX                       | Admin mobile behavior has CSS safeguards but no authenticated mobile route/action coverage |
-| P3       | UX                       | No browser-level mobile contact submission test                                            |
-| P3       | FRONTEND                 | Legacy routes are implemented inline and omitted from route tooling                        |
-| P3       | UX                       | Large production JS bundle warning remains                                                 |
+| Severity | Dependency         | Issue                                                                                      |
+| -------- | ------------------ | ------------------------------------------------------------------------------------------ |
+| P1       | FRONTEND/BACKEND   | Document detail/update/Admin attach workflow is incomplete                                 |
+| P2       | FRONTEND           | Internal notes, reports, and secondary presentation state still use in-memory store data    |
+| P2       | FRONTEND/HOSTINGER | Route discovery/check catalogs are incomplete/stale                                        |
+| P2       | AUTH               | Logout lacks server CSRF enforcement                                                       |
+| P2       | FRONTEND           | Supporting-file task linkage remains incomplete                                            |
+| P2       | BACKEND            | Service-request Admin review is indirect rather than an explicit queue                     |
+| P2       | FRONTEND/BACKEND   | Content is deliberately disabled; no CMS persistence                                       |
+| P2       | FRONTEND/BACKEND   | Reports are local calculations without report endpoints                                    |
+| P2       | DATABASE/BACKEND   | Editable settings lack a persisted settings model and remain disabled                      |
+| P2       | SES/UX             | Automated retry scheduling and full template localization remain incomplete                |
+| P2       | STRIPE/UX          | Admin retry/detail and client receipt-link presentation remain incomplete                  |
+| P2       | UX                 | Admin mobile behavior has CSS safeguards but no authenticated mobile route/action coverage |
+| P3       | UX                 | No browser-level mobile contact submission test                                            |
+| P3       | FRONTEND           | Legacy routes are implemented inline and omitted from route tooling                        |
+| P3       | UX                 | Large production JS bundle warning remains                                                 |
 
 Mobile source review confirms the Admin return link moves into the drawer below 1023px, table wrappers use contained horizontal scrolling, and Client Portal navigation has a mobile E2E test. Authenticated Admin mobile controls/modals and contact submission remain unverified at browser level.
 
 ## 17. Recommended remediation order
 
-1. Add public lead throttling and session-status revalidation.
-2. Reconcile Admin API contracts: clients, services, appointments, documents, invoices; remove fake staff options and eliminate local-only mutations.
-3. Connect portal invitation/reset and lead notifications to SES with templates and delivery/outbox state.
-4. Add client-initiated password reset/change-password flows.
-5. Add Google folder/file and Calendar event identifiers via forward migrations, then wire adapters.
-6. Implement Stripe checkout/payment-link creation and webhook-to-invoice reconciliation.
-7. Decide whether CMS/settings/report persistence is in scope; retain explicit disabled states until then.
-8. Replace the split route catalogs with router-derived discovery and add Admin/mobile/contact E2E coverage.
+1. Complete Admin document attach/detail and eliminate the remaining local-only internal-note workflow/demo staff options.
+2. Add operational retry controls and scheduled notification retry processing without exposing provider details.
+3. Complete Stripe receipt presentation and Admin payment reconciliation detail.
+4. Decide whether CMS/settings/report persistence is in scope; retain explicit disabled states until then.
+5. Replace the split route catalogs with router-derived discovery and add Admin/mobile/contact E2E coverage.
+
+## 18. Phase 4 production lifecycle validation
+
+This section preserves the earlier audit and classifies the lifecycle after contract-level validation. “Automated verified” means source contracts and local automated suites passed; it does not mean the deployed Hostinger database or an external provider was exercised.
+
+### Canonical lifecycle and ownership
+
+| Transition | Database authority | API / portal owner | External representation | Validation status |
+| --- | --- | --- | --- | --- |
+| Public contact → lead | `leads`, `activity_events`, `public_submission_guards` | Public `POST leads`; Admin Leads | SES Admin notice | IMPLEMENTED / AUTOMATED VERIFIED; live persistence and SES require validation |
+| Lead review → conversion | `leads.client_id`, `clients.origin_lead_id` | Admin Leads conversion | None | RESOLVED: migration 022 supplies the previously missing lead/client column and conversion now locks inside its transaction |
+| Client → portal provisioning | `clients`, `users`, `client_access_grants`, `portal_account_tokens` | Admin Client detail | SES invitation or one-time manual link | IMPLEMENTED / AUTOMATED VERIFIED; provider delivery requires live validation |
+| Invitation → activation | `users.password_hash/status`, grant/client portal status, token consumption | `/set-password`, auth API | SES/manual link transport only | IMPLEMENTED / AUTOMATED VERIFIED |
+| Engagement → intake → review | engagements and intake assignment/response/history tables | Admin Services/Intake and Client Intake | Optional document handoff | IMPLEMENTED / AUTOMATED VERIFIED; full live reload round trip remains checklist work |
+| Document request → version/review | private local storage, metadata/submissions | Admin Documents and Client Documents | Best-effort Drive copy with persisted state | IMPLEMENTED / AUTOMATED VERIFIED; live Drive permissions require validation |
+| Appointment request → decision | appointments/change requests | Client Appointments and Admin attention | Calendar event keyed by persisted deterministic event ID | IMPLEMENTED / AUTOMATED VERIFIED; live Calendar access requires validation |
+| Client/Admin messaging | threads/messages/read timestamps/notifications | Client Messages and Admin Communications | Best-effort SES notice | IMPLEMENTED / AUTOMATED VERIFIED |
+| Invoice → payment | invoices/line items/payments/webhook events | Admin Billing and Client Billing | Stripe Checkout and verified webhook | RESOLVED: issuance, reload hydration, line-item persistence, manual reconciliation, and idempotent payment request are now database-backed; live Stripe test-mode validation required |
+| Task/engagement completion | task and engagement status/history | Admin Tasks/Services and Client Tasks | None | IMPLEMENTED / AUTOMATED VERIFIED; completion policy remains operational |
+
+### Phase 4 route-contract findings
+
+| Contract | Finding before correction | Classification | Current result |
+| --- | --- | --- | --- |
+| `POST leads/:id/convert` | `FOR UPDATE` executed before the transaction and `leads.client_id` was referenced without any migration | BROKEN / P1 DATABASE | RESOLVED by migration 022 and transactional lock ordering |
+| Admin issue invoice → Client Billing | UI sent `open` but no `issued_at`; Client query intentionally excluded it | FALSE SUCCESS / P1 BACKEND | RESOLVED: non-draft creation assigns `issued_at` and notification uses persisted issuance |
+| Invoice line editor → reload | Visible line editor calculated totals but neither sent nor persisted line items | IN-MEMORY / P1 FRONTEND/BACKEND | RESOLVED: request, repository transaction, and reload serialization preserve line items |
+| Admin record payment | UI called only `adminStore.recordPayment`; API-created payments did not update invoice totals/status | FALSE SUCCESS / P1 FRONTEND/BACKEND | RESOLVED: CSRF/Admin API persists an idempotent payment and reconciles the locked invoice before cache update |
+| Admin Billing reload | Admin layout did not load invoices/payments from APIs | IN-MEMORY / P1 FRONTEND | RESOLVED: both collections hydrate from persistent APIs |
+| Existing disabled/revoked session | Role guards trusted the login-time session snapshot | BROKEN AUTHORIZATION / P1 AUTH | RESOLVED: every authenticated guard reloads active user state; portal roles must retain at least one active grant |
+| Client internal note | Client-detail “Add note” still writes only `adminStore` | IN-MEMORY / P2 FRONTEND/BACKEND | OPEN; not required for the canonical client-facing lifecycle and must not be represented as persisted |
+| Admin document attachment/detail | Metadata/review exists; general Admin binary attachment is disabled | DEAD UI / P1 DOCUMENTS | OPEN; control is explicitly disabled rather than falsely successful |
+| Multiple-client authorized user | Repository selects the default/oldest active grant and there is no client-switch route/UI | MISSING / P2 AUTH/UX | OPEN; single-client access is enforced correctly, but multi-client selection is not operationally complete |
+
+### Key lifecycle route contract summary
+
+| Caller → route | Auth / CSRF / body | Persistence and response consumer | Reload result |
+| --- | --- | --- | --- |
+| Contact form → `POST leads` | Public; JSON validation, honeypot, replay/rate guard; no session CSRF | Lead/activity commit before deduplicated notification attempt; form consumes safe 201/4xx | Admin list reads `leads` |
+| Admin conversion → `POST leads/:id/convert` | Staff/Admin + CSRF; conversion profile JSON | Locked lead, one client, lead linkage, activity/audit | Admin APIs return converted lead/client |
+| Admin client create/provision/actions | Staff/Admin or Admin as appropriate + CSRF | Client/user/grant/token transaction; delivery result separate; raw setup token returned once when required | Client and portal status reload from repository joins |
+| Auth login/session/set/reset/change/logout | Login/setup/reset public-safe; change requires session+CSRF | Password hashes stay server-only; session ID regenerates; tokens are expiring/one-use | Session route revalidates current user/grant |
+| Admin engagement/intake/task/document/appointment/invoice | Staff/Admin + CSRF; validated JSON or multipart | Persistent repositories and activity/review tables | Admin hydration and Client scoped reads use the same records |
+| Client portal mutations | Authenticated session, active scoped grant, CSRF; IDs re-bound to resolved client | Client-scoped repositories; safe 404/403 on foreign IDs | Portal resource GET returns persisted state |
+| Client billing checkout | Active billing-capable grant + CSRF; invoice public ID | Stripe session/provider IDs persist; no local paid mutation | Only signed webhook changes payment/invoice completion |
+| Stripe webhook | Raw body + Stripe signature; no browser session | Unique event, locked invoice/payment reconciliation | Client/Admin billing reload reflects verified result |
+
+### Database and migration validation
+
+- Migration 022 adds the missing `leads.client_id` relationship used by conversion and a nullable unique `payments.request_key` for retry-safe manual payments.
+- Historical negative credit values are normalized to the schema’s positive credit/deposit convention; invoice calculations now consistently subtract credits.
+- `scripts/verify-production-schema.php` is CLI-only and compares critical production columns for type/nullability, reporting only PRESENT, MISSING, or MISMATCH.
+- The local environment does not provide a production database snapshot, so the deployed schema is **REQUIRES LIVE VERIFICATION** after migrations 001–022.
+
+### Isolation and authorization validation
+
+- Client profile, engagements, intake, tasks, documents/downloads, appointments, messages, acknowledgements, invoices, and payments resolve through the authenticated grant/client rather than a caller-supplied client ID.
+- Admin APIs use role guards; state-changing routes require CSRF except logout, retained as an open P2 hardening item.
+- Existing static security suites validate query-level client binding and Admin role guards. A real Client A/Client B database exercise remains in the production acceptance checklist and is not represented as production verified.
+
+### UI truthfulness
+
+- Client payment completion is never inferred from a return URL; the UI says processing until webhook reconciliation.
+- Provider responses return persisted synchronized/failed/not-configured states and never fabricate success.
+- Content/settings integrations remain disabled where persistence does not exist.
+- The remaining client-detail internal-note action is local-only and is an OPEN P2 truthfulness defect; Admin document attachment remains explicitly disabled.
+
+### Mobile, accessibility, and performance observations
+
+- Existing E2E covers public mobile overflow and Client navigation; authenticated Admin workflow coverage is desktop-focused. The live checklist covers the missing mobile workflow matrix.
+- Public axe checks exist. Authenticated Admin/Client axe coverage remains OPEN P2; this pass does not weaken public assertions.
+- Production build emits one approximately 838 kB minified entry chunk (approximately 223 kB gzip). `App.jsx` eagerly imports all public, Admin, and Client pages, and the very large `AdminOperationalPages.jsx` is included for public visits. React, React Router, and Lucide are the only material runtime packages. Route-level lazy loading would materially reduce public initial JavaScript, but it is deferred as a low-risk-focused P3 performance remediation because changing every route import during acceptance validation would broaden risk.
+
+### Historical finding disposition
+
+| Historical finding group | Disposition |
+| --- | --- |
+| Missing Admin client/service/task/appointment/document/invoice HTTP contracts | RESOLVED |
+| Portal provisioning coupled to email and missing manual links | RESOLVED |
+| Forgot/change password and authorized-user Admin controls | RESOLVED |
+| Drive/Calendar/Stripe workflow identifiers and synchronization | RESOLVED in implementation; REQUIRES LIVE VERIFICATION |
+| SES domain notifications and lead abuse controls | RESOLVED in implementation; REQUIRES LIVE VERIFICATION |
+| Session revocation revalidation | RESOLVED |
+| Lead conversion schema/transaction contract | RESOLVED in migration 022 |
+| Admin/client billing issuance, reload, line items, and manual payment persistence | RESOLVED |
+| CMS/settings/report persistence | OPEN / deliberately disabled or local reporting |
+| Admin document binary attach/detail | OPEN P1; explicitly disabled |
+| Remaining local internal-note/demo staff data | OPEN P2 |
+| Route catalog gaps and mobile/authenticated accessibility coverage | OPEN P2/P3 |

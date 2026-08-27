@@ -86,7 +86,7 @@ final class AlchemizePortalActionRepository
         );
     }
 
-    public function createDocumentSubmission(array $row): void
+    public function createDocumentSubmission(array $row): int
     {
         $this->insert(
             'INSERT INTO document_submissions
@@ -97,6 +97,7 @@ final class AlchemizePortalActionRepository
                  :storage_key, :mime_type, :file_extension, :file_size_bytes, :sha256, :client_comment)',
             $row,
         );
+        return (int) $this->database->lastInsertId();
     }
 
     public function nextDocumentVersion(int $documentId): int

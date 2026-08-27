@@ -12,6 +12,13 @@ final class AlchemizeDocumentRepository
         return $statement->fetchAll();
     }
 
+    public function findById(int $id): ?array
+    {
+        $statement = $this->database->prepare('SELECT * FROM documents_metadata WHERE id = :id LIMIT 1');
+        $statement->execute(['id' => $id]); $row = $statement->fetch();
+        return is_array($row) ? $row : null;
+    }
+
     public function create(array $row): int
     {
         $statement = $this->database->prepare(

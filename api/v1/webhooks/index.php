@@ -74,14 +74,32 @@ try {
         }
 
         $processing = alchemize_stripe_process_event_payload($payload, $eventType);
-        $repository->create([
-            'public_id' => alchemize_uuid_v4(),
-            'stripe_event_id' => $eventId,
-            'event_type' => $eventType,
-            'event_status' => $processing['status'],
-            'payload' => json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
-            'processed_at' => null,
-        ]);
+        $database->beginTransaction();
+        try {
+            $repository->create([
+                'public_id' => alchemize_uuid_v4(), 'stripe_event_id' => $eventId,
+                'event_type' => $eventType, 'event_status' => $processing['status'],
+                'payload' => json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
+                'processed_at' => null,
+            ]);
+            if ($eventType === 'checkout.session.completed' && ($processing['payment_status'] ?? '') === 'paid') {
+                $integrations = new AlchemizeExternalIntegrationRepository($database);
+                $integrations->reconcileCheckoutSession(
+                    (string) $processing['checkout_session_id'], (string) $processing['payment_intent_id'],
+                    (int) ($processing['amount_received'] ?? 0),
+                );
+            }
+            if ($eventType === 'payment_intent.succeeded' && !empty($processing['payment_intent_id'])) {
+                (new AlchemizeExternalIntegrationRepository($database))->reconcileStripeInvoice(
+                    (string) $processing['payment_intent_id'], (int) ($processing['amount_received'] ?? 0), null, null,
+                );
+            }
+            $repository->updateStatus($eventId, $processing['status']);
+            $database->commit();
+        } catch (Throwable $processingError) {
+            if ($database->inTransaction()) $database->rollBack();
+            throw $processingError;
+        }
 
         alchemize_json_response(['data' => ['received' => true, 'status' => $processing['status'], 'event_type' => $eventType]], 200);
     }

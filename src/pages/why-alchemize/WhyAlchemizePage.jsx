@@ -19,6 +19,19 @@ import "./why-alchemize.css";
 const approachIcons = [Search, FolderTree, Focus, MoveRight];
 const principleIcons = [Compass, Link2, ClipboardCheck, ShieldCheck, RefreshCw];
 
+const continuityRoutes = {
+  "Tax Preparation": "/services/individuals/tax-preparation",
+  "Notary & Documents": "/services/individuals/notary-document-services",
+  "Translation & Apostille": "/services/individuals",
+  "Digital Support": "/web-digital",
+  "Preparation & Organization": "/services/individuals",
+  "Startup Support": "/services/businesses/readiness-growth",
+  "Bookkeeping & Payroll": "/services/businesses",
+  "Business Tax Support": "/services/businesses/business-tax-support",
+  "Operations & Administration": "/services/businesses/operations-implementation",
+  Advisory: "/services/businesses/advisory-optimization",
+};
+
 function WhyAlchemizePage() {
   const { language } = useLanguage();
   const content = whyContent[language];
@@ -188,22 +201,22 @@ function WhyAlchemizePage() {
                     key={label}
                   >
                     <h3>{label}</h3>
-                    <ol>
-                      {stages.map((stage, stageIndex) => (
-                        <li key={stage}>
-                          <span
-                            className="why-pathway-marker"
-                            aria-hidden="true"
-                          />
-                          <span className="why-pathway-stage">{stage}</span>
-                          {stageIndex < stages.length - 1 && (
+                    <ol className="why-pathway-list">
+                      {stages.map((stage) => {
+                        const to = continuityRoutes[stage] ?? "/services";
+
+                        return (
+                          <li key={stage} className="why-pathway-item">
                             <span
-                              className="why-pathway-connector"
+                              className="why-pathway-node"
                               aria-hidden="true"
                             />
-                          )}
-                        </li>
-                      ))}
+                            <Link className="why-pathway-link" to={to}>
+                              <span className="why-pathway-stage">{stage}</span>
+                            </Link>
+                          </li>
+                        );
+                      })}
                     </ol>
                   </Reveal>
                 ),

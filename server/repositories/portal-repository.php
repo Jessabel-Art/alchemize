@@ -122,7 +122,7 @@ final class AlchemizePortalRepository
             'SELECT i.public_id AS id, i.invoice_number, i.invoice_date, i.due_date,
                     i.status, i.currency, i.subtotal, i.adjustment_total,
                     i.credit_deposit_total, i.paid_total, i.outstanding_balance,
-                    i.client_facing_notes, i.issued_at,
+                    i.client_facing_notes, i.issued_at, i.stripe_sync_status,
                     e.public_id AS engagement_id, e.title AS engagement_title
              FROM invoices i
              LEFT JOIN engagements e ON e.id = i.engagement_id AND e.client_id = i.client_id
@@ -138,7 +138,7 @@ final class AlchemizePortalRepository
     public function listPayments(int $clientId): array
     {
         $statement = $this->database->prepare(
-            'SELECT p.public_id AS id, p.payment_date, p.amount, p.payment_method,
+            'SELECT p.public_id AS id, p.payment_date, p.amount, p.payment_method, p.receipt_url,
                     i.public_id AS invoice_id, i.invoice_number
              FROM payments p
              INNER JOIN invoices i ON i.id = p.invoice_id AND i.client_id = p.client_id

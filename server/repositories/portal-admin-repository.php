@@ -8,6 +8,28 @@ final class AlchemizePortalAdminRepository
 
     public function database(): PDO { return $this->database; }
 
+    public function listAccessGrants(?int $clientId = null): array
+    {
+        $sql = "SELECT cag.public_id AS id, cag.client_id, c.display_name AS client_name,
+                       u.display_name, u.email, cag.access_role, cag.status, cag.effective_at, cag.expires_at
+                FROM client_access_grants cag INNER JOIN users u ON u.id = cag.user_id
+                INNER JOIN clients c ON c.id = cag.client_id";
+        $params = [];
+        if ($clientId !== null) { $sql .= ' WHERE cag.client_id = :client_id'; $params['client_id'] = $clientId; }
+        $sql .= ' ORDER BY c.display_name, u.display_name';
+        $statement = $this->database->prepare($sql); $statement->execute($params); return $statement->fetchAll();
+    }
+
+    public function updateAccessGrant(string $publicId, string $role, string $status, int $actorId): bool
+    {
+        $statement = $this->database->prepare(
+            "UPDATE client_access_grants SET access_role = :role, status = :status,
+                    granted_by_user_id = :actor, effective_at = IF(:status = 'active', COALESCE(effective_at, CURRENT_TIMESTAMP(6)), effective_at)
+             WHERE public_id = :id AND is_default = 0"
+        );
+        $statement->execute(['role'=>$role,'status'=>$status,'actor'=>$actorId,'id'=>$publicId]); return $statement->rowCount() > 0;
+    }
+
     public function listThreads(): array
     {
         return $this->database->query(

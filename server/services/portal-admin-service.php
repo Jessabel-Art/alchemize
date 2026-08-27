@@ -9,9 +9,22 @@ final class AlchemizePortalAdminService
         private readonly AlchemizeActivityRepository $activities,
         private readonly AlchemizeAuditEventRepository $audit,
         private readonly AlchemizeNotificationService $notifications,
+        private readonly ?AlchemizePortalAccountService $accounts = null,
+        private readonly ?AlchemizeExternalIntegrationService $integrations = null,
     ) {}
 
     public function attention(): array { return ['items' => $this->repository->attention()]; }
+
+    public function accessGrants(?int $clientId): array { return ['items' => $this->repository->listAccessGrants($clientId)]; }
+
+    public function updateAccessGrant(string $id, array $user, array $payload): array
+    {
+        $role=(string)($payload['access_role']??'');$status=(string)($payload['status']??'');
+        if(!in_array($role,['authorized_user','billing_contact','document_contact','read_only'],true)
+            || !in_array($status,['active','revoked'],true)) throw new AlchemizeRequestException(422,'VALIDATION_ERROR','Select a valid access role and state.');
+        if(!$this->repository->updateAccessGrant($id,$role,$status,(int)$user['user_id']))$this->notFound();
+        return ['id'=>$id,'access_role'=>$role,'status'=>$status];
+    }
 
     public function reply(string $threadId, array $user, array $payload): array
     {
@@ -116,6 +129,12 @@ final class AlchemizePortalAdminService
                 $row = $this->repository->findAccessRequest($id, true);
                 if ($row === null) $this->notFound();
                 if ($row['status'] !== 'pending') $this->conflict();
+                $portalProvisioning = null;
+                if ($decision === 'approved' && empty($row['target_user_id'])) {
+                    if ($this->accounts === null) throw new RuntimeException('Portal account service is unavailable.');
+                    $portalProvisioning = $this->accounts->provisionAuthorized((int)$row['client_id'],(string)$row['email'],(string)$row['name'],(string)$row['requested_access_role'],(int)$user['user_id']);
+                    $row['target_user_id']=$portalProvisioning['_user_id'];unset($portalProvisioning['_user_id']);
+                }
                 $this->repository->resolveAccessRequest($row, $decision, (int) $user['user_id'], $note);
                 $entityType = 'client_access'; $entityId = $id; $clientId = $row['client_id']; $engagementId = null;
             } elseif ($type === 'task') {
@@ -136,15 +155,18 @@ final class AlchemizePortalAdminService
                 'public_id' => alchemize_uuid_v4(), 'actor_user_id' => $user['user_id'], 'event_type' => $eventType,
                 'entity_type' => $entityType, 'entity_id' => $entityId, 'action_summary' => 'Staff resolved a client portal request.', 'request_metadata' => null,
             ]);
-            if ($clientId !== null && in_array($type, ['appointment', 'document'], true)) {
+            if ($clientId !== null && in_array($type, ['appointment', 'document', 'access'], true)) {
                 $this->notifications->notifyClient(
                     (int) $clientId, $eventType, $entityType, $entityId,
-                    $type === 'document' ? 'Document update' : 'Appointment update',
+                    $type === 'document' ? 'Document update' : ($type === 'access' ? 'Authorized-user request update' : 'Appointment update'),
                     'Alchemize updated a record in your client portal.',
                     'admin-resolution:' . $type . ':' . $id . ':' . $decision,
                 );
             }
-            $database->commit(); return ['id' => $id, 'decision' => $decision];
+            $database->commit();
+            $sync = $type === 'appointment' && isset($row['appointment_id']) && $this->integrations !== null
+                ? $this->integrations->synchronizeAppointment((int) $row['appointment_id']) : null;
+            return ['id' => $id, 'decision' => $decision] + ($sync === null ? [] : ['calendar_sync_status' => $sync['status']]) + ($portalProvisioning ?? []);
         } catch (Throwable $error) {
             if ($database->inTransaction()) $database->rollBack(); throw $error;
         }

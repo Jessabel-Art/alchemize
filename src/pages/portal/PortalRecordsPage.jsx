@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { portalApi } from "../../services/portal-api.js";
+import { auth } from "../../services/admin-api.js";
 import "./portal.css";
 
 const pageContent = {
@@ -1124,6 +1125,30 @@ function Billing({ data, empty, busy, run }) {
                 >
                   Acknowledge
                 </ActionButton>
+                {["open", "partially_paid", "past_due"].includes(item.status) &&
+                Number(item.outstanding_balance) > 0 ? (
+                  <ActionButton
+                    busy={busy === `${item.id}-pay`}
+                    onClick={() =>
+                      run(
+                        `${item.id}-pay`,
+                        async () => {
+                          const checkout = await portalApi.checkoutInvoice(
+                            item.id,
+                          );
+                          if (!checkout.checkout_url)
+                            throw new Error(
+                              "Online payment is temporarily unavailable.",
+                            );
+                          window.location.assign(checkout.checkout_url);
+                        },
+                        "Opening secure payment…",
+                      )
+                    }
+                  >
+                    Pay securely
+                  </ActionButton>
+                ) : null}
               </div>
             </li>
           ))}
@@ -1155,6 +1180,10 @@ function Billing({ data, empty, busy, run }) {
 }
 
 function Profile({ data, empty, busy, run }) {
+  const [passwordForm, setPasswordForm] = useState({
+    current_password: "",
+    new_password: "",
+  });
   const client = data.client;
   const [form, setForm] = useState(() =>
     client
@@ -1278,6 +1307,56 @@ function Profile({ data, empty, busy, run }) {
       </section>
       <section>
         <h2>Portal access and authorized users</h2>
+        <form
+          className="portal-composer"
+          onSubmit={(event) => {
+            event.preventDefault();
+            run(
+              "change-password",
+              () => auth.changePassword(passwordForm),
+              "Password changed successfully.",
+            );
+          }}
+        >
+          <h3>Change password</h3>
+          <label>
+            <span>Current password</span>
+            <input
+              type="password"
+              autoComplete="current-password"
+              required
+              value={passwordForm.current_password}
+              onChange={(event) =>
+                setPasswordForm({
+                  ...passwordForm,
+                  current_password: event.target.value,
+                })
+              }
+            />
+          </label>
+          <label>
+            <span>New password</span>
+            <input
+              type="password"
+              autoComplete="new-password"
+              minLength="12"
+              required
+              value={passwordForm.new_password}
+              onChange={(event) =>
+                setPasswordForm({
+                  ...passwordForm,
+                  new_password: event.target.value,
+                })
+              }
+            />
+          </label>
+          <button
+            className="portal-action-button"
+            disabled={busy === "change-password"}
+          >
+            Change Password
+          </button>
+        </form>
         {(data.portal_users || []).length ? (
           <ul className="portal-record-list">
             {data.portal_users.map((item) => (

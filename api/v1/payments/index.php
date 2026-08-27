@@ -44,7 +44,7 @@ try {
     }
 
     if ($method === 'POST' && $parts === []) {
-        alchemize_require_staff_or_admin();
+        $actor = alchemize_require_staff_or_admin();
         alchemize_require_csrf();
         $payload = alchemize_read_json_request();
         $invoiceId = isset($payload['invoice_id']) && $payload['invoice_id'] !== '' ? (int) $payload['invoice_id'] : null;
@@ -54,8 +54,13 @@ try {
             throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Invoice, client, and amount are required.');
         }
 
-        $id = $repository->create([
+        $requestKey = trim((string) ($payload['request_key'] ?? ''));
+        if ($requestKey !== '' && preg_match('/^[a-f0-9-]{36}$/i', $requestKey) !== 1) {
+            throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'The payment request identifier is invalid.');
+        }
+        $recorded = $repository->recordManualPayment([
             'public_id' => alchemize_uuid_v4(),
+            'request_key' => $requestKey !== '' ? $requestKey : null,
             'invoice_id' => $invoiceId,
             'client_id' => $clientId,
             'payment_date' => trim((string) ($payload['payment_date'] ?? date('Y-m-d'))),
@@ -63,10 +68,10 @@ try {
             'payment_method' => trim((string) ($payload['payment_method'] ?? 'manual')) !== '' ? trim((string) ($payload['payment_method'])) : 'manual',
             'external_reference' => trim((string) ($payload['external_reference'] ?? '')) !== '' ? trim((string) ($payload['external_reference'])) : null,
             'internal_note' => trim((string) ($payload['internal_note'] ?? '')) !== '' ? trim((string) ($payload['internal_note'])) : null,
-            'recorded_by_user_id' => isset($payload['recorded_by_user_id']) && $payload['recorded_by_user_id'] !== '' ? (int) $payload['recorded_by_user_id'] : null,
+            'recorded_by_user_id' => (int) $actor['user_id'],
         ]);
 
-        alchemize_json_response(['data' => ['id' => $id, 'amount' => number_format($amount, 2, '.', '')]], 201);
+        alchemize_json_response(['data' => $recorded], $recorded['duplicate'] ? 200 : 201);
     }
 
     throw new AlchemizeRequestException(404, 'NOT_FOUND', 'The requested payment route was not found.');

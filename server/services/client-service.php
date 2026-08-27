@@ -49,4 +49,37 @@ final class AlchemizeClientService
 
         return ['id' => $clientId, 'display_name' => $displayName, 'client_type' => $clientType];
     }
+
+    public function update(int $clientId, array $payload): array
+    {
+        if ($this->clients->findById($clientId) === null) {
+            throw new AlchemizeRequestException(404, 'NOT_FOUND', 'Client was not found.');
+        }
+        $values = [];
+        foreach (['display_name', 'legal_name', 'preferred_name', 'primary_phone'] as $field) {
+            if (array_key_exists($field, $payload)) $values[$field] = trim((string) $payload[$field]) ?: null;
+        }
+        if (array_key_exists('primary_email', $payload)) {
+            $email = strtolower(trim((string) $payload['primary_email']));
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Enter a valid client email.');
+            $values['primary_email'] = $email;
+        }
+        $enums = [
+            'client_type' => ['individual', 'business', 'organization'],
+            'preferred_contact_method' => ['email', 'phone', 'either'],
+            'language_preference' => ['en', 'es'],
+            'status' => ['prospective', 'active', 'inactive', 'archived'],
+        ];
+        foreach ($enums as $field => $allowed) {
+            if (array_key_exists($field, $payload)) {
+                if (!in_array($payload[$field], $allowed, true)) throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Select a valid client status or preference.');
+                $values[$field] = $payload[$field];
+            }
+        }
+        if (($values['display_name'] ?? 'valid') === null) throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Display name is required.');
+        if (($values['status'] ?? null) === 'archived') $values['archived_at'] = date('Y-m-d H:i:s.u');
+        elseif (array_key_exists('status', $values)) $values['archived_at'] = null;
+        $this->clients->update($clientId, $values);
+        return $this->clients->findById($clientId) ?? [];
+    }
 }

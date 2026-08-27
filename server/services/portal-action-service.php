@@ -10,6 +10,7 @@ final class AlchemizePortalActionService
         private readonly AlchemizeAuditEventRepository $audit,
         private readonly AlchemizeDocumentStorageService $storage,
         private readonly AlchemizeNotificationService $notifications,
+        private readonly ?AlchemizeExternalIntegrationService $integrations = null,
     ) {}
 
     public function requestService(array $access, array $user, array $payload): array
@@ -83,7 +84,7 @@ final class AlchemizePortalActionService
         $stored = null;
         try {
             $stored = $this->storage->store($file, (int) $access['client_id'], $documentId, 1, $engagementId);
-            $this->repository->createDocumentSubmission([
+            $submissionId = $this->repository->createDocumentSubmission([
                 'public_id' => alchemize_uuid_v4(), 'document_id' => $documentId, 'client_id' => $access['client_id'],
                 'version_number' => 1, 'submitted_by_user_id' => $user['user_id'],
                 'original_filename' => $stored['original_filename'], 'storage_key' => $stored['storage_key'],
@@ -96,8 +97,9 @@ final class AlchemizePortalActionService
             $this->repository->deleteGeneralDocument($documentId, (int) $access['client_id']);
             throw $error;
         }
+        $sync = $this->integrations?->synchronizeDocument($submissionId, (string) $stored['absolute_path']) ?? ['status' => 'not_configured'];
         $this->activity($access, $user, 'client.document.uploaded_general', 'document', $publicId, 'Client uploaded a general document.', $engagementId);
-        return ['id' => $publicId, 'status' => 'received'];
+        return ['id' => $publicId, 'status' => 'received', 'drive_sync_status' => $sync['status']];
     }
 
     public function task(array $access, array $user, string $taskId, string $action, array $payload): array
@@ -169,7 +171,7 @@ final class AlchemizePortalActionService
             if ($locked === null || !in_array($locked['status'], ['requested', 'awaiting_upload', 'replacement_requested'], true)) {
                 throw new AlchemizeRequestException(409, 'DOCUMENT_NOT_ACCEPTING_UPLOADS', 'This document request changed before the upload completed.');
             }
-            $this->repository->createDocumentSubmission([
+            $submissionId = $this->repository->createDocumentSubmission([
                 'public_id' => alchemize_uuid_v4(), 'document_id' => $locked['id'], 'client_id' => $access['client_id'],
                 'version_number' => $versionNumber,
                 'submitted_by_user_id' => $user['user_id'], 'original_filename' => $stored['original_filename'],
@@ -189,7 +191,8 @@ final class AlchemizePortalActionService
                 'document-upload:' . $documentId . ':' . $versionNumber,
             );
             $database->commit();
-            return ['id' => $documentId, 'status' => 'received', 'filename' => $stored['original_filename']];
+            $sync = $this->integrations?->synchronizeDocument($submissionId, (string) $stored['absolute_path']) ?? ['status' => 'not_configured'];
+            return ['id' => $documentId, 'status' => 'received', 'filename' => $stored['original_filename'], 'drive_sync_status' => $sync['status']];
         } catch (Throwable $error) {
             if ($database->inTransaction()) $database->rollBack();
             $this->storage->discard($stored['absolute_path']);
@@ -329,7 +332,9 @@ final class AlchemizePortalActionService
                 );
             }
             $database->commit();
-            return ['id' => $appointmentId, 'action' => $action, 'status' => $action === 'confirm' ? 'confirmed' : $appointment['status']];
+            $sync = $action === 'confirm' && $this->integrations !== null
+                ? $this->integrations->synchronizeAppointment((int) $appointment['id']) : ['status' => 'pending'];
+            return ['id' => $appointmentId, 'action' => $action, 'status' => $action === 'confirm' ? 'confirmed' : $appointment['status'], 'calendar_sync_status' => $sync['status']];
         } catch (Throwable $error) {
             if ($database->inTransaction()) $database->rollBack();
             throw $error;

@@ -12,6 +12,7 @@ function AuthPage({ title, buttonLabel }) {
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resetMessage, setResetMessage] = useState("");
 
   const [session, setSession] = useState(null);
 
@@ -44,6 +45,28 @@ function AuthPage({ title, buttonLabel }) {
       );
     } catch (caughtError) {
       setError(caughtError.message || "The request could not be completed.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const requestReset = async () => {
+    if (!email.trim()) {
+      setError("Enter your email address first.");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    try {
+      const result = await auth.forgotPassword(email);
+      setResetMessage(
+        result?.message ||
+          "If the account is eligible, password reset instructions will be sent.",
+      );
+    } catch (caughtError) {
+      setError(
+        caughtError.message || "Password reset is temporarily unavailable.",
+      );
     } finally {
       setLoading(false);
     }
@@ -112,6 +135,7 @@ function AuthPage({ title, buttonLabel }) {
               </label>
             )}
             {error && <p role="alert">{error}</p>}
+            {resetMessage && <p role="status">{resetMessage}</p>}
             <button
               className="button button-primary"
               type="submit"
@@ -119,6 +143,16 @@ function AuthPage({ title, buttonLabel }) {
             >
               {loading ? "Please wait..." : buttonLabel}
             </button>
+            {login ? (
+              <button
+                className="button button-secondary"
+                type="button"
+                disabled={loading}
+                onClick={requestReset}
+              >
+                Forgot Password
+              </button>
+            ) : null}
           </form>
           <footer>
             {login ? (

@@ -20,8 +20,11 @@ import {
   clients as clientApi,
   documents as documentApi,
   engagements as engagementApi,
+  invoices as invoiceApi,
+  payments as paymentApi,
   leads as leadApi,
   portalAdmin,
+  services as serviceApi,
   tasks as taskApi,
 } from "../../services/admin-api.js";
 
@@ -1170,6 +1173,7 @@ function ClientManagementPage() {
   const [communicationThreads, setCommunicationThreads] = useState([]);
   const [portalActionMessage, setPortalActionMessage] = useState("");
   const [portalActionPending, setPortalActionPending] = useState(false);
+  const [accessGrants, setAccessGrants] = useState([]);
 
   useEffect(() => {
     portalAdmin
@@ -1177,6 +1181,31 @@ function ClientManagementPage() {
       .then((data) => setCommunicationThreads(data?.items || []))
       .catch(() => setCommunicationThreads([]));
   }, []);
+
+  useEffect(() => {
+    if (!clientId) {
+      setAccessGrants([]);
+      return;
+    }
+    portalAdmin
+      .accessGrants(clientId)
+      .then((data) => setAccessGrants(data?.items || []))
+      .catch(() => setAccessGrants([]));
+  }, [clientId, recordVersion]);
+
+  const updateAuthorizedAccess = async (grant, changes) => {
+    try {
+      await portalAdmin.updateAccessGrant(grant.id, {
+        access_role: changes.access_role || grant.access_role,
+        status: changes.status || grant.status,
+      });
+      refreshClientState();
+    } catch (error) {
+      setPortalActionMessage(
+        error.message || "Unable to update authorized access.",
+      );
+    }
+  };
 
   const rows = snapshot.clients;
   const selectedClient = clientId
@@ -1300,31 +1329,33 @@ function ClientManagementPage() {
     refreshClientState();
   };
 
-  const saveClientProfile = () => {
+  const saveClientProfile = async () => {
     if (!selectedClient || !clientDraft) return;
-
-    adminStore.updateClientProfile(selectedClient.id, {
-      displayName:
-        clientDraft.displayName?.trim() || selectedClient.displayName,
-      businessName: clientDraft.businessName?.trim() || "",
-      email: clientDraft.email?.trim() || "",
-      phone: clientDraft.phone?.trim() || "",
-      preferredContactMethod: clientDraft.preferredContactMethod || "Email",
-      status: clientDraft.status || selectedClient.status,
-      portalStatus: clientDraft.portalStatus || selectedClient.portalStatus,
-      nextAction: clientDraft.nextAction?.trim() || selectedClient.nextAction,
-      representative:
-        clientDraft.representative?.trim() ||
-        selectedClient.representative ||
-        selectedClient.displayName,
-      authorizedUsers:
-        clientDraft.authorizedUsers ||
-        selectedClient.authorizedUsers ||
-        selectedClient.displayName,
-    });
-
-    setIsClientEditorOpen(false);
-    refreshClientState();
+    try {
+      const updated = await clientApi.update(selectedClient.id, {
+        display_name: clientDraft.displayName?.trim(),
+        legal_name: clientDraft.businessName?.trim() || null,
+        primary_email: clientDraft.email?.trim(),
+        primary_phone: clientDraft.phone?.trim() || null,
+        preferred_contact_method: String(
+          clientDraft.preferredContactMethod || "email",
+        ).toLowerCase(),
+        status: String(clientDraft.status || "prospective").toLowerCase(),
+      });
+      adminStore.updateClientProfile(selectedClient.id, {
+        displayName: updated.display_name,
+        businessName: updated.legal_name || "",
+        email: updated.primary_email || "",
+        phone: updated.primary_phone || "",
+        preferredContactMethod: toTitleCase(updated.preferred_contact_method),
+        status: toTitleCase(updated.status),
+      });
+      setClientSavedMessage("Client changes saved.");
+      setIsClientEditorOpen(false);
+      refreshClientState();
+    } catch (error) {
+      setClientSavedMessage(error.message || "Unable to save client changes.");
+    }
   };
 
   const handleCreateClient = async () => {
@@ -1368,8 +1399,20 @@ function ClientManagementPage() {
       }));
       adminStore.replaceCollections({ clients: mapped });
       setClientSavedMessage(
-        `Client added: ${created.display_name}${created.portal?.development_url ? ` — development invitation: ${created.portal.development_url}` : ""}`,
+        created.message || `Client added: ${created.display_name}`,
       );
+      if (created.portal?.setup_url) {
+        try {
+          await navigator.clipboard.writeText(created.portal.setup_url);
+          setClientSavedMessage(
+            `${created.message} The one-time setup link was copied to your clipboard.`,
+          );
+        } catch {
+          setClientSavedMessage(
+            `${created.message} One-time setup link: ${created.portal.setup_url}`,
+          );
+        }
+      }
       setClientFormError("");
       setNewClientForm(createEmptyClientForm());
       setIsAddClientOpen(false);
@@ -1386,12 +1429,37 @@ function ClientManagementPage() {
     setPortalActionPending(true);
     setPortalActionMessage("");
     try {
-      const result =
-        kind === "reset"
-          ? await clientApi.sendPasswordReset(selectedClient.id)
-          : await clientApi.sendInvitation(selectedClient.id);
+      const actions = {
+        reset: () => clientApi.sendPasswordReset(selectedClient.id),
+        invite: () => clientApi.sendInvitation(selectedClient.id),
+        create: () => clientApi.createPortalAccess(selectedClient.id),
+        setupLink: () => clientApi.copySetupLink(selectedClient.id),
+        resetLink: () => clientApi.copyPasswordResetLink(selectedClient.id),
+        disable: () => clientApi.disablePortal(selectedClient.id),
+        enable: () => clientApi.enablePortal(selectedClient.id),
+      };
+      const result = await actions[kind]();
+      let linkCopied = false;
+      if (result?.setup_url) {
+        try {
+          await navigator.clipboard.writeText(result.setup_url);
+          linkCopied = true;
+        } catch {
+          linkCopied = false;
+        }
+      }
       setPortalActionMessage(
-        `${kind === "reset" ? "Password reset" : "Portal invitation"} queued.${result?.development_url ? ` Development link: ${result.development_url}` : ""}`,
+        result?.setup_url
+          ? linkCopied
+            ? "A new one-time portal link was copied to your clipboard."
+            : `One-time portal link: ${result.setup_url}`
+          : result?.email_delivery === "sent"
+            ? "The portal email was sent."
+            : kind === "disable"
+              ? "Portal access disabled."
+              : kind === "enable"
+                ? "Portal access re-enabled."
+                : "The portal action completed, but email delivery was unavailable.",
       );
     } catch (error) {
       setPortalActionMessage(
@@ -1466,11 +1534,14 @@ function ClientManagementPage() {
     setTimeout(() => window.print(), 50);
   };
 
-  const handleArchiveClient = () => {
+  const handleArchiveClient = async () => {
     if (!selectedClient) return;
-    adminStore.archiveRecord({ collection: "clients", id: selectedClient.id });
-    navigate("/admin/clients");
-    refreshClientState();
+    try {
+      await clientApi.update(selectedClient.id, { status: "archived" });
+      navigate("/admin/clients");
+    } catch (error) {
+      setClientSavedMessage(error.message || "Unable to archive this client.");
+    }
   };
 
   const renderClientDetail = () => {
@@ -1542,6 +1613,14 @@ function ClientManagementPage() {
                 <div>
                   <dt>Portal status</dt>
                   <dd>{selectedClient.portalStatus || "Active"}</dd>
+                </div>
+                <div>
+                  <dt>Drive</dt>
+                  <dd>{selectedClient.driveSyncStatus || "Not configured"}</dd>
+                </div>
+                <div>
+                  <dt>Stripe customer</dt>
+                  <dd>{selectedClient.stripeSyncStatus || "Not configured"}</dd>
                 </div>
                 <div>
                   <dt>Authorized users</dt>
@@ -1718,26 +1797,75 @@ function ClientManagementPage() {
                 </div>
               </dl>
               <div className="admin-header-actions">
-                {!selectedClient.portalPasswordSet ? (
+                {!selectedClient.portalUserStatus ? (
                   <button
                     type="button"
                     className="secondary-button"
                     disabled={portalActionPending}
-                    onClick={() => runPortalAction("invite")}
+                    onClick={() => runPortalAction("create")}
                   >
-                    {selectedClient.portalUserStatus === "invited"
-                      ? "Resend Portal Invitation"
-                      : "Send Portal Invitation"}
+                    Create Portal Access
                   </button>
+                ) : !selectedClient.portalPasswordSet ? (
+                  <>
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      disabled={portalActionPending}
+                      onClick={() => runPortalAction("invite")}
+                    >
+                      {selectedClient.portalUserStatus === "invited"
+                        ? "Resend Portal Invitation"
+                        : "Send Portal Invitation"}
+                    </button>
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      disabled={portalActionPending}
+                      onClick={() => runPortalAction("setupLink")}
+                    >
+                      Copy Setup Link
+                    </button>
+                  </>
                 ) : (
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    disabled={portalActionPending}
-                    onClick={() => runPortalAction("reset")}
-                  >
-                    Send Password Reset
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      disabled={portalActionPending}
+                      onClick={() => runPortalAction("reset")}
+                    >
+                      Send Password Reset
+                    </button>
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      disabled={portalActionPending}
+                      onClick={() => runPortalAction("resetLink")}
+                    >
+                      Copy Password Reset Link
+                    </button>
+                    {String(selectedClient.portalStatus).toLowerCase() ===
+                    "disabled" ? (
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        disabled={portalActionPending}
+                        onClick={() => runPortalAction("enable")}
+                      >
+                        Re-enable Portal Access
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        disabled={portalActionPending}
+                        onClick={() => runPortalAction("disable")}
+                      >
+                        Disable Portal Access
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
               {portalActionMessage ? (
@@ -1817,7 +1945,7 @@ function ClientManagementPage() {
                   >
                     <option value="Email">Email</option>
                     <option value="Phone">Phone</option>
-                    <option value="Text">Text</option>
+                    <option value="Either">Either</option>
                   </select>
                 </label>
                 <label>
@@ -1831,24 +1959,19 @@ function ClientManagementPage() {
                       }))
                     }
                   >
-                    {[
-                      "Prospect",
-                      "Onboarding",
-                      "Active",
-                      "Waiting on Client",
-                      "Paused",
-                      "Completed",
-                      "Inactive",
-                    ].map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
+                    {["Prospective", "Active", "Inactive", "Archived"].map(
+                      (option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ),
+                    )}
                   </select>
                 </label>
                 <label>
                   <span>Portal status</span>
                   <select
+                    disabled
                     value={clientDraft.portalStatus || "Active"}
                     onChange={(event) =>
                       setClientDraft((current) => ({
@@ -1862,6 +1985,9 @@ function ClientManagementPage() {
                     <option value="Paused">Paused</option>
                     <option value="Inactive">Inactive</option>
                   </select>
+                  <small>
+                    Use the portal access actions above to change this state.
+                  </small>
                 </label>
                 <label>
                   <span>Representative</span>
@@ -1879,6 +2005,7 @@ function ClientManagementPage() {
                 <label className="full-span">
                   <span>Authorized users</span>
                   <input
+                    disabled
                     type="text"
                     value={clientDraft.authorizedUsers || ""}
                     onChange={(event) =>
@@ -1889,6 +2016,10 @@ function ClientManagementPage() {
                     }
                     placeholder="Comma-separated names"
                   />
+                  <small>
+                    Authorized access is managed through reviewed portal
+                    requests.
+                  </small>
                 </label>
                 <label className="full-span">
                   <span>Next action</span>
@@ -1989,6 +2120,62 @@ function ClientManagementPage() {
                     <dd>{selectedClient.activeServices || 0}</dd>
                   </div>
                 </dl>
+              </div>
+              <div className="detail-block full-width">
+                <h3>Authorized portal users</h3>
+                {accessGrants.filter(
+                  (grant) => grant.access_role !== "primary_contact",
+                ).length ? (
+                  <ul className="detail-list">
+                    {accessGrants
+                      .filter(
+                        (grant) => grant.access_role !== "primary_contact",
+                      )
+                      .map((grant) => (
+                        <li key={grant.id}>
+                          <div>
+                            <strong>{grant.display_name}</strong>
+                            <p>{grant.email}</p>
+                          </div>
+                          <select
+                            value={grant.access_role}
+                            onChange={(event) =>
+                              updateAuthorizedAccess(grant, {
+                                access_role: event.target.value,
+                              })
+                            }
+                          >
+                            <option value="authorized_user">
+                              Authorized User
+                            </option>
+                            <option value="billing_contact">
+                              Billing Contact
+                            </option>
+                            <option value="document_contact">
+                              Document Contact
+                            </option>
+                            <option value="read_only">Read Only</option>
+                          </select>
+                          <button
+                            type="button"
+                            className="secondary-button"
+                            onClick={() =>
+                              updateAuthorizedAccess(grant, {
+                                status:
+                                  grant.status === "active"
+                                    ? "revoked"
+                                    : "active",
+                              })
+                            }
+                          >
+                            {grant.status === "active" ? "Revoke" : "Re-enable"}
+                          </button>
+                        </li>
+                      ))}
+                  </ul>
+                ) : (
+                  <p>No additional authorized portal users.</p>
+                )}
               </div>
               <div className="detail-block full-width">
                 <h3>Service engagements</h3>
@@ -2833,7 +3020,7 @@ function ServiceManagementPage() {
     });
   };
 
-  const saveServiceForm = () => {
+  const saveServiceForm = async () => {
     try {
       const payload = {
         ...serviceForm,
@@ -2851,8 +3038,20 @@ function ServiceManagementPage() {
         addOns: parseAddOnInput(serviceForm.addOns),
       };
 
-      const created = adminStore.createService(payload);
-      setServiceSavedMessage(`Service added: ${created.serviceName}`);
+      const created = await serviceApi.create({
+        service_code: payload.serviceCode,
+        service_name: payload.serviceName,
+        description: payload.shortDescription,
+        audience: String(payload.audience || "all")
+          .toLowerCase()
+          .replace("both", "all"),
+        category: payload.category,
+        status: String(payload.status || "active").toLowerCase(),
+        default_duration: payload.defaultDuration,
+        billing_type: payload.billingType,
+        default_price: payload.defaultPrice,
+      });
+      setServiceSavedMessage(`Service added: ${created.service_name}`);
       setServiceError("");
       setIsNewServiceOpen(false);
       setServiceForm(createEmptyServiceForm());
@@ -2862,7 +3061,7 @@ function ServiceManagementPage() {
     }
   };
 
-  const saveEditedService = () => {
+  const saveEditedService = async () => {
     if (!editingServiceId || !serviceDraft) return;
 
     const payload = {
@@ -2890,11 +3089,27 @@ function ServiceManagementPage() {
         : [],
     };
 
-    adminStore.updateService(editingServiceId, payload);
-    setServiceSavedMessage(`Service updated: ${payload.serviceName}`);
-    setServiceError("");
-    setEditingServiceId(null);
-    setServiceDraft(null);
+    try {
+      await serviceApi.update(editingServiceId, {
+        service_code: payload.serviceCode,
+        service_name: payload.serviceName,
+        description: payload.shortDescription,
+        audience: String(payload.audience || "all")
+          .toLowerCase()
+          .replace("both", "all"),
+        category: payload.category,
+        status: String(payload.status || "active").toLowerCase(),
+        default_duration: payload.defaultDuration,
+        billing_type: payload.billingType,
+        default_price: payload.defaultPrice,
+      });
+      setServiceSavedMessage(`Service updated: ${payload.serviceName}`);
+      setServiceError("");
+      setEditingServiceId(null);
+      setServiceDraft(null);
+    } catch (error) {
+      setServiceError(error.message || "Unable to update this service.");
+    }
   };
 
   const renderCatalog = () => (
@@ -4307,6 +4522,7 @@ function DocumentManagementPage() {
                   <th>Requested Date</th>
                   <th>Received Date</th>
                   <th>Status</th>
+                  <th>Drive sync</th>
                   <th>Visibility</th>
                   <th>Next Action</th>
                   <th>Actions</th>
@@ -4331,14 +4547,20 @@ function DocumentManagementPage() {
                         tone={statusTone[document.status] || "neutral"}
                       />
                     </td>
+                    <td>{document.driveSyncStatus || "Not configured"}</td>
                     <td>{document.visibility || "Internal Only"}</td>
                     <td>
                       {document.status === "Requested" ? "Follow up" : "Review"}
                     </td>
                     <td>
                       <div className="table-actions">
-                        <button type="button" className="link-button">
-                          View
+                        <button
+                          type="button"
+                          className="link-button"
+                          disabled
+                          title="Document detail review is available from client submissions; metadata drawer is not implemented."
+                        >
+                          Detail unavailable
                         </button>
                       </div>
                     </td>
@@ -4950,6 +5172,15 @@ function AppointmentManagementPage() {
     }
 
     if (formMode === "edit") {
+      await appointmentApi.update(selectedAppointmentId, {
+        client_id: Number(draftState.clientId),
+        appointment_type: String(draftState.type)
+          .toLowerCase()
+          .replaceAll(" ", "_"),
+        scheduled_at: `${draftState.date} ${draftState.startTime}:00`,
+        status: String(draftState.status).toLowerCase().replaceAll(" ", "_"),
+        internal_notes: draftState.notes,
+      });
       setAppointments((current) =>
         current.map((appointment) =>
           appointment.id === selectedAppointmentId
@@ -4975,6 +5206,10 @@ function AppointmentManagementPage() {
     }
 
     if (formMode === "reschedule") {
+      await appointmentApi.update(selectedAppointmentId, {
+        scheduled_at: `${draftState.date} ${draftState.startTime}:00`,
+        status: "scheduled",
+      });
       setAppointments((current) =>
         current.map((appointment) =>
           appointment.id === selectedAppointmentId
@@ -4996,7 +5231,11 @@ function AppointmentManagementPage() {
     setIsFormOpen(false);
   };
 
-  const confirmCancel = () => {
+  const confirmCancel = async () => {
+    await appointmentApi.update(selectedAppointmentId, {
+      status: "cancelled",
+      internal_notes: cancelReason,
+    });
     setAppointments((current) =>
       current.map((appointment) =>
         appointment.id === selectedAppointmentId
@@ -5011,7 +5250,10 @@ function AppointmentManagementPage() {
     setIsFormOpen(false);
   };
 
-  const changeStatus = (appointmentId, nextStatus) => {
+  const changeStatus = async (appointmentId, nextStatus) => {
+    await appointmentApi.update(appointmentId, {
+      status: nextStatus.toLowerCase().replaceAll(" ", "_"),
+    });
     setAppointments((current) =>
       current.map((appointment) =>
         appointment.id === appointmentId
@@ -6218,7 +6460,7 @@ function BillingManagementPage() {
     }));
   };
 
-  const saveInvoice = (asDraft = true) => {
+  const saveInvoice = async (asDraft = true) => {
     const clientId = invoiceDraft.clientId;
     if (!clientId) {
       setInvoiceError("Select a client before saving the invoice.");
@@ -6251,29 +6493,32 @@ function BillingManagementPage() {
 
     let invoice;
     try {
-      invoice = adminStore.createInvoiceDraft({
-        clientId,
-        engagementId: invoiceDraft.engagementId || null,
-        amount:
-          resolvedLines.reduce(
-            (sum, line) => sum + Number(line.amount || 0),
-            0,
-          ) +
-          Number(invoiceDraft.adjustments || 0) -
-          Number(invoiceDraft.creditsApplied || 0),
-        dueDate: invoiceDraft.dueDate,
-        status: asDraft ? "Draft" : "Issued",
-        lineItems: resolvedLines,
-        invoiceDate: invoiceDraft.invoiceDate,
-        notes: invoiceDraft.notes,
-        internalMemo: invoiceDraft.internalMemo,
-        paymentTerms: invoiceDraft.paymentTerms,
-        adjustments: Number(invoiceDraft.adjustments || 0),
-        creditsApplied: Number(invoiceDraft.creditsApplied || 0),
-        serviceName: resolvedLines[0]?.description || "General",
-        businessName:
-          selectedClient?.businessName || selectedClient?.displayName || "",
-        relatedClientName: selectedClient?.displayName,
+      const subtotal =
+        resolvedLines.reduce((sum, line) => sum + Number(line.amount || 0), 0) +
+        Number(invoiceDraft.adjustments || 0) -
+        Number(invoiceDraft.creditsApplied || 0);
+      invoice = await invoiceApi.create({
+        invoice_number: `INV-${Date.now()}`,
+        client_id: Number(clientId),
+        engagement_id: invoiceDraft.engagementId
+          ? Number(invoiceDraft.engagementId)
+          : null,
+        invoice_date: invoiceDraft.invoiceDate,
+        due_date: invoiceDraft.dueDate,
+        status: asDraft ? "draft" : "open",
+        subtotal,
+        adjustment_total: Number(invoiceDraft.adjustments || 0),
+        credit_deposit_total: Number(invoiceDraft.creditsApplied || 0),
+        line_items: resolvedLines.map((line) => ({
+          service_id: line.relatedServiceId,
+          service_code: line.serviceCode,
+          description: line.description,
+          quantity: line.quantity,
+          unit_price: line.unitPrice,
+          billing_type: line.billingType,
+        })),
+        client_facing_notes: invoiceDraft.notes,
+        internal_notes: invoiceDraft.internalMemo,
       });
     } catch (error) {
       setInvoiceError(error.message || "Unable to create the invoice.");
@@ -6283,9 +6528,29 @@ function BillingManagementPage() {
     setInvoiceError("");
     setInvoiceMessage(
       asDraft
-        ? `Draft invoice ${invoice.invoiceNumber} created.`
-        : `Invoice ${invoice.invoiceNumber} issued.`,
+        ? `Draft invoice ${invoice.invoice_number} created.`
+        : `Invoice ${invoice.invoice_number} issued.`,
     );
+    adminStore.replaceCollections({
+      invoices: [
+        {
+          id: String(invoice.id),
+          invoiceNumber: invoice.invoice_number,
+          clientId: String(clientId),
+          engagementId: invoiceDraft.engagementId || "",
+          invoiceDate: invoiceDraft.invoiceDate,
+          dueAt: invoiceDraft.dueDate,
+          status: asDraft ? "Draft" : "Open",
+          lineItems: resolvedLines,
+          adjustments: Number(invoiceDraft.adjustments || 0),
+          creditsApplied: Number(invoiceDraft.creditsApplied || 0),
+          paidAmount: 0,
+          notes: invoiceDraft.notes,
+          internalMemo: invoiceDraft.internalMemo,
+        },
+        ...snapshot.invoices,
+      ],
+    });
     setIsCreateOpen(false);
     setInvoiceDraft({
       clientId: snapshot.clients[0]?.id || "",
@@ -6805,6 +7070,7 @@ function InvoiceDetailPage() {
       (entry) => entry.id === invoiceId || entry.invoiceNumber === invoiceId,
     ) || null;
   const [recordPayment, setRecordPayment] = useState({
+    requestKey: window.crypto.randomUUID(),
     amount: "",
     date: new Date().toISOString().slice(0, 10),
     methodLabel: "ACH / Bank Transfer",
@@ -6853,7 +7119,7 @@ function InvoiceDetailPage() {
   );
   const totals = getInvoiceCalculatedTotals(invoiceSnapshot);
 
-  const handleRecordPayment = () => {
+  const handleRecordPayment = async () => {
     const amount = Number(recordPayment.amount || 0);
     if (!amount || amount <= 0) {
       setPaymentError("Enter a valid payment amount.");
@@ -6861,6 +7127,18 @@ function InvoiceDetailPage() {
     }
 
     try {
+      await paymentApi.create({
+        request_key: recordPayment.requestKey,
+        invoice_id: Number(invoiceSnapshot.id),
+        client_id: Number(invoiceSnapshot.clientId),
+        payment_date: recordPayment.date,
+        amount,
+        payment_method: String(recordPayment.methodLabel || "manual")
+          .toLowerCase()
+          .replaceAll(" ", "_"),
+        external_reference: recordPayment.reference,
+        internal_note: recordPayment.note,
+      });
       adminStore.recordPayment(invoiceSnapshot.id, {
         amount,
         date: recordPayment.date,
@@ -6871,6 +7149,7 @@ function InvoiceDetailPage() {
       setPaymentError("");
       setPaymentMessage(`Payment of ${formatCurrency(amount)} recorded.`);
       setRecordPayment({
+        requestKey: window.crypto.randomUUID(),
         amount: "",
         date: new Date().toISOString().slice(0, 10),
         methodLabel: "ACH / Bank Transfer",

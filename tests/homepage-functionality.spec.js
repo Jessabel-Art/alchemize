@@ -1,4 +1,3 @@
-import { mkdirSync } from "node:fs";
 import { expect, test } from "@playwright/test";
 
 const capabilityTargets = [
@@ -6,7 +5,7 @@ const capabilityTargets = [
   ["Operations & Implementation", "operations-implementation"],
   ["Digital Business & Technology", "digital-business-technology"],
   ["Business Readiness & Growth", "readiness-growth"],
-  ["Financial & Tax Support", "financial-tax-support"],
+  ["Business Tax Support", "business-tax-support"],
 ];
 
 const resourceFiles = [
@@ -50,12 +49,10 @@ test("homepage resource links deliver branded PDF files", async ({
 
 test("homepage refinement remains composed without horizontal overflow", async ({
   page,
-}) => {
-  const screenshots = "artifacts/homepage-refinement";
-  mkdirSync(screenshots, { recursive: true });
+}, testInfo) => {
+  await page.goto("/", { waitUntil: "networkidle" });
   for (const width of [1440, 1024, 768, 430, 390, 360]) {
     await page.setViewportSize({ width, height: 1000 });
-    await page.goto("/", { waitUntil: "networkidle" });
     await expect(page.locator(".home-connect-process")).toBeVisible();
     await expect(page.locator(".home-resource-list a")).toHaveCount(3);
     const overflows = await page.evaluate(
@@ -66,7 +63,7 @@ test("homepage refinement remains composed without horizontal overflow", async (
     expect(overflows).toBeFalsy();
     if ([1440, 768, 390].includes(width)) {
       await page.screenshot({
-        path: `${screenshots}/home-${width}.png`,
+        path: testInfo.outputPath(`home-${width}.png`),
         fullPage: true,
       });
       for (const section of [
@@ -76,9 +73,8 @@ test("homepage refinement remains composed without horizontal overflow", async (
       ]) {
         const target = page.locator(`.${section}`);
         await target.scrollIntoViewIfNeeded();
-        await page.waitForTimeout(500);
         await target.screenshot({
-          path: `${screenshots}/${section}-${width}.png`,
+          path: testInfo.outputPath(`${section}-${width}.png`),
         });
       }
     }

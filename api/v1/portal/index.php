@@ -51,6 +51,7 @@ try {
         new AlchemizeAuditEventRepository($database),
         new AlchemizeDocumentStorageService((string) $config['document_storage_root']),
         new AlchemizeNotificationService(new AlchemizeNotificationRepository($database), alchemize_email_provider($config)),
+        alchemize_external_integrations($database, $config),
     );
     $intakes = new AlchemizeIntakeService(new AlchemizeIntakeRepository($database), new AlchemizeActivityRepository($database));
 
@@ -137,6 +138,18 @@ try {
     }
     if ($method === 'POST' && $resource === 'appointments' && count($parts) === 3) {
         alchemize_json_response(['data' => $actions->appointment($access, $sessionUser, $parts[1], $parts[2], $payload)], 200);
+    }
+    if ($method === 'POST' && $resource === 'billing' && count($parts) === 3 && $parts[2] === 'checkout') {
+        if (!in_array((string) ($access['access_role'] ?? ''), ['primary_contact', 'authorized_user', 'billing_contact'], true)) {
+            throw new AlchemizeRequestException(403, 'PORTAL_ACTION_NOT_PERMITTED', 'This portal account cannot initiate invoice payments.');
+        }
+        $stripeConfig = ($config['stripe'] ?? []) + ['app_url' => (string) ($config['app_url'] ?? '')];
+        $payments = new AlchemizeStripePaymentService(
+            new AlchemizeExternalIntegrationRepository($database),
+            new AlchemizeStripeHttpGateway((string) ($stripeConfig['secret_key'] ?? '')),
+            $stripeConfig,
+        );
+        alchemize_json_response(['data' => $payments->checkout((int) $access['client_id'], $parts[1])], 201);
     }
     if ($method === 'PUT' && $resource === 'profile' && count($parts) === 1) {
         alchemize_json_response(['data' => $actions->profile($access, $sessionUser, $payload)], 200);

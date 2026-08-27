@@ -52,6 +52,27 @@ final class AlchemizeUserRepository
         $statement->execute(['id' => $userId]);
     }
 
+    public function hasActiveClientAccess(int $userId): bool
+    {
+        $statement = $this->database->prepare(
+            "SELECT 1 FROM client_access_grants cag
+             INNER JOIN clients c ON c.id = cag.client_id
+             WHERE cag.user_id = :user_id AND cag.status = 'active'
+               AND (cag.effective_at IS NULL OR cag.effective_at <= CURRENT_TIMESTAMP(6))
+               AND (cag.expires_at IS NULL OR cag.expires_at > CURRENT_TIMESTAMP(6))
+               AND c.portal_status = 'active' AND c.status <> 'archived' LIMIT 1"
+        );
+        $statement->execute(['user_id' => $userId]);
+        return $statement->fetchColumn() !== false;
+    }
+
+    public function updatePasswordHash(int $userId, string $passwordHash): void
+    {
+        $statement = $this->database->prepare('UPDATE users SET password_hash = :hash WHERE id = :id AND status = \'active\'');
+        $statement->execute(['hash' => $passwordHash, 'id' => $userId]);
+        if ($statement->rowCount() !== 1) throw new AlchemizeRequestException(409, 'ACCOUNT_NOT_ACTIVE', 'This account is not active.');
+    }
+
     public function listInternalUsers(): array
     {
         $statement = $this->database->query(

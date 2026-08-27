@@ -7,6 +7,8 @@ import {
   clients,
   documents,
   engagements,
+  invoices,
+  payments,
   services,
   tasks,
 } from "../services/admin-api.js";
@@ -25,6 +27,8 @@ const mapClient = (row) => ({
   portalStatus: titleCase(row.portal_status),
   portalUserStatus: row.portal_user_status,
   portalPasswordSet: Boolean(Number(row.portal_password_set)),
+  driveSyncStatus: titleCase(row.drive_sync_status || "not_configured"),
+  stripeSyncStatus: titleCase(row.stripe_sync_status || "not_configured"),
   lastActivity: row.updated_at || row.created_at,
   createdAt: row.created_at,
 });
@@ -56,6 +60,7 @@ const mapAppointment = (row) => {
     duration: 60,
     needsPreparation: Boolean(Number(row.preparation_required)),
     followUpRequired: Boolean(Number(row.follow_up_required)),
+    calendarSyncStatus: titleCase(row.calendar_sync_status || "not_configured"),
   };
 };
 const mapEngagement = (row) => ({
@@ -96,6 +101,54 @@ const mapDocument = (row) => ({
   requestedAt: row.requested_date,
   receivedAt: row.received_date,
   instructions: row.client_instructions || "",
+  driveSyncStatus: titleCase(row.drive_sync_status || "not_configured"),
+});
+const mapInvoice = (row) => ({
+  id: String(row.id),
+  publicId: row.public_id,
+  invoiceNumber: row.invoice_number,
+  clientId: String(row.client_id),
+  engagementId: row.engagement_id == null ? "" : String(row.engagement_id),
+  invoiceDate: row.invoice_date,
+  dueAt: row.due_date,
+  status: titleCase(row.status),
+  currency: row.currency,
+  lineItems: (row.line_items?.length
+    ? row.line_items
+    : [
+        {
+          id: `subtotal-${row.id}`,
+          description: "Invoice services",
+          quantity: 1,
+          unit_price: Number(row.subtotal || 0),
+          amount: Number(row.subtotal || 0),
+        },
+      ]
+  ).map((item) => ({
+    id: item.id,
+    serviceCode: item.service_code || "",
+    description: item.description,
+    quantity: Number(item.quantity || 1),
+    unitPrice: Number(item.unit_price || 0),
+    amount: Number(item.amount || 0),
+    billingType: item.billing_type || "Custom",
+  })),
+  adjustments: Number(row.adjustment_total || 0),
+  creditsApplied: Number(row.credit_deposit_total || 0),
+  paidAmount: Number(row.paid_total || 0),
+  notes: row.client_facing_notes || "",
+  internalMemo: row.internal_notes || "",
+  stripeSyncStatus: titleCase(row.stripe_sync_status || "not_configured"),
+});
+const mapPayment = (row) => ({
+  id: String(row.id),
+  invoiceId: String(row.invoice_id),
+  clientId: String(row.client_id),
+  date: row.payment_date,
+  amount: Number(row.amount || 0),
+  methodLabel: titleCase(row.payment_method || "manual"),
+  reference: row.external_reference || "",
+  receiptUrl: row.receipt_url || "",
 });
 
 const navItems = [
@@ -131,6 +184,8 @@ function AdminLayout() {
       engagements.list(),
       tasks.list(),
       documents.list(),
+      invoices.list(),
+      payments.list(),
     ])
       .then(
         ([
@@ -140,6 +195,8 @@ function AdminLayout() {
           engagementRows,
           taskRows,
           documentRows,
+          invoiceRows,
+          paymentRows,
         ]) => {
           if (!active) return;
           adminStore.replaceCollections({
@@ -149,6 +206,8 @@ function AdminLayout() {
             engagements: (engagementRows || []).map(mapEngagement),
             tasks: (taskRows || []).map(mapTask),
             documents: (documentRows || []).map(mapDocument),
+            invoices: (invoiceRows || []).map(mapInvoice),
+            payments: (paymentRows || []).map(mapPayment),
           });
           setLoadState({ loading: false, error: "" });
         },

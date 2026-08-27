@@ -103,6 +103,11 @@ export const portalApi = {
       { method: "POST", body: JSON.stringify({ document_id: documentId }) },
     ),
   billing: () => getPortalResource("billing"),
+  checkoutInvoice: (id) =>
+    portalRequest(`billing/${id}/checkout`, {
+      method: "POST",
+      body: JSON.stringify({}),
+    }),
   profile: () => getPortalResource("profile"),
   activity: () => getPortalResource("activity"),
   completeTask: (id, response = "") =>

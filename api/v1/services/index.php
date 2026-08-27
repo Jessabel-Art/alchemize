@@ -83,6 +83,17 @@ try {
         alchemize_json_response(['data' => $service], 200);
     }
 
+    if ($method === 'PUT' && count($parts) === 1 && ctype_digit((string) $parts[0])) {
+        alchemize_require_staff_or_admin(); alchemize_require_csrf();
+        $id = (int) $parts[0]; if ($repository->findById($id) === null) throw new AlchemizeRequestException(404, 'NOT_FOUND', 'Service was not found.');
+        $payload = alchemize_read_json_request('PUT'); $values = [];
+        foreach (['service_code','service_name','description','category','billing_type','billing_description','internal_pricing_notes'] as $field) if (array_key_exists($field,$payload)) $values[$field]=trim((string)$payload[$field])?:null;
+        foreach (['default_duration','default_price','active_flag'] as $field) if (array_key_exists($field,$payload)) $values[$field]=$payload[$field] === '' ? null : $payload[$field];
+        if (isset($payload['audience']) && in_array($payload['audience'],['individual','business','all'],true)) $values['audience']=$payload['audience'];
+        if (isset($payload['status']) && in_array($payload['status'],['draft','active','retired','archived'],true)) $values['status']=$payload['status'];
+        $repository->update($id,$values); alchemize_json_response(['data'=>$repository->findById($id)],200);
+    }
+
     throw new AlchemizeRequestException(404, 'NOT_FOUND', 'The requested service route was not found.');
 } catch (AlchemizeRequestException $error) {
     alchemize_error_response($error->httpStatus, $error->errorCode, $error->getMessage());

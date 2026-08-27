@@ -71,7 +71,7 @@ try {
 
     if ($method === 'GET' && $parts === ['session']) {
         $authStage = 'session';
-        $user = alchemize_session_user();
+        $user = alchemize_validated_session_user();
         $csrfToken = alchemize_csrf_token();
         alchemize_json_response([
             'data' => [
@@ -113,6 +113,23 @@ try {
             (string) ($payload['password'] ?? '')
         );
         alchemize_json_response(['data' => ['completed' => true]], 200);
+    }
+
+    if ($method === 'POST' && $parts === ['forgot-password']) {
+        $payload = alchemize_read_json_request();
+        $accountService->requestPasswordReset((string) ($payload['email'] ?? ''));
+        alchemize_json_response(['data' => ['accepted' => true, 'message' => 'If the account is eligible, password reset instructions will be sent.']], 202);
+    }
+
+    if ($method === 'POST' && $parts === ['change-password']) {
+        $user = alchemize_require_authenticated_user(); alchemize_require_csrf();
+        $payload = alchemize_read_json_request();
+        $accountService->changePassword((int) $user['user_id'], (string) ($payload['current_password'] ?? ''), (string) ($payload['new_password'] ?? ''));
+        (new AlchemizeAuditEventRepository($database))->create([
+            'public_id'=>alchemize_uuid_v4(),'actor_user_id'=>$user['user_id'],'event_type'=>'portal.password.changed',
+            'entity_type'=>'user','entity_id'=>(string)$user['public_id'],'action_summary'=>'Portal user changed their password.','request_metadata'=>null,
+        ]);
+        alchemize_json_response(['data' => ['changed' => true]], 200);
     }
 
     if ($method === 'POST' && $parts === ['logout']) {

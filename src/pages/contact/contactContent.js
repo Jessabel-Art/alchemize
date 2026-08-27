@@ -38,11 +38,15 @@ export const contactContent = {
     services: {
       "individual-tax": "Tax Preparation",
       "individual-notary": "Notary & Document Services",
+      "individual-translation": "Translation Services",
+      "individual-apostille": "Apostille Services",
       "business-advisory": "Business Advisory & Optimization",
       "business-operations": "Business Operations & Implementation",
       "business-digital": "Digital Business & Technology",
       "business-readiness": "Business Readiness & Growth",
-      "business-financial": "Financial & Tax Support",
+      "business-bookkeeping": "Bookkeeping & Financial Reporting",
+      "business-payroll": "Payroll Processing",
+      "business-financial": "Business Tax Support",
     },
     aside: {
       eyebrow: "What to expect",
@@ -123,10 +127,14 @@ export const contactContent = {
     services: {
       "individual-tax": "Preparación de impuestos",
       "individual-notary": "Servicios de notaría y documentos",
+      "individual-translation": "Servicios de traducción",
+      "individual-apostille": "Servicios de apostilla",
       "business-advisory": "Asesoría y optimización empresarial",
       "business-operations": "Operaciones e implementación",
       "business-digital": "Tecnología para empresas",
       "business-readiness": "Preparación y crecimiento empresarial",
+      "business-bookkeeping": "Contabilidad y reportes financieros",
+      "business-payroll": "Procesamiento de nómina",
       "business-financial": "Apoyo financiero y fiscal",
     },
     aside: {

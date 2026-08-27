@@ -21,7 +21,7 @@ const SERVICE_DETAIL_PATHS = [
   "/services/businesses/operations-implementation",
   "/services/businesses/digital-business-technology",
   "/services/businesses/readiness-growth",
-  "/services/businesses/financial-tax-support",
+  "/services/businesses/business-tax-support",
 ];
 
 export const APP_ROUTE_PATHS = [

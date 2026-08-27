@@ -92,6 +92,16 @@ export const auth = {
       method: "POST",
       body: JSON.stringify(payload),
     }),
+  forgotPassword: (email) =>
+    apiRequest(buildApiUrl("auth/forgot-password"), {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+  changePassword: (payload) =>
+    apiRequest(buildApiUrl("auth/change-password"), {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
 };
 
 export const clients = {
@@ -115,6 +125,18 @@ export const clients = {
     }),
   sendPasswordReset: (id) =>
     apiRequest(buildApiUrl(`clients/${id}/password-reset`), { method: "POST" }),
+  createPortalAccess: (id) =>
+    apiRequest(buildApiUrl(`clients/${id}/portal-access`), { method: "POST" }),
+  copySetupLink: (id) =>
+    apiRequest(buildApiUrl(`clients/${id}/setup-link`), { method: "POST" }),
+  copyPasswordResetLink: (id) =>
+    apiRequest(buildApiUrl(`clients/${id}/password-reset-link`), {
+      method: "POST",
+    }),
+  disablePortal: (id) =>
+    apiRequest(buildApiUrl(`clients/${id}/disable-portal`), { method: "POST" }),
+  enablePortal: (id) =>
+    apiRequest(buildApiUrl(`clients/${id}/enable-portal`), { method: "POST" }),
   team: () => apiRequest(buildApiUrl("clients/team")),
 };
 
@@ -209,6 +231,7 @@ export const invoices = {
 };
 
 export const payments = {
+  list: () => apiRequest(buildApiUrl("payments")),
   create: (payload) =>
     apiRequest(buildApiUrl("payments"), {
       method: "POST",
@@ -218,6 +241,18 @@ export const payments = {
 
 export const portalAdmin = {
   attention: () => apiRequest(buildApiUrl("portal-admin/attention")),
+  accessGrants: (clientId) =>
+    apiRequest(
+      buildApiUrl(
+        "portal-admin/access",
+        clientId ? { client_id: clientId } : {},
+      ),
+    ),
+  updateAccessGrant: (id, payload) =>
+    apiRequest(buildApiUrl(`portal-admin/access/${id}`), {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    }),
   documentDownloadUrl: (id) =>
     buildApiUrl(`portal-admin/documents/${id}/download`),
   documentVersions: (id) =>

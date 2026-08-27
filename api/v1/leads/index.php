@@ -44,7 +44,11 @@ try {
     $clientRepository = new AlchemizeClientRepository($database);
     $auditRepository = new AlchemizeAuditEventRepository($database);
 
-    $leadService = new AlchemizeLeadService($database, $leadRepository, $activityRepository);
+    $leadService = new AlchemizeLeadService(
+        $database, $leadRepository, $activityRepository,
+        new AlchemizeExternalIntegrationRepository($database),
+        new AlchemizeNotificationService(new AlchemizeNotificationRepository($database), alchemize_email_provider($config)),
+    );
     $leadAdminService = new AlchemizeLeadAdminService(
         $leadRepository,
         $activityRepository,
@@ -69,7 +73,10 @@ try {
         if (!$validation['valid']) {
             alchemize_error_response(422, 'VALIDATION_ERROR', 'Please review the highlighted fields and try again.', $validation['errors']);
         }
-        alchemize_json_response(['data' => $leadService->create($validation['data'])], 201);
+        alchemize_json_response(['data' => $leadService->create($validation['data'], [
+            'remote_address' => (string) ($_SERVER['REMOTE_ADDR'] ?? ''),
+            'user_agent' => substr((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 300),
+        ])], 201);
     }
 
     $sessionUser = $method === 'GET'

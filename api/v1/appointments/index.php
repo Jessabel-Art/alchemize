@@ -33,6 +33,8 @@ $config = require $bootstrap;
 try {
     $database = alchemize_database($config['database']);
     $repository = new AlchemizeAppointmentRepository($database);
+    $integrations = alchemize_external_integrations($database, $config);
+    $notifications = new AlchemizeNotificationService(new AlchemizeNotificationRepository($database), alchemize_email_provider($config));
 
     $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
     $path = trim($_SERVER['PATH_INFO'] ?? ($_SERVER['REQUEST_URI'] ?? ''), '/');
@@ -73,7 +75,27 @@ try {
             'owner_user_id' => isset($payload['owner_user_id']) && $payload['owner_user_id'] !== '' ? (int) $payload['owner_user_id'] : null,
         ]);
 
-        alchemize_json_response(['data' => ['id' => $id, 'appointment_type' => $appointmentType]], 201);
+        $sync = $integrations->synchronizeAppointment($id);
+        if (!empty($payload['client_id'])) $notifications->notifyClient((int) $payload['client_id'], 'admin.appointment.created', 'appointment', (string) $id, 'Appointment scheduled', 'An appointment was added to your client portal.', 'appointment-created:' . $id);
+        alchemize_json_response(['data' => ['id' => $id, 'appointment_type' => $appointmentType, 'calendar_sync_status' => $sync['status']]], 201);
+    }
+
+    if (count($parts) === 1 && ctype_digit((string)$parts[0]) && $method === 'GET') {
+        alchemize_require_read_only_or_higher(); $row=$repository->findById((int)$parts[0]);
+        if($row===null)throw new AlchemizeRequestException(404,'NOT_FOUND','Appointment was not found.');
+        alchemize_json_response(['data'=>$row],200);
+    }
+    if (count($parts) === 1 && ctype_digit((string)$parts[0]) && $method === 'PUT') {
+        alchemize_require_staff_or_admin(); alchemize_require_csrf(); $id=(int)$parts[0];
+        if($repository->findById($id)===null)throw new AlchemizeRequestException(404,'NOT_FOUND','Appointment was not found.');
+        $payload=alchemize_read_json_request('PUT');$values=[];
+        foreach(['appointment_type','scheduled_at','end_at','timezone','location_type','client_instructions','internal_notes'] as $field)if(array_key_exists($field,$payload))$values[$field]=trim((string)$payload[$field])?:null;
+        foreach(['client_id','lead_id','engagement_id','service_id','owner_user_id','preparation_required','follow_up_required'] as $field)if(array_key_exists($field,$payload))$values[$field]=$payload[$field]===''?null:$payload[$field];
+        if(isset($payload['status'])&&in_array($payload['status'],['requested','scheduled','confirmed','completed','cancelled'],true))$values['status']=$payload['status'];
+        if(isset($payload['visibility'])&&in_array($payload['visibility'],['admin','client','both'],true))$values['visibility']=$payload['visibility'];
+        $repository->update($id,$values);$sync=$integrations->synchronizeAppointment($id);$row=$repository->findById($id);
+        if (!empty($row['client_id'])) $notifications->notifyClient((int)$row['client_id'], 'admin.appointment.updated', 'appointment', (string)$id, 'Appointment updated', 'An appointment in your client portal was updated.', 'appointment-updated:' . $id . ':' . (string)($row['updated_at'] ?? microtime(true)));
+        $row['calendar_sync_status']=$sync['status'];alchemize_json_response(['data'=>$row],200);
     }
 
     throw new AlchemizeRequestException(404, 'NOT_FOUND', 'The requested appointment route was not found.');

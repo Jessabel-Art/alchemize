@@ -19,18 +19,33 @@ final class AlchemizePortalAccountService
             throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'A valid email is required to invite a portal user.');
         }
         $existing = $this->users->findByEmail($normalizedEmail);
-        if ($existing !== null) {
+        if ($existing !== null && !in_array((string) ($existing['role_slug'] ?? ''), ['client', 'business-authorized-user'], true)) {
             throw new AlchemizeRequestException(409, 'EMAIL_IN_USE', 'That email is already associated with an account.');
         }
-        $role = $this->roles->findBySlug('client');
-        if ($role === null) throw new RuntimeException('Client role is not configured.');
-        $userId = $this->users->create([
-            'public_id' => alchemize_uuid_v4(), 'email' => $normalizedEmail,
-            'password_hash' => null, 'display_name' => $displayName,
-            'status' => 'invited', 'role_id' => (int) $role['id'],
-        ]);
+        if ($existing === null) {
+            $role = $this->roles->findBySlug('client');
+            if ($role === null) throw new RuntimeException('Client role is not configured.');
+            $userId = $this->users->create([
+                'public_id' => alchemize_uuid_v4(), 'email' => $normalizedEmail,
+                'password_hash' => null, 'display_name' => $displayName,
+                'status' => 'invited', 'role_id' => (int) $role['id'],
+            ]);
+        } else {
+            $userId = (int) $existing['id'];
+        }
         $this->accounts->createAccessGrant($userId, $clientId, $actorId);
-        return $this->issue($clientId, $userId, 'invitation', $actorId);
+        return $this->issue($clientId, $userId, $normalizedEmail, 'invitation', $actorId, true);
+    }
+
+    public function provisionAuthorized(int $clientId, string $email, string $displayName, string $accessRole, ?int $actorId): array
+    {
+        $normalizedEmail=strtolower(trim($email));
+        if(!filter_var($normalizedEmail,FILTER_VALIDATE_EMAIL))throw new AlchemizeRequestException(422,'VALIDATION_ERROR','A valid email is required.');
+        $existing=$this->users->findByEmail($normalizedEmail);
+        if($existing!==null&&!in_array((string)($existing['role_slug']??''),['client','business-authorized-user'],true))throw new AlchemizeRequestException(409,'EMAIL_IN_USE','That email is already associated with an account.');
+        if($existing===null){$role=$this->roles->findBySlug('business-authorized-user');if($role===null)throw new RuntimeException('Authorized-user role is not configured.');$userId=$this->users->create(['public_id'=>alchemize_uuid_v4(),'email'=>$normalizedEmail,'password_hash'=>null,'display_name'=>$displayName,'status'=>'invited','role_id'=>(int)$role['id']]);}else{$userId=(int)$existing['id'];}
+        $this->accounts->createAuthorizedAccessGrant($userId,$clientId,$accessRole,$actorId);
+        $result=$this->issue($clientId,$userId,$normalizedEmail,'invitation',$actorId,true);$result['_user_id']=$userId;return $result;
     }
 
     public function issueForClient(int $clientId, string $purpose, ?int $actorId): array
@@ -40,14 +55,21 @@ final class AlchemizePortalAccountService
         $active = $status['user_status'] === 'active' && !empty($status['password_hash']);
         if ($purpose === 'invitation' && $active) throw new AlchemizeRequestException(409, 'ACCOUNT_ALREADY_ACTIVE', 'This portal account is already active.');
         if ($purpose === 'password_reset' && !$active) throw new AlchemizeRequestException(409, 'ACCOUNT_NOT_ACTIVE', 'Password reset is available only after portal setup is complete.');
-        return $this->issue($clientId, (int) $status['user_id'], $purpose, $actorId);
+        return $this->issue($clientId, (int) $status['user_id'], (string) $status['email'], $purpose, $actorId, true);
     }
 
-    private function issue(int $clientId, int $userId, string $purpose, ?int $actorId): array
+    public function manualLinkForClient(int $clientId, string $purpose, ?int $actorId): array
     {
-        if (($this->config['app_env'] ?? 'production') !== 'development') {
-            throw new AlchemizeRequestException(503, 'EMAIL_NOT_CONFIGURED', 'Email delivery is not configured. The invitation was not sent.');
-        }
+        $status = $this->accounts->statusForClient($clientId);
+        if ($status === null || empty($status['user_id'])) throw new AlchemizeRequestException(409, 'PORTAL_ACCOUNT_MISSING', 'This client does not have a portal account.');
+        $active = $status['user_status'] === 'active' && !empty($status['password_hash']);
+        if ($purpose === 'invitation' && $active) throw new AlchemizeRequestException(409, 'ACCOUNT_ALREADY_ACTIVE', 'This portal account is already active.');
+        if ($purpose === 'password_reset' && !$active) throw new AlchemizeRequestException(409, 'ACCOUNT_NOT_ACTIVE', 'Password reset is available only after portal setup is complete.');
+        return $this->issue($clientId, (int) $status['user_id'], (string) $status['email'], $purpose, $actorId, false);
+    }
+
+    private function issue(int $clientId, int $userId, string $email, string $purpose, ?int $actorId, bool $deliver): array
+    {
         $this->accounts->invalidateTokens($userId, $purpose);
         $raw = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
         $hours = $purpose === 'invitation' ? 72 : 1;
@@ -55,19 +77,58 @@ final class AlchemizePortalAccountService
         $this->accounts->createToken($userId, $clientId, $purpose, hash('sha256', $raw), $expires, $actorId);
         $path = $purpose === 'invitation' ? '/set-password?purpose=invitation&token=' : '/set-password?purpose=password_reset&token=';
         $url = rtrim((string) ($this->config['app_url'] ?? ''), '/') . $path . rawurlencode($raw);
-        $this->deliver($purpose, $url);
-        $result = ['purpose' => $purpose, 'expires_at' => $expires, 'delivery' => 'queued'];
-        if (($this->config['app_env'] ?? 'production') === 'development') $result['development_url'] = $url;
+        $delivery = $deliver ? $this->deliver($email, $purpose, $url) : 'not_attempted';
+        $result = ['purpose' => $purpose, 'expires_at' => $expires, 'email_delivery' => $delivery];
+        if (!$deliver || $delivery !== 'sent') $result['setup_url'] = $url;
         return $result;
     }
 
-    private function deliver(string $purpose, string $url): void
+    private function deliver(string $email, string $purpose, string $url): string
     {
         if (($this->config['app_env'] ?? 'production') === 'development') {
             error_log(sprintf('Development portal %s URL: %s', $purpose, $url));
-            return;
+            return 'unavailable';
         }
-        throw new AlchemizeRequestException(503, 'EMAIL_NOT_CONFIGURED', 'Email delivery is not configured. The invitation was not sent.');
+        try {
+            if (!function_exists('alchemize_email_provider')) return 'unavailable';
+            return alchemize_email_provider($this->config)->deliver([
+                'public_id' => alchemize_uuid_v4(), 'recipient_email' => $email,
+                'title' => $purpose === 'invitation' ? 'Set up your Alchemize client portal' : 'Reset your Alchemize portal password',
+                'message_body' => ($purpose === 'invitation' ? 'Set up your portal password: ' : 'Reset your portal password: ') . $url,
+            ]);
+        } catch (Throwable $error) {
+            error_log(sprintf('Portal account email delivery failed [%s].', get_class($error)));
+            return 'failed';
+        }
+    }
+
+    public function setAccessState(int $clientId, bool $enabled): array
+    {
+        $this->accounts->setAccessState($clientId, $enabled);
+        return ['portal_status' => $enabled ? 'active' : 'disabled'];
+    }
+
+    public function requestPasswordReset(string $email): void
+    {
+        try {
+            $status = $this->accounts->statusForEmail($email);
+            if ($status === null || $status['user_status'] !== 'active' || empty($status['password_hash'])
+                || $status['access_status'] !== 'active' || $status['portal_status'] !== 'active') return;
+            $this->issue((int) $status['client_id'], (int) $status['user_id'], (string) $status['email'], 'password_reset', null, true);
+        } catch (Throwable $error) {
+            error_log(sprintf('Public password reset request failed [%s].', get_class($error)));
+        }
+    }
+
+    public function changePassword(int $userId, string $currentPassword, string $newPassword): void
+    {
+        if (strlen($newPassword) < 12) throw new AlchemizeRequestException(422, 'WEAK_PASSWORD', 'Use at least 12 characters for your password.');
+        $user = $this->users->findById($userId);
+        if ($user === null || !password_verify($currentPassword, (string) ($user['password_hash'] ?? ''))) {
+            throw new AlchemizeRequestException(401, 'INVALID_CREDENTIALS', 'The current password is incorrect.');
+        }
+        $this->users->updatePasswordHash($userId, password_hash($newPassword, PASSWORD_DEFAULT));
+        $this->accounts->invalidateTokens($userId, 'password_reset');
     }
 
     public function setPassword(string $rawToken, string $purpose, string $password): void

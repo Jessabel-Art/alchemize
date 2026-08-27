@@ -10,7 +10,6 @@ import {
 
 export const serviceStatuses = {
   medicare: "planned",
-  electronicNotary: "planned",
 };
 
 const individual = [
@@ -175,11 +174,6 @@ const individual = [
     ],
     boundary:
       "Alchemize does not determine whether a document is legally sufficient, select legal forms, draft legal language, interpret legal consequences, or provide legal advice. Requirements depend on the document, receiving party, applicable law, and commission authority.",
-    status: {
-      label: "Electronic Notary Services",
-      value: serviceStatuses.electronicNotary,
-      text: "Planned after completion of applicable North Carolina certification and authorization requirements. No electronic-notary booking is offered while this status is not active.",
-    },
     checklist: [
       "Notary & Document Readiness Checklist",
       "/assets/downloads/notary-appointment-checklist.pdf",
@@ -199,6 +193,183 @@ const individual = [
       ["Business Readiness & Growth", "/services/businesses/readiness-growth"],
     ],
     cta: "Need a document or notarization prepared correctly?",
+  },
+  {
+    audience: "individuals",
+    audienceLabel: "Individual Services",
+    slug: "translation-services",
+    serviceKey: "individual-translation",
+    title: "Translation Services",
+    Icon: FileCheck2,
+    statement:
+      "Clear translation support for documents that need to be understandable, organized, and ready for the next step.",
+    hero: "Professional document translation support for personal, administrative, and business needs.",
+    overview:
+      "Translation needs vary by document, destination, and purpose. Alchemize helps organize translated materials, clarify content, and prepare a useful record set for review before the engagement is confirmed.",
+    capabilities: [
+      "Personal document translation support",
+      "Business document translation support",
+      "Administrative document organization",
+      "Supporting records and correspondence",
+    ],
+    for: [
+      "Individuals preparing personal records for another language",
+      "Businesses translating policies, forms, or correspondence",
+      "Clients organizing supporting records for a review process",
+      "People preparing materials for an agency or institution",
+    ],
+    situations: [
+      "A personal or business record needs translation for a formal review",
+      "A form, policy, or letter must be translated before use",
+      "Supporting documents are ready but need a consistent language version",
+      "A client wants a clear, organized set of materials before submitting them",
+    ],
+    helps: [
+      "Personal document translation support",
+      "Business correspondence and form translation",
+      "Administrative records and supporting-document translation",
+      "Document packet preparation and organization",
+      "Review-ready translated materials before submission",
+      "Language conversion for client-facing or internal business records",
+      "Document organization for agencies, institutions, or business content",
+    ],
+    process: [
+      [
+        "Review",
+        "Confirm the document, intended destination, source language, and what needs to be translated.",
+      ],
+      [
+        "Organize",
+        "Group the supporting records and identify the materials that belong in the translation set.",
+      ],
+      [
+        "Translate",
+        "Prepare the requested translation work in a clear, review-ready format based on the selected engagement.",
+      ],
+      [
+        "Confirm",
+        "Review the final materials and determine whether additional instructions or follow-up are needed.",
+      ],
+    ],
+    prepare: [
+      "The documents that need translation",
+      "The source language and desired target language",
+      "Any instructions from the receiving party or organization",
+      "Related records that should remain attached to the translated packet",
+      "Reference materials that clarify terminology or context",
+    ],
+    boundary:
+      "Translation services are design and document-support services and do not guarantee acceptance, certification, legal effect, or any agency-specific result. Some institutions, courts, immigration matters, foreign governments, or other authorities may impose specific translation or certification requirements, and those requirements should be confirmed before service begins.",
+    checklist: [
+      "Translation Services Preparation Checklist",
+      "/assets/downloads/alchemize-consultation-document-checklist.pdf",
+    ],
+    resources: [
+      [
+        "Documents to Bring to a Consultation",
+        "/assets/downloads/alchemize-consultation-document-checklist.pdf",
+      ],
+      [
+        "Preparing for a Notary Appointment",
+        "/resources/preparing-for-a-notary-appointment",
+      ],
+    ],
+    related: [
+      [
+        "Notary & Document Services",
+        "/services/individuals/notary-document-services",
+      ],
+      ["Apostille Services", "/services/individuals/apostille-services"],
+    ],
+    cta: "Need translated materials prepared clearly and consistently?",
+  },
+  {
+    audience: "individuals",
+    audienceLabel: "Individual Services",
+    slug: "apostille-services",
+    serviceKey: "individual-apostille",
+    title: "Apostille Services",
+    Icon: FileCheck2,
+    statement:
+      "Document preparation and coordination support for materials that may need authentication for use outside the United States.",
+    hero: "Prepare the document set for the destination that will receive it.",
+    overview:
+      "Apostille processing may involve reviewing the intended destination, identifying whether notarization or certification is required first, and helping organize the document package for the correct authentication process. Alchemize focuses on administrative and document-coordination support rather than legal or immigration guidance.",
+    capabilities: [
+      "Destination and document review",
+      "Document organization",
+      "Notarization or certification coordination support",
+      "Submission preparation and return handling",
+    ],
+    for: [
+      "Individuals preparing personal records for use abroad",
+      "Families coordinating authenticated documents for another country",
+      "Businesses preparing corporate records for overseas use",
+      "Clients organizing records that may require authentication",
+    ],
+    situations: [
+      "A document will be used in another country or jurisdiction",
+      "The receiving authority requires an apostille or comparable authentication",
+      "The document may need prior notarization or certification before apostille processing",
+      "A client needs help organizing the supporting records for the process",
+    ],
+    helps: [
+      "Review of intended destination and document type",
+      "Assessment of whether notarization or certification is required first",
+      "Organization of supporting documents and receiving instructions",
+      "Document packet preparation and record handling",
+      "Coordination of submission requirements and return details",
+      "Administrative support for document authentication workflows",
+    ],
+    process: [
+      [
+        "Review",
+        "Clarify the destination country, document type, and any issuing authority requirements.",
+      ],
+      [
+        "Confirm",
+        "Determine whether notarization, certification, or another step is required before apostille processing.",
+      ],
+      [
+        "Organize",
+        "Prepare the document set, supporting records, and submission details in an orderly packet.",
+      ],
+      [
+        "Coordinate",
+        "Support the return, tracking, and document-handling steps based on the engagement and instructions received.",
+      ],
+    ],
+    prepare: [
+      "The document that may require apostille processing",
+      "Any applicable notarization or certification records",
+      "Instructions from the receiving authority or document source",
+      "A copy of the final document set and any supporting records",
+      "Destination-country or issuing-authority details when available",
+    ],
+    boundary:
+      "Apostille services are administrative and document-coordination support. Alchemize does not guarantee apostille approval, processing time, legal advice, immigration advice, or acceptance by a foreign government. Requirements vary by document type, issuing authority, destination country, and whether the destination participates in the Hague Apostille Convention or requires additional authentication.",
+    checklist: [
+      "Apostille Services Preparation Checklist",
+      "/assets/downloads/alchemize-consultation-document-checklist.pdf",
+    ],
+    resources: [
+      [
+        "Documents to Bring to a Consultation",
+        "/assets/downloads/alchemize-consultation-document-checklist.pdf",
+      ],
+      [
+        "Preparing for a Notary Appointment",
+        "/resources/preparing-for-a-notary-appointment",
+      ],
+    ],
+    related: [
+      ["Translation Services", "/services/individuals/translation-services"],
+      [
+        "Notary & Document Services",
+        "/services/individuals/notary-document-services",
+      ],
+    ],
+    cta: "Need a document packet organized for authentication or overseas use?",
   },
 ];
 
@@ -587,84 +758,172 @@ const business = [
         "Digital Business & Technology",
         "/services/businesses/digital-business-technology",
       ],
-      ["Financial & Tax Support", "/services/businesses/financial-tax-support"],
+      ["Business Tax Support", "/services/businesses/business-tax-support"],
     ],
     cta: "Preparing the business for what comes next?",
   },
   {
     audience: "businesses",
     audienceLabel: "Business Services",
-    slug: "financial-tax-support",
-    serviceKey: "business-financial",
-    title: "Financial & Tax Support",
+    slug: "bookkeeping-financial-reporting",
+    serviceKey: "business-bookkeeping",
+    title: "Bookkeeping & Financial Reporting",
     Icon: Landmark,
     statement:
-      "Keep financial and tax responsibilities organized before they become reactive.",
-    hero: "Create a dependable record process before filing and reporting deadlines arrive.",
+      "Organized bookkeeping gives a business a reliable financial record of what is coming in, what is going out, what is owed, and where the business stands.",
+    hero: "Organized bookkeeping gives a business a reliable financial record of what is coming in, what is going out, what is owed, and where the business stands.",
     overview:
-      "Alchemize helps organize the records, transaction workflow, deadlines, and preparation steps that support bookkeeping and tax readiness. QuickBooks or another accounting platform may remain the system of record while Alchemize helps make the information usable and maintainable.",
+      "Bookkeeping is not only transaction entry. It is a dependable recordkeeping process that helps a business understand its financial position and maintain useful information for reporting, review, and year-end preparation. Alchemize can help structure the records, reconcile the books, and organize a recurring process based on the selected service level.",
     capabilities: [
-      "Business tax preparation",
-      "Bookkeeping organization",
-      "Financial workflows",
-      "Year-end readiness",
+      "Transaction categorization",
+      "Bank reconciliation",
+      "Credit-card reconciliation",
+      "Income and expense tracking",
     ],
     for: [
-      "Businesses preparing supported tax returns",
-      "Owners cleaning up bookkeeping records",
-      "Companies improving invoice or receipt workflows",
-      "Businesses preparing records for a CPA or accountant",
+      "Businesses needing better financial record visibility",
+      "Owners who need cleaner bookkeeping before tax or review season",
+      "Companies with scattered receipts, invoices, and statements",
+      "Businesses wanting recurring financial-reporting support",
     ],
     situations: [
-      "Business and personal records are not consistently separated",
-      "Transactions or receipts need organization",
-      "Monthly records are not ready for review",
-      "Tax season exposes gaps that should be addressed year-round",
+      "The business has too many transactions to categorize without a clear system",
+      "Bank and credit-card accounts need reconciliation against recorded activity",
+      "Receipts, invoices, and expenses are stored in different places",
+      "The owner needs a cleaner view of the company's financial position",
     ],
     helps: [
-      "Business tax preparation for supported return types",
-      "Business tax-document organization",
-      "Estimated-tax record organization",
-      "Bookkeeping support and cleanup",
-      "Transaction categorization support",
-      "Expense and receipt organization",
-      "Accounts-receivable and invoice workflow setup",
-      "Financial deadline tracking",
-      "QuickBooks setup or support where appropriate",
-      "Accountant or CPA preparation support",
-      "Year-end record preparation",
+      "Transaction categorization and review",
+      "Bank reconciliation and account matching",
+      "Credit-card reconciliation and expense review",
+      "Income and expense tracking",
+      "Accounts receivable tracking",
+      "Accounts payable tracking",
+      "General ledger maintenance",
+      "Monthly or periodic reporting",
+      "Bookkeeping cleanup and historical organization",
+      "Documentation organization for tax preparation support",
+      "Coordination of records for year-end review",
     ],
     process: [
       [
-        "Organize",
-        "Bring accounts, documents, receipts, deadlines, and responsibilities into a defined record system.",
+        "Gather",
+        "Collect the legal setup records, bank and credit records, income and expense support, and relevant payroll or contractor information required for the books.",
+      ],
+      [
+        "Review",
+        "Identify missing items, inconsistencies, and transactions that need classification or clarification.",
       ],
       [
         "Reconcile",
-        "Identify inconsistencies, missing support, and items requiring confirmation or qualified review.",
+        "Match recorded transactions to statements and organize the ledger so the books reflect the business's actual activity.",
       ],
       [
-        "Prepare",
-        "Assemble the supported bookkeeping, reporting, or tax-preparation record set.",
-      ],
-      [
-        "Maintain",
-        "Establish a practical recurring rhythm for records, review, and handoff.",
+        "Report",
+        "Produce the reporting and record set aligned with the selected bookkeeping engagement and ongoing service rhythm.",
       ],
     ],
     prepare: [
-      "Business bank and credit statements",
-      "Bookkeeping system access when shared securely",
-      "Income, invoice, expense, and receipt records",
-      "Prior-year business returns",
-      "Estimated-payment records",
-      "Payroll or contractor summaries where applicable",
-      "Notices and filing deadlines",
+      "Articles of incorporation or formation records and comparable legal setup documents",
+      "EIN and business registration records when relevant",
+      "Business checking, savings, loan, and credit card statements",
+      "Customer invoices, sales records, vendor bills, receipts, and expense records",
+      "Payroll summaries, timesheets, contractor invoices, and relevant payroll records",
+      "Equipment, asset, and financing records including purchase dates and supporting statements",
     ],
     boundary:
-      "Alchemize is not a CPA, audit, payroll-processing, or investment-advisory firm. Supported return types, bookkeeping depth, software support, and jurisdictions must be confirmed before engagement; specialized work may require a CPA or other qualified professional.",
+      "Bookkeeping support covers organized financial recordkeeping and reporting based on the selected engagement. It does not replace CPA, auditor, tax-preparer, payroll-processing, or investment-advisory services. Organized books can help prepare cleaner records for year-end tax preparation and professional review.",
     checklist: [
-      "Business Financial & Tax Preparation Checklist",
+      "Bookkeeping & Financial Reporting Preparation Checklist",
+      "/assets/downloads/business-tax-preparation-checklist.pdf",
+    ],
+    resources: [
+      [
+        "Business Records: What Needs a Home",
+        "/resources/business-records-what-needs-a-home",
+      ],
+      [
+        "Building a Business Deadline Calendar",
+        "/resources/building-a-business-deadline-calendar",
+      ],
+    ],
+    related: [
+      ["Payroll Processing", "/services/businesses/payroll-processing"],
+      ["Business Tax Support", "/services/businesses/business-tax-support"],
+    ],
+    cta: "Need the financial recordkeeping process made clearer and more reliable?",
+  },
+  {
+    audience: "businesses",
+    audienceLabel: "Business Services",
+    slug: "payroll-processing",
+    serviceKey: "business-payroll",
+    title: "Payroll Processing",
+    Icon: Landmark,
+    statement:
+      "Structured payroll support for businesses that need dependable employee and contractor payment administration, organized payroll records, and recurring payroll reporting.",
+    hero: "Structured payroll support for businesses that need dependable employee and contractor payment administration, organized payroll records, and recurring payroll reporting.",
+    overview:
+      "Payroll work requires dependable information, clear process ownership, and an organized record trail. Alchemize can help support payroll setup, payroll record maintenance, recurring payroll reporting, and year-end coordination using the selected payroll platform and agreed service scope.",
+    capabilities: [
+      "Payroll setup",
+      "Recurring payroll processing coordination",
+      "Employee payroll records",
+      "Contractor payment records",
+    ],
+    for: [
+      "Businesses managing employee or contractor payments",
+      "Owners who need more organized payroll records",
+      "Companies needing recurring payroll reporting and documentation",
+      "Teams coordinating payroll information across schedules and deductions",
+    ],
+    situations: [
+      "Payroll data is being tracked in multiple places",
+      "Employee or contractor records need cleaner organization",
+      "A business needs recurring payroll summaries and reconciliation support",
+      "Year-end payroll records need better coordination and cleanup",
+    ],
+    helps: [
+      "Employee setup and recurring payroll data collection",
+      "Payroll schedule and pay-period organization",
+      "Wage and hour record preparation support",
+      "Deduction tracking and payroll-summary organization",
+      "Contractor payment record maintenance",
+      "Payroll reconciliation and report preparation",
+      "Payroll record maintenance and review",
+      "Year-end payroll record coordination",
+      "Administrative support for payroll data cleanup",
+    ],
+    process: [
+      [
+        "Assess",
+        "Confirm the payroll process, employee and contractor information, pay schedule, and required reporting structure.",
+      ],
+      [
+        "Organize",
+        "Collect the payroll records, schedules, and supporting details in a review-ready format.",
+      ],
+      [
+        "Process",
+        "Coordinate payroll administration and reporting through the selected payroll platform or agreed process.",
+      ],
+      [
+        "Review",
+        "Confirm summary records, reconcile exceptions, and support the final record set before the next payroll cycle or annual close.",
+      ],
+    ],
+    prepare: [
+      "Employee and contractor information",
+      "Pay schedules and relevant payroll calendars",
+      "Wage, deduction, and reimbursement information",
+      "Timesheet, payroll summary, and contractor invoice records",
+      "W-9 and 1099-related information where applicable",
+      "Prior payroll records and year-end reporting documents",
+    ],
+    boundary:
+      "Payroll support is administrative and operational in nature. Alchemize does not claim direct tax-remittance responsibility unless it is specifically established through the selected payroll platform and the agreed workflow. Supported payroll capabilities, platform requirements, and legal obligations must be confirmed before engagement.",
+    checklist: [
+      "Payroll Processing Preparation Checklist",
       "/assets/downloads/business-tax-preparation-checklist.pdf",
     ],
     resources: [
@@ -679,12 +938,104 @@ const business = [
     ],
     related: [
       [
-        "Operations & Implementation",
-        "/services/businesses/operations-implementation",
+        "Bookkeeping & Financial Reporting",
+        "/services/businesses/bookkeeping-financial-reporting",
       ],
-      ["Business Readiness & Growth", "/services/businesses/readiness-growth"],
+      ["Business Tax Support", "/services/businesses/business-tax-support"],
     ],
-    cta: "Need the records and financial process organized?",
+    cta: "Need payroll records and administration organized more reliably?",
+  },
+  {
+    audience: "businesses",
+    audienceLabel: "Business Services",
+    slug: "business-tax-support",
+    serviceKey: "business-financial",
+    title: "Business Tax Support",
+    Icon: Landmark,
+    statement:
+      "Business tax responsibilities are easier to manage when records, deadlines, and required documents are organized before filing season arrives.",
+    hero: "Business tax responsibilities are easier to manage when records, deadlines, and required documents are organized before filing season arrives.",
+    overview:
+      "Business tax work becomes more manageable when the owner has a clearer record set, a practical timeline, and a realistic understanding of what must be assembled for filing. Alchemize can help organize the information needed for applicable business tax preparation, year-end readiness, and estimated-tax planning support based on the selected engagement and scope.",
+    capabilities: [
+      "Business tax preparation",
+      "Tax document organization",
+      "Year-end tax readiness",
+      "Estimated tax planning support",
+    ],
+    for: [
+      "Small business owners preparing for filing season",
+      "Entrepreneurs organizing business income and expense records",
+      "Businesses collecting prior-year information for tax preparation",
+      "Founders preparing for estimated tax and year-end readiness work",
+    ],
+    situations: [
+      "The business has records spread across several places before filing season",
+      "The owner needs a cleaner tax record set for the next filing cycle",
+      "A business needs help identifying missing documents and tax-ready records",
+      "Year-end obligations are approaching and the record set needs review",
+    ],
+    helps: [
+      "Business tax preparation support for applicable return types",
+      "Tax document organization and filing-readiness review",
+      "Business income and expense documentation readiness",
+      "Prior-year information gathering and organization",
+      "Estimated tax preparation support and tracking",
+      "Contractor and payroll tax documentation readiness where relevant",
+      "Year-end tax readiness and deadline awareness",
+      "Documentation review before a filing or professional handoff",
+    ],
+    process: [
+      [
+        "Organize",
+        "Compile the income, expense, payroll, contractor, and prior-year records needed for the tax process.",
+      ],
+      [
+        "Review",
+        "Identify what is missing, what needs clarification, and what must be prepared before filing.",
+      ],
+      [
+        "Prepare",
+        "Assemble the records and supporting information required for the appropriate business tax preparation workflow.",
+      ],
+      [
+        "Confirm",
+        "Establish a practical next step, filing timeline, and handoff path for the next stage of the engagement.",
+      ],
+    ],
+    prepare: [
+      "Business income records and supporting statements",
+      "Expense documentation and receipts",
+      "Prior-year business tax returns and related records",
+      "Payroll summaries and contractor payment records where applicable",
+      "Estimated tax payment records and supporting notes",
+      "Assets, purchases, and business-use vehicle information when relevant",
+      "Tax correspondence, deadlines, and filing-related notices",
+    ],
+    boundary:
+      "Business tax support is centered on organization, preparation, and readiness. Alchemize does not provide legal tax advice, representation, or professional tax strategy beyond the defined service scope. Supported return types, tax obligations, and jurisdictions must be confirmed before engagement; specialized work may require a CPA, attorney, enrolled agent, or other qualified professional.",
+    checklist: [
+      "Business Tax Support Preparation Checklist",
+      "/assets/downloads/business-tax-preparation-checklist.pdf",
+    ],
+    resources: [
+      [
+        "Business Records: What Needs a Home",
+        "/resources/business-records-what-needs-a-home",
+      ],
+      [
+        "Building a Business Deadline Calendar",
+        "/resources/building-a-business-deadline-calendar",
+      ],
+    ],
+    related: [
+      [
+        "Bookkeeping & Financial Reporting",
+        "/services/businesses/bookkeeping-financial-reporting",
+      ],
+      ["Payroll Processing", "/services/businesses/payroll-processing"],
+    ],
+    cta: "Need your business tax records organized before filing season?",
   },
 ];
 
@@ -698,7 +1049,8 @@ export const findService = (audience, slug) =>
 export const legacyServiceRoutes = {
   "business-formation": "/services/businesses/readiness-growth",
   "administration-operations": "/services/businesses/operations-implementation",
-  "business-tax": "/services/businesses/financial-tax-support",
+  "business-tax": "/services/businesses/business-tax-support",
+  "financial-tax-support": "/services/businesses/business-tax-support",
   "business-advisory": "/services/businesses/advisory-optimization",
   "notary-administrative-services":
     "/services/individuals/notary-document-services",

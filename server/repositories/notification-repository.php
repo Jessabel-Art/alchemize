@@ -51,6 +51,22 @@ final class AlchemizeNotificationRepository
         return $statement->rowCount() === 1;
     }
 
+    public function recordDelivery(string $publicId, string $status, ?string $error = null): void
+    {
+        $allowed = ['sent', 'failed', 'unavailable'];
+        if (!in_array($status, $allowed, true)) $status = 'failed';
+        $statement = $this->database->prepare(
+            'UPDATE notifications SET delivery_status = :status, delivery_attempted_at = CURRENT_TIMESTAMP(6),
+             delivered_at = IF(:status_sent = \'sent\', CURRENT_TIMESTAMP(6), delivered_at), delivery_error = :error
+             WHERE public_id = :public_id'
+        );
+        $statement->execute([
+            'status' => $status, 'status_sent' => $status,
+            'error' => $status === 'sent' ? null : ($error ?? ($status === 'unavailable' ? 'not_configured' : 'provider_error')),
+            'public_id' => $publicId,
+        ]);
+    }
+
     public function listForUser(int $userId): array
     {
         $statement = $this->database->prepare(
