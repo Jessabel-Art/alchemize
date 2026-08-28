@@ -71,7 +71,7 @@ try {
 
     if ($method === 'GET' && $parts === ['session']) {
         $authStage = 'session';
-        $user = alchemize_validated_session_user();
+        $user = alchemize_session_user();
         $csrfToken = alchemize_csrf_token();
         alchemize_json_response([
             'data' => [

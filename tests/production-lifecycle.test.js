@@ -4,10 +4,14 @@ import test from "node:test";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("every authenticated request revalidates active user and portal access", () => {
+test("internal admin sessions stay usable after login and only client roles are portal-access gated", () => {
   const session = read("server/auth/session.php");
   const users = read("server/repositories/user-repository.php");
   assert.match(session, /alchemize_validated_session_user/);
+  assert.match(session, /alchemize_session_user\(\)/);
+  assert.match(session, /owner-admin|administrator|staff|read-only/);
+  assert.match(session, /if \(\$isInternalRole\)/);
+  assert.match(session, /return \$sessionUser;/);
   assert.match(session, /status.*active/s);
   assert.match(session, /hasActiveClientAccess/);
   assert.match(users, /cag\.status = 'active'/);

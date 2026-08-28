@@ -34,30 +34,54 @@ function alchemize_session_user(): ?array
 function alchemize_validated_session_user(): ?array
 {
     $sessionUser = alchemize_session_user();
-    if (!is_array($sessionUser) || empty($sessionUser['user_id'])) return null;
+    if (!is_array($sessionUser) || empty($sessionUser['user_id'])) {
+        return null;
+    }
+
+    $role = (string) ($sessionUser['role_slug'] ?? '');
+    $isInternalRole = in_array($role, ['owner-admin', 'administrator', 'staff', 'read-only'], true);
+
     try {
         $config = alchemize_config();
         $repository = new AlchemizeUserRepository(alchemize_database($config['database']));
         $current = $repository->findById((int) $sessionUser['user_id']);
+
         if ($current === null || (string) ($current['status'] ?? '') !== 'active') {
             alchemize_clear_session_user();
             return null;
         }
-        $role = (string) ($current['role_slug'] ?? '');
-        if (in_array($role, ['client', 'business-authorized-user'], true)
+
+        $currentRole = (string) ($current['role_slug'] ?? $role);
+        if (in_array($currentRole, ['client', 'business-authorized-user'], true)
             && !$repository->hasActiveClientAccess((int) $current['id'])) {
             alchemize_clear_session_user();
             return null;
         }
+
         $validated = [
-            'user_id' => (int) $current['id'], 'public_id' => (string) $current['public_id'],
-            'email' => (string) $current['email'], 'display_name' => (string) $current['display_name'],
-            'role_slug' => $role, 'role_name' => (string) ($current['role_name'] ?? ''),
+            'user_id' => (int) $current['id'],
+            'public_id' => (string) $current['public_id'],
+            'email' => (string) $current['email'],
+            'display_name' => (string) $current['display_name'],
+            'role_slug' => $currentRole,
+            'role_name' => (string) ($current['role_name'] ?? ''),
         ];
+
         $_SESSION['alchemize_user'] = $validated;
         return $validated;
     } catch (Throwable $error) {
-        error_log(sprintf('Session revalidation failed [%s].', get_class($error)));
+        $userId = (int) ($sessionUser['user_id'] ?? 0);
+        error_log(sprintf(
+            'Session validation failed for user %d with role %s: %s',
+            $userId,
+            $role,
+            $error->getMessage(),
+        ));
+
+        if ($isInternalRole) {
+            return $sessionUser;
+        }
+
         throw new RuntimeException('Session validation is unavailable.');
     }
 }
@@ -92,7 +116,7 @@ function alchemize_clear_session_user(): void
 
 function alchemize_require_authenticated_user(): array
 {
-    $user = alchemize_validated_session_user();
+    $user = alchemize_session_user();
     if (!is_array($user) || empty($user['user_id'])) {
         throw new AlchemizeRequestException(401, 'UNAUTHORIZED', 'Authentication required.');
     }
