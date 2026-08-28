@@ -807,7 +807,10 @@ const translations = {
       "El apoyo contable cubre registros financieros organizados y reportes según el servicio seleccionado. No sustituye servicios de CPA, auditor, preparador de impuestos, procesamiento de nómina ni asesoría de inversiones. Los libros organizados pueden ayudar a preparar registros más claros para la preparación de impuestos de fin de año y la revisión profesional.",
     related: [
       ["Procesamiento de nómina", "/services/businesses/payroll-processing"],
-      ["Apoyo tributario para empresas", "/services/businesses/business-tax-support"],
+      [
+        "Apoyo tributario para empresas",
+        "/services/businesses/business-tax-support",
+      ],
     ],
     cta: "¿Necesita que el proceso de registros financieros sea más claro y confiable?",
     checklist: [
@@ -887,7 +890,10 @@ const translations = {
         "Contabilidad y reportes financieros",
         "/services/businesses/bookkeeping-financial-reporting",
       ],
-      ["Apoyo tributario para empresas", "/services/businesses/business-tax-support"],
+      [
+        "Apoyo tributario para empresas",
+        "/services/businesses/business-tax-support",
+      ],
     ],
     cta: "¿Necesita que los registros y la administración de nómina estén más organizados?",
     checklist: [

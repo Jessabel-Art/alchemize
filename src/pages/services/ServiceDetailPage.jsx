@@ -93,24 +93,29 @@ function useServiceMetadata(service, language) {
 
     injectSiteEntitySchema();
 
-    ensureJsonLd(
-      `service-schema-${language}-${service.slug}`,
-      {
-        "@context": "https://schema.org",
-        "@graph": [
-          buildServiceSchema(service, language, canonical),
-          buildBreadcrumbListSchema([
-            [language === "es" ? "Servicios" : "Services", `${SITE_URL}${prefix}/services`],
-            [service.audienceLabel, `${SITE_URL}${prefix}/services#${service.audience}`],
-            [service.title, canonical],
-          ]),
-        ],
-      },
-    );
+    ensureJsonLd(`service-schema-${language}-${service.slug}`, {
+      "@context": "https://schema.org",
+      "@graph": [
+        buildServiceSchema(service, language, canonical),
+        buildBreadcrumbListSchema([
+          [
+            language === "es" ? "Servicios" : "Services",
+            `${SITE_URL}${prefix}/services`,
+          ],
+          [
+            service.audienceLabel,
+            `${SITE_URL}${prefix}/services#${service.audience}`,
+          ],
+          [service.title, canonical],
+        ]),
+      ],
+    });
 
     return () => {
       document.head
-        .querySelector(`script[data-schema-id="service-schema-${language}-${service.slug}"]`)
+        .querySelector(
+          `script[data-schema-id="service-schema-${language}-${service.slug}"]`,
+        )
         ?.remove();
     };
   }, [service, language]);

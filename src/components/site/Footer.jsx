@@ -41,10 +41,7 @@ const groups = {
           "/services/businesses/bookkeeping-financial-reporting",
         ],
         ["Payroll Processing", "/services/businesses/payroll-processing"],
-        [
-          "Business Tax Support",
-          "/services/businesses/business-tax-support",
-        ],
+        ["Business Tax Support", "/services/businesses/business-tax-support"],
       ],
     ],
     [

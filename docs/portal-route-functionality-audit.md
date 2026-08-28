@@ -270,7 +270,7 @@ No engagement/client relationship migration is required: `engagements.client_id`
 | Severity | Dependency         | Issue                                                                                      |
 | -------- | ------------------ | ------------------------------------------------------------------------------------------ |
 | P1       | FRONTEND/BACKEND   | Document detail/update/Admin attach workflow is incomplete                                 |
-| P2       | FRONTEND           | Internal notes, reports, and secondary presentation state still use in-memory store data    |
+| P2       | FRONTEND           | Internal notes, reports, and secondary presentation state still use in-memory store data   |
 | P2       | FRONTEND/HOSTINGER | Route discovery/check catalogs are incomplete/stale                                        |
 | P2       | AUTH               | Logout lacks server CSRF enforcement                                                       |
 | P2       | FRONTEND           | Supporting-file task linkage remains incomplete                                            |
@@ -301,45 +301,45 @@ This section preserves the earlier audit and classifies the lifecycle after cont
 
 ### Canonical lifecycle and ownership
 
-| Transition | Database authority | API / portal owner | External representation | Validation status |
-| --- | --- | --- | --- | --- |
-| Public contact → lead | `leads`, `activity_events`, `public_submission_guards` | Public `POST leads`; Admin Leads | SES Admin notice | IMPLEMENTED / AUTOMATED VERIFIED; live persistence and SES require validation |
-| Lead review → conversion | `leads.client_id`, `clients.origin_lead_id` | Admin Leads conversion | None | RESOLVED: migration 022 supplies the previously missing lead/client column and conversion now locks inside its transaction |
-| Client → portal provisioning | `clients`, `users`, `client_access_grants`, `portal_account_tokens` | Admin Client detail | SES invitation or one-time manual link | IMPLEMENTED / AUTOMATED VERIFIED; provider delivery requires live validation |
-| Invitation → activation | `users.password_hash/status`, grant/client portal status, token consumption | `/set-password`, auth API | SES/manual link transport only | IMPLEMENTED / AUTOMATED VERIFIED |
-| Engagement → intake → review | engagements and intake assignment/response/history tables | Admin Services/Intake and Client Intake | Optional document handoff | IMPLEMENTED / AUTOMATED VERIFIED; full live reload round trip remains checklist work |
-| Document request → version/review | private local storage, metadata/submissions | Admin Documents and Client Documents | Best-effort Drive copy with persisted state | IMPLEMENTED / AUTOMATED VERIFIED; live Drive permissions require validation |
-| Appointment request → decision | appointments/change requests | Client Appointments and Admin attention | Calendar event keyed by persisted deterministic event ID | IMPLEMENTED / AUTOMATED VERIFIED; live Calendar access requires validation |
-| Client/Admin messaging | threads/messages/read timestamps/notifications | Client Messages and Admin Communications | Best-effort SES notice | IMPLEMENTED / AUTOMATED VERIFIED |
-| Invoice → payment | invoices/line items/payments/webhook events | Admin Billing and Client Billing | Stripe Checkout and verified webhook | RESOLVED: issuance, reload hydration, line-item persistence, manual reconciliation, and idempotent payment request are now database-backed; live Stripe test-mode validation required |
-| Task/engagement completion | task and engagement status/history | Admin Tasks/Services and Client Tasks | None | IMPLEMENTED / AUTOMATED VERIFIED; completion policy remains operational |
+| Transition                        | Database authority                                                          | API / portal owner                       | External representation                                  | Validation status                                                                                                                                                                     |
+| --------------------------------- | --------------------------------------------------------------------------- | ---------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Public contact → lead             | `leads`, `activity_events`, `public_submission_guards`                      | Public `POST leads`; Admin Leads         | SES Admin notice                                         | IMPLEMENTED / AUTOMATED VERIFIED; live persistence and SES require validation                                                                                                         |
+| Lead review → conversion          | `leads.client_id`, `clients.origin_lead_id`                                 | Admin Leads conversion                   | None                                                     | RESOLVED: migration 022 supplies the previously missing lead/client column and conversion now locks inside its transaction                                                            |
+| Client → portal provisioning      | `clients`, `users`, `client_access_grants`, `portal_account_tokens`         | Admin Client detail                      | SES invitation or one-time manual link                   | IMPLEMENTED / AUTOMATED VERIFIED; provider delivery requires live validation                                                                                                          |
+| Invitation → activation           | `users.password_hash/status`, grant/client portal status, token consumption | `/set-password`, auth API                | SES/manual link transport only                           | IMPLEMENTED / AUTOMATED VERIFIED                                                                                                                                                      |
+| Engagement → intake → review      | engagements and intake assignment/response/history tables                   | Admin Services/Intake and Client Intake  | Optional document handoff                                | IMPLEMENTED / AUTOMATED VERIFIED; full live reload round trip remains checklist work                                                                                                  |
+| Document request → version/review | private local storage, metadata/submissions                                 | Admin Documents and Client Documents     | Best-effort Drive copy with persisted state              | IMPLEMENTED / AUTOMATED VERIFIED; live Drive permissions require validation                                                                                                           |
+| Appointment request → decision    | appointments/change requests                                                | Client Appointments and Admin attention  | Calendar event keyed by persisted deterministic event ID | IMPLEMENTED / AUTOMATED VERIFIED; live Calendar access requires validation                                                                                                            |
+| Client/Admin messaging            | threads/messages/read timestamps/notifications                              | Client Messages and Admin Communications | Best-effort SES notice                                   | IMPLEMENTED / AUTOMATED VERIFIED                                                                                                                                                      |
+| Invoice → payment                 | invoices/line items/payments/webhook events                                 | Admin Billing and Client Billing         | Stripe Checkout and verified webhook                     | RESOLVED: issuance, reload hydration, line-item persistence, manual reconciliation, and idempotent payment request are now database-backed; live Stripe test-mode validation required |
+| Task/engagement completion        | task and engagement status/history                                          | Admin Tasks/Services and Client Tasks    | None                                                     | IMPLEMENTED / AUTOMATED VERIFIED; completion policy remains operational                                                                                                               |
 
 ### Phase 4 route-contract findings
 
-| Contract | Finding before correction | Classification | Current result |
-| --- | --- | --- | --- |
-| `POST leads/:id/convert` | `FOR UPDATE` executed before the transaction and `leads.client_id` was referenced without any migration | BROKEN / P1 DATABASE | RESOLVED by migration 022 and transactional lock ordering |
-| Admin issue invoice → Client Billing | UI sent `open` but no `issued_at`; Client query intentionally excluded it | FALSE SUCCESS / P1 BACKEND | RESOLVED: non-draft creation assigns `issued_at` and notification uses persisted issuance |
-| Invoice line editor → reload | Visible line editor calculated totals but neither sent nor persisted line items | IN-MEMORY / P1 FRONTEND/BACKEND | RESOLVED: request, repository transaction, and reload serialization preserve line items |
-| Admin record payment | UI called only `adminStore.recordPayment`; API-created payments did not update invoice totals/status | FALSE SUCCESS / P1 FRONTEND/BACKEND | RESOLVED: CSRF/Admin API persists an idempotent payment and reconciles the locked invoice before cache update |
-| Admin Billing reload | Admin layout did not load invoices/payments from APIs | IN-MEMORY / P1 FRONTEND | RESOLVED: both collections hydrate from persistent APIs |
-| Existing disabled/revoked session | Role guards trusted the login-time session snapshot | BROKEN AUTHORIZATION / P1 AUTH | RESOLVED: every authenticated guard reloads active user state; portal roles must retain at least one active grant |
-| Client internal note | Client-detail “Add note” still writes only `adminStore` | IN-MEMORY / P2 FRONTEND/BACKEND | OPEN; not required for the canonical client-facing lifecycle and must not be represented as persisted |
-| Admin document attachment/detail | Metadata/review exists; general Admin binary attachment is disabled | DEAD UI / P1 DOCUMENTS | OPEN; control is explicitly disabled rather than falsely successful |
-| Multiple-client authorized user | Repository selects the default/oldest active grant and there is no client-switch route/UI | MISSING / P2 AUTH/UX | OPEN; single-client access is enforced correctly, but multi-client selection is not operationally complete |
+| Contract                             | Finding before correction                                                                               | Classification                      | Current result                                                                                                    |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `POST leads/:id/convert`             | `FOR UPDATE` executed before the transaction and `leads.client_id` was referenced without any migration | BROKEN / P1 DATABASE                | RESOLVED by migration 022 and transactional lock ordering                                                         |
+| Admin issue invoice → Client Billing | UI sent `open` but no `issued_at`; Client query intentionally excluded it                               | FALSE SUCCESS / P1 BACKEND          | RESOLVED: non-draft creation assigns `issued_at` and notification uses persisted issuance                         |
+| Invoice line editor → reload         | Visible line editor calculated totals but neither sent nor persisted line items                         | IN-MEMORY / P1 FRONTEND/BACKEND     | RESOLVED: request, repository transaction, and reload serialization preserve line items                           |
+| Admin record payment                 | UI called only `adminStore.recordPayment`; API-created payments did not update invoice totals/status    | FALSE SUCCESS / P1 FRONTEND/BACKEND | RESOLVED: CSRF/Admin API persists an idempotent payment and reconciles the locked invoice before cache update     |
+| Admin Billing reload                 | Admin layout did not load invoices/payments from APIs                                                   | IN-MEMORY / P1 FRONTEND             | RESOLVED: both collections hydrate from persistent APIs                                                           |
+| Existing disabled/revoked session    | Role guards trusted the login-time session snapshot                                                     | BROKEN AUTHORIZATION / P1 AUTH      | RESOLVED: every authenticated guard reloads active user state; portal roles must retain at least one active grant |
+| Client internal note                 | Client-detail “Add note” still writes only `adminStore`                                                 | IN-MEMORY / P2 FRONTEND/BACKEND     | OPEN; not required for the canonical client-facing lifecycle and must not be represented as persisted             |
+| Admin document attachment/detail     | Metadata/review exists; general Admin binary attachment is disabled                                     | DEAD UI / P1 DOCUMENTS              | OPEN; control is explicitly disabled rather than falsely successful                                               |
+| Multiple-client authorized user      | Repository selects the default/oldest active grant and there is no client-switch route/UI               | MISSING / P2 AUTH/UX                | OPEN; single-client access is enforced correctly, but multi-client selection is not operationally complete        |
 
 ### Key lifecycle route contract summary
 
-| Caller → route | Auth / CSRF / body | Persistence and response consumer | Reload result |
-| --- | --- | --- | --- |
-| Contact form → `POST leads` | Public; JSON validation, honeypot, replay/rate guard; no session CSRF | Lead/activity commit before deduplicated notification attempt; form consumes safe 201/4xx | Admin list reads `leads` |
-| Admin conversion → `POST leads/:id/convert` | Staff/Admin + CSRF; conversion profile JSON | Locked lead, one client, lead linkage, activity/audit | Admin APIs return converted lead/client |
-| Admin client create/provision/actions | Staff/Admin or Admin as appropriate + CSRF | Client/user/grant/token transaction; delivery result separate; raw setup token returned once when required | Client and portal status reload from repository joins |
-| Auth login/session/set/reset/change/logout | Login/setup/reset public-safe; change requires session+CSRF | Password hashes stay server-only; session ID regenerates; tokens are expiring/one-use | Session route revalidates current user/grant |
-| Admin engagement/intake/task/document/appointment/invoice | Staff/Admin + CSRF; validated JSON or multipart | Persistent repositories and activity/review tables | Admin hydration and Client scoped reads use the same records |
-| Client portal mutations | Authenticated session, active scoped grant, CSRF; IDs re-bound to resolved client | Client-scoped repositories; safe 404/403 on foreign IDs | Portal resource GET returns persisted state |
-| Client billing checkout | Active billing-capable grant + CSRF; invoice public ID | Stripe session/provider IDs persist; no local paid mutation | Only signed webhook changes payment/invoice completion |
-| Stripe webhook | Raw body + Stripe signature; no browser session | Unique event, locked invoice/payment reconciliation | Client/Admin billing reload reflects verified result |
+| Caller → route                                            | Auth / CSRF / body                                                                | Persistence and response consumer                                                                          | Reload result                                                |
+| --------------------------------------------------------- | --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| Contact form → `POST leads`                               | Public; JSON validation, honeypot, replay/rate guard; no session CSRF             | Lead/activity commit before deduplicated notification attempt; form consumes safe 201/4xx                  | Admin list reads `leads`                                     |
+| Admin conversion → `POST leads/:id/convert`               | Staff/Admin + CSRF; conversion profile JSON                                       | Locked lead, one client, lead linkage, activity/audit                                                      | Admin APIs return converted lead/client                      |
+| Admin client create/provision/actions                     | Staff/Admin or Admin as appropriate + CSRF                                        | Client/user/grant/token transaction; delivery result separate; raw setup token returned once when required | Client and portal status reload from repository joins        |
+| Auth login/session/set/reset/change/logout                | Login/setup/reset public-safe; change requires session+CSRF                       | Password hashes stay server-only; session ID regenerates; tokens are expiring/one-use                      | Session route revalidates current user/grant                 |
+| Admin engagement/intake/task/document/appointment/invoice | Staff/Admin + CSRF; validated JSON or multipart                                   | Persistent repositories and activity/review tables                                                         | Admin hydration and Client scoped reads use the same records |
+| Client portal mutations                                   | Authenticated session, active scoped grant, CSRF; IDs re-bound to resolved client | Client-scoped repositories; safe 404/403 on foreign IDs                                                    | Portal resource GET returns persisted state                  |
+| Client billing checkout                                   | Active billing-capable grant + CSRF; invoice public ID                            | Stripe session/provider IDs persist; no local paid mutation                                                | Only signed webhook changes payment/invoice completion       |
+| Stripe webhook                                            | Raw body + Stripe signature; no browser session                                   | Unique event, locked invoice/payment reconciliation                                                        | Client/Admin billing reload reflects verified result         |
 
 ### Database and migration validation
 
@@ -369,17 +369,17 @@ This section preserves the earlier audit and classifies the lifecycle after cont
 
 ### Historical finding disposition
 
-| Historical finding group | Disposition |
-| --- | --- |
-| Missing Admin client/service/task/appointment/document/invoice HTTP contracts | RESOLVED |
-| Portal provisioning coupled to email and missing manual links | RESOLVED |
-| Forgot/change password and authorized-user Admin controls | RESOLVED |
-| Drive/Calendar/Stripe workflow identifiers and synchronization | RESOLVED in implementation; REQUIRES LIVE VERIFICATION |
-| SES domain notifications and lead abuse controls | RESOLVED in implementation; REQUIRES LIVE VERIFICATION |
-| Session revocation revalidation | RESOLVED |
-| Lead conversion schema/transaction contract | RESOLVED in migration 022 |
-| Admin/client billing issuance, reload, line items, and manual payment persistence | RESOLVED |
-| CMS/settings/report persistence | OPEN / deliberately disabled or local reporting |
-| Admin document binary attach/detail | OPEN P1; explicitly disabled |
-| Remaining local internal-note/demo staff data | OPEN P2 |
-| Route catalog gaps and mobile/authenticated accessibility coverage | OPEN P2/P3 |
+| Historical finding group                                                          | Disposition                                            |
+| --------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| Missing Admin client/service/task/appointment/document/invoice HTTP contracts     | RESOLVED                                               |
+| Portal provisioning coupled to email and missing manual links                     | RESOLVED                                               |
+| Forgot/change password and authorized-user Admin controls                         | RESOLVED                                               |
+| Drive/Calendar/Stripe workflow identifiers and synchronization                    | RESOLVED in implementation; REQUIRES LIVE VERIFICATION |
+| SES domain notifications and lead abuse controls                                  | RESOLVED in implementation; REQUIRES LIVE VERIFICATION |
+| Session revocation revalidation                                                   | RESOLVED                                               |
+| Lead conversion schema/transaction contract                                       | RESOLVED in migration 022                              |
+| Admin/client billing issuance, reload, line items, and manual payment persistence | RESOLVED                                               |
+| CMS/settings/report persistence                                                   | OPEN / deliberately disabled or local reporting        |
+| Admin document binary attach/detail                                               | OPEN P1; explicitly disabled                           |
+| Remaining local internal-note/demo staff data                                     | OPEN P2                                                |
+| Route catalog gaps and mobile/authenticated accessibility coverage                | OPEN P2/P3                                             |

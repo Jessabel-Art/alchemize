@@ -655,6 +655,21 @@
 }
 
 @media (max-width: 700px) {
+  .services-hero {
+    padding-top: 2.5rem;
+    padding-bottom: 2.25rem;
+  }
+
+  .services-hero h1 {
+    max-width: 11ch;
+    font-size: clamp(2.4rem, 12vw, 4rem);
+    line-height: 0.97;
+  }
+
+  .services-hero p {
+    max-width: none;
+  }
+
   .services-choice-grid,
   .service-capability-grid,
   .service-process-row,
@@ -664,6 +679,7 @@
 
   .services-choice-grid button {
     min-height: 0;
+    padding: 1.2rem 1rem;
   }
 
   .services-choice-grid button + button {
@@ -671,9 +687,32 @@
     border-left: 0;
   }
 
+  .services-choice-grid strong {
+    font-size: clamp(1.55rem, 8vw, 2.2rem);
+  }
+
+  .services-choice-grid p {
+    max-width: none;
+  }
+
   .service-row {
-    grid-template-columns: 44px minmax(0, 1fr);
-    gap: 0.8rem 0.9rem;
+    grid-template-columns: 1fr;
+    gap: 0.45rem 0;
+    padding: 1.4rem 0;
+  }
+
+  .service-row-arrow {
+    justify-self: flex-end;
+    min-width: 0;
+    font-size: 1.8rem;
+  }
+
+  .service-row-copy h3 {
+    font-size: clamp(1.6rem, 7vw, 2.2rem);
+  }
+
+  .service-row-copy p {
+    max-width: none;
   }
 
   .service-row-copy ul {
@@ -731,6 +770,21 @@
 
   .service-download-button {
     justify-content: center;
+  }
+}
+
+@media (max-width: 420px) {
+  .services-choice-grid button {
+    padding: 1rem 0.8rem;
+  }
+
+  .service-row-copy ul {
+    gap: 0.35rem 0;
+  }
+
+  .service-row-copy li {
+    padding-left: 0.55rem;
+    font-size: 0.68rem;
   }
 }
 

@@ -41,7 +41,9 @@ const routeExpectations = [
 
 function readJsonLd(page) {
   return page.evaluate(() => {
-    const scripts = [...document.querySelectorAll('script[type="application/ld+json"]')];
+    const scripts = [
+      ...document.querySelectorAll('script[type="application/ld+json"]'),
+    ];
     return scripts
       .map((script) => {
         try {

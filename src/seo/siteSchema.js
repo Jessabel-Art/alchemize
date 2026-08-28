@@ -21,7 +21,9 @@ const organizationBase = {
 export function ensureJsonLd(id, payload) {
   if (typeof document === "undefined") return;
 
-  const existing = document.head.querySelector(`script[data-schema-id="${id}"]`);
+  const existing = document.head.querySelector(
+    `script[data-schema-id="${id}"]`,
+  );
   if (existing) existing.remove();
 
   const script = document.createElement("script");
@@ -78,10 +80,19 @@ export function buildServiceSchema(service, language, canonical) {
 
   const areaServed = (() => {
     const serviceSlug = service.slug;
-    if (["notary-document-services", "apostille-services"].includes(serviceSlug)) {
+    if (
+      ["notary-document-services", "apostille-services"].includes(serviceSlug)
+    ) {
       return "North Carolina";
     }
-    if (["translation-services", "bookkeeping-financial-reporting", "payroll-processing", "digital-business-technology"].includes(serviceSlug)) {
+    if (
+      [
+        "translation-services",
+        "bookkeeping-financial-reporting",
+        "payroll-processing",
+        "digital-business-technology",
+      ].includes(serviceSlug)
+    ) {
       return "United States";
     }
     return undefined;
@@ -125,7 +136,13 @@ export function buildFaqSchema(faqItems) {
   };
 }
 
-export function buildPersonSchema({ name, jobTitle, description, url, worksFor }) {
+export function buildPersonSchema({
+  name,
+  jobTitle,
+  description,
+  url,
+  worksFor,
+}) {
   return {
     "@context": "https://schema.org",
     "@type": "Person",

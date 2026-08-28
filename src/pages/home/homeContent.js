@@ -105,7 +105,8 @@ export const homeContent = {
   },
   es: {
     metadata: {
-      title: "Alchemize Business Services | Asesoría empresarial y apoyo operativo en español",
+      title:
+        "Alchemize Business Services | Asesoría empresarial y apoyo operativo en español",
       description:
         "Apoyo práctico para operaciones empresariales, impuestos, sistemas digitales, servicios documentales y planificación administrativa para emprendedores y pequeñas empresas.",
     },

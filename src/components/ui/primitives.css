@@ -7,6 +7,12 @@
   width: min(var(--text-max), calc(100% - (var(--page-gutter) * 2)));
   margin-inline: auto;
 }
+@media (max-width: 640px) {
+  .content-shell,
+  .text-shell {
+    width: min(var(--content-max), calc(100% - 1.25rem));
+  }
+}
 .eyebrow,
 .section-kicker {
   display: inline-flex;

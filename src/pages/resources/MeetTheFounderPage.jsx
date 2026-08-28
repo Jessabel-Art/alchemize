@@ -3,7 +3,11 @@ import Reveal from "../../components/ui/Reveal.jsx";
 import { LocalizedLink as Link } from "../../i18n/LocalizedLink.jsx";
 import { useLanguage } from "../../i18n/LanguageContext.jsx";
 import usePageMetadata from "../../i18n/usePageMetadata.js";
-import { buildPersonSchema, ensureJsonLd, SITE_URL } from "../../seo/siteSchema.js";
+import {
+  buildPersonSchema,
+  ensureJsonLd,
+  SITE_URL,
+} from "../../seo/siteSchema.js";
 import "./meet-the-founder.css";
 
 export default function MeetTheFounderPage() {

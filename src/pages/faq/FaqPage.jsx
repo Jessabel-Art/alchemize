@@ -392,10 +392,7 @@ function FaqPage() {
     const faqItems = categories.flatMap((category) =>
       category.items.map(({ question, answer }) => ({ question, answer })),
     );
-    ensureJsonLd(
-      `faq-schema-${language}`,
-      buildFaqSchema(faqItems),
-    );
+    ensureJsonLd(`faq-schema-${language}`, buildFaqSchema(faqItems));
     return () => {
       document.head
         .querySelector(`script[data-schema-id="faq-schema-${language}"]`)

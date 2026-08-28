@@ -1,9 +1,10 @@
 export const whyContent = {
   en: {
     metadata: {
-      title: "Why Alchemize | Business Support for Taxes, Operations & Digital Needs",
+      title:
+        "Why Alchemize | Business Support for Taxes, Operations & Digital Needs",
       description:
-        "Alchemize helps individuals and small businesses move through taxes, documents, business operations, administration, and digital support with clearer next steps and practical guidance."
+        "Alchemize helps individuals and small businesses move through taxes, documents, business operations, administration, and digital support with clearer next steps and practical guidance.",
     },
     hero: {
       eyebrow: "Why Alchemize",
@@ -137,9 +138,10 @@ export const whyContent = {
   },
   es: {
     metadata: {
-      title: "Por qué Alchemize | Apoyo para impuestos, operaciones y necesidades digitales",
+      title:
+        "Por qué Alchemize | Apoyo para impuestos, operaciones y necesidades digitales",
       description:
-        "Alchemize ayuda a personas y pequeñas empresas a abordar impuestos, documentos, operaciones, administración y apoyo digital con pasos claros y orientación práctica."
+        "Alchemize ayuda a personas y pequeñas empresas a abordar impuestos, documentos, operaciones, administración y apoyo digital con pasos claros y orientación práctica.",
     },
     hero: {
       eyebrow: "Por qué Alchemize",

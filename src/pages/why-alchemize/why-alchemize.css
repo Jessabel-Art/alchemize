@@ -633,7 +633,9 @@
   max-width: min(100%, 20rem);
   color: var(--white);
   text-decoration: none;
-  transition: transform 180ms ease, color 180ms ease;
+  transition:
+    transform 180ms ease,
+    color 180ms ease;
 }
 
 .why-pathway-link::after {
@@ -643,7 +645,9 @@
   opacity: 0;
   transform: translateX(-0.2rem);
   color: var(--gold);
-  transition: opacity 180ms ease, transform 180ms ease;
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
 }
 
 .why-pathway-link:hover,

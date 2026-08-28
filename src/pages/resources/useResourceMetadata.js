@@ -104,7 +104,10 @@ export default function useResourceMetadata(resource, language = "en") {
             mainEntityOfPage: canonical,
           },
           buildBreadcrumbListSchema([
-            [language === "es" ? "Recursos" : "Resources", `${SITE_URL}${prefix}/resources`],
+            [
+              language === "es" ? "Recursos" : "Resources",
+              `${SITE_URL}${prefix}/resources`,
+            ],
             [resource.title, canonical],
           ]),
         ],

@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
+const read = (path) =>
+  readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
 test("internal admin sessions stay usable after login and only client roles are portal-access gated", () => {
   const session = read("server/auth/session.php");
@@ -21,7 +22,10 @@ test("internal admin sessions stay usable after login and only client roles are 
 test("lead conversion locks inside its transaction and has schema-backed linkage", () => {
   const service = read("server/services/lead-admin-service.php");
   const migration = read("migrations/022_close_lifecycle_contract_gaps.sql");
-  assert.ok(service.indexOf("beginTransaction()") < service.indexOf("findByIdForUpdate"));
+  assert.ok(
+    service.indexOf("beginTransaction()") <
+      service.indexOf("findByIdForUpdate"),
+  );
   assert.match(service, /LEAD_ALREADY_CONVERTED/);
   assert.match(migration, /ALTER TABLE leads[\s\S]*ADD COLUMN client_id/);
   assert.match(migration, /UNIQUE KEY uq_leads_client_id/);
@@ -46,7 +50,10 @@ test("manual payment is persisted, idempotent, and reconciles the invoice", () =
   assert.match(repository, /FOR UPDATE/);
   assert.match(repository, /outstanding_balance/);
   assert.match(repository, /request_key/);
-  assert.ok(frontend.indexOf("await paymentApi.create") < frontend.indexOf("adminStore.recordPayment"));
+  assert.ok(
+    frontend.indexOf("await paymentApi.create") <
+      frontend.indexOf("adminStore.recordPayment"),
+  );
 });
 
 test("Admin billing reloads invoices and payments from persistent APIs", () => {

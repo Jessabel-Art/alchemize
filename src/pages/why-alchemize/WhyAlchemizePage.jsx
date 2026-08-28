@@ -30,11 +30,15 @@ const continuityRoutes = {
   "Preparation & Organization": "/services/individuals",
   "Startup Support": "/services/businesses/readiness-growth",
   "Bookkeeping & Payroll": [
-    { label: "Bookkeeping", to: "/services/businesses/bookkeeping-financial-reporting" },
+    {
+      label: "Bookkeeping",
+      to: "/services/businesses/bookkeeping-financial-reporting",
+    },
     { label: "Payroll", to: "/services/businesses/payroll-processing" },
   ],
   "Business Tax Support": "/services/businesses/business-tax-support",
-  "Operations & Administration": "/services/businesses/operations-implementation",
+  "Operations & Administration":
+    "/services/businesses/operations-implementation",
   Advisory: "/services/businesses/advisory-optimization",
 };
 
@@ -244,7 +248,9 @@ function WhyAlchemizePage() {
                               </span>
                             ) : (
                               <Link className="why-pathway-link" to={route}>
-                                <span className="why-pathway-stage">{stage}</span>
+                                <span className="why-pathway-stage">
+                                  {stage}
+                                </span>
                               </Link>
                             )}
                           </li>
