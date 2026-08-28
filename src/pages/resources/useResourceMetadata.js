@@ -1,18 +1,10 @@
 import { useEffect } from "react";
-
-const SITE_URL = "https://getalchemize.com";
-
-function ensureMeta(selector, attributes) {
-  let element = document.head.querySelector(selector);
-  if (!element) {
-    element = document.createElement("meta");
-    document.head.appendChild(element);
-  }
-  Object.entries(attributes).forEach(([name, value]) =>
-    element.setAttribute(name, value),
-  );
-  return element;
-}
+import {
+  ensureMeta,
+  injectSiteEntitySchema,
+  buildBreadcrumbListSchema,
+  SITE_URL,
+} from "../../seo/siteSchema.js";
 
 export default function useResourceMetadata(resource, language = "en") {
   useEffect(() => {
@@ -20,13 +12,13 @@ export default function useResourceMetadata(resource, language = "en") {
     const title = resource
       ? `${resource.title} | Alchemize Resource Library`
       : language === "es"
-        ? "Recursos | Alchemize Business Services"
-        : "Resources | Alchemize Business Services";
+        ? "Recursos | Guías prácticas para impuestos, negocios y operaciones"
+        : "Resources | Practical Guides for Taxes, Business & Operations";
     const description = resource
       ? resource.excerpt
       : language === "es"
-        ? "Guías, listas, recursos oficiales y explicaciones claras para responsabilidades personales y empresariales."
-        : "Practical guides, checklists, official resources, and straightforward explanations for personal and business responsibilities.";
+        ? "Guías prácticas, listas de verificación y recursos oficiales para impuestos, operaciones empresariales, documentos y administración diaria."
+        : "Practical guides, checklists, and official resources for taxes, business operations, document support, and day-to-day business administration.";
     const path = resource ? `/resources/${resource.slug}` : "/resources";
     const canonical = `${SITE_URL}${prefix}${path}`;
     document.title = title;
@@ -51,6 +43,26 @@ export default function useResourceMetadata(resource, language = "en") {
       property: "og:type",
       content: resource ? "article" : "website",
     });
+    ensureMeta('meta[property="og:site_name"]', {
+      property: "og:site_name",
+      content: "Alchemize Business Services",
+    });
+    ensureMeta('meta[property="og:locale"]', {
+      property: "og:locale",
+      content: language === "es" ? "es_ES" : "en_US",
+    });
+    ensureMeta('meta[name="twitter:card"]', {
+      name: "twitter:card",
+      content: "summary_large_image",
+    });
+    ensureMeta('meta[name="twitter:title"]', {
+      name: "twitter:title",
+      content: title,
+    });
+    ensureMeta('meta[name="twitter:description"]', {
+      name: "twitter:description",
+      content: description,
+    });
 
     let canonicalLink = document.head.querySelector('link[rel="canonical"]');
     if (!canonicalLink) {
@@ -60,13 +72,15 @@ export default function useResourceMetadata(resource, language = "en") {
     }
     canonicalLink.href = canonical;
 
+    injectSiteEntitySchema();
+
     const oldScript = document.getElementById("resource-structured-data");
     oldScript?.remove();
     if (resource) {
-      const script = document.createElement("script");
-      script.id = "resource-structured-data";
-      script.type = "application/ld+json";
-      script.textContent = JSON.stringify({
+      const articleScript = document.createElement("script");
+      articleScript.id = "resource-structured-data";
+      articleScript.type = "application/ld+json";
+      articleScript.textContent = JSON.stringify({
         "@context": "https://schema.org",
         "@graph": [
           {
@@ -74,6 +88,7 @@ export default function useResourceMetadata(resource, language = "en") {
             headline: resource.title,
             description: resource.excerpt,
             dateModified: "2026-08-18",
+            inLanguage: language === "es" ? "es" : "en",
             author: {
               "@type": "Organization",
               name: "Alchemize Business Services",
@@ -88,27 +103,15 @@ export default function useResourceMetadata(resource, language = "en") {
             },
             mainEntityOfPage: canonical,
           },
-          {
-            "@type": "BreadcrumbList",
-            itemListElement: [
-              {
-                "@type": "ListItem",
-                position: 1,
-                name: language === "es" ? "Recursos" : "Resources",
-                item: `${SITE_URL}${prefix}/resources`,
-              },
-              {
-                "@type": "ListItem",
-                position: 2,
-                name: resource.title,
-                item: canonical,
-              },
-            ],
-          },
+          buildBreadcrumbListSchema([
+            [language === "es" ? "Recursos" : "Resources", `${SITE_URL}${prefix}/resources`],
+            [resource.title, canonical],
+          ]),
         ],
       });
-      document.head.appendChild(script);
+      document.head.appendChild(articleScript);
     }
+
     return () => document.getElementById("resource-structured-data")?.remove();
   }, [resource, language]);
 }

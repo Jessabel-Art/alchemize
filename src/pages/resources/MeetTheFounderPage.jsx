@@ -1,7 +1,9 @@
+import { useEffect } from "react";
 import Reveal from "../../components/ui/Reveal.jsx";
 import { LocalizedLink as Link } from "../../i18n/LocalizedLink.jsx";
 import { useLanguage } from "../../i18n/LanguageContext.jsx";
 import usePageMetadata from "../../i18n/usePageMetadata.js";
+import { buildPersonSchema, ensureJsonLd, SITE_URL } from "../../seo/siteSchema.js";
 import "./meet-the-founder.css";
 
 export default function MeetTheFounderPage() {
@@ -9,16 +11,42 @@ export default function MeetTheFounderPage() {
 
   usePageMetadata({
     en: {
-      title: "Meet the Founder | Alchemize Business Services",
+      title: "Meet the Founder | Business Operations & Digital Experience",
       description:
-        "Learn about Jessy Santos, founder of Alchemize, and the business and digital experience behind the firm.",
+        "Learn about Jessy Santos and the business operations, client-service, and digital experience behind Alchemize Business Services.",
     },
     es: {
-      title: "Conozca a la fundadora | Alchemize Business Services",
+      title: "Conozca a la fundadora | Experiencia en operaciones y digital",
       description:
-        "Conozca a Jessy Santos, fundadora de Alchemize, y la experiencia empresarial y digital detrás de la firma.",
+        "Conozca a Jessy Santos y la experiencia en operaciones empresariales, atención al cliente y digital detrás de Alchemize Business Services.",
     },
   });
+
+  useEffect(() => {
+    ensureJsonLd(
+      "person-schema-founder",
+      buildPersonSchema({
+        name: "Jessy Santos",
+        jobTitle: language === "es" ? "Fundadora" : "Founder",
+        description:
+          language === "es"
+            ? "Fundadora de Alchemize Business Services con experiencia en operaciones empresariales, administración, servicio al cliente y presencia digital."
+            : "Founder of Alchemize Business Services with experience across business operations, administration, client service, and digital support.",
+        url: `${SITE_URL}/resources/meet-the-founder`,
+        worksFor: {
+          "@type": "Organization",
+          name: "Alchemize Business Services",
+          url: SITE_URL,
+        },
+      }),
+    );
+
+    return () => {
+      document.head
+        .querySelector('script[data-schema-id="person-schema-founder"]')
+        ?.remove();
+    };
+  }, [language]);
 
   const content = {
     en: {

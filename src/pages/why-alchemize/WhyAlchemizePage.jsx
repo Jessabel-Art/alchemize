@@ -22,11 +22,17 @@ const principleIcons = [Compass, Link2, ClipboardCheck, ShieldCheck, RefreshCw];
 const continuityRoutes = {
   "Tax Preparation": "/services/individuals/tax-preparation",
   "Notary & Documents": "/services/individuals/notary-document-services",
-  "Translation & Apostille": "/services/individuals",
+  "Translation & Apostille": [
+    { label: "Translation", to: "/services/individuals/translation-services" },
+    { label: "Apostille", to: "/services/individuals/apostille-services" },
+  ],
   "Digital Support": "/web-digital",
   "Preparation & Organization": "/services/individuals",
   "Startup Support": "/services/businesses/readiness-growth",
-  "Bookkeeping & Payroll": "/services/businesses",
+  "Bookkeeping & Payroll": [
+    { label: "Bookkeeping", to: "/services/businesses/bookkeeping-financial-reporting" },
+    { label: "Payroll", to: "/services/businesses/payroll-processing" },
+  ],
   "Business Tax Support": "/services/businesses/business-tax-support",
   "Operations & Administration": "/services/businesses/operations-implementation",
   Advisory: "/services/businesses/advisory-optimization",
@@ -203,7 +209,8 @@ function WhyAlchemizePage() {
                     <h3>{label}</h3>
                     <ol className="why-pathway-list">
                       {stages.map((stage) => {
-                        const to = continuityRoutes[stage] ?? "/services";
+                        const route = continuityRoutes[stage] ?? "/services";
+                        const isSplitLabel = Array.isArray(route);
 
                         return (
                           <li key={stage} className="why-pathway-item">
@@ -211,9 +218,35 @@ function WhyAlchemizePage() {
                               className="why-pathway-node"
                               aria-hidden="true"
                             />
-                            <Link className="why-pathway-link" to={to}>
-                              <span className="why-pathway-stage">{stage}</span>
-                            </Link>
+                            {isSplitLabel ? (
+                              <span className="why-pathway-stage why-pathway-stage--split">
+                                {route.map((item, index) => (
+                                  <span
+                                    key={item.label}
+                                    className="why-pathway-inline"
+                                  >
+                                    <Link
+                                      className="why-pathway-link"
+                                      to={item.to}
+                                    >
+                                      {item.label}
+                                    </Link>
+                                    {index < route.length - 1 && (
+                                      <span
+                                        className="why-pathway-separator"
+                                        aria-hidden="true"
+                                      >
+                                        &
+                                      </span>
+                                    )}
+                                  </span>
+                                ))}
+                              </span>
+                            ) : (
+                              <Link className="why-pathway-link" to={route}>
+                                <span className="why-pathway-stage">{stage}</span>
+                              </Link>
+                            )}
                           </li>
                         );
                       })}

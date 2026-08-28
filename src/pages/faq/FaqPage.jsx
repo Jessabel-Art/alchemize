@@ -2,6 +2,7 @@
 import PageShell from "../../components/ui/PageShell.jsx";
 import { useLanguage } from "../../i18n/LanguageContext.jsx";
 import usePageMetadata from "../../i18n/usePageMetadata.js";
+import { buildFaqSchema, ensureJsonLd } from "../../seo/siteSchema.js";
 import { faqCategoriesEs, faqUiEs } from "./faqContent.es.js";
 import "./faq.css";
 
@@ -370,17 +371,37 @@ function FaqPage() {
   const [activeCategory, setActiveCategory] = useState(categories[0].category);
   usePageMetadata({
     en: {
-      title: "FAQ | Alchemize Business Services",
+      title: "FAQ | Business Services Questions & Answers",
       description:
-        "Clear answers about Alchemize services, consultations, and what to expect when working with us.",
+        "Find clear answers about Alchemize services, consultations, business support, and what to expect before starting a project or engagement.",
     },
-    es: faqUiEs.metadata,
+    es: {
+      title: "FAQ | Preguntas y respuestas sobre servicios empresariales",
+      description:
+        "Encuentre respuestas claras sobre los servicios de Alchemize, las consultas, el apoyo empresarial y qué esperar antes de comenzar un proyecto o servicio.",
+    },
   });
   useEffect(() => {
     setQuery("");
     setOpenQuestion(categories[0].items[0].question);
     setActiveCategory(categories[0].category);
   }, [language, categories]);
+
+  useEffect(() => {
+    if (!categories?.length) return undefined;
+    const faqItems = categories.flatMap((category) =>
+      category.items.map(({ question, answer }) => ({ question, answer })),
+    );
+    ensureJsonLd(
+      `faq-schema-${language}`,
+      buildFaqSchema(faqItems),
+    );
+    return () => {
+      document.head
+        .querySelector(`script[data-schema-id="faq-schema-${language}"]`)
+        ?.remove();
+    };
+  }, [categories, language]);
 
   const normalizedQuery = query.trim().toLowerCase();
 

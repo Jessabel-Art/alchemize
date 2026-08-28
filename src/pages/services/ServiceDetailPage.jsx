@@ -12,12 +12,19 @@ import { Navigate, useParams } from "react-router-dom";
 import Reveal from "../../components/ui/Reveal.jsx";
 import { useLanguage } from "../../i18n/LanguageContext.jsx";
 import LocalizedLink from "../../i18n/LocalizedLink.jsx";
+import {
+  buildBreadcrumbListSchema,
+  buildServiceSchema,
+  ensureJsonLd,
+  ensureMeta,
+  injectSiteEntitySchema,
+  SITE_URL,
+} from "../../seo/siteSchema.js";
 import { findService, legacyServiceRoutes } from "./serviceCatalog.js";
 import { findServiceEs } from "./serviceCatalog.es.js";
 import { serviceDetailUi } from "./servicesContent.js";
 import "./services.css";
 
-const SITE_URL = "https://getalchemize.com";
 const processIcons = [Search, FolderKanban, ListChecks, CircleCheck];
 
 function useServiceMetadata(service, language) {
@@ -25,51 +32,87 @@ function useServiceMetadata(service, language) {
     if (!service) return undefined;
     const prefix = language === "es" ? "/es" : "";
     const canonical = `${SITE_URL}${prefix}/services/${service.audience}/${service.slug}`;
-    document.title = `${service.title} | Alchemize Business Services`;
+    const seoTitle = service.seoTitle || `${service.title} | Alchemize`;
+    const seoDescription =
+      service.seoDescription ||
+      service.overview.replace(/\s+/g, " ").trim().slice(0, 158);
+
+    document.title = seoTitle;
     let meta = document.head.querySelector('meta[name="description"]');
     if (!meta) {
       meta = document.createElement("meta");
       meta.name = "description";
       document.head.append(meta);
     }
-    meta.content = service.overview.slice(0, 158);
-    let link = document.head.querySelector('link[rel="canonical"]');
-    if (!link) {
-      link = document.createElement("link");
-      link.rel = "canonical";
-      document.head.append(link);
+    meta.content = seoDescription;
+
+    let canonicalLink = document.head.querySelector('link[rel="canonical"]');
+    if (!canonicalLink) {
+      canonicalLink = document.createElement("link");
+      canonicalLink.rel = "canonical";
+      document.head.append(canonicalLink);
     }
-    link.href = canonical;
-    const script = document.createElement("script");
-    script.id = "service-breadcrumb-data";
-    script.type = "application/ld+json";
-    script.textContent = JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "BreadcrumbList",
-      itemListElement: [
-        {
-          "@type": "ListItem",
-          position: 1,
-          name: language === "es" ? "Servicios" : "Services",
-          item: `${SITE_URL}${prefix}/services`,
-        },
-        {
-          "@type": "ListItem",
-          position: 2,
-          name: service.audienceLabel,
-          item: `${SITE_URL}${prefix}/services#${service.audience}`,
-        },
-        {
-          "@type": "ListItem",
-          position: 3,
-          name: service.title,
-          item: canonical,
-        },
-      ],
+    canonicalLink.href = canonical;
+
+    ensureMeta('meta[property="og:title"]', {
+      property: "og:title",
+      content: seoTitle,
     });
-    document.getElementById(script.id)?.remove();
-    document.head.append(script);
-    return () => script.remove();
+    ensureMeta('meta[property="og:description"]', {
+      property: "og:description",
+      content: seoDescription,
+    });
+    ensureMeta('meta[property="og:url"]', {
+      property: "og:url",
+      content: canonical,
+    });
+    ensureMeta('meta[property="og:type"]', {
+      property: "og:type",
+      content: "article",
+    });
+    ensureMeta('meta[property="og:site_name"]', {
+      property: "og:site_name",
+      content: "Alchemize Business Services",
+    });
+    ensureMeta('meta[property="og:locale"]', {
+      property: "og:locale",
+      content: language === "es" ? "es_ES" : "en_US",
+    });
+    ensureMeta('meta[name="twitter:card"]', {
+      name: "twitter:card",
+      content: "summary_large_image",
+    });
+    ensureMeta('meta[name="twitter:title"]', {
+      name: "twitter:title",
+      content: seoTitle,
+    });
+    ensureMeta('meta[name="twitter:description"]', {
+      name: "twitter:description",
+      content: seoDescription,
+    });
+
+    injectSiteEntitySchema();
+
+    ensureJsonLd(
+      `service-schema-${language}-${service.slug}`,
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          buildServiceSchema(service, language, canonical),
+          buildBreadcrumbListSchema([
+            [language === "es" ? "Servicios" : "Services", `${SITE_URL}${prefix}/services`],
+            [service.audienceLabel, `${SITE_URL}${prefix}/services#${service.audience}`],
+            [service.title, canonical],
+          ]),
+        ],
+      },
+    );
+
+    return () => {
+      document.head
+        .querySelector(`script[data-schema-id="service-schema-${language}-${service.slug}"]`)
+        ?.remove();
+    };
   }, [service, language]);
 }
 

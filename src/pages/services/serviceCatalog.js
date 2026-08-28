@@ -19,12 +19,15 @@ const individual = [
     slug: "tax-preparation",
     serviceKey: "individual-tax",
     title: "Tax Preparation",
+    seoTitle: "Individual Tax Preparation Services | Alchemize",
+    seoDescription:
+      "Individual tax preparation support with organized records, document review, and virtual filing guidance where service requirements allow.",
     Icon: Calculator,
     statement:
       "Organized tax preparation begins with complete records, clear questions, and a filing process that does not depend on last-minute document searches.",
     hero: "Prepare the return with the records already working in your favor.",
     overview:
-      "Tax preparation becomes harder when income records, expenses, prior-year information, and unanswered questions are scattered across different places. Alchemize helps organize the filing process so the return can be prepared from a clearer starting point.",
+      "Tax preparation becomes harder when income records, expenses, prior-year information, and unanswered questions are scattered across different places. Alchemize helps organize the filing process so the return can be prepared from a clearer starting point. Based in North Carolina, support can be delivered virtually where service requirements allow.",
     capabilities: [
       "Federal filing preparation",
       "Tax document organization",
@@ -112,12 +115,15 @@ const individual = [
     slug: "notary-document-services",
     serviceKey: "individual-notary",
     title: "Notary & Document Services",
+    seoTitle: "North Carolina Notary Services | Alchemize",
+    seoDescription:
+      "North Carolina notary and document support for signatures, acknowledgments, and administrative document preparation with clear appointment expectations.",
     Icon: FileCheck2,
     statement:
       "Prepare the document. Verify the requirements. Complete the appointment correctly.",
     hero: "Prepare the document. Verify the requirements. Complete the appointment correctly.",
     overview:
-      "Notary work and document support are related but distinct. Alchemize can perform authorized notarial acts and help organize non-legal administrative document work without selecting forms or interpreting legal consequences.",
+      "Notary work and document support are related but distinct. Alchemize provides North Carolina notary support and administrative document preparation for appointments that require accurate identification, witnessing, and document readiness without selecting forms or interpreting legal consequences.",
     capabilities: [
       "Traditional notarization",
       "Document readiness",
@@ -200,12 +206,15 @@ const individual = [
     slug: "translation-services",
     serviceKey: "individual-translation",
     title: "Translation Services",
+    seoTitle: "Document Translation Services | Alchemize",
+    seoDescription:
+      "Professional document translation services for individuals and businesses, with virtual support available and North Carolina-based coordination where appropriate.",
     Icon: FileCheck2,
     statement:
       "Clear translation support for documents that need to be understandable, organized, and ready for the next step.",
     hero: "Professional document translation support for personal, administrative, and business needs.",
     overview:
-      "Translation needs vary by document, destination, and purpose. Alchemize helps organize translated materials, clarify content, and prepare a useful record set for review before the engagement is confirmed.",
+      "Translation needs vary by document, destination, and purpose. Based in North Carolina, Alchemize helps organize translated materials, clarify content, and prepare a useful record set for review before the engagement is confirmed, with virtual support available where appropriate.",
     capabilities: [
       "Personal document translation support",
       "Business document translation support",
@@ -289,12 +298,15 @@ const individual = [
     slug: "apostille-services",
     serviceKey: "individual-apostille",
     title: "Apostille Services",
+    seoTitle: "North Carolina Apostille Services | Alchemize",
+    seoDescription:
+      "North Carolina apostille and document-authentication support with remote coordination available when requirements depend on the document, jurisdiction, and destination country.",
     Icon: FileCheck2,
     statement:
       "Document preparation and coordination support for materials that may need authentication for use outside the United States.",
     hero: "Prepare the document set for the destination that will receive it.",
     overview:
-      "Apostille processing may involve reviewing the intended destination, identifying whether notarization or certification is required first, and helping organize the document package for the correct authentication process. Alchemize focuses on administrative and document-coordination support rather than legal or immigration guidance.",
+      "Apostille processing may involve reviewing the intended destination, identifying whether notarization or certification is required first, and helping organize the document package for the correct authentication process. Based in North Carolina, Alchemize focuses on administrative and document-coordination support for apostille and document-authentication workflows where remote coordination is appropriate and requirements depend on the document and issuing jurisdiction.",
     capabilities: [
       "Destination and document review",
       "Document organization",
@@ -380,6 +392,9 @@ const business = [
     slug: "advisory-optimization",
     serviceKey: "business-advisory",
     title: "Business Advisory & Optimization",
+    seoTitle: "Small Business Consulting & Advisory Services | Alchemize",
+    seoDescription:
+      "Small business consulting and advisory support for owners who need clearer priorities, process improvements, and practical next steps for what to change or improve.",
     Icon: Compass,
     statement:
       "Identify what is not working, what is slowing the business down, and what should happen next.",
@@ -475,6 +490,9 @@ const business = [
     slug: "operations-implementation",
     serviceKey: "business-operations",
     title: "Business Operations & Implementation",
+    seoTitle: "Small Business Operations & Process Support | Alchemize",
+    seoDescription:
+      "Small business operations support for workflows, process improvement, administrative systems, and practical implementation that helps the business run more smoothly.",
     Icon: Workflow,
     statement:
       "Build the systems and administrative structure behind the work.",
@@ -673,6 +691,9 @@ const business = [
     slug: "readiness-growth",
     serviceKey: "business-readiness",
     title: "Business Readiness & Growth",
+    seoTitle: "Small Business Startup & Readiness Support | Alchemize",
+    seoDescription:
+      "Small business startup support, readiness planning, and launch preparation for entrepreneurs who need stronger records, process clarity, and next-step organization.",
     Icon: ClipboardCheck,
     statement:
       "Prepare the business for formation, opportunities, funding, certifications, and the next stage of growth.",
@@ -768,12 +789,15 @@ const business = [
     slug: "bookkeeping-financial-reporting",
     serviceKey: "business-bookkeeping",
     title: "Bookkeeping & Financial Reporting",
+    seoTitle: "Small Business Bookkeeping & Financial Reporting | Alchemize",
+    seoDescription:
+      "Small business bookkeeping and financial reporting support with reconciliations, recurring reporting, and virtual service options for growing businesses.",
     Icon: Landmark,
     statement:
       "Organized bookkeeping gives a business a reliable financial record of what is coming in, what is going out, what is owed, and where the business stands.",
     hero: "Organized bookkeeping gives a business a reliable financial record of what is coming in, what is going out, what is owed, and where the business stands.",
     overview:
-      "Bookkeeping is not only transaction entry. It is a dependable recordkeeping process that helps a business understand its financial position and maintain useful information for reporting, review, and year-end preparation. Alchemize can help structure the records, reconcile the books, and organize a recurring process based on the selected service level.",
+      "Bookkeeping is not only transaction entry. It is a dependable recordkeeping process that helps a business understand its financial position and maintain useful information for reporting, review, and year-end preparation. Based in North Carolina, Alchemize can provide virtual bookkeeping support across the U.S. where the engagement allows, while structuring the records, reconciling the books, and organizing a recurring process based on the selected service level.",
     capabilities: [
       "Transaction categorization",
       "Bank reconciliation",
@@ -859,12 +883,15 @@ const business = [
     slug: "payroll-processing",
     serviceKey: "business-payroll",
     title: "Payroll Processing",
+    seoTitle: "Small Business Payroll Processing Services | Alchemize",
+    seoDescription:
+      "Payroll processing support for small businesses, including organized payroll records, recurring reporting, and virtual administration where the selected workflow allows.",
     Icon: Landmark,
     statement:
       "Structured payroll support for businesses that need dependable employee and contractor payment administration, organized payroll records, and recurring payroll reporting.",
     hero: "Structured payroll support for businesses that need dependable employee and contractor payment administration, organized payroll records, and recurring payroll reporting.",
     overview:
-      "Payroll work requires dependable information, clear process ownership, and an organized record trail. Alchemize can help support payroll setup, payroll record maintenance, recurring payroll reporting, and year-end coordination using the selected payroll platform and agreed service scope.",
+      "Payroll work requires dependable information, clear process ownership, and an organized record trail. Based in North Carolina, Alchemize can support small-business payroll processing and payroll administration with virtual coordination across the U.S. where the selected payroll platform and service scope allow.",
     capabilities: [
       "Payroll setup",
       "Recurring payroll processing coordination",
@@ -951,12 +978,15 @@ const business = [
     slug: "business-tax-support",
     serviceKey: "business-financial",
     title: "Business Tax Support",
+    seoTitle: "Small Business Tax Preparation & Support | Alchemize",
+    seoDescription:
+      "Small business tax preparation and support for organized records, year-end readiness, and virtual tax document preparation where service requirements allow.",
     Icon: Landmark,
     statement:
       "Business tax responsibilities are easier to manage when records, deadlines, and required documents are organized before filing season arrives.",
     hero: "Business tax responsibilities are easier to manage when records, deadlines, and required documents are organized before filing season arrives.",
     overview:
-      "Business tax work becomes more manageable when the owner has a clearer record set, a practical timeline, and a realistic understanding of what must be assembled for filing. Alchemize can help organize the information needed for applicable business tax preparation, year-end readiness, and estimated-tax planning support based on the selected engagement and scope.",
+      "Business tax work becomes more manageable when the owner has a clearer record set, a practical timeline, and a realistic understanding of what must be assembled for filing. Based in North Carolina, Alchemize can help organize the information needed for applicable small business tax preparation, year-end readiness, and estimated-tax planning support through virtual coordination where service requirements allow.",
     capabilities: [
       "Business tax preparation",
       "Tax document organization",

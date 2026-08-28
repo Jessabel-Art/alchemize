@@ -318,9 +318,9 @@ export const faqCategoriesEs = [
 
 export const faqUiEs = {
   metadata: {
-    title: "Preguntas frecuentes | Alchemize Business Services",
+    title: "Preguntas frecuentes | Servicios empresariales y consultas",
     description:
-      "Respuestas claras sobre los servicios, las consultas y qué esperar al trabajar con Alchemize.",
+      "Respuestas claras sobre los servicios de Alchemize, consultas, apoyo empresarial y qué esperar antes de empezar un proyecto o servicio.",
   },
   eyebrow: "Preguntas frecuentes",
   title: "¿Tiene preguntas antes de comenzar?",

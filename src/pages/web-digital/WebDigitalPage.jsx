@@ -7,9 +7,9 @@ import "./web-digital.css";
 const content = {
   en: {
     metadata: {
-      title: "Web & Digital Solutions | Alchemize Business Services",
+      title: "Small Business Website Design & Digital Solutions | Alchemize",
       description:
-        "Professional websites and practical digital support for small businesses, professionals, and individuals building a credible online presence.",
+        "Professional website design and digital support for small businesses, entrepreneurs, and professionals building a credible online presence with practical web solutions.",
     },
     hero: {
       eyebrow: "Web & Digital Solutions",
@@ -96,9 +96,9 @@ const content = {
   },
   es: {
     metadata: {
-      title: "Web y soluciones digitales | Alchemize Business Services",
+      title: "Diseño de sitios web para pequeñas empresas | Alchemize",
       description:
-        "Sitios web profesionales y apoyo digital práctico para pequeñas empresas, profesionales y personas que buscan una presencia en línea sólida y confiable.",
+        "Diseño de sitios web profesional y apoyo digital para pequeñas empresas, emprendedores y profesionales que necesitan una presencia en línea clara y confiable.",
     },
     hero: {
       eyebrow: "Web y soluciones digitales",
@@ -204,8 +204,8 @@ function WebDigitalPage() {
   const { language } = useLanguage();
   const content = contentMap[language];
   usePageMetadata({
-    en: content.metadata,
-    es: content.metadata,
+    en: contentMap.en.metadata,
+    es: contentMap.es.metadata,
   });
 
   const editorial =

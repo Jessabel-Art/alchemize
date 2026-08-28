@@ -2,9 +2,9 @@ export const homeContent = {
   en: {
     metadata: {
       title:
-        "Alchemize Business Services | Practical Support for What Comes Next",
+        "Alchemize Business Services | Business Advisory, Taxes & Operations Support",
       description:
-        "Business advisory, operations, technology, tax, digital support, and professional services for individuals, entrepreneurs, and small businesses.",
+        "Practical support for business operations, tax preparation, digital systems, document services, and administrative planning for entrepreneurs and small businesses.",
     },
     hero: {
       eyebrow: "Alchemize Business Services",
@@ -105,9 +105,9 @@ export const homeContent = {
   },
   es: {
     metadata: {
-      title: "Alchemize Business Services | Apoyo profesional en español",
+      title: "Alchemize Business Services | Asesoría empresarial y apoyo operativo en español",
       description:
-        "Asesoría empresarial, operaciones, tecnología, impuestos, apoyo digital y servicios profesionales para personas, emprendedores y pequeñas empresas.",
+        "Apoyo práctico para operaciones empresariales, impuestos, sistemas digitales, servicios documentales y planificación administrativa para emprendedores y pequeñas empresas.",
     },
     hero: {
       eyebrow: "Alchemize Business Services",

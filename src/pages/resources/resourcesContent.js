@@ -3,7 +3,7 @@ export const resourcesUi = {
     metadata: {
       title: "Resources | Alchemize Business Services",
       description:
-        "Practical guides and checklists for tax preparation, web and digital solutions, business formation, operations, records, and administration.",
+        "Practical guides, checklists, and reference materials for taxes, business operations, document preparation, web and digital support, and day-to-day business administration.",
     },
     directory: {
       eyebrow: "Understand · Prepare · Organize · Act",
@@ -43,7 +43,7 @@ export const resourcesUi = {
     metadata: {
       title: "Recursos | Alchemize Business Services",
       description:
-        "Guías y listas prácticas sobre impuestos, soluciones web y digitales, formación empresarial, operaciones, registros y administración.",
+        "Guías prácticas, listas de verificación y materiales de referencia sobre impuestos, operaciones empresariales, preparación documental, apoyo web y digital, y administración diaria.",
     },
     directory: {
       eyebrow: "Comprender · Preparar · Organizar · Actuar",

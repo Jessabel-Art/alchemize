@@ -3,9 +3,12 @@ import { serviceGroups } from "./serviceCatalog.js";
 const translations = {
   "tax-preparation": {
     title: "Preparación de impuestos",
+    seoTitle: "Preparación de Impuestos Personales | Alchemize",
+    seoDescription:
+      "Preparación de impuestos para individuos con registros organizados, revisión documental y apoyo virtual donde los requisitos del servicio lo permitan.",
     hero: "Prepare su declaración con registros que ya estén organizados a su favor.",
     overview:
-      "La preparación de impuestos se complica cuando los comprobantes de ingresos, gastos, datos de años anteriores y preguntas pendientes están dispersos. Alchemize organiza el proceso para que la declaración pueda prepararse desde un punto de partida más claro.",
+      "La preparación de impuestos se complica cuando los comprobantes de ingresos, gastos, datos de años anteriores y preguntas pendientes están dispersos. Alchemize organiza el proceso para que la declaración pueda prepararse desde un punto de partida más claro. Con sede en Carolina del Norte, el apoyo puede ofrecerse virtualmente donde lo permitan los requisitos del servicio.",
     statement:
       "Una preparación de impuestos organizada comienza con registros completos, preguntas claras y un proceso que no dependa de buscar documentos a última hora.",
     capabilities: [
@@ -93,9 +96,12 @@ const translations = {
   },
   "notary-document-services": {
     title: "Servicios notariales y de documentos",
+    seoTitle: "Servicios de Notario en Carolina del Norte | Alchemize",
+    seoDescription:
+      "Servicios de notario en Carolina del Norte para documentos, firmas, reconocimientos y apoyo administrativo con citas claras y requisitos bien definidos.",
     hero: "Prepare el documento. Verifique los requisitos. Complete correctamente la cita.",
     overview:
-      "El trabajo notarial y el apoyo documental son servicios relacionados, pero distintos. Alchemize puede realizar actos notariales autorizados y ayudar a organizar documentos administrativos no legales, sin seleccionar formularios ni interpretar consecuencias legales.",
+      "El trabajo notarial y el apoyo documental son servicios relacionados, pero distintos. Alchemize ofrece servicios notariales en Carolina del Norte y ayuda a organizar documentos administrativos sin seleccionar formularios ni interpretar consecuencias legales.",
     statement:
       "Prepare el documento. Verifique los requisitos. Complete correctamente la cita.",
     capabilities: [
@@ -177,8 +183,184 @@ const translations = {
       "/assets/downloads/notary-appointment-checklist.pdf",
     ],
   },
+  "translation-services": {
+    title: "Servicios de traducción",
+    seoTitle: "Servicios de Traducción de Documentos | Alchemize",
+    seoDescription:
+      "Traducción profesional de documentos para individuos y negocios, con apoyo virtual y coordinación basada en Carolina del Norte cuando corresponde.",
+    hero: "Apoyo profesional para traducción de documentos personales, administrativos y empresariales.",
+    overview:
+      "Las necesidades de traducción varían según el documento, el destino y el propósito. Con sede en Carolina del Norte, Alchemize ayuda a organizar materiales traducidos, aclarar el contenido y preparar un conjunto útil para revisión antes de confirmar el servicio, con apoyo virtual cuando corresponde.",
+    statement:
+      "Apoyo claro para documentos que necesitan ser entendibles, ordenados y listos para el siguiente paso.",
+    capabilities: [
+      "Apoyo para traducción de documentos personales",
+      "Apoyo para traducción de documentos empresariales",
+      "Organización de documentos administrativos",
+      "Registros y correspondencia de apoyo",
+    ],
+    for: [
+      "Personas que preparan documentos personales para otro idioma",
+      "Negocios que traducen políticas, formularios o correspondencia",
+      "Clientes que organizan documentos de apoyo para revisión",
+      "Personas que preparan materiales para una agencia o institución",
+    ],
+    helps: [
+      "Apoyo a la traducción de documentos personales",
+      "Traducción de correspondencia y formularios empresariales",
+      "Traducción de registros administrativos y documentos de apoyo",
+      "Preparación y organización de paquetes de documentos",
+      "Materiales traducidos listos para revisión antes del envío",
+      "Conversión de idioma para registros internos o dirigidos a clientes",
+      "Organización documental para agencias, instituciones o contenido empresarial",
+    ],
+    situations: [
+      "Un documento personal o empresarial necesita traducción para revisión formal",
+      "Un formulario, política o carta debe traducirse antes de usarse",
+      "Los documentos de apoyo ya están listos pero requieren una versión consistente en otro idioma",
+      "Un cliente desea un conjunto claro y organizado antes de presentarlo",
+    ],
+    process: [
+      [
+        "Revisar",
+        "Confirme el documento, el destino previsto, el idioma de origen y lo que debe traducirse.",
+      ],
+      [
+        "Organizar",
+        "Agrupe los documentos de apoyo e identifique los materiales que deben formar parte del conjunto de traducción.",
+      ],
+      [
+        "Traducir",
+        "Prepare el trabajo solicitado en un formato claro y listo para revisión según el servicio seleccionado.",
+      ],
+      [
+        "Confirmar",
+        "Revise los materiales finales y determine si se requieren instrucciones adicionales o seguimiento.",
+      ],
+    ],
+    prepare: [
+      "Los documentos que requieren traducción",
+      "El idioma de origen y el idioma de destino",
+      "Cualquier instrucción de la entidad receptora u organización",
+      "Documentos relacionados que deben acompañar al paquete traducido",
+      "Materiales de referencia que aclaren terminología o contexto",
+    ],
+    boundary:
+      "Los servicios de traducción son de apoyo documental y no garantizan aceptación, certificación, efecto legal ni resultado específico de una agencia. Algunas instituciones, cortes, asuntos de inmigración, gobiernos extranjeros u otras autoridades pueden exigir requisitos específicos de traducción o certificación, y conviene confirmarlos antes de iniciar el servicio.",
+    related: [
+      [
+        "Servicios notariales y de documentos",
+        "/services/individuals/notary-document-services",
+      ],
+      ["Servicios de apostilla", "/services/individuals/apostille-services"],
+    ],
+    resources: [
+      [
+        "Documentos para preparar antes de una consulta",
+        "/assets/downloads/alchemize-consultation-document-checklist.pdf",
+      ],
+      [
+        "Cómo prepararse para una cita notarial",
+        "/resources/preparing-for-a-notary-appointment",
+      ],
+    ],
+    cta: "¿Necesita materiales traducidos con claridad y consistencia?",
+    checklist: [
+      "Lista de preparación para servicios de traducción",
+      "/assets/downloads/alchemize-consultation-document-checklist.pdf",
+    ],
+  },
+  "apostille-services": {
+    title: "Servicios de apostilla",
+    seoTitle: "Servicios de Apostilla en Carolina del Norte | Alchemize",
+    seoDescription:
+      "Apoyo para apostilla y autenticación de documentos en Carolina del Norte, con coordinación remota cuando los requisitos dependen del documento, la jurisdicción y el país de destino.",
+    hero: "Prepare el conjunto de documentos para el destino que los recibirá.",
+    overview:
+      "La apostilla puede requerir revisar el destino, identificar si antes se necesita notarialización o certificación y ayudar a organizar el paquete documental para el proceso correcto. Con sede en Carolina del Norte, Alchemize se enfoca en apoyo administrativo y de coordinación para apostillas y autenticación de documentos cuando la coordinación remota es apropiada y los requisitos dependen del documento y la autoridad emisora.",
+    statement:
+      "Apoyo para preparar y coordinar documentos que podrían necesitar autenticación para su uso fuera de Estados Unidos.",
+    capabilities: [
+      "Revisión de destino y documento",
+      "Organización documental",
+      "Apoyo para notarialización o certificación",
+      "Preparación para envío y manejo de devolución",
+    ],
+    for: [
+      "Personas que preparan documentos personales para uso en el extranjero",
+      "Familias que coordinan documentos autenticados para otro país",
+      "Negocios que preparan registros corporativos para uso internacional",
+      "Clientes que organizan documentos que podrían requerir autenticación",
+    ],
+    helps: [
+      "Revisión del destino previsto y tipo de documento",
+      "Evaluación de si antes se requiere notarialización o certificación",
+      "Organización de documentos de apoyo e instrucciones del destinatario",
+      "Preparación del paquete documental y manejo de registros",
+      "Coordinación de requisitos de envío y detalles de devolución",
+      "Apoyo administrativo para flujos de autenticación documental",
+    ],
+    situations: [
+      "Un documento se usará en otro país o jurisdicción",
+      "La autoridad receptora exige una apostilla o autenticación equivalente",
+      "El documento puede necesitar notarialización o certificación antes del trámite de apostilla",
+      "Un cliente necesita ayuda para organizar los registros de apoyo del proceso",
+    ],
+    process: [
+      [
+        "Revisar",
+        "Aclare el país de destino, el tipo de documento y los requisitos de la autoridad emisora.",
+      ],
+      [
+        "Confirmar",
+        "Determine si se requiere notarialización, certificación u otro paso antes de la apostilla.",
+      ],
+      [
+        "Organizar",
+        "Prepare el conjunto documental, los registros de apoyo y los detalles de envío en un paquete ordenado.",
+      ],
+      [
+        "Coordinar",
+        "Apoye la devolución, el seguimiento y el manejo del documento según el servicio acordado.",
+      ],
+    ],
+    prepare: [
+      "El documento que podría requerir apostilla",
+      "Cualquier registro de notarialización o certificación aplicable",
+      "Instrucciones de la autoridad receptora o de la fuente del documento",
+      "Una copia del conjunto final y cualquier registro complementario",
+      "Detalles del país de destino o autoridad emisora cuando estén disponibles",
+    ],
+    boundary:
+      "Los servicios de apostilla son apoyo administrativo y de coordinación documental. Alchemize no garantiza aprobación, tiempos de trámite, asesoría legal, asesoría de inmigración ni aceptación por parte de un gobierno extranjero. Los requisitos varían según el documento, la autoridad emisora, el país de destino y si este participa en la Convención de La Haya o requiere autenticación adicional.",
+    related: [
+      ["Servicios de traducción", "/services/individuals/translation-services"],
+      [
+        "Servicios notariales y de documentos",
+        "/services/individuals/notary-document-services",
+      ],
+    ],
+    resources: [
+      [
+        "Documentos para preparar antes de una consulta",
+        "/assets/downloads/alchemize-consultation-document-checklist.pdf",
+      ],
+      [
+        "Cómo prepararse para una cita notarial",
+        "/resources/preparing-for-a-notary-appointment",
+      ],
+    ],
+    cta: "¿Necesita organizar un paquete documental para autenticación o uso en el extranjero?",
+    checklist: [
+      "Lista de preparación para servicios de apostilla",
+      "/assets/downloads/alchemize-consultation-document-checklist.pdf",
+    ],
+  },
   "advisory-optimization": {
     title: "Asesoría y optimización empresarial",
+    seoTitle: "Consultoría Empresarial para Pequeñas Empresas | Alchemize",
+    seoDescription:
+      "Consultoría empresarial para pequeñas empresas con apoyo en prioridades, mejora operativa y decisiones prácticas sobre qué cambiar o mejorar.",
     hero: "Convierta la fricción operativa en un plan práctico de acción.",
     overview:
       "Alchemize revisa la situación actual, identifica dónde fallan la información o las responsabilidades, distingue los síntomas de las causas y crea un plan ordenado de mejora. Cuando la implementación está dentro del alcance, el trabajo puede continuar más allá de las recomendaciones.",
@@ -269,6 +451,9 @@ const translations = {
   },
   "operations-implementation": {
     title: "Operaciones e implementación empresarial",
+    seoTitle: "Apoyo Operativo para Pequeñas Empresas | Alchemize",
+    seoDescription:
+      "Apoyo operativo para pequeñas empresas en procesos, flujos de trabajo, sistemas administrativos e implementación práctica para mejorar la operación del negocio.",
     hero: "Una recomendación solo es útil si después el negocio puede operar de otra manera.",
     overview:
       "Alchemize traza el flujo actual, identifica dónde fallan la información o las responsabilidades, documenta los pasos requeridos, asigna responsables y ayuda a poner en práctica el proceso revisado.",
@@ -457,6 +642,9 @@ const translations = {
   },
   "readiness-growth": {
     title: "Preparación y crecimiento empresarial",
+    seoTitle: "Apoyo para Iniciar un Pequeño Negocio | Alchemize",
+    seoDescription:
+      "Apoyo para iniciar un pequeño negocio y preparación para lanzamiento, con organización de registros, claridad de procesos y próximos pasos para emprendedores.",
     hero: "Construya los registros y la preparación que respaldan la oportunidad.",
     overview:
       "Este trabajo organiza la información, los registros, los planes, las fechas y los documentos de respaldo que una oportunidad puede exigir. La meta es fortalecer el proceso de solicitud o decisión, no prometer una aprobación o adjudicación.",
@@ -548,11 +736,173 @@ const translations = {
       "/assets/downloads/business-formation-startup-checklist.pdf",
     ],
   },
+  "bookkeeping-financial-reporting": {
+    title: "Contabilidad y reportes financieros",
+    seoTitle: "Contabilidad para Pequeños Negocios | Alchemize",
+    seoDescription:
+      "Contabilidad para pequeños negocios con conciliación, reportes financieros y apoyo virtual para empresas en crecimiento.",
+    hero: "Una contabilidad organizada le da al negocio un historial financiero confiable de lo que entra, sale, debe y en qué situación se encuentra.",
+    overview:
+      "La contabilidad no es solo la captura de transacciones. Es un proceso de registros confiable que ayuda al negocio a entender su posición financiera y mantener información útil para reportes, revisión y preparación de fin de año. Con sede en Carolina del Norte, Alchemize puede ofrecer apoyo virtual de contabilidad en Estados Unidos cuando el servicio lo permita, mientras estructura los registros, concilia los libros y organiza un proceso recurrente según el nivel de servicio seleccionado.",
+    statement:
+      "Una contabilidad organizada le da al negocio un historial financiero confiable de lo que entra, sale, debe y en qué situación se encuentra.",
+    capabilities: [
+      "Categorización de transacciones",
+      "Conciliación bancaria",
+      "Conciliación de tarjetas de crédito",
+      "Seguimiento de ingresos y gastos",
+    ],
+    for: [
+      "Negocios que necesitan mejor visibilidad financiera",
+      "Propietarios que requieren contabilidad más clara antes de impuestos o revisión",
+      "Empresas con recibos, facturas y estados dispersos",
+      "Negocios que desean apoyo recurrente con reportes financieros",
+    ],
+    helps: [
+      "Categorización y revisión de transacciones",
+      "Conciliación bancaria y comparación de cuentas",
+      "Conciliación de tarjeta de crédito y revisión de gastos",
+      "Seguimiento de ingresos y gastos",
+      "Seguimiento de cuentas por cobrar",
+      "Seguimiento de cuentas por pagar",
+      "Mantenimiento del libro mayor",
+      "Reportes mensuales o periódicos",
+      "Limpieza contable y organización histórica",
+      "Organización de documentos para apoyo tributario",
+      "Coordinación de registros para revisión de fin de año",
+    ],
+    situations: [
+      "La empresa tiene demasiadas transacciones para categorizar sin un sistema claro",
+      "Las cuentas bancarias y de tarjeta de crédito necesitan conciliación frente a la actividad registrada",
+      "Los recibos, facturas y gastos están en distintos lugares",
+      "El propietario necesita una vista más clara de la posición financiera de la empresa",
+    ],
+    process: [
+      [
+        "Reunir",
+        "Reúna los registros legales, bancarios, de ingresos, gastos y la información relevante de nómina o contratistas necesarios para la contabilidad.",
+      ],
+      [
+        "Revisar",
+        "Identifique elementos faltantes, inconsistencias y transacciones que necesiten clasificación o aclaración.",
+      ],
+      [
+        "Conciliar",
+        "Compare las transacciones registradas con los estados y organice el libro mayor para que refleje la actividad real del negocio.",
+      ],
+      [
+        "Reportar",
+        "Prepare los reportes y registros alineados con el nivel de servicio contable y el ritmo de trabajo acordado.",
+      ],
+    ],
+    prepare: [
+      "Documentos legales de constitución o registro y documentos comparables",
+      "Registro de EIN y documentos de registro empresarial cuando correspondan",
+      "Estados bancarios, de ahorros, préstamos y tarjetas de crédito",
+      "Facturas de clientes, registros de ventas, facturas de proveedores, recibos y gastos",
+      "Resumen de nómina, hojas de tiempo, facturas de contratistas y registros de nómina relevantes",
+      "Registros de activos, financiamiento y compras con fechas y respaldos",
+    ],
+    boundary:
+      "El apoyo contable cubre registros financieros organizados y reportes según el servicio seleccionado. No sustituye servicios de CPA, auditor, preparador de impuestos, procesamiento de nómina ni asesoría de inversiones. Los libros organizados pueden ayudar a preparar registros más claros para la preparación de impuestos de fin de año y la revisión profesional.",
+    related: [
+      ["Procesamiento de nómina", "/services/businesses/payroll-processing"],
+      ["Apoyo tributario para empresas", "/services/businesses/business-tax-support"],
+    ],
+    cta: "¿Necesita que el proceso de registros financieros sea más claro y confiable?",
+    checklist: [
+      "Lista de preparación para contabilidad y reportes financieros",
+      "/assets/downloads/business-tax-preparation-checklist.pdf",
+    ],
+  },
+  "payroll-processing": {
+    title: "Procesamiento de nómina",
+    seoTitle: "Servicios de Nómina para Pequeñas Empresas | Alchemize",
+    seoDescription:
+      "Apoyo de nómina para pequeñas empresas con registros organizados, reportes recurrentes y administración virtual donde lo permite el flujo seleccionado.",
+    hero: "Apoyo estructurado de nómina para negocios que necesitan pagos confiables a empleados y contratistas, registros organizados y reportes recurrentes.",
+    overview:
+      "El trabajo de nómina requiere información confiable, propiedad clara del proceso y un historial ordenado. Con sede en Carolina del Norte, Alchemize puede apoyar el procesamiento de nómina para pequeñas empresas y la administración de nómina con coordinación virtual en Estados Unidos donde la plataforma y el alcance lo permitan.",
+    statement:
+      "Apoyo estructurado de nómina para negocios que necesitan pagos confiables a empleados y contratistas, registros organizados y reportes recurrentes.",
+    capabilities: [
+      "Configuración de nómina",
+      "Coordinación de nómina recurrente",
+      "Registros de nómina de empleados",
+      "Registros de pagos a contratistas",
+    ],
+    for: [
+      "Negocios que gestionan pagos a empleados o contratistas",
+      "Propietarios que necesitan registros de nómina más organizados",
+      "Empresas con reportes recurrentes y documentación de nómina",
+      "Equipos que coordinan información de nómina entre horarios y deducciones",
+    ],
+    helps: [
+      "Configuración de empleados y recolección de datos de nómina",
+      "Organización de horarios y periodos de pago",
+      "Preparación de registros de sueldos y horas",
+      "Seguimiento de deducciones y organización de resúmenes",
+      "Mantenimiento de registros de pagos a contratistas",
+      "Conciliación de nómina y preparación de reportes",
+      "Mantenimiento y revisión de registros de nómina",
+      "Coordinación de registros de nómina de fin de año",
+      "Apoyo administrativo para limpieza de datos de nómina",
+    ],
+    situations: [
+      "Los datos de nómina se están manejando en varios lugares",
+      "Los registros de empleados o contratistas necesitan orden",
+      "El negocio requiere resúmenes recurrentes de nómina y apoyo de conciliación",
+      "Los registros de fin de año necesitan mejor coordinación y limpieza",
+    ],
+    process: [
+      [
+        "Evaluar",
+        "Confirme el proceso de nómina, la información de empleados y contratistas, el calendario y la estructura de reportes requerida.",
+      ],
+      [
+        "Organizar",
+        "Reúna los registros de nómina, calendarios y detalles de apoyo en un formato listo para revisión.",
+      ],
+      [
+        "Procesar",
+        "Coordine la administración y los reportes de nómina a través de la plataforma o del proceso acordado.",
+      ],
+      [
+        "Revisar",
+        "Confirme los resúmenes, concilie excepciones y apoye el conjunto final antes del siguiente ciclo o cierre anual.",
+      ],
+    ],
+    prepare: [
+      "Información de empleados y contratistas",
+      "Calendarios de pago y periodos relevantes",
+      "Información de salarios, deducciones y reembolsos",
+      "Hojas de tiempo, resúmenes de nómina y facturas de contratistas",
+      "Información relacionada con W-9 y 1099 cuando corresponda",
+      "Registros previos de nómina y documentos de fin de año",
+    ],
+    boundary:
+      "El apoyo de nómina es administrativo y operativo. Alchemize no asume responsabilidad directa por remesas fiscales salvo que se establezca específicamente a través de la plataforma seleccionada y el flujo acordado. Las capacidades admitidas, los requisitos de la plataforma y las obligaciones legales deben confirmarse antes del compromiso.",
+    related: [
+      [
+        "Contabilidad y reportes financieros",
+        "/services/businesses/bookkeeping-financial-reporting",
+      ],
+      ["Apoyo tributario para empresas", "/services/businesses/business-tax-support"],
+    ],
+    cta: "¿Necesita que los registros y la administración de nómina estén más organizados?",
+    checklist: [
+      "Lista de preparación para procesamiento de nómina",
+      "/assets/downloads/business-tax-preparation-checklist.pdf",
+    ],
+  },
   "business-tax-support": {
     title: "Apoyo tributario para empresas",
+    seoTitle: "Preparación de Impuestos para Pequeñas Empresas | Alchemize",
+    seoDescription:
+      "Preparación de impuestos para pequeñas empresas con organización documental, preparación de fin de año y apoyo virtual donde los requisitos del servicio lo permitan.",
     hero: "Las responsabilidades tributarias de la empresa son más fáciles de manejar cuando los registros, los plazos y los documentos requeridos están organizados antes de la temporada de declaraciones.",
     overview:
-      "El trabajo tributario empresarial se vuelve más manejable cuando el propietario cuenta con un conjunto de registros más claro, un calendario práctico y una comprensión realista de lo que debe reunirse para la declaración. Alchemize puede ayudar a organizar la información necesaria para la preparación de impuestos empresariales aplicables, la preparación de fin de año y el apoyo a impuestos estimados según el alcance y el servicio seleccionado.",
+      "El trabajo tributario empresarial se vuelve más manejable cuando el propietario cuenta con un conjunto de registros más claro, un calendario práctico y una comprensión realista de lo que debe reunirse para la declaración. Con sede en Carolina del Norte, Alchemize puede ayudar a organizar la información necesaria para la preparación de impuestos para pequeñas empresas, la preparación de fin de año y el apoyo a impuestos estimados con coordinación virtual donde lo permitan los requisitos del servicio.",
     statement:
       "Las responsabilidades tributarias de la empresa son más fáciles de manejar cuando los registros, los plazos y los documentos requeridos están organizados antes de la temporada de declaraciones.",
     capabilities: [
