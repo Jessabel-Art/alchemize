@@ -2,12 +2,12 @@
 -- These rows prevent public clients from interpreting the highest standardized tier
 -- as unlimited, while ensuring Custom SOW work never renders as a zero-dollar offer.
 INSERT INTO service_tiers (
-    service_id, tier_key, tier_name, description, base_price, minimum_price,
+    public_id, service_id, tier_key, tier_name, description, base_price, minimum_price,
     billing_frequency, pricing_type, status, included_scope, limits_metadata,
     pricing_metadata, invoice_description, internal_notes, active_flag,
     sort_order, catalog_version
 )
-SELECT s.id, x.tier_key, x.tier_name, x.description, NULL, NULL,
+SELECT UUID(), s.id, x.tier_key, x.tier_name, x.description, NULL, NULL,
        'CUSTOM', 'CUSTOM_SOW', 'CUSTOM_SOW_ONLY', NULL, x.limits_metadata,
        NULL, x.invoice_description, NULL, 1, x.sort_order, '2026-08-29'
 FROM services s
