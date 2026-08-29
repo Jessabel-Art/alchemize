@@ -74,6 +74,13 @@ test("lead persistence precedes best-effort Admin notification with abuse guards
   assert.match(service, /RATE_LIMITED/);
   assert.match(service, /duplicate/);
   assert.match(endpoint, /REMOTE_ADDR/);
+  assert.match(service, /42S02/);
+  assert.match(service, /1146/);
+  assert.match(service, /Contact lead guard unavailable/);
+  assert.ok(
+    service.indexOf("$this->database->commit()") <
+      service.indexOf("Lead notification bookkeeping failed"),
+  );
 });
 
 test("Stripe Checkout is hosted, client scoped, and cannot locally mark paid", () => {

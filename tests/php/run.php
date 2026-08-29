@@ -7,6 +7,7 @@ require_once dirname(__DIR__, 2) . '/server/config/config.php';
 require_once dirname(__DIR__, 2) . '/server/validation/lead-validator.php';
 require_once dirname(__DIR__, 2) . '/server/services/stripe-webhook-service.php';
 require_once dirname(__DIR__, 2) . '/server/services/google-client-factory.php';
+require_once dirname(__DIR__, 2) . '/server/services/catalog-pricing-service.php';
 $composerAutoload = dirname(__DIR__, 2) . '/vendor/autoload.php';
 if (is_file($composerAutoload)) {
     require_once $composerAutoload;
@@ -79,6 +80,26 @@ test('normalizes a documented legacy service alias', function (): void {
     $payload['service_key'] = 'business-administration-operations';
     $payload['audience'] = 'business';
     expect(alchemize_validate_lead($payload)['data']['service_key'] === 'business-operations');
+});
+
+test('accepts active canonical translation and digital service keys', function (): void {
+    $translation = valid_payload();
+    $translation['service_key'] = 'individual-translation';
+    expect(alchemize_validate_lead($translation)['valid'] === true);
+    $digital = valid_payload();
+    $digital['audience'] = 'business';
+    $digital['service_key'] = 'business-digital';
+    expect(alchemize_validate_lead($digital)['valid'] === true);
+});
+
+test('normalizes legacy formation and tax families to maintained public keys', function (): void {
+    $formation = valid_payload();
+    $formation['audience'] = 'business';
+    $formation['service_key'] = 'business-formation';
+    expect(alchemize_validate_lead($formation)['data']['service_key'] === 'business-readiness');
+    $tax = $formation;
+    $tax['service_key'] = 'business-tax';
+    expect(alchemize_validate_lead($tax)['data']['service_key'] === 'business-financial');
 });
 
 test('rejects oversized message', function (): void {
@@ -229,6 +250,24 @@ test('initializes the SES SMTP provider without connecting or sending', function
     expect($mailer->Port === 587);
     expect($mailer->SMTPSecure === PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS);
     expect($mailer->SMTPAuth === true);
+});
+
+test('calculates finalized catalog pricing and stops at complexity thresholds', function (): void {
+    $pricing = new AlchemizeCatalogPricingService();
+    foreach ([1 => 250, 2 => 375, 5 => 750, 12 => 1625] as $months => $amount) expect($pricing->calculate('bookkeeping', 'cleanup', ['months_behind' => $months])['amount'] === (float) $amount);
+    expect($pricing->calculate('translation', 'general', ['source_words' => 1200])['amount'] === 180.0);
+    expect($pricing->calculate('translation', 'certified', ['pages' => 2])['amount'] === 90.0);
+    expect($pricing->calculate('translation', 'certified', ['pages' => 2, 'rush' => true])['amount'] === 135.0);
+    foreach ([100 => ['essentials',249], 101 => ['growth',399], 300 => ['growth',399], 301 => ['operations',599], 600 => ['operations',599]] as $quantity => [$tier,$amount]) { $result=$pricing->calculate('bookkeeping','monthly',['transactions'=>$quantity]); expect($result['tier_key']===$tier && $result['amount']===(float)$amount); }
+    expect($pricing->calculate('bookkeeping','monthly',['transactions'=>601])['amount'] === null);
+    foreach ([5=>99,6=>149,15=>149,16=>199,30=>199] as $employees=>$amount) expect($pricing->calculate('payroll','processing',['employees'=>$employees])['amount']===(float)$amount);
+    expect($pricing->calculate('payroll','processing',['employees'=>31])['amount'] === null);
+    expect($pricing->calculate('tax-preparation','standard-1040',['rentals'=>2,'additional_states'=>1])['amount'] === 624.0);
+    expect($pricing->calculate('website-design','launch')['amount'] === 1250.0);
+    expect($pricing->calculate('website-design','growth')['amount'] === 1850.0);
+    expect($pricing->calculate('website-design','custom')['display_price'] === 'Custom SOW');
+    expect($pricing->calculate('apostille','facilitation',['documents'=>1])['amount'] === 149.0);
+    expect($pricing->calculate('apostille','facilitation',['documents'=>3])['amount'] === 229.0);
 });
 
 $failed = 0;

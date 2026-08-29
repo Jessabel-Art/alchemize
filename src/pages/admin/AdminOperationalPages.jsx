@@ -1174,6 +1174,13 @@ function ClientManagementPage() {
   const [portalActionMessage, setPortalActionMessage] = useState("");
   const [portalActionPending, setPortalActionPending] = useState(false);
   const [accessGrants, setAccessGrants] = useState([]);
+  const [serviceAssignment, setServiceAssignment] = useState({
+    serviceId: "",
+    tierId: "",
+    agreedPrice: "",
+    startDate: new Date().toISOString().slice(0, 10),
+    notes: "",
+  });
 
   useEffect(() => {
     portalAdmin
@@ -1299,6 +1306,36 @@ function ClientManagementPage() {
     : [];
 
   const refreshClientState = () => setRecordVersion((current) => current + 1);
+
+  const assignCatalogService = async (event) => {
+    event.preventDefault();
+    if (!selectedClient || !serviceAssignment.serviceId) return;
+    try {
+      await clientApi.assignService(selectedClient.id, {
+        service_id: Number(serviceAssignment.serviceId),
+        tier_id: serviceAssignment.tierId
+          ? Number(serviceAssignment.tierId)
+          : null,
+        agreed_base_price: Number(serviceAssignment.agreedPrice || 0),
+        start_date: serviceAssignment.startDate,
+        notes: serviceAssignment.notes,
+      });
+      setClientSavedMessage(
+        "Canonical service assigned with a locked pricing snapshot.",
+      );
+      setServiceAssignment({
+        serviceId: "",
+        tierId: "",
+        agreedPrice: "",
+        startDate: new Date().toISOString().slice(0, 10),
+        notes: "",
+      });
+    } catch (error) {
+      setClientSavedMessage(
+        error.message || "Unable to assign this catalog service.",
+      );
+    }
+  };
 
   useEffect(() => {
     if (!selectedClient) {
@@ -2200,7 +2237,135 @@ function ClientManagementPage() {
 
           {activeTab === "services" ? (
             <div className="detail-block">
-              <h3>Active services</h3>
+              <div className="note-header">
+                <h3>Active services</h3>
+              </div>
+              <form
+                className="client-detail-editor-grid"
+                onSubmit={assignCatalogService}
+              >
+                <label>
+                  <span>Catalog service</span>
+                  <select
+                    required
+                    value={serviceAssignment.serviceId}
+                    onChange={(event) =>
+                      setServiceAssignment({
+                        ...serviceAssignment,
+                        serviceId: event.target.value,
+                        tierId: "",
+                        agreedPrice: "",
+                      })
+                    }
+                  >
+                    <option value="">Select service</option>
+                    {snapshot.services
+                      .filter((service) => service.selectable)
+                      .map((service) => (
+                        <option key={service.id} value={service.id}>
+                          {service.serviceName}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+                <label>
+                  <span>Tier</span>
+                  <select
+                    required
+                    value={serviceAssignment.tierId}
+                    onChange={(event) => {
+                      const tier = snapshot.services
+                        .find(
+                          (service) =>
+                            service.id === serviceAssignment.serviceId,
+                        )
+                        ?.tiers?.find((item) => item.id === event.target.value);
+                      setServiceAssignment({
+                        ...serviceAssignment,
+                        tierId: event.target.value,
+                        agreedPrice:
+                          tier?.basePrice ?? tier?.minimumPrice ?? "",
+                      });
+                    }}
+                  >
+                    <option value="">Select tier</option>
+                    {(
+                      snapshot.services.find(
+                        (service) => service.id === serviceAssignment.serviceId,
+                      )?.tiers || []
+                    )
+                      .filter(
+                        (tier) =>
+                          tier.active &&
+                          ![
+                            "NOT_OFFERED",
+                            "PENDING_AUTHORIZATION",
+                            "FUTURE_EXPANSION",
+                          ].includes(tier.status),
+                      )
+                      .map((tier) => (
+                        <option key={tier.id} value={tier.id}>
+                          {tier.tierName} —{" "}
+                          {tier.pricingType === "CUSTOM_SOW"
+                            ? "Custom SOW"
+                            : formatCurrency(
+                                tier.basePrice || tier.minimumPrice,
+                              )}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+                <label>
+                  <span>Agreed price</span>
+                  <input
+                    required
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    value={serviceAssignment.agreedPrice}
+                    onChange={(event) =>
+                      setServiceAssignment({
+                        ...serviceAssignment,
+                        agreedPrice: event.target.value,
+                      })
+                    }
+                  />
+                </label>
+                <label>
+                  <span>Start date</span>
+                  <input
+                    type="date"
+                    value={serviceAssignment.startDate}
+                    onChange={(event) =>
+                      setServiceAssignment({
+                        ...serviceAssignment,
+                        startDate: event.target.value,
+                      })
+                    }
+                  />
+                </label>
+                <label className="full-span">
+                  <span>Scope / notes</span>
+                  <textarea
+                    value={serviceAssignment.notes}
+                    onChange={(event) =>
+                      setServiceAssignment({
+                        ...serviceAssignment,
+                        notes: event.target.value,
+                      })
+                    }
+                  />
+                </label>
+                <div className="full-span">
+                  <button type="submit" className="primary-button">
+                    Assign catalog service
+                  </button>
+                  <p className="field-help">
+                    The agreed rate is snapshotted. Later catalog price changes
+                    affect new agreements only.
+                  </p>
+                </div>
+              </form>
               {clientEngagements.length ? (
                 <div className="admin-table-wrap">
                   <table className="admin-table">
@@ -3184,61 +3349,89 @@ function ServiceManagementPage() {
         <table className="admin-table">
           <thead>
             <tr>
-              <th>Service Code</th>
+              <th>Category</th>
               <th>Service</th>
-              <th>Audience</th>
+              <th>Tier</th>
+              <th>Price</th>
+              <th>Frequency</th>
+              <th>Pricing</th>
               <th>Status</th>
-              <th>Default Duration</th>
-              <th>Billing Type</th>
-              <th>Default Price</th>
+              <th>Scope / limits</th>
               <th>Add-ons</th>
-              <th>Active Engagements</th>
+              <th>Selectable</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {filteredCatalog.map((item) => (
-              <tr key={item.id}>
-                <td>{item.serviceCode}</td>
-                <td>{item.serviceName}</td>
-                <td>{item.audience}</td>
-                <td>
-                  <AdminStatusBadge
-                    status={item.status}
-                    tone={statusTone[item.status] || "neutral"}
-                  />
-                </td>
-                <td>
-                  {item.defaultDuration ? `${item.defaultDuration} min` : "—"}
-                </td>
-                <td>{item.billingType}</td>
-                <td>
-                  {item.defaultPrice == null
-                    ? "Custom / SOW"
-                    : formatCurrency(item.defaultPrice)}
-                </td>
-                <td>{Array.isArray(item.addOns) ? item.addOns.length : 0}</td>
-                <td>{item.activeEngagements}</td>
-                <td>
-                  <div className="table-actions">
-                    <button
-                      type="button"
-                      className="link-button"
-                      onClick={() => openServiceEditor(item)}
-                    >
-                      View
-                    </button>
-                    <button
-                      type="button"
-                      className="link-button"
-                      onClick={() => openServiceEditor(item)}
-                    >
-                      Edit
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {filteredCatalog.flatMap((item) =>
+              (item.tiers?.length ? item.tiers : [null]).map((tier) => (
+                <tr key={`${item.id}:${tier?.id || "service"}`}>
+                  <td>{item.category}</td>
+                  <td>
+                    <strong>{item.serviceName}</strong>
+                  </td>
+                  <td>{tier?.tierName || "—"}</td>
+                  <td>
+                    {tier?.pricingType === "CUSTOM_SOW"
+                      ? "Custom SOW"
+                      : tier?.pricingType === "STARTING_AT"
+                        ? `Starting at ${formatCurrency(tier.minimumPrice || tier.basePrice)}`
+                        : tier?.basePrice == null
+                          ? "Manual Review Required"
+                          : formatCurrency(tier.basePrice)}
+                  </td>
+                  <td>
+                    {tier?.billingFrequency?.replaceAll("_", " ") ||
+                      item.billingType}
+                  </td>
+                  <td>
+                    {tier?.pricingType?.replaceAll("_", " ") ||
+                      item.pricingType}
+                  </td>
+                  <td>
+                    <AdminStatusBadge
+                      status={(tier?.status || item.catalogStatus).replaceAll(
+                        "_",
+                        " ",
+                      )}
+                      tone={
+                        (tier?.status || item.catalogStatus) === "ACTIVE"
+                          ? "success"
+                          : "warning"
+                      }
+                    />
+                  </td>
+                  <td>
+                    {tier?.description || item.shortDescription}
+                    {tier?.limits
+                      ? ` · Limits: ${typeof tier.limits === "string" ? tier.limits : JSON.stringify(tier.limits)}`
+                      : ""}
+                  </td>
+                  <td>{Array.isArray(item.addOns) ? item.addOns.length : 0}</td>
+                  <td>
+                    {item.selectable && tier?.active !== false ? "Yes" : "No"}
+                  </td>
+                  <td>
+                    <div className="table-actions">
+                      <button
+                        type="button"
+                        className="link-button"
+                        onClick={() => openServiceEditor(item)}
+                      >
+                        View
+                      </button>
+                      <button
+                        type="button"
+                        className="link-button"
+                        onClick={() => openServiceEditor(item)}
+                      >
+                        Edit
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              )),
+            )}
           </tbody>
         </table>
       </div>
@@ -6450,6 +6643,38 @@ function BillingManagementPage() {
     }));
   };
 
+  const selectCatalogTier = (lineId, selection) => {
+    const [serviceId, tierId] = selection.split(":");
+    const service = snapshot.services.find((item) => item.id === serviceId);
+    const tier = service?.tiers?.find((item) => item.id === tierId);
+    if (!service || !tier) return;
+    const custom = ["CUSTOM_SOW", "MANUAL_REVIEW"].includes(tier.pricingType);
+    setInvoiceDraft((current) => ({
+      ...current,
+      lines: current.lines.map((line) =>
+        line.id !== lineId
+          ? line
+          : {
+              ...line,
+              serviceCode: service.serviceCode,
+              relatedServiceId: service.id,
+              relatedTierId: tier.id,
+              description:
+                tier.invoiceDescription ||
+                `${service.serviceName} — ${tier.tierName}`,
+              billingType: tier.billingFrequency,
+              unitPrice: custom
+                ? 0
+                : Number(tier.basePrice || tier.minimumPrice || 0),
+              amount: custom
+                ? 0
+                : Number(tier.basePrice || tier.minimumPrice || 0),
+              pricingType: tier.pricingType,
+            },
+      ),
+    }));
+  };
+
   const removeLineItem = (lineId) => {
     setInvoiceDraft((current) => ({
       ...current,
@@ -6482,6 +6707,7 @@ function BillingManagementPage() {
         billingType: line.billingType || "Custom",
         referenceType: line.referenceType || "custom",
         relatedServiceId: line.relatedServiceId || null,
+        relatedTierId: line.relatedTierId || null,
         relatedEngagementId:
           line.relatedEngagementId || invoiceDraft.engagementId || null,
       }));
@@ -6511,6 +6737,7 @@ function BillingManagementPage() {
         credit_deposit_total: Number(invoiceDraft.creditsApplied || 0),
         line_items: resolvedLines.map((line) => ({
           service_id: line.relatedServiceId,
+          tier_id: line.relatedTierId,
           service_code: line.serviceCode,
           description: line.description,
           quantity: line.quantity,
@@ -6903,14 +7130,47 @@ function BillingManagementPage() {
 
               {invoiceDraft.lines.map((line, index) => (
                 <div key={line.id} className="invoice-line-row">
-                  <input
-                    type="text"
-                    value={line.serviceCode}
-                    placeholder="Service code"
-                    onChange={(event) =>
-                      updateLine(line.id, "serviceCode", event.target.value)
+                  <select
+                    value={
+                      line.relatedServiceId && line.relatedTierId
+                        ? `${line.relatedServiceId}:${line.relatedTierId}`
+                        : ""
                     }
-                  />
+                    onChange={(event) =>
+                      selectCatalogTier(line.id, event.target.value)
+                    }
+                    aria-label={`Catalog service for line ${index + 1}`}
+                  >
+                    <option value="">Custom line</option>
+                    {snapshot.services
+                      .filter((service) => service.selectable)
+                      .flatMap((service) =>
+                        (service.tiers || [])
+                          .filter(
+                            (tier) =>
+                              tier.active &&
+                              ![
+                                "NOT_OFFERED",
+                                "PENDING_AUTHORIZATION",
+                                "FUTURE_EXPANSION",
+                              ].includes(tier.status),
+                          )
+                          .map((tier) => (
+                            <option
+                              key={`${service.id}:${tier.id}`}
+                              value={`${service.id}:${tier.id}`}
+                            >
+                              {service.serviceName} — {tier.tierName} (
+                              {tier.pricingType === "CUSTOM_SOW"
+                                ? "Custom SOW"
+                                : tier.pricingType === "STARTING_AT"
+                                  ? `Starting at ${formatCurrency(tier.minimumPrice || tier.basePrice)}`
+                                  : formatCurrency(tier.basePrice)}
+                              )
+                            </option>
+                          )),
+                      )}
+                  </select>
                   <input
                     type="text"
                     value={line.description}

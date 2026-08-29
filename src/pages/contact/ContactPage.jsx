@@ -6,24 +6,18 @@ import usePageMetadata from "../../i18n/usePageMetadata.js";
 import { businessContact, contactRouting } from "../../data/contactInfo.js";
 import { initContactForm } from "../../../js/contact-form.js";
 import { contactContent } from "./contactContent.js";
+import { contactServiceGroups } from "../services/serviceCatalog.js";
 import "./contact.css";
 import "./contact-integration.css";
-
-const individualValues = ["individual-tax", "individual-notary"];
-const businessValues = [
-  "business-advisory",
-  "business-operations",
-  "business-digital",
-  "business-readiness",
-  "business-financial",
-];
 
 function ContactPage() {
   const { language } = useLanguage();
   const content = contactContent[language];
   const [searchParams] = useSearchParams();
   const requestedService = searchParams.get("service") ?? "";
-  const allValues = [...individualValues, ...businessValues];
+  const allValues = contactServiceGroups.flatMap((group) =>
+    group.items.map((item) => item.value),
+  );
   const currentService = useMemo(
     () => (allValues.includes(requestedService) ? requestedService : ""),
     [requestedService],
@@ -45,12 +39,11 @@ function ContactPage() {
     [content.formMessages],
   );
 
-  const visibleValues =
-    selectedAudience === "business"
-      ? businessValues
-      : selectedAudience === "individual"
-        ? individualValues
-        : allValues;
+  const visibleGroups = selectedAudience
+    ? contactServiceGroups.filter(
+        (group) => group.audience === selectedAudience,
+      )
+    : contactServiceGroups;
 
   return (
     <div className="contact-page">
@@ -121,10 +114,17 @@ function ContactPage() {
                   defaultValue={currentService}
                 >
                   <option value="">{content.form.unsure}</option>
-                  {visibleValues.map((value) => (
-                    <option value={value} key={value}>
-                      {content.services[value]}
-                    </option>
+                  {visibleGroups.map((group) => (
+                    <optgroup
+                      key={group.audience}
+                      label={content.serviceGroups[group.audience]}
+                    >
+                      {group.items.map((item) => (
+                        <option value={item.value} key={item.value}>
+                          {content.services[item.value] || item.label}
+                        </option>
+                      ))}
+                    </optgroup>
                   ))}
                 </select>
               </label>

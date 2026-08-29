@@ -13,6 +13,10 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
+    env:
+      PUBLIC_WEB_ROOT: public_html
+      PRIVATE_BACKEND_ROOT: alchemize-server
+
     steps:
       - name: Checkout main
         uses: actions/checkout@v4
@@ -29,30 +33,61 @@ jobs:
       - name: Build production frontend
         run: npm run build
 
-      - name: Assemble production package
+      - name: Assemble public deployment package
         shell: bash
         run: |
           rm -rf deploy-output
-          mkdir -p deploy-output
+          mkdir -p deploy-output/${PUBLIC_WEB_ROOT}
+          mkdir -p deploy-output/${PRIVATE_BACKEND_ROOT}
 
-          cp -R dist/. deploy-output/
-          cp -R api deploy-output/api
-          cp public/alchemize-api.php deploy-output/alchemize-api.php
-          cp public/.htaccess deploy-output/.htaccess
+          cp -R dist/. deploy-output/${PUBLIC_WEB_ROOT}/
+          cp -R api deploy-output/${PUBLIC_WEB_ROOT}/api
+          cp public/alchemize-api.php deploy-output/${PUBLIC_WEB_ROOT}/alchemize-api.php
+          cp public/.htaccess deploy-output/${PUBLIC_WEB_ROOT}/.htaccess
+
+          cp -R server/. deploy-output/${PRIVATE_BACKEND_ROOT}/
 
       - name: Verify deployment package
         shell: bash
         run: |
-          test -f deploy-output/index.html
-          test -f deploy-output/alchemize-api.php
-          test -f deploy-output/.htaccess
-          test -f deploy-output/api/v1/auth/index.php
-          test -d deploy-output/assets
+          npm run deploy:verify -- ./deploy-output
+
+          test -f deploy-output/${PUBLIC_WEB_ROOT}/index.html
+          test -f deploy-output/${PUBLIC_WEB_ROOT}/alchemize-api.php
+          test -f deploy-output/${PUBLIC_WEB_ROOT}/.htaccess
+          test -f deploy-output/${PUBLIC_WEB_ROOT}/api/v1/auth/index.php
+          test -d deploy-output/${PUBLIC_WEB_ROOT}/assets
+
+          test -f deploy-output/${PRIVATE_BACKEND_ROOT}/bootstrap.php
+          test -f deploy-output/${PRIVATE_BACKEND_ROOT}/services/external-integration-service.php
+          test -f deploy-output/${PRIVATE_BACKEND_ROOT}/repositories/external-integration-repository.php
+          test -f deploy-output/${PRIVATE_BACKEND_ROOT}/services/google-drive-service.php
+          test -f deploy-output/${PRIVATE_BACKEND_ROOT}/services/google-calendar-service.php
+
+          test ! -e deploy-output/${PUBLIC_WEB_ROOT}/server
+          test ! -e deploy-output/${PUBLIC_WEB_ROOT}/.env
 
       - name: Publish deploy branch
+        if: ${{ always() }}
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: deploy
-          publish_dir: ./deploy-output
+          publish_dir: ./deploy-output/${{ env.PUBLIC_WEB_ROOT }}
           force_orphan: true
+
+      - name: Sync backend runtime to Hostinger private directory
+        if: ${{ secrets.HOSTINGER_SSH_KEY != '' && secrets.HOSTINGER_HOST != '' && secrets.HOSTINGER_USER != '' && secrets.HOSTINGER_PRIVATE_ROOT != '' }}
+        shell: bash
+        env:
+          SSH_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
+          SSH_HOST: ${{ secrets.HOSTINGER_HOST }}
+          SSH_USER: ${{ secrets.HOSTINGER_USER }}
+          SSH_PRIVATE_ROOT: ${{ secrets.HOSTINGER_PRIVATE_ROOT }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s' "$SSH_KEY" > ~/.ssh/hostinger_ed25519
+          chmod 600 ~/.ssh/hostinger_ed25519
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
+          rsync -avz --delete --exclude='.env' --exclude='node_modules' --exclude='vendor' ./deploy-output/${PRIVATE_BACKEND_ROOT}/ "$SSH_USER@$SSH_HOST:$SSH_PRIVATE_ROOT/"

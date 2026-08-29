@@ -138,6 +138,11 @@ export const clients = {
   enablePortal: (id) =>
     apiRequest(buildApiUrl(`clients/${id}/enable-portal`), { method: "POST" }),
   team: () => apiRequest(buildApiUrl("clients/team")),
+  assignService: (id, payload) =>
+    apiRequest(buildApiUrl(`clients/${id}/services`), {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
 };
 
 export const services = {
@@ -151,6 +156,11 @@ export const services = {
   update: (id, payload) =>
     apiRequest(buildApiUrl(`services/${id}`), {
       method: "PUT",
+      body: JSON.stringify(payload),
+    }),
+  calculate: (id, payload) =>
+    apiRequest(buildApiUrl(`services/${id}/calculate`), {
+      method: "POST",
       body: JSON.stringify(payload),
     }),
 };

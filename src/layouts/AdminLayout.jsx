@@ -36,7 +36,48 @@ const mapService = (row) => ({
   id: String(row.id),
   serviceName: row.service_name,
   serviceCode: row.service_code,
-  status: titleCase(row.status),
+  publicName: row.public_name || row.service_name,
+  category: row.category || "General",
+  audience: titleCase(row.audience),
+  status: titleCase(row.catalog_status || row.status),
+  catalogStatus: row.catalog_status || "ACTIVE",
+  pricingType: row.pricing_type || "FIXED",
+  billingType: titleCase(row.billing_type || "custom"),
+  defaultPrice: row.default_price == null ? null : Number(row.default_price),
+  active: Boolean(Number(row.active_flag)),
+  selectable:
+    Boolean(Number(row.active_flag)) &&
+    ["ACTIVE", "CUSTOM_SOW_ONLY", "MANUAL_REVIEW"].includes(row.catalog_status),
+  shortDescription: row.description || "",
+  internalPricingNotes: row.internal_pricing_notes || "",
+  catalogVersion: row.catalog_version,
+  priceLocked: Boolean(Number(row.price_locked)),
+  tiers: (row.tiers || []).map((tier) => ({
+    id: String(tier.id),
+    tierKey: tier.tier_key,
+    tierName: tier.tier_name,
+    description: tier.description || "",
+    basePrice: tier.base_price == null ? null : Number(tier.base_price),
+    minimumPrice:
+      tier.minimum_price == null ? null : Number(tier.minimum_price),
+    billingFrequency: tier.billing_frequency,
+    pricingType: tier.pricing_type,
+    status: tier.status,
+    active: Boolean(Number(tier.active_flag)),
+    limits: tier.limits_metadata,
+    invoiceDescription: tier.invoice_description || "",
+  })),
+  addOns: (row.add_ons || []).map((addOn) => ({
+    id: String(addOn.id),
+    addOnCode: addOn.add_on_code,
+    addOnName: addOn.name,
+    description: addOn.description || "",
+    defaultPrice:
+      addOn.default_price == null ? null : Number(addOn.default_price),
+    pricingMethod: addOn.pricing_method,
+    unit: addOn.unit,
+    active: Boolean(Number(addOn.active_flag)),
+  })),
 });
 const mapAppointment = (row) => {
   const start = String(row.scheduled_at || "").replace(" ", "T");

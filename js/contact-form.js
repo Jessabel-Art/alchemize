@@ -1,14 +1,10 @@
-const canonicalServiceKeys = new Set([
-  "individual-tax",
-  "individual-insurance",
-  "individual-notary",
-  "business-formation",
-  "business-operations",
-  "business-tax",
-  "business-advisory",
-  "business-insurance",
-  "business-notary",
-]);
+import { contactServiceGroups } from "../src/pages/services/serviceCatalog.js";
+
+const canonicalServiceKeys = new Set(
+  contactServiceGroups.flatMap((group) =>
+    group.items.map((service) => service.value),
+  ),
+);
 
 const legacyServiceAliases = {
   "individual-tax-preparation": "individual-tax",
@@ -17,9 +13,8 @@ const legacyServiceAliases = {
   "business-administration-operations": "business-operations",
   "business-notary-administrative-services": "business-notary",
   "insurance-review": "individual-insurance",
-  "business-digital": "business-operations",
-  "business-readiness": "business-formation",
-  "business-financial": "business-tax",
+  "business-formation": "business-readiness",
+  "business-tax": "business-financial",
 };
 
 const serviceAudience = (serviceKey) =>
@@ -209,10 +204,14 @@ export function initContactForm(messages = {}) {
           validationFailure = true;
           showFieldErrors(form, result?.error?.fields, messages);
         }
+        const publicMessage =
+          response.status === 422
+            ? messages.validation || result?.error?.message
+            : response.status === 429
+              ? messages.rateLimited || result?.error?.message
+              : messages.temporary || messages.failure;
         throw new Error(
-          messages.failure ||
-            result?.error?.message ||
-            "Your request could not be submitted.",
+          publicMessage || "Your request could not be submitted.",
         );
       }
 
@@ -246,4 +245,4 @@ export function initContactForm(messages = {}) {
   };
 }
 
-export { canonicalServiceKeys, normalizeServiceKey };
+export { canonicalServiceKeys, contactServiceGroups, normalizeServiceKey };

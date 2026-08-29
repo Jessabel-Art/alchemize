@@ -24,6 +24,10 @@ import { findService, legacyServiceRoutes } from "./serviceCatalog.js";
 import { findServiceEs } from "./serviceCatalog.es.js";
 import { serviceDetailUi } from "./servicesContent.js";
 import "./services.css";
+import {
+  LegalDocumentBoundary,
+  PublicPricing,
+} from "../../components/services/PublicPricing.jsx";
 
 const processIcons = [Search, FolderKanban, ListChecks, CircleCheck];
 
@@ -194,6 +198,16 @@ function ServiceDetailPage() {
           </Reveal>
         </div>
       </section>
+      <PublicPricing serviceKey={service.serviceKey} language={language} />
+      {["business-operations", "business-readiness"].includes(
+        service.serviceKey,
+      ) ? (
+        <section className="service-section public-boundary-section">
+          <div className="content-shell">
+            <LegalDocumentBoundary />
+          </div>
+        </section>
+      ) : null}
       <section className="service-section service-fit">
         <div className="content-shell service-two-column">
           <Reveal>

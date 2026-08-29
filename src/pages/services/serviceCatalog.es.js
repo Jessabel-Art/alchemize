@@ -95,13 +95,13 @@ const translations = {
     ],
   },
   "notary-document-services": {
-    title: "Servicios notariales y de documentos",
+    title: "Servicios notariales y apoyo documental administrativo",
     seoTitle: "Servicios de Notario en Carolina del Norte | Alchemize",
     seoDescription:
       "Servicios de notario en Carolina del Norte para documentos, firmas, reconocimientos y apoyo administrativo con citas claras y requisitos bien definidos.",
     hero: "Prepare el documento. Verifique los requisitos. Complete correctamente la cita.",
     overview:
-      "El trabajo notarial y el apoyo documental son servicios relacionados, pero distintos. Alchemize ofrece servicios notariales en Carolina del Norte y ayuda a organizar documentos administrativos sin seleccionar formularios ni interpretar consecuencias legales.",
+      "El trabajo notarial y el apoyo documental administrativo son servicios relacionados, pero distintos. Alchemize ofrece servicios notariales en Carolina del Norte y ayuda a organizar paquetes no legales sin seleccionar formularios, redactar términos jurídicos ni interpretar consecuencias legales.",
     statement:
       "Prepare el documento. Verifique los requisitos. Complete correctamente la cita.",
     capabilities: [
@@ -177,7 +177,7 @@ const translations = {
         "/assets/downloads/alchemize-consultation-document-checklist.pdf",
       ],
     ],
-    cta: "¿Necesita preparar correctamente un documento o una notarización?",
+    cta: "¿Necesita organizar una cita notarial o un paquete documental no legal?",
     checklist: [
       "Lista de preparación notarial y documental (PDF en inglés)",
       "/assets/downloads/notary-appointment-checklist.pdf",
@@ -271,13 +271,13 @@ const translations = {
     ],
   },
   "apostille-services": {
-    title: "Servicios de apostilla",
+    title: "Facilitación y apoyo para apostillas de Carolina del Norte",
     seoTitle: "Servicios de Apostilla en Carolina del Norte | Alchemize",
     seoDescription:
       "Apoyo para apostilla y autenticación de documentos en Carolina del Norte, con coordinación remota cuando los requisitos dependen del documento, la jurisdicción y el país de destino.",
     hero: "Prepare el conjunto de documentos para el destino que los recibirá.",
     overview:
-      "La apostilla puede requerir revisar el destino, identificar si antes se necesita notarialización o certificación y ayudar a organizar el paquete documental para el proceso correcto. Con sede en Carolina del Norte, Alchemize se enfoca en apoyo administrativo y de coordinación para apostillas y autenticación de documentos cuando la coordinación remota es apropiada y los requisitos dependen del documento y la autoridad emisora.",
+      "Alchemize facilita y apoya el proceso de apostilla de Carolina del Norte mediante la organización del paquete documental y la coordinación de requisitos previos, envío y devolución. La apostilla la emite la autoridad gubernamental correspondiente, no Alchemize, y la disponibilidad permanece pendiente de preparación operativa.",
     statement:
       "Apoyo para preparar y coordinar documentos que podrían necesitar autenticación para su uso fuera de Estados Unidos.",
     capabilities: [
@@ -332,7 +332,7 @@ const translations = {
       "Detalles del país de destino o autoridad emisora cuando estén disponibles",
     ],
     boundary:
-      "Los servicios de apostilla son apoyo administrativo y de coordinación documental. Alchemize no garantiza aprobación, tiempos de trámite, asesoría legal, asesoría de inmigración ni aceptación por parte de un gobierno extranjero. Los requisitos varían según el documento, la autoridad emisora, el país de destino y si este participa en la Convención de La Haya o requiere autenticación adicional.",
+      "Alchemize brinda facilitación y coordinación administrativa; no emite apostillas. Las tarifas gubernamentales, de envío, mensajería y terceros son separadas. La autoridad emisora controla los plazos y la emisión. Alchemize no brinda asesoría legal o migratoria ni garantiza la emisión o aceptación por una autoridad extranjera.",
     related: [
       ["Servicios de traducción", "/services/individuals/translation-services"],
       [
@@ -363,7 +363,7 @@ const translations = {
       "Consultoría empresarial para pequeñas empresas con apoyo en prioridades, mejora operativa y decisiones prácticas sobre qué cambiar o mejorar.",
     hero: "Convierta la fricción operativa en un plan práctico de acción.",
     overview:
-      "Alchemize revisa la situación actual, identifica dónde fallan la información o las responsabilidades, distingue los síntomas de las causas y crea un plan ordenado de mejora. Cuando la implementación está dentro del alcance, el trabajo puede continuar más allá de las recomendaciones.",
+      "Alchemize revisa la situación actual, identifica dónde fallan la información o las responsabilidades, distingue los síntomas de las causas y crea un plan ordenado de mejora. La consultoría diagnostica, recomienda y planifica; la implementación sustancial requiere un servicio separado salvo que esté expresamente incluida.",
     statement:
       "Identifique qué no funciona, qué está retrasando al negocio y qué debe suceder después.",
     capabilities: [
@@ -410,7 +410,7 @@ const translations = {
       ],
       [
         "Actuar",
-        "Defina los próximos pasos e implemente los cambios admitidos donde Alchemize pueda ayudar.",
+        "Defina los próximos pasos e identifique la implementación que debe cotizarse por separado.",
       ],
     ],
     prepare: [
@@ -422,7 +422,7 @@ const translations = {
       "Recomendaciones previas o soluciones intentadas",
     ],
     boundary:
-      "La asesoría empresarial no sustituye la asesoría legal, contable, tributaria, de inversiones u otra asesoría profesional regulada. Las recomendaciones y el alcance de implementación dependen de la información disponible y del servicio acordado.",
+      "La consultoría identifica problemas, aclara prioridades y desarrolla recomendaciones o planes de implementación. La implementación sustancial se cotiza por separado salvo que esté expresamente incluida. La asesoría no sustituye servicios legales, contables, tributarios, de inversiones u otros servicios regulados.",
     related: [
       [
         "Operaciones e implementación",

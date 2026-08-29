@@ -3,24 +3,26 @@ import fs from "node:fs";
 import test from "node:test";
 import {
   canonicalServiceKeys,
+  contactServiceGroups,
   normalizeServiceKey,
 } from "../js/contact-form.js";
 import { businessContact, contactRouting } from "../src/data/contactInfo.js";
 import { getSitemapRoutes } from "../scripts/lib/react-routes.js";
 
-test("exposes exactly the nine canonical service keys", () => {
+test("derives the complete public selector from canonical service-page keys", () => {
   assert.deepEqual(
     [...canonicalServiceKeys],
     [
       "individual-tax",
-      "individual-insurance",
       "individual-notary",
-      "business-formation",
-      "business-operations",
-      "business-tax",
+      "individual-translation",
       "business-advisory",
-      "business-insurance",
-      "business-notary",
+      "business-operations",
+      "business-digital",
+      "business-readiness",
+      "business-bookkeeping",
+      "business-payroll",
+      "business-financial",
     ],
   );
 });
@@ -34,9 +36,40 @@ test("normalizes documented legacy service aliases", () => {
     normalizeServiceKey("individual-notary-documents"),
     "individual-notary",
   );
-  assert.equal(normalizeServiceKey("business-digital"), "business-operations");
-  assert.equal(normalizeServiceKey("business-readiness"), "business-formation");
-  assert.equal(normalizeServiceKey("business-financial"), "business-tax");
+  assert.equal(normalizeServiceKey("business-digital"), "business-digital");
+  assert.equal(normalizeServiceKey("business-formation"), "business-readiness");
+  assert.equal(normalizeServiceKey("business-tax"), "business-financial");
+});
+
+test("contact selector groups are accessible and contain no duplicate values", () => {
+  assert.deepEqual(
+    contactServiceGroups.map(({ audience, label }) => ({ audience, label })),
+    [
+      { audience: "individual", label: "Individual Services" },
+      { audience: "business", label: "Business Services" },
+    ],
+  );
+  const values = contactServiceGroups.flatMap((group) =>
+    group.items.map((item) => item.value),
+  );
+  assert.equal(values.length, new Set(values).size);
+  assert.ok(values.includes("individual-tax"));
+  assert.ok(values.includes("individual-notary"));
+  assert.ok(values.includes("business-readiness"));
+  assert.ok(values.includes("business-operations"));
+  assert.ok(values.includes("business-financial"));
+  assert.ok(values.includes("business-advisory"));
+  assert.ok(values.includes("business-digital"));
+});
+
+test("Contact page renders a neutral option and labelled optgroups", () => {
+  const source = fs.readFileSync(
+    new URL("../src/pages/contact/ContactPage.jsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(source, /<option value="">\{content\.form\.unsure\}<\/option>/);
+  assert.match(source, /<optgroup/);
+  assert.match(source, /label=\{content\.serviceGroups\[group\.audience\]\}/);
 });
 
 test("rejects unknown service values", () => {

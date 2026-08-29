@@ -128,6 +128,6 @@ try {
     }
     alchemize_error_response($error->httpStatus, $error->errorCode, $error->getMessage());
 } catch (Throwable $error) {
-    error_log(sprintf('Lead API failure [%s]: %s', get_class($error), $error->getMessage()));
+    error_log(sprintf('Lead API request failed during public lead handling [%s].', get_class($error)));
     alchemize_error_response(500, 'INTERNAL_ERROR', 'The leads API is temporarily unavailable.');
 }

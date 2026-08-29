@@ -38,6 +38,11 @@ try {
     $path = trim($_SERVER['PATH_INFO'] ?? ($_SERVER['REQUEST_URI'] ?? ''), '/');
     $parts = array_values(array_filter(explode('/', $path), static fn (string $value): bool => $value !== ''));
 
+    if ($method === 'GET' && $parts === ['public']) {
+        header('Cache-Control: public, max-age=300, stale-while-revalidate=3600');
+        alchemize_json_response(['data' => $repository->listPublic()], 200);
+    }
+
     if ($method === 'GET' && $parts === []) {
         alchemize_require_read_only_or_higher();
         alchemize_json_response(['data' => $repository->listAll()], 200);
@@ -81,6 +86,14 @@ try {
             throw new AlchemizeRequestException(404, 'NOT_FOUND', 'Service was not found.');
         }
         alchemize_json_response(['data' => $service], 200);
+    }
+
+    if ($method === 'POST' && count($parts) === 2 && ctype_digit((string) $parts[0]) && $parts[1] === 'calculate') {
+        alchemize_require_staff_or_admin();
+        alchemize_require_csrf();
+        $payload = alchemize_read_json_request();
+        $tierId = isset($payload['tier_id']) && $payload['tier_id'] !== '' ? (int) $payload['tier_id'] : null;
+        alchemize_json_response(['data' => $repository->calculate((int) $parts[0], $tierId, (array) ($payload['inputs'] ?? []))], 200);
     }
 
     if ($method === 'PUT' && count($parts) === 1 && ctype_digit((string) $parts[0])) {

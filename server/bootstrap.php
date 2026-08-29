@@ -51,6 +51,7 @@ require_once __DIR__ . '/services/lead-service.php';
 require_once __DIR__ . '/services/lead-admin-service.php';
 require_once __DIR__ . '/services/auth-service.php';
 require_once __DIR__ . '/services/client-service.php';
+require_once __DIR__ . '/services/catalog-pricing-service.php';
 require_once __DIR__ . '/services/portal-service.php';
 require_once __DIR__ . '/services/stripe-webhook-service.php';
 require_once __DIR__ . '/services/stripe-payment-service.php';

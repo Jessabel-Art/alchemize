@@ -33,6 +33,7 @@ $config = require $bootstrap;
 try {
     $database = alchemize_database($config['database']);
     $repository = new AlchemizeInvoiceRepository($database);
+    $catalogRepository = new AlchemizeServiceRepository($database);
     $notifications = new AlchemizeNotificationService(new AlchemizeNotificationRepository($database), alchemize_email_provider($config));
 
     $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
@@ -59,15 +60,31 @@ try {
             if (!is_array($item)) continue;
             $description = trim((string) ($item['description'] ?? ''));
             $quantity = max(0.01, (float) ($item['quantity'] ?? 1));
+            $serviceId = !empty($item['service_id']) ? (int) $item['service_id'] : null;
+            $tierId = !empty($item['tier_id']) ? (int) $item['tier_id'] : null;
+            $service = $serviceId === null ? null : $catalogRepository->findById($serviceId);
+            $tier = $tierId === null ? null : $catalogRepository->findTier($tierId);
+            if ($serviceId !== null) {
+                if ($service === null) throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Selected catalog service was not found.');
+                (new AlchemizeCatalogPricingService())->assertSelectable($service, $tier);
+                if ($tierId !== null && ($tier === null || (int) $tier['service_id'] !== $serviceId)) throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Selected tier does not belong to the service.');
+            }
+            $pricingType = strtoupper((string) ($tier['pricing_type'] ?? $service['pricing_type'] ?? 'MANUAL_REVIEW'));
             $unitPrice = max(0.0, (float) ($item['unit_price'] ?? 0));
             $amount = round($quantity * $unitPrice, 2);
-            if ($description === '' || $amount <= 0) throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Each invoice line needs a description and positive amount.');
+            if ($description === '' || $amount <= 0) throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', $pricingType === 'CUSTOM_SOW' ? 'Custom SOW lines require an approved amount and engagement-specific description.' : 'Each invoice line needs a description and positive amount.');
+            if ($pricingType === 'CUSTOM_SOW' && mb_strlen($description) < 35) throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Custom SOW lines require a meaningful engagement-specific description.');
+            $snapshot = ['service_name' => $service['service_name'] ?? null, 'tier_name' => $tier['tier_name'] ?? null, 'pricing_type' => $pricingType, 'base_catalog_price' => $tier['base_price'] ?? $service['default_price'] ?? null, 'agreed_price' => $unitPrice, 'add_ons' => (array) ($item['add_ons'] ?? []), 'quantity' => $quantity, 'discount' => (float) ($item['discount'] ?? 0), 'total' => $amount, 'billing_frequency' => $tier['billing_frequency'] ?? $item['billing_type'] ?? null, 'catalog_version' => $tier['catalog_version'] ?? $service['catalog_version'] ?? null, 'invoice_date' => trim((string) ($payload['invoice_date'] ?? date('Y-m-d')) )];
             $lineItems[] = [
-                'service_id' => !empty($item['service_id']) ? (int) $item['service_id'] : null,
+                'service_id' => $serviceId, 'tier_id' => $tierId,
                 'service_code' => trim((string) ($item['service_code'] ?? '')) ?: null,
+                'service_name' => $service['service_name'] ?? trim((string) ($item['service_name'] ?? '')) ?: null,
+                'tier_name' => $tier['tier_name'] ?? null,
                 'description' => $description, 'quantity' => number_format($quantity, 2, '.', ''),
                 'unit_price' => number_format($unitPrice, 2, '.', ''), 'amount' => number_format($amount, 2, '.', ''),
                 'billing_type' => trim((string) ($item['billing_type'] ?? 'custom')) ?: 'custom',
+                'pricing_type' => $pricingType, 'base_catalog_price' => $snapshot['base_catalog_price'],
+                'pricing_snapshot' => $snapshot, 'catalog_version' => $snapshot['catalog_version'],
             ];
         }
         $subtotal = $lineItems !== [] ? array_sum(array_map(static fn(array $item): float => (float) $item['amount'], $lineItems)) : (float) ($payload['subtotal'] ?? 0.0);

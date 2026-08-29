@@ -49,6 +49,7 @@
     "migrations:check": "node scripts/check-migrations.js",
     "config:check": "php scripts/config-diagnostics.php",
     "schema:check": "php scripts/verify-production-schema.php",
+    "deploy:verify": "php scripts/verify-deployment-runtime.php",
     "predeploy": "node scripts/predeploy.js",
     "check": "npm run lint && npm run format:check && npm run validate:html && npm run routes:check && npm run metadata:check && npm run check:links && npm run check:assets && npm run check:security && npm run build"
   },

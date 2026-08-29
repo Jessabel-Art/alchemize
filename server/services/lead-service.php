@@ -29,7 +29,14 @@ final class AlchemizeLeadService
         ], JSON_UNESCAPED_SLASHES));
         $requestFingerprint = hash('sha256', (string) ($requestContext['remote_address'] ?? '') . '|' . (string) ($requestContext['user_agent'] ?? ''));
         if ($this->integrations !== null) {
-            $guard = $this->integrations->registerPublicSubmission($requestFingerprint, $payloadFingerprint, 5, 3600);
+            try {
+                $guard = $this->integrations->registerPublicSubmission($requestFingerprint, $payloadFingerprint, 5, 3600);
+            } catch (PDOException $guardError) {
+                $driverCode = (int) ($guardError->errorInfo[1] ?? 0);
+                if ($guardError->getCode() !== '42S02' && $driverCode !== 1146) throw $guardError;
+                $guard = 'unavailable';
+                error_log(sprintf('Contact lead guard unavailable during registerPublicSubmission [%s].', get_class($guardError)));
+            }
             if ($guard === 'limited') throw new AlchemizeRequestException(429, 'RATE_LIMITED', 'Please wait before sending another request.');
             if ($guard === 'duplicate') return ['leadId' => alchemize_uuid_v4(), 'status' => 'received', 'duplicate' => true];
         }
@@ -70,6 +77,7 @@ final class AlchemizeLeadService
             if ($this->database->inTransaction()) {
                 $this->database->rollBack();
             }
+            error_log(sprintf('Contact lead persistence failed for %s [%s].', $leadPublicId, get_class($error)));
             throw $error;
         }
     }

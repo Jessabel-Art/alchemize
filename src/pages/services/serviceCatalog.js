@@ -114,16 +114,16 @@ const individual = [
     audienceLabel: "Individual Services",
     slug: "notary-document-services",
     serviceKey: "individual-notary",
-    title: "Notary & Document Services",
+    title: "Notary & Administrative Document Support",
     seoTitle: "North Carolina Notary Services | Alchemize",
     seoDescription:
-      "North Carolina notary and document support for signatures, acknowledgments, and administrative document preparation with clear appointment expectations.",
+      "North Carolina notary and nonlegal administrative document support for signatures, acknowledgments, packet organization, and clear appointment expectations.",
     Icon: FileCheck2,
     statement:
       "Prepare the document. Verify the requirements. Complete the appointment correctly.",
     hero: "Prepare the document. Verify the requirements. Complete the appointment correctly.",
     overview:
-      "Notary work and document support are related but distinct. Alchemize provides North Carolina notary support and administrative document preparation for appointments that require accurate identification, witnessing, and document readiness without selecting forms or interpreting legal consequences.",
+      "Notary work and administrative document support are related but distinct. Alchemize provides North Carolina notary support and nonlegal packet organization for appointments that require accurate identification, witnessing, and document readiness without selecting forms, drafting legal terms, or interpreting legal consequences.",
     capabilities: [
       "Traditional notarization",
       "Document readiness",
@@ -148,7 +148,7 @@ const individual = [
       "Document printing, scanning, and copying",
       "File conversion and digital organization",
       "Document packet assembly",
-      "Administrative form support using client-provided information",
+      "Nonlegal administrative forms using client-provided information",
       "Submission-packet preparation",
       "Administrative proofreading for completeness or format",
     ],
@@ -198,7 +198,7 @@ const individual = [
       ["Tax Preparation", "/services/individuals/tax-preparation"],
       ["Business Readiness & Growth", "/services/businesses/readiness-growth"],
     ],
-    cta: "Need a document or notarization prepared correctly?",
+    cta: "Need a notary appointment or nonlegal document packet organized?",
   },
   {
     audience: "individuals",
@@ -297,16 +297,16 @@ const individual = [
     audienceLabel: "Individual Services",
     slug: "apostille-services",
     serviceKey: "individual-apostille",
-    title: "Apostille Services",
-    seoTitle: "North Carolina Apostille Services | Alchemize",
+    title: "North Carolina Apostille Facilitation & Support",
+    seoTitle: "North Carolina Apostille Facilitation & Support | Alchemize",
     seoDescription:
-      "North Carolina apostille and document-authentication support with remote coordination available when requirements depend on the document, jurisdiction, and destination country.",
+      "North Carolina apostille facilitation and document-coordination support. Apostilles are issued by the appropriate government authority, not Alchemize.",
     Icon: FileCheck2,
     statement:
       "Document preparation and coordination support for materials that may need authentication for use outside the United States.",
     hero: "Prepare the document set for the destination that will receive it.",
     overview:
-      "Apostille processing may involve reviewing the intended destination, identifying whether notarization or certification is required first, and helping organize the document package for the correct authentication process. Based in North Carolina, Alchemize focuses on administrative and document-coordination support for apostille and document-authentication workflows where remote coordination is appropriate and requirements depend on the document and issuing jurisdiction.",
+      "Alchemize facilitates and supports the North Carolina apostille process by helping organize the document package, coordinate prerequisite notarization or certification where applicable, and prepare submission and return details. Apostilles are issued by the appropriate government authority, not Alchemize, and availability remains pending process readiness.",
     capabilities: [
       "Destination and document review",
       "Document organization",
@@ -359,7 +359,7 @@ const individual = [
       "Destination-country or issuing-authority details when available",
     ],
     boundary:
-      "Apostille services are administrative and document-coordination support. Alchemize does not guarantee apostille approval, processing time, legal advice, immigration advice, or acceptance by a foreign government. Requirements vary by document type, issuing authority, destination country, and whether the destination participates in the Hague Apostille Convention or requires additional authentication.",
+      "Alchemize provides facilitation and administrative document-coordination support; it does not issue apostilles. Government, shipping, courier, and third-party fees are separate. Processing times and issuance are controlled by the issuing authority. Alchemize does not provide legal or immigration advice and does not guarantee issuance or acceptance by a foreign authority.",
     checklist: [
       "Apostille Services Preparation Checklist",
       "/assets/downloads/alchemize-consultation-document-checklist.pdf",
@@ -400,7 +400,7 @@ const business = [
       "Identify what is not working, what is slowing the business down, and what should happen next.",
     hero: "Turn operational friction into a practical plan of action.",
     overview:
-      "Alchemize reviews the current situation, traces where information or responsibility breaks down, distinguishes symptoms from causes, and creates an ordered plan for improvement. When implementation falls within scope, the work can continue beyond recommendations.",
+      "Alchemize reviews the current situation, traces where information or responsibility breaks down, distinguishes symptoms from causes, and creates an ordered plan for improvement. Consulting diagnoses, recommends, and plans; substantial hands-on implementation requires a separate engagement unless explicitly included.",
     capabilities: [
       "Operational assessment",
       "Process-gap identification",
@@ -445,7 +445,7 @@ const business = [
       ],
       [
         "Act",
-        "Define the next steps and implement supported changes where Alchemize can help.",
+        "Define practical next steps and identify any implementation work that should be scoped separately.",
       ],
     ],
     prepare: [
@@ -457,7 +457,7 @@ const business = [
       "Prior recommendations or attempted fixes",
     ],
     boundary:
-      "Business advisory does not replace legal, accounting, tax, investment, or other regulated professional advice. Recommendations and implementation scope depend on the information available and the engagement agreed.",
+      "Consulting engagements identify issues, clarify priorities, and develop recommendations or implementation plans. Substantial implementation is priced separately unless explicitly included. Business advisory does not replace legal, accounting, tax, investment, or other regulated professional advice.",
     checklist: [
       "Business Advisory Preparation Guide",
       "/assets/downloads/business-advisory-preparation-guide.pdf",
@@ -696,25 +696,25 @@ const business = [
       "Small business startup support, readiness planning, and launch preparation for entrepreneurs who need stronger records, process clarity, and next-step organization.",
     Icon: ClipboardCheck,
     statement:
-      "Prepare the business for formation, opportunities, funding, certifications, and the next stage of growth.",
+      "Prepare the business for formation, organized operations, strategic planning, and the next stage of growth.",
     hero: "Build the records and readiness behind the opportunity.",
     overview:
-      "Readiness work organizes the business information, registrations, plans, deadlines, and supporting records an opportunity may require. The goal is a stronger submission or decision process—not a promise of approval or award.",
+      "Readiness work organizes business information, registrations, plans, deadlines, and supporting records for launch, growth, strategic planning, and external review. The goal is a stronger planning and decision process—not financing procurement or a promise of approval.",
     capabilities: [
       "Formation preparation",
-      "Funding readiness",
-      "Contracting readiness",
+      "Financial readiness",
+      "Planning-material readiness",
       "Growth infrastructure",
     ],
     for: [
       "Entrepreneurs preparing to form or launch",
-      "Businesses evaluating funding readiness",
+      "Businesses organizing financial-readiness materials",
       "Owners preparing for registrations or certifications",
       "Companies organizing for government or vendor opportunities",
     ],
     situations: [
       "Formation information and startup steps are scattered",
-      "A funding conversation requires stronger records",
+      "External review requires stronger planning and financial records",
       "SAM.gov or vendor-registration preparation needs coordination",
       "A capability statement or opportunity packet needs organized source information",
     ],
@@ -723,12 +723,12 @@ const business = [
       "EIN assistance within permitted scope",
       "Launch and foundational-record checklists",
       "Business and growth-readiness assessment",
-      "Funding-readiness preparation and opportunity tracking",
+      "Financial-readiness preparation and supporting-document organization",
       "Business plan support",
       "Capability statement preparation",
       "Certification-readiness support",
-      "Government-contracting and SAM.gov preparation support",
-      "Vendor registration",
+      "Nonlegal registration and administrative readiness support",
+      "Vendor-record organization",
       "Compliance calendar and documentation readiness",
     ],
     process: [
@@ -758,7 +758,7 @@ const business = [
       "Deadlines, registrations, and responsible contacts",
     ],
     boundary:
-      "Alchemize does not guarantee formation outcomes, funding, loan approval, grants, certifications, SAM.gov validation, government contracts, vendor acceptance, or legal compliance. Legal, tax, lending, and procurement decisions may require qualified third parties.",
+      "Business planning and financial-readiness support does not include financing procurement, lender matching, lender negotiation, application submission, or financing guarantees. Alchemize does not guarantee formation outcomes, certifications, registrations, vendor acceptance, or legal compliance. Legal, tax, lending, and procurement decisions may require qualified professionals.",
     checklist: [
       "Business Formation & Readiness Checklist",
       "/assets/downloads/business-formation-startup-checklist.pdf",
@@ -832,7 +832,7 @@ const business = [
     process: [
       [
         "Gather",
-        "Collect the legal setup records, bank and credit records, income and expense support, and relevant payroll or contractor information required for the books.",
+      "Collect formation records, bank and credit records, income and expense support, and relevant payroll or contractor information required for the books.",
       ],
       [
         "Review",
@@ -856,7 +856,7 @@ const business = [
       "Equipment, asset, and financing records including purchase dates and supporting statements",
     ],
     boundary:
-      "Bookkeeping support covers organized financial recordkeeping and reporting based on the selected engagement. It does not replace CPA, auditor, tax-preparer, payroll-processing, or investment-advisory services. Organized books can help prepare cleaner records for year-end tax preparation and professional review.",
+      "Recurring bookkeeping includes transaction categorization, reconciliations, income and expense tracking, recurring financial reporting, and support appropriate to the selected tier. Tax preparation is a separate service and is not included in monthly bookkeeping. Bookkeeping does not replace CPA, audit, payroll-processing, or investment-advisory services.",
     checklist: [
       "Bookkeeping & Financial Reporting Preparation Checklist",
       "/assets/downloads/business-tax-preparation-checklist.pdf",
@@ -888,7 +888,7 @@ const business = [
       "Payroll processing support for small businesses, including organized payroll records, recurring reporting, and virtual administration where the selected workflow allows.",
     Icon: Landmark,
     statement:
-      "Structured payroll support for businesses that need dependable employee and contractor payment administration, organized payroll records, and recurring payroll reporting.",
+      "Payroll administration and processing through the applicable payroll platform, with organized payroll records and recurring reporting.",
     hero: "Structured payroll support for businesses that need dependable employee and contractor payment administration, organized payroll records, and recurring payroll reporting.",
     overview:
       "Payroll work requires dependable information, clear process ownership, and an organized record trail. Based in North Carolina, Alchemize can support small-business payroll processing and payroll administration with virtual coordination across the U.S. where the selected payroll platform and service scope allow.",
@@ -948,7 +948,7 @@ const business = [
       "Prior payroll records and year-end reporting documents",
     ],
     boundary:
-      "Payroll support is administrative and operational in nature. Alchemize does not claim direct tax-remittance responsibility unless it is specifically established through the selected payroll platform and the agreed workflow. Supported payroll capabilities, platform requirements, and legal obligations must be confirmed before engagement.",
+      "Payroll support is administrative and operational. Alchemize enters payroll and W-4 information as supplied and does not advise employees how to complete withholding elections. Alchemize does not provide HR, employment-law, legal, or individualized tax advice and does not replace the payroll platform’s tax filing or deposit functions. Platform/software charges are separate.",
     checklist: [
       "Payroll Processing Preparation Checklist",
       "/assets/downloads/business-tax-preparation-checklist.pdf",
@@ -1071,6 +1071,23 @@ const business = [
 
 export const serviceCatalog = [...individual, ...business];
 export const serviceGroups = { individuals: individual, businesses: business };
+export const contactServiceGroups = [
+  {
+    audience: "individual",
+    label: "Individual Services",
+    items: individual
+      .filter((service) => service.serviceKey !== "individual-apostille")
+      .map(({ serviceKey, title }) => ({ value: serviceKey, label: title })),
+  },
+  {
+    audience: "business",
+    label: "Business Services",
+    items: business.map(({ serviceKey, title }) => ({
+      value: serviceKey,
+      label: title,
+    })),
+  },
+];
 export const findService = (audience, slug) =>
   serviceCatalog.find(
     (service) => service.audience === audience && service.slug === slug,

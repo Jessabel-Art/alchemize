@@ -35,6 +35,7 @@ try {
     $repository = new AlchemizeClientRepository($database);
     $activityRepo = new AlchemizeActivityRepository($database);
     $service = new AlchemizeClientService($repository, $activityRepo);
+    $catalogRepository = new AlchemizeServiceRepository($database);
     $userRepository = new AlchemizeUserRepository($database);
     $accountRepository = new AlchemizePortalAccountRepository($database);
     $accountService = new AlchemizePortalAccountService(
@@ -79,6 +80,15 @@ try {
     if ($method === 'POST' && count($parts) === 2 && ctype_digit((string) $parts[0]) && $parts[1] === 'drive-sync') {
         alchemize_require_admin(); alchemize_require_csrf();
         alchemize_json_response(['data' => alchemize_external_integrations($database, $config)->ensureClientFolder((int) $parts[0])], 200);
+    }
+
+    if ($method === 'POST' && count($parts) === 2 && ctype_digit((string) $parts[0]) && $parts[1] === 'services') {
+        alchemize_require_staff_or_admin(); alchemize_require_csrf();
+        if ($repository->findById((int) $parts[0]) === null) throw new AlchemizeRequestException(404, 'NOT_FOUND', 'Client was not found.');
+        $payload = alchemize_read_json_request();
+        $serviceId = (int) ($payload['service_id'] ?? 0);
+        if ($serviceId < 1) throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'A catalog service is required.');
+        alchemize_json_response(['data'=>$catalogRepository->assignToClient((int)$parts[0],$serviceId,isset($payload['tier_id'])?(int)$payload['tier_id']:null,$payload)],201);
     }
 
     if ($method === 'GET' && $parts === ['team']) {

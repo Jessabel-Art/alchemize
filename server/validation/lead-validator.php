@@ -6,12 +6,14 @@ const ALCHEMIZE_SERVICE_KEYS = [
     'individual-tax',
     'individual-insurance',
     'individual-notary',
-    'business-formation',
+    'individual-translation',
+    'business-readiness',
     'business-operations',
-    'business-tax',
+    'business-digital',
+    'business-bookkeeping',
+    'business-payroll',
+    'business-financial',
     'business-advisory',
-    'business-insurance',
-    'business-notary',
 ];
 
 const ALCHEMIZE_SERVICE_ALIASES = [
@@ -21,9 +23,8 @@ const ALCHEMIZE_SERVICE_ALIASES = [
     'business-administration-operations' => 'business-operations',
     'business-notary-administrative-services' => 'business-notary',
     'insurance-review' => 'individual-insurance',
-    'business-digital' => 'business-operations',
-    'business-readiness' => 'business-formation',
-    'business-financial' => 'business-tax',
+    'business-formation' => 'business-readiness',
+    'business-tax' => 'business-financial',
 ];
 
 function alchemize_string_value(array $payload, string $field): ?string
