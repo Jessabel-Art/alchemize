@@ -15,8 +15,7 @@ const normalizeTier = (tier) => ({
   tierName: tier.tier_name,
   description: tier.description || "",
   basePrice: tier.base_price == null ? null : Number(tier.base_price),
-  minimumPrice:
-    tier.minimum_price == null ? null : Number(tier.minimum_price),
+  minimumPrice: tier.minimum_price == null ? null : Number(tier.minimum_price),
   billingFrequency: tier.billing_frequency,
   pricingType: tier.pricing_type,
   status: tier.status,

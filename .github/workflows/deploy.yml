@@ -16,6 +16,7 @@ jobs:
     env:
       PUBLIC_WEB_ROOT: public_html
       PRIVATE_BACKEND_ROOT: alchemize-server
+      HOSTINGER_SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT || '65002' }}
 
     steps:
       - name: Checkout main
@@ -46,11 +47,14 @@ jobs:
           cp public/.htaccess deploy-output/${PUBLIC_WEB_ROOT}/.htaccess
 
           cp -R server/. deploy-output/${PRIVATE_BACKEND_ROOT}/
+          cp -R migrations deploy-output/${PRIVATE_BACKEND_ROOT}/migrations
+          cp scripts/run-migrations.php deploy-output/${PRIVATE_BACKEND_ROOT}/run-migrations.php
+          cp scripts/verify-deployment-runtime.php deploy-output/${PRIVATE_BACKEND_ROOT}/verify-deployment-runtime.php
 
       - name: Verify deployment package
         shell: bash
         run: |
-          npm run deploy:verify -- ./deploy-output
+          php scripts/verify-deployment-runtime.php ./deploy-output
 
           test -f deploy-output/${PUBLIC_WEB_ROOT}/index.html
           test -f deploy-output/${PUBLIC_WEB_ROOT}/alchemize-api.php
@@ -63,20 +67,15 @@ jobs:
           test -f deploy-output/${PRIVATE_BACKEND_ROOT}/repositories/external-integration-repository.php
           test -f deploy-output/${PRIVATE_BACKEND_ROOT}/services/google-drive-service.php
           test -f deploy-output/${PRIVATE_BACKEND_ROOT}/services/google-calendar-service.php
+          test -d deploy-output/${PRIVATE_BACKEND_ROOT}/migrations
+          test -f deploy-output/${PRIVATE_BACKEND_ROOT}/run-migrations.php
+          test -f deploy-output/${PRIVATE_BACKEND_ROOT}/verify-deployment-runtime.php
 
           test ! -e deploy-output/${PUBLIC_WEB_ROOT}/server
           test ! -e deploy-output/${PUBLIC_WEB_ROOT}/.env
+          test ! -e deploy-output/${PUBLIC_WEB_ROOT}/migrations
 
-      - name: Publish deploy branch
-        if: ${{ always() }}
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_branch: deploy
-          publish_dir: ./deploy-output/${{ env.PUBLIC_WEB_ROOT }}
-          force_orphan: true
-
-      - name: Sync backend runtime to Hostinger private directory
+      - name: Sync private backend runtime to Hostinger
         if: ${{ secrets.HOSTINGER_SSH_KEY != '' && secrets.HOSTINGER_HOST != '' && secrets.HOSTINGER_USER != '' && secrets.HOSTINGER_PRIVATE_ROOT != '' }}
         shell: bash
         env:
@@ -89,5 +88,45 @@ jobs:
           chmod 700 ~/.ssh
           printf '%s' "$SSH_KEY" > ~/.ssh/hostinger_ed25519
           chmod 600 ~/.ssh/hostinger_ed25519
-          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
-          rsync -avz --delete --exclude='.env' --exclude='node_modules' --exclude='vendor' ./deploy-output/${PRIVATE_BACKEND_ROOT}/ "$SSH_USER@$SSH_HOST:$SSH_PRIVATE_ROOT/"
+          ssh-keyscan -H -p "$HOSTINGER_SSH_PORT" "$SSH_HOST" >> ~/.ssh/known_hosts
+
+          rsync -avz --delete \
+            -e "ssh -p $HOSTINGER_SSH_PORT -i ~/.ssh/hostinger_ed25519" \
+            --filter='P .env' \
+            --filter='P logs/' \
+            --filter='P storage/' \
+            --filter='P tmp/' \
+            --filter='P private/' \
+            ./deploy-output/${PRIVATE_BACKEND_ROOT}/ "$SSH_USER@$SSH_HOST:$SSH_PRIVATE_ROOT/"
+
+      - name: Execute pending database migrations
+        if: ${{ secrets.HOSTINGER_SSH_KEY != '' && secrets.HOSTINGER_HOST != '' && secrets.HOSTINGER_USER != '' && secrets.HOSTINGER_PRIVATE_ROOT != '' }}
+        shell: bash
+        env:
+          SSH_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
+          SSH_HOST: ${{ secrets.HOSTINGER_HOST }}
+          SSH_USER: ${{ secrets.HOSTINGER_USER }}
+          SSH_PRIVATE_ROOT: ${{ secrets.HOSTINGER_PRIVATE_ROOT }}
+        run: |
+          ssh -p "$HOSTINGER_SSH_PORT" -i ~/.ssh/hostinger_ed25519 "$SSH_USER@$SSH_HOST" "php '$SSH_PRIVATE_ROOT/run-migrations.php'"
+
+      - name: Verify deployed production runtime
+        if: ${{ secrets.HOSTINGER_SSH_KEY != '' && secrets.HOSTINGER_HOST != '' && secrets.HOSTINGER_USER != '' && secrets.HOSTINGER_PRIVATE_ROOT != '' }}
+        shell: bash
+        env:
+          SSH_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
+          SSH_HOST: ${{ secrets.HOSTINGER_HOST }}
+          SSH_USER: ${{ secrets.HOSTINGER_USER }}
+          SSH_PRIVATE_ROOT: ${{ secrets.HOSTINGER_PRIVATE_ROOT }}
+        run: |
+          SSH_DOMAIN_ROOT=$(dirname "$SSH_PRIVATE_ROOT")
+          ssh -p "$HOSTINGER_SSH_PORT" -i ~/.ssh/hostinger_ed25519 "$SSH_USER@$SSH_HOST" "php '$SSH_PRIVATE_ROOT/verify-deployment-runtime.php' '$SSH_DOMAIN_ROOT'"
+
+      - name: Publish deploy branch
+        if: ${{ always() }}
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: deploy
+          publish_dir: ./deploy-output/${{ env.PUBLIC_WEB_ROOT }}
+          force_orphan: true

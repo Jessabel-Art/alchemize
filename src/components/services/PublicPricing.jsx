@@ -47,7 +47,10 @@ const renderPrice = (tier) => {
     return { primary: tier.displayPrice, secondary: "Published formula" };
   const amount = tier.minimumPrice ?? tier.basePrice;
   if (amount == null)
-    return { primary: "Manual Review Required", secondary: "No automatic quote" };
+    return {
+      primary: "Manual Review Required",
+      secondary: "No automatic quote",
+    };
   if (tier.pricingType === "STARTING_AT")
     return { primary: money(amount), secondary: "Starting at" };
   return {
@@ -85,27 +88,39 @@ function PricingCard({ tier, pending }) {
       <div className="public-pricing-card-head">
         <div>
           <span className="pricing-type-label">
-            {pending ? "Availability pending authorization" : tier.pricingType.replaceAll("_", " ")}
+            {pending
+              ? "Availability pending authorization"
+              : tier.pricingType.replaceAll("_", " ")}
           </span>
           <h3>{tier.tierName}</h3>
         </div>
-        <div className="pricing-amount" aria-label={`${tier.tierName}: ${price.secondary} ${price.primary}`}>
+        <div
+          className="pricing-amount"
+          aria-label={`${tier.tierName}: ${price.secondary} ${price.primary}`}
+        >
           {tier.pricingType === "STARTING_AT" ? <span>Starting at</span> : null}
           <strong>{price.primary}</strong>
-          {tier.pricingType !== "STARTING_AT" ? <span>{price.secondary}</span> : null}
+          {tier.pricingType !== "STARTING_AT" ? (
+            <span>{price.secondary}</span>
+          ) : null}
         </div>
       </div>
       {tier.description ? <p>{tier.description}</p> : null}
       {limits.length ? (
         <div className="pricing-limit-chips" aria-label="Standard limits">
           {limits.map(([key, value]) => (
-            <span key={key}>{key.replaceAll("_", " ")}: {value}</span>
+            <span key={key}>
+              {key.replaceAll("_", " ")}: {value}
+            </span>
           ))}
         </div>
       ) : null}
       <ul>
         {(Array.isArray(tier.scope) ? tier.scope : []).map((item) => (
-          <li key={item}><Check aria-hidden="true" />{item}</li>
+          <li key={item}>
+            <Check aria-hidden="true" />
+            {item}
+          </li>
         ))}
       </ul>
     </article>
@@ -143,7 +158,9 @@ export function PublicPricing({ serviceKey, language = "en" }) {
   }, []);
   const groups = useMemo(() => {
     const codes = pricingServiceMap[serviceKey] || [];
-    return codes.map((code) => catalog.find((item) => item.serviceCode === code)).filter(Boolean);
+    return codes
+      .map((code) => catalog.find((item) => item.serviceCode === code))
+      .filter(Boolean);
   }, [catalog, serviceKey]);
   if (!groups.length) return null;
   const visible = groups.filter(
@@ -153,38 +170,134 @@ export function PublicPricing({ serviceKey, language = "en" }) {
   const types = new Set(
     visible.flatMap((service) =>
       service.tiers.map((tier) =>
-        tier.status === "PENDING_AUTHORIZATION" ? "REGULATED_PENDING" : tier.pricingType,
+        tier.status === "PENDING_AUTHORIZATION"
+          ? "REGULATED_PENDING"
+          : tier.pricingType,
       ),
     ),
   );
   return (
-    <section className="service-section public-pricing" aria-labelledby={`pricing-${serviceKey}`}>
+    <section
+      className="service-section public-pricing"
+      aria-labelledby={`pricing-${serviceKey}`}
+    >
       <div className="content-shell">
         <div className="service-section-heading">
-          <span className="eyebrow eyebrow--gold">{language === "es" ? "Precios y alcance" : "Pricing and standard scope"}</span>
-          <h2 id={`pricing-${serviceKey}`}>{language === "es" ? "Compare el alcance estándar." : "Compare standardized service options."}</h2>
-          <p>{language === "es" ? "Los precios finales y el alcance se confirman por escrito antes de comenzar." : "Choose a useful starting point. Final scope and applicable terms are confirmed in writing before work begins."}</p>
+          <span className="eyebrow eyebrow--gold">
+            {language === "es"
+              ? "Precios y alcance"
+              : "Pricing and standard scope"}
+          </span>
+          <h2 id={`pricing-${serviceKey}`}>
+            {language === "es"
+              ? "Compare el alcance estándar."
+              : "Compare standardized service options."}
+          </h2>
+          <p>
+            {language === "es"
+              ? "Los precios finales y el alcance se confirman por escrito antes de comenzar."
+              : "Choose a useful starting point. Final scope and applicable terms are confirmed in writing before work begins."}
+          </p>
         </div>
         {visible.map((service) => {
           const pending = service.status === "PENDING_AUTHORIZATION";
           const tiers = service.tiers.filter(
-            (item) => !["NOT_OFFERED", "FUTURE_EXPANSION"].includes(item.status),
+            (item) =>
+              !["NOT_OFFERED", "FUTURE_EXPANSION"].includes(item.status),
           );
           return (
             <div className="public-pricing-group" key={service.serviceCode}>
               <div className="public-pricing-group-title">
                 <h3>{service.serviceName}</h3>
                 {service.description ? <p>{service.description}</p> : null}
-                {pending ? <span className="pricing-status">Coming Soon · Availability pending authorization</span> : null}
+                {pending ? (
+                  <span className="pricing-status">
+                    Coming Soon · Availability pending authorization
+                  </span>
+                ) : null}
               </div>
-              <div className={`public-pricing-grid public-pricing-grid--${Math.min(tiers.length, 4)}`}>
-                {tiers.map((item) => <PricingCard key={item.tierKey} tier={item} pending={pending || item.status === "PENDING_AUTHORIZATION"} />)}
+              <div
+                className={`public-pricing-grid public-pricing-grid--${Math.min(tiers.length, 4)}`}
+              >
+                {tiers.map((item) => (
+                  <PricingCard
+                    key={item.tierKey}
+                    tier={item}
+                    pending={pending || item.status === "PENDING_AUTHORIZATION"}
+                  />
+                ))}
               </div>
-              {service.serviceCode === "bookkeeping" ? <p className="pricing-group-note">Tax preparation is a separate service and is not included in monthly bookkeeping. Cleanup may be required before recurring bookkeeping begins when historical records are incomplete, unreconciled, miscategorized, or otherwise not ready for ongoing monthly service. Normal cleanup follows the published formula; severe, unusually high-volume, incomplete, or reconstruction-heavy records require a separate review and may require a Custom SOW.</p> : null}
-              {service.serviceCode === "payroll" ? <p className="pricing-group-note">Payroll platform/software charges are separate. Alchemize enters W-4 information as provided and does not advise employees how to complete withholding elections. Alchemize does not provide HR, employment-law, or individualized tax advice and does not replace the payroll platform’s tax filing or deposit functions.</p> : null}
-              {service.serviceCode === "business-consulting" ? <div className="pricing-group-note"><p>Consulting engagements diagnose issues, clarify priorities, recommend practical next steps, and develop implementation plans. Substantial hands-on implementation—such as CRM configuration, workflow implementation, website development, bookkeeping cleanup, systems setup, automation, SEO implementation, or operational transformation—is priced separately unless explicitly included.</p><details><summary>Business Foundation Assessment project-credit terms</summary><p>Your $249 Business Foundation Assessment fee may be credited toward a qualifying project of $799 or more when contracted within 30 calendar days. The credit is non-refundable, non-transferable, limited to one credit per qualifying project, has no cash value, does not apply to unrelated services, and cannot be combined with another promotional or project credit unless expressly approved by Alchemize.</p></details></div> : null}
-              {service.serviceCode === "apostille" ? <p className="pricing-group-note">Alchemize facilitates and supports the North Carolina apostille process; apostilles are issued by the appropriate government authority, not Alchemize. Government, shipping, courier, and third-party fees are separate. Processing times and issuance are controlled by the issuing authority. Alchemize does not guarantee issuance or acceptance by a foreign authority.</p> : null}
-              {service.serviceCode === "business-planning" ? <p className="pricing-group-note">Business planning and financial-readiness services help clients organize professional planning materials for growth, strategic planning, and external review. Alchemize does not procure financing, negotiate with lenders, submit loan applications on a client’s behalf, or guarantee financing approval.</p> : null}
+              {service.serviceCode === "bookkeeping" ? (
+                <p className="pricing-group-note">
+                  Tax preparation is a separate service and is not included in
+                  monthly bookkeeping. Cleanup may be required before recurring
+                  bookkeeping begins when historical records are incomplete,
+                  unreconciled, miscategorized, or otherwise not ready for
+                  ongoing monthly service. Normal cleanup follows the published
+                  formula; severe, unusually high-volume, incomplete, or
+                  reconstruction-heavy records require a separate review and may
+                  require a Custom SOW.
+                </p>
+              ) : null}
+              {service.serviceCode === "payroll" ? (
+                <p className="pricing-group-note">
+                  Payroll platform/software charges are separate. Alchemize does
+                  not advise employees how to complete withholding elections and
+                  enters W-4 information only as provided. Alchemize does not
+                  provide HR, employment-law, or individualized tax advice and
+                  does not replace the payroll platform’s tax filing or deposit
+                  functions.
+                </p>
+              ) : null}
+              {service.serviceCode === "business-consulting" ? (
+                <div className="pricing-group-note">
+                  <p>
+                    Consulting engagements diagnose issues, clarify priorities,
+                    recommend practical next steps, and develop implementation
+                    plans. Substantial hands-on implementation—such as CRM
+                    configuration, workflow implementation, website development,
+                    bookkeeping cleanup, systems setup, automation, SEO
+                    implementation, or operational transformation—is priced
+                    separately unless explicitly included.
+                  </p>
+                  <details>
+                    <summary>
+                      Business Foundation Assessment project-credit terms
+                    </summary>
+                    <p>
+                      Your $249 Business Foundation Assessment fee may be
+                      credited toward a qualifying project of $799 or more when
+                      contracted within 30 calendar days. The credit is
+                      non-refundable, non-transferable, limited to one credit
+                      per qualifying project, has no cash value, does not apply
+                      to unrelated services, and cannot be combined with another
+                      promotional or project credit unless expressly approved by
+                      Alchemize.
+                    </p>
+                  </details>
+                </div>
+              ) : null}
+              {service.serviceCode === "apostille" ? (
+                <p className="pricing-group-note">
+                  Alchemize facilitates and supports the North Carolina
+                  apostille process. The apostille is issued by the appropriate
+                  government authority, not Alchemize. Government, shipping,
+                  courier, and third-party fees are separate. Processing times
+                  and issuance are controlled by the issuing authority.
+                  Alchemize does not guarantee issuance or acceptance by a
+                  foreign authority.
+                </p>
+              ) : null}
+              {service.serviceCode === "business-planning" ? (
+                <p className="pricing-group-note">
+                  Business planning and financial-readiness services help
+                  clients organize professional planning materials for growth,
+                  strategic planning, and external review. Alchemize does not
+                  procure financing, negotiate with lenders, submit loan
+                  applications on a client’s behalf, or guarantee financing
+                  approval.
+                </p>
+              ) : null}
             </div>
           );
         })}

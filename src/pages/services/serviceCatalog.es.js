@@ -647,18 +647,18 @@ const translations = {
       "Apoyo para iniciar un pequeño negocio y preparación para lanzamiento, con organización de registros, claridad de procesos y próximos pasos para emprendedores.",
     hero: "Construya los registros y la preparación que respaldan la oportunidad.",
     overview:
-      "Este trabajo organiza la información, los registros, los planes, las fechas y los documentos de respaldo que una oportunidad puede exigir. La meta es fortalecer el proceso de solicitud o decisión, no prometer una aprobación o adjudicación.",
+      "Este trabajo organiza información, registros, planes, fechas y documentos de respaldo para el lanzamiento, crecimiento, planificación estratégica y revisión externa. No incluye procurar financiamiento ni prometer una aprobación.",
     statement:
-      "Prepare al negocio para su formación, oportunidades, financiamiento, certificaciones y próxima etapa de crecimiento.",
+      "Prepare al negocio para su formación, operaciones organizadas, planificación estratégica y próxima etapa de crecimiento.",
     capabilities: [
       "Preparación para la formación",
-      "Preparación para financiamiento",
-      "Preparación para contrataciones",
+      "Preparación financiera",
+      "Preparación de materiales de planificación",
       "Infraestructura para el crecimiento",
     ],
     for: [
       "Emprendedores que se preparan para formar o lanzar un negocio",
-      "Empresas que evalúan su preparación para financiamiento",
+      "Empresas que organizan materiales de preparación financiera",
       "Propietarios que se preparan para registros o certificaciones",
       "Compañías que se organizan para oportunidades gubernamentales o con proveedores",
     ],
@@ -667,17 +667,17 @@ const translations = {
       "Asistencia con EIN dentro del alcance permitido",
       "Listas de lanzamiento y registros fundamentales",
       "Evaluación de preparación para negocios y crecimiento",
-      "Preparación para financiamiento y seguimiento de oportunidades",
+      "Preparación financiera y organización de documentos de respaldo",
       "Apoyo con planes de negocio",
       "Preparación de declaraciones de capacidad",
       "Apoyo para certificaciones",
-      "Preparación para contratación gubernamental y SAM.gov",
+      "Preparación administrativa no legal para registros",
       "Registro de proveedores",
       "Calendario de cumplimiento y preparación documental",
     ],
     situations: [
       "La información de formación y los pasos de lanzamiento están dispersos",
-      "Una conversación de financiamiento requiere mejores registros",
+      "Una revisión externa requiere mejores registros financieros y de planificación",
       "La preparación para SAM.gov o registros de proveedores necesita coordinación",
       "Una declaración de capacidad o paquete de oportunidad necesita fuentes organizadas",
     ],
@@ -708,7 +708,7 @@ const translations = {
       "Plazos, registros y contactos responsables",
     ],
     boundary:
-      "Alchemize no garantiza resultados de formación, financiamiento, aprobación de préstamos, subvenciones, certificaciones, validación de SAM.gov, contratos gubernamentales, aceptación de proveedores ni cumplimiento legal. Las decisiones legales, tributarias, crediticias y de contratación pueden requerir terceros calificados.",
+      "Los servicios de planificación y preparación financiera no incluyen procurar financiamiento, seleccionar o negociar con prestamistas, enviar solicitudes ni garantizar aprobación. Alchemize no garantiza resultados de formación, certificaciones, registros, aceptación de proveedores ni cumplimiento legal.",
     related: [
       [
         "Operaciones e implementación",

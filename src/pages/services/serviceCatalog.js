@@ -359,7 +359,7 @@ const individual = [
       "Destination-country or issuing-authority details when available",
     ],
     boundary:
-      "Alchemize provides facilitation and administrative document-coordination support; it does not issue apostilles. Government, shipping, courier, and third-party fees are separate. Processing times and issuance are controlled by the issuing authority. Alchemize does not provide legal or immigration advice and does not guarantee issuance or acceptance by a foreign authority.",
+      "Alchemize provides facilitation and administrative document-coordination support. The apostille is issued by the appropriate government authority, not Alchemize. Government, shipping, courier, and third-party fees are separate. Processing times and issuance are controlled by the issuing authority. Alchemize does not provide legal or immigration advice and does not guarantee issuance or acceptance by a foreign authority.",
     checklist: [
       "Apostille Services Preparation Checklist",
       "/assets/downloads/alchemize-consultation-document-checklist.pdf",
@@ -832,7 +832,7 @@ const business = [
     process: [
       [
         "Gather",
-      "Collect formation records, bank and credit records, income and expense support, and relevant payroll or contractor information required for the books.",
+        "Collect formation records, bank and credit records, income and expense support, and relevant payroll or contractor information required for the books.",
       ],
       [
         "Review",

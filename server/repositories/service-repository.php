@@ -23,7 +23,7 @@ final class AlchemizeServiceRepository
     public function listPublic(): array
     {
         $statement = $this->database->query(
-            "SELECT id, public_id, service_code, service_name, public_name, description, audience,
+            "SELECT id, service_code, service_name, public_name, description, audience,
                     category, catalog_status, pricing_type, default_price, currency, active_flag,
                     sort_order, catalog_version, billing_description
              FROM services
@@ -65,23 +65,32 @@ final class AlchemizeServiceRepository
 
     private function withPublicCatalogRelations(array $service): array
     {
+        $serviceId = (int) $service['id'];
+        unset($service['id']);
         $tiers = $this->database->prepare(
-            "SELECT id, public_id, tier_key, tier_name, description, base_price, minimum_price,
+            "SELECT tier_key, tier_name, description, base_price, minimum_price,
                     billing_frequency, pricing_type, status, included_scope, limits_metadata,
                     pricing_metadata, invoice_description, active_flag, sort_order, catalog_version
              FROM service_tiers WHERE service_id = :service_id
                AND status NOT IN ('NOT_OFFERED','FUTURE_EXPANSION')
              ORDER BY sort_order, tier_name"
         );
-        $tiers->execute(['service_id' => $service['id']]);
+        $tiers->execute(['service_id' => $serviceId]);
         $addons = $this->database->prepare(
-            "SELECT id, public_id, add_on_code, name, description, pricing_method, default_price,
+            "SELECT add_on_code, name, description, pricing_method, default_price,
                     unit, pricing_metadata, active_flag
              FROM service_addons WHERE service_id = :service_id AND archived_at IS NULL
              ORDER BY name"
         );
-        $addons->execute(['service_id' => $service['id']]);
-        $service['tiers'] = $tiers->fetchAll();
+        $addons->execute(['service_id' => $serviceId]);
+        $service['tiers'] = array_map(function (array $tier): array {
+            $limits = json_decode((string) ($tier['limits_metadata'] ?? ''), true);
+            if (is_array($limits)) {
+                unset($limits['implementation_hours'], $limits['max_internal_hours'], $limits['expected_labor_hours']);
+                $tier['limits_metadata'] = json_encode($limits, JSON_THROW_ON_ERROR);
+            }
+            return $tier;
+        }, $tiers->fetchAll());
         $service['add_ons'] = $addons->fetchAll();
         return $service;
     }
