@@ -309,12 +309,12 @@ const faqCategories = [
       {
         question: "How are services priced?",
         answer:
-          "Standardized services display fixed, formula, monthly, or starting-at pricing on the applicable service page. Custom SOW services require a scope review. Final scope, pricing, external costs, and payment terms are confirmed in writing before work begins.",
+          "Pricing depends on the type of service, scope of work, complexity, and amount of support required. Where pricing has not yet been standardized, Alchemize should define the scope and applicable cost before substantial work begins.",
       },
       {
         question: "Will I know the cost before work begins?",
         answer:
-          "Yes. Published fixed prices apply within stated package assumptions, starting-at prices are finalized after scope review, and Custom SOW pricing is confirmed in writing. Additional work or external costs are disclosed for approval before charges are incurred.",
+          "The objective is to make scope and pricing clear before significant work begins. Some services may have standardized pricing while others may require review of the request before a fee can be determined.",
       },
       {
         question:

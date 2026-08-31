@@ -77,22 +77,15 @@ test("every public service-page family maps to centralized pricing groups", () =
     assert.ok(pricingServiceMap[key]?.length, key);
 });
 
-test("shared component owns type-specific disclaimers and compliance boundaries", () => {
+test("public service details do not mount the pricing renderer", () => {
   const source = fs.readFileSync(
-    new URL("../src/components/services/PublicPricing.jsx", import.meta.url),
+    new URL("../src/pages/services/ServiceDetailPage.jsx", import.meta.url),
     "utf8",
   );
-  assert.match(source, /Published fixed prices apply/);
-  assert.match(source, /“Starting at” pricing represents/);
-  assert.match(source, /Projects marked “Custom SOW”/);
-  assert.match(source, /Tax preparation is a separate service/);
-  assert.match(
+  assert.doesNotMatch(
     source,
-    /does\s+not advise\s+employees[\s\S]*withholding\s+elections/,
+    /PublicPricing|publicPricingCatalog|public-catalog-api/,
   );
-  assert.match(source, /does not issue apostilles/);
-  assert.match(source, /does\s+not\s+procure financing/);
-  assert.doesNotMatch(source, /Most Popular|Best Value/);
 });
 
 test("public API projection excludes internal fields and unavailable services", () => {
