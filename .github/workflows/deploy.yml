@@ -104,7 +104,7 @@ jobs:
             ./deploy-output/${PRIVATE_BACKEND_ROOT}/ "$SSH_USER@$SSH_HOST:$SSH_PRIVATE_ROOT/"
 
       - name: Execute pending database migrations
-        if: ${{ secrets.HOSTINGER_SSH_KEY != '' && secrets.HOSTINGER_HOST != '' && secrets.HOSTINGER_USER != '' && secrets.HOSTINGER_PRIVATE_ROOT != '' }}
+        if: ${{ env.HOSTINGER_SSH_KEY != '' && env.HOSTINGER_HOST != '' && env.HOSTINGER_USER != '' && env.HOSTINGER_PRIVATE_ROOT != '' }}
         shell: bash
         env:
           SSH_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
@@ -115,7 +115,7 @@ jobs:
           ssh -p "$HOSTINGER_SSH_PORT" -i ~/.ssh/hostinger_ed25519 "$SSH_USER@$SSH_HOST" "php '$SSH_PRIVATE_ROOT/run-migrations.php'"
 
       - name: Verify deployed production runtime
-        if: ${{ secrets.HOSTINGER_SSH_KEY != '' && secrets.HOSTINGER_HOST != '' && secrets.HOSTINGER_USER != '' && secrets.HOSTINGER_PRIVATE_ROOT != '' }}
+        if: ${{ env.HOSTINGER_SSH_KEY != '' && env.HOSTINGER_HOST != '' && env.HOSTINGER_USER != '' && env.HOSTINGER_PRIVATE_ROOT != '' }}
         shell: bash
         env:
           SSH_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
