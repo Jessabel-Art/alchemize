@@ -17,6 +17,10 @@ jobs:
       PUBLIC_WEB_ROOT: public_html
       PRIVATE_BACKEND_ROOT: alchemize-server
       HOSTINGER_SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT || '65002' }}
+      HOSTINGER_SSH_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
+      HOSTINGER_HOST: ${{ secrets.HOSTINGER_HOST }}
+      HOSTINGER_USER: ${{ secrets.HOSTINGER_USER }}
+      HOSTINGER_PRIVATE_ROOT: ${{ secrets.HOSTINGER_PRIVATE_ROOT }}
 
     steps:
       - name: Checkout main
@@ -76,7 +80,7 @@ jobs:
           test ! -e deploy-output/${PUBLIC_WEB_ROOT}/migrations
 
       - name: Sync private backend runtime to Hostinger
-        if: ${{ secrets.HOSTINGER_SSH_KEY != '' && secrets.HOSTINGER_HOST != '' && secrets.HOSTINGER_USER != '' && secrets.HOSTINGER_PRIVATE_ROOT != '' }}
+        if: ${{ env.HOSTINGER_SSH_KEY != '' && env.HOSTINGER_HOST != '' && env.HOSTINGER_USER != '' && env.HOSTINGER_PRIVATE_ROOT != '' }}
         shell: bash
         env:
           SSH_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
