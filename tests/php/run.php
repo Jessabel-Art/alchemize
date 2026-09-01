@@ -246,6 +246,14 @@ test('initializes the Resend provider without connecting or sending', function (
     expect($provider->configurationStatus()['RESEND_FROM_NAME'] === true);
 });
 
+test('keeps the centralized Resend factory stable even when legacy SES classes are loaded', function (): void {
+    require_once dirname(__DIR__, 2) . '/server/services/ses-email-provider.php';
+    expect(function_exists('alchemize_email_provider'));
+    $config = ['email_provider' => 'resend', 'resend' => ['api_key' => 're_test_key', 'from_email' => 'notifications@getalchemize.com', 'from_name' => 'Alchemize Business Services', 'reply_to_email' => 'admin@getalchemize.com']];
+    $provider = alchemize_email_provider($config);
+    expect($provider instanceof AlchemizeResendEmailProvider);
+});
+
 test('renders a reusable branded transactional email layout with safe HTML and text', function (): void {
     $rendered = alchemize_render_email_template([
         'title' => 'Reset Your Password',

@@ -86,11 +86,19 @@ final class AlchemizeSesSmtpEmailProvider implements AlchemizeEmailProvider
     }
 }
 
-function alchemize_email_provider(array $config): AlchemizeEmailProvider
-{
-    $provider = new AlchemizeSesSmtpEmailProvider($config['ses'] ?? []);
-    if (class_exists(PHPMailer::class) && !in_array(false, $provider->configurationStatus(), true)) {
-        return $provider;
+if (!function_exists('alchemize_email_provider')) {
+    function alchemize_email_provider(array $config): AlchemizeEmailProvider
+    {
+        $providerName = strtolower((string) ($config['email_provider'] ?? 'resend'));
+        if ($providerName !== 'resend') {
+            return new AlchemizeNullEmailProvider();
+        }
+
+        if (!class_exists('AlchemizeResendEmailProvider', false)) {
+            return new AlchemizeNullEmailProvider();
+        }
+
+        $provider = new AlchemizeResendEmailProvider($config['resend'] ?? []);
+        return in_array(false, $provider->configurationStatus(), true) ? new AlchemizeNullEmailProvider() : $provider;
     }
-    return new AlchemizeNullEmailProvider();
 }

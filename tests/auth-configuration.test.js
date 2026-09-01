@@ -80,3 +80,23 @@ test("Stripe webhook reads config, raw input, and verifies signatures", () => {
   assert.match(endpoint, /alchemize_stripe_verify_signed_payload/);
   assert.match(endpoint, /INTEGRATION_UNAVAILABLE/);
 });
+
+test("registration requests are submitted as lead-intake instead of blocking creation", () => {
+  const authPage = read("src/pages/auth/AuthPage.jsx");
+  const apiClient = read("src/services/admin-api.js");
+
+  assert.match(authPage, /requestAccess/);
+  assert.match(authPage, /auth\.requestAccess/);
+  assert.doesNotMatch(authPage, /Account creation is not enabled in this phase\./);
+  assert.match(apiClient, /requestAccess:\s*\(/);
+  assert.match(apiClient, /buildApiUrl\("leads"\)/);
+});
+
+test("admin manual lead creation persists through the authenticated lead API", () => {
+  const apiClient = read("src/services/admin-api.js");
+  const adminPage = read("src/pages/admin/AdminOperationalPages.jsx");
+
+  assert.match(apiClient, /create:\s*\(payload\)\s*=>\s*apiRequest\(buildApiUrl\("leads"\),\s*\{\s*method:\s*"POST"/);
+  assert.match(adminPage, /leadApi\.create\(/);
+  assert.doesNotMatch(adminPage, /Manual lead draft created locally\./);
+});

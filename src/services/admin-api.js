@@ -87,6 +87,11 @@ export const auth = {
     delete window.__ALCHEMIZE_CSRF_TOKEN__;
     return data;
   },
+  requestAccess: (payload) =>
+    apiRequest(buildApiUrl("leads"), {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
   setPassword: (payload) =>
     apiRequest(buildApiUrl("auth/set-password"), {
       method: "POST",
@@ -316,6 +321,11 @@ export const intakeAdmin = {
 export const leads = {
   list: () => apiRequest(buildApiUrl("leads")),
   get: (id) => apiRequest(buildApiUrl(`leads/${id}`)),
+  create: (payload) =>
+    apiRequest(buildApiUrl("leads"), {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
   update: (id, payload) =>
     apiRequest(buildApiUrl(`leads/${id}`), {
       method: "PUT",

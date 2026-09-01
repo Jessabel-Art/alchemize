@@ -596,38 +596,44 @@ function LeadManagementPage() {
     }
   };
 
-  const addLead = () => {
-    const newLead = {
-      id: `lead-temp-${Date.now()}`,
-      name: draftLead.name || "New lead",
-      email: draftLead.email || "",
-      phone: draftLead.phone || "",
-      businessName: draftLead.businessName || "",
-      audience: draftLead.audience || "Individual",
-      serviceInterest: draftLead.serviceInterest || "Business Advisory",
-      source: draftLead.source || "Manual entry",
-      message: draftLead.message || "No inquiry details provided yet.",
-      status: "New",
-      receivedAt: new Date().toISOString(),
-      assignedTo: "Owner / Administrator",
-      nextAction: "Review inquiry and assign follow-up",
-      internalNotes:
-        "Manual lead draft created locally. This prototype does not yet persist manual lead creation in the backend.",
-    };
+  const addLead = async () => {
+    const trimmedName = draftLead.name.trim();
+    if (!trimmedName || !draftLead.email.trim()) {
+      setError("Name and email are required to save a lead.");
+      return;
+    }
 
-    setRows((current) => [normalizeLeadRecord(newLead), ...current]);
-    setShowAddLeadForm(false);
-    setDraftLead({
-      name: "",
-      email: "",
-      phone: "",
-      audience: "Individual",
-      businessName: "",
-      serviceInterest: "Business Advisory",
-      source: "Manual entry",
-      message: "",
-    });
-    setSelectedLead(normalizeLeadRecord(newLead));
+    try {
+      await leadApi.create({
+        full_name: trimmedName,
+        email: draftLead.email.trim(),
+        phone: draftLead.phone.trim() || null,
+        audience: (draftLead.audience || "Individual").toLowerCase(),
+        service_key: null,
+        message:
+          draftLead.message.trim() ||
+          `Manual lead created from admin entry for ${trimmedName}.`,
+        preferred_contact: draftLead.phone.trim() ? "phone" : "email",
+        language_preference: "en",
+        website: "",
+      });
+
+      setShowAddLeadForm(false);
+      setDraftLead({
+        name: "",
+        email: "",
+        phone: "",
+        audience: "Individual",
+        businessName: "",
+        serviceInterest: "Business Advisory",
+        source: "Manual entry",
+        message: "",
+      });
+      setError("");
+      await refreshLeads();
+    } catch {
+      setError("Unable to save the lead to the backend.");
+    }
   };
 
   const leadDetail = selectedLead ? normalizeLeadRecord(selectedLead) : null;
@@ -851,9 +857,8 @@ function LeadManagementPage() {
             </label>
           </div>
           <p className="admin-note-text">
-            This manual add flow is prepared for the current UI, but the backend
-            does not yet provide a persistent create-lead API for manual
-            entries.
+            Manual entries are now saved through the same lead API used for public
+            inquiries so they remain visible in the lead queue after refresh.
           </p>
           <div className="admin-header-actions">
             <button type="button" className="primary-button" onClick={addLead}>

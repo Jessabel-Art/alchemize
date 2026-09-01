@@ -13,6 +13,7 @@ function AuthPage({ title, buttonLabel }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [resetMessage, setResetMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   const [session, setSession] = useState(null);
 
@@ -40,9 +41,26 @@ function AuthPage({ title, buttonLabel }) {
         return;
       }
 
-      setError(
-        "Account creation is not enabled in this phase. Please request access from the team.",
+      const requestPayload = {
+        full_name: name.trim(),
+        email: email.trim(),
+        phone: "",
+        audience: "business",
+        service_key: null,
+        message: `Access request submitted during registration for ${email.trim()}.`,
+        preferred_contact: "email",
+        language_preference: "en",
+      };
+
+      const result = await auth.requestAccess(requestPayload);
+      setError("");
+      setSuccessMessage(
+        result?.status === "received"
+          ? "Your access request is already in review. A team member will follow up soon."
+          : "Your access request has been submitted. A team member will follow up shortly.",
       );
+      setName("");
+      setEmail("");
     } catch (caughtError) {
       setError(caughtError.message || "The request could not be completed.");
     } finally {
@@ -135,6 +153,7 @@ function AuthPage({ title, buttonLabel }) {
               </label>
             )}
             {error && <p role="alert">{error}</p>}
+            {successMessage && <p role="status">{successMessage}</p>}
             {resetMessage && <p role="status">{resetMessage}</p>}
             <button
               className="button button-primary"
