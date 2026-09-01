@@ -37,21 +37,22 @@ final class AlchemizeResendEmailProvider implements AlchemizeEmailProvider
             $fromEmail = (string) ($this->config['from_email'] ?? 'notifications@getalchemize.com');
             $replyTo = (string) ($this->config['reply_to_email'] ?? 'admin@getalchemize.com');
             $subject = 'Alchemize | ' . (string) ($notification['title'] ?? 'Account notification');
-            $plainText = trim((string) ($notification['message_body'] ?? ''));
-            $safeTitle = htmlspecialchars((string) ($notification['title'] ?? 'Account notification'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-            $safeBody = nl2br(htmlspecialchars($plainText, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'));
-            $html = '<div style="font-family:Arial,sans-serif;max-width:600px;color:#202020">'
-                . '<div style="border-bottom:3px solid #8b6f47;padding:16px 0;font-size:20px;font-weight:700">Alchemize Business Services</div>'
-                . '<h1 style="font-size:20px;margin:24px 0 12px">' . $safeTitle . '</h1><p style="line-height:1.6">' . $safeBody . '</p>'
-                . '<p style="margin-top:28px;color:#666;font-size:13px">This transactional notice contains no document contents or password information.</p></div>';
+            $payload = alchemize_render_email_template([
+                'title' => (string) ($notification['title'] ?? 'Account notification'),
+                'message_body' => (string) ($notification['message_body'] ?? ''),
+                'preheader' => (string) ($notification['preheader'] ?? ''),
+                'action_url' => (string) ($notification['action_url'] ?? ''),
+                'action_label' => (string) ($notification['action_label'] ?? ''),
+                'secondary_text' => (string) ($notification['secondary_text'] ?? 'This transactional notice contains no document contents or password information.'),
+            ], (string) ($notification['app_url'] ?? 'https://www.getalchemize.com'));
 
-            $payload = [
+            $payloadToSend = [
                 'from' => sprintf('%s <%s>', $fromName, $fromEmail),
                 'to' => [$recipient],
                 'reply_to' => $replyTo,
                 'subject' => $subject,
-                'html' => $html,
-                'text' => "Alchemize Business Services\n\n" . (string) ($notification['title'] ?? 'Account notification') . "\n\n" . $plainText,
+                'html' => $payload['html'],
+                'text' => $payload['text'],
             ];
 
             $apiKey = (string) ($this->config['api_key'] ?? '');
@@ -63,7 +64,7 @@ final class AlchemizeResendEmailProvider implements AlchemizeEmailProvider
                         'Content-Type: application/json',
                         'Accept: application/json',
                     ],
-                    'content' => json_encode($payload, JSON_THROW_ON_ERROR),
+                    'content' => json_encode($payloadToSend, JSON_THROW_ON_ERROR),
                     'ignore_errors' => true,
                     'timeout' => 20,
                 ],

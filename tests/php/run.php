@@ -14,6 +14,7 @@ if (is_file($composerAutoload)) {
 }
 require_once dirname(__DIR__, 2) . '/server/repositories/notification-repository.php';
 require_once dirname(__DIR__, 2) . '/server/services/notification-service.php';
+require_once dirname(__DIR__, 2) . '/server/services/email-template.php';
 require_once dirname(__DIR__, 2) . '/server/services/resend-email-provider.php';
 
 $tests = [];
@@ -243,6 +244,41 @@ test('initializes the Resend provider without connecting or sending', function (
     expect($provider instanceof AlchemizeResendEmailProvider);
     expect($provider->configurationStatus()['RESEND_API_KEY'] === true);
     expect($provider->configurationStatus()['RESEND_FROM_NAME'] === true);
+});
+
+test('renders a reusable branded transactional email layout with safe HTML and text', function (): void {
+    $rendered = alchemize_render_email_template([
+        'title' => 'Reset Your Password',
+        'message_body' => "Use this link to reset your password.\n\nIf you did not request this, ignore it.",
+        'preheader' => 'Your secure reset link is ready.',
+        'action_url' => 'https://www.getalchemize.com/set-password?token=abc123',
+        'action_label' => 'Reset Your Password',
+    ], 'https://www.getalchemize.com');
+
+    expect(str_contains($rendered['html'], 'Alchemize Business Services'));
+    expect(str_contains($rendered['html'], 'https://www.getalchemize.com/set-password?token=abc123'));
+    expect(str_contains($rendered['html'], 'Reset Your Password'));
+    expect(str_contains($rendered['html'], 'getalchemize.com'));
+    expect(str_contains($rendered['html'], 'admin@getalchemize.com'));
+    expect(str_contains($rendered['text'], 'Alchemize Business Services'));
+    expect(str_contains($rendered['text'], 'Reset Your Password'));
+    expect(str_contains($rendered['text'], 'https://www.getalchemize.com/set-password?token=abc123'));
+    expect(!str_contains($rendered['html'], '<script>'));
+});
+
+test('escapes HTML and omits unsafe or incomplete CTA content', function (): void {
+    $rendered = alchemize_render_email_template([
+        'title' => 'Unsafe title <script>alert(1)</script>',
+        'message_body' => '<script>alert(1)</script> This should be escaped.',
+        'action_url' => 'javascript:alert(1)',
+        'action_label' => 'Continue',
+    ], 'https://www.getalchemize.com');
+
+    expect(!str_contains($rendered['html'], '<script>alert(1)</script>'));
+    expect(!str_contains($rendered['html'], 'javascript:alert(1)'));
+    expect(!str_contains($rendered['html'], '>Continue<'));
+    expect(str_contains($rendered['html'], '&lt;script&gt;alert(1)&lt;/script&gt;'));
+    expect(str_contains($rendered['text'], 'Unsafe title'));
 });
 
 test('calculates finalized catalog pricing and stops at complexity thresholds', function (): void {

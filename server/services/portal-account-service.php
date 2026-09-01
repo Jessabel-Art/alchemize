@@ -91,10 +91,20 @@ final class AlchemizePortalAccountService
         }
         try {
             if (!function_exists('alchemize_email_provider')) return 'unavailable';
+            $actionLabel = $purpose === 'invitation' ? 'Set Up Your Portal' : 'Reset Your Password';
+            $subject = $purpose === 'invitation' ? 'Set up your Alchemize client portal' : 'Reset your Alchemize portal password';
+            $body = $purpose === 'invitation'
+                ? 'You have been invited to access your secure Alchemize client portal. Set up your password to continue.'
+                : 'We received a request to reset your portal password. Use the secure link below to continue.';
             return alchemize_email_provider($this->config)->deliver([
                 'public_id' => alchemize_uuid_v4(), 'recipient_email' => $email,
-                'title' => $purpose === 'invitation' ? 'Set up your Alchemize client portal' : 'Reset your Alchemize portal password',
-                'message_body' => ($purpose === 'invitation' ? 'Set up your portal password: ' : 'Reset your portal password: ') . $url,
+                'title' => $subject,
+                'message_body' => $body . "\n\n" . ($purpose === 'invitation' ? 'Set up your password: ' : 'Reset your password: ') . $url,
+                'preheader' => $purpose === 'invitation' ? 'Your portal invitation is ready.' : 'Your secure reset link is ready.',
+                'action_url' => $url,
+                'action_label' => $actionLabel,
+                'secondary_text' => 'This message was sent to complete your secure Alchemize account setup or password reset.',
+                'app_url' => (string) ($this->config['app_url'] ?? 'https://www.getalchemize.com'),
             ]);
         } catch (Throwable $error) {
             error_log(sprintf('Portal account email delivery failed [%s].', get_class($error)));

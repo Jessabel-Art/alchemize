@@ -64,6 +64,7 @@ require_once __DIR__ . '/services/document-storage-service.php';
 require_once __DIR__ . '/services/portal-action-service.php';
 require_once __DIR__ . '/services/portal-admin-service.php';
 require_once __DIR__ . '/services/notification-service.php';
+require_once __DIR__ . '/services/email-template.php';
 require_once __DIR__ . '/services/resend-email-provider.php';
 require_once __DIR__ . '/services/intake-service.php';
 require_once __DIR__ . '/services/intake-admin-service.php';
