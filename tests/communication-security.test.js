@@ -76,7 +76,13 @@ test("creates deduplicated internal notifications behind an email provider bound
 
 test("configures Resend through the existing provider boundary without raw SMTP", () => {
   assert.match(resendProvider, /implements AlchemizeEmailProvider/);
-  assert.match(resendProvider, /api\.resend\.com\/emails|Authorization: Bearer/);
+  assert.match(
+    resendProvider,
+    /api\.resend\.com\/emails|Authorization: Bearer/,
+  );
   assert.match(resendProvider, /reply_to/);
-  assert.doesNotMatch(resendProvider, /PHPMailer|SMTPAuth|ENCRYPTION_STARTTLS|fsockopen|stream_socket_client/);
+  assert.doesNotMatch(
+    resendProvider,
+    /PHPMailer|SMTPAuth|ENCRYPTION_STARTTLS|fsockopen|stream_socket_client/,
+  );
 });
