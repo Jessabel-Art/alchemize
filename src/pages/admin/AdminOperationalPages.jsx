@@ -1334,8 +1334,9 @@ function ClientManagementPage() {
 
   const selectedCatalogService = useMemo(
     () =>
-      snapshot.services.find((service) => service.id === serviceAssignment.serviceId) ||
-      null,
+      snapshot.services.find(
+        (service) => service.id === serviceAssignment.serviceId,
+      ) || null,
     [snapshot.services, serviceAssignment.serviceId],
   );
 
@@ -1384,8 +1385,13 @@ function ClientManagementPage() {
           ? Number(serviceAssignment.tierId)
           : null,
         agreed_base_price: targetPrice,
-        custom_price_override: serviceAssignment.useCustomPrice ? targetPrice : null,
-        pricing_model: selectedCatalogTier?.pricingType || selectedCatalogService?.pricingType || "FIXED",
+        custom_price_override: serviceAssignment.useCustomPrice
+          ? targetPrice
+          : null,
+        pricing_model:
+          selectedCatalogTier?.pricingType ||
+          selectedCatalogService?.pricingType ||
+          "FIXED",
         use_custom_price: Boolean(serviceAssignment.useCustomPrice),
         start_date: serviceAssignment.startDate,
         notes: serviceAssignment.notes,
@@ -1536,7 +1542,8 @@ function ClientManagementPage() {
   const handleResendPortalInvitation = async () => {
     if (!selectedClient) return;
     const result = await clientApi.sendInvitation(selectedClient.id);
-    const email = selectedClient.email || result?.recipient_email || "the client";
+    const email =
+      selectedClient.email || result?.recipient_email || "the client";
     if (result?.email_delivery === "sent") {
       setPortalActionMessage(`Portal invitation sent to ${email}.`);
       return;
@@ -1578,9 +1585,13 @@ function ClientManagementPage() {
         create: () => clientApi.createPortalAccess(selectedClient.id),
         setupLink: handleCopySetupLink,
         resetLink: async () => {
-          const result = await clientApi.copyPasswordResetLink(selectedClient.id);
+          const result = await clientApi.copyPasswordResetLink(
+            selectedClient.id,
+          );
           if (!result?.setup_url) {
-            setPortalActionMessage("The password reset link could not be generated.");
+            setPortalActionMessage(
+              "The password reset link could not be generated.",
+            );
             return;
           }
           try {
@@ -2450,7 +2461,11 @@ function ClientManagementPage() {
                     type="number"
                     min="0.01"
                     step="0.01"
-                    value={serviceAssignment.useCustomPrice ? serviceAssignment.customPrice : estimatedAssignmentPrice}
+                    value={
+                      serviceAssignment.useCustomPrice
+                        ? serviceAssignment.customPrice
+                        : estimatedAssignmentPrice
+                    }
                     readOnly={!serviceAssignment.useCustomPrice}
                     onChange={(event) =>
                       setServiceAssignment({
@@ -2469,7 +2484,8 @@ function ClientManagementPage() {
                         ...serviceAssignment,
                         useCustomPrice: event.target.checked,
                         customPrice: event.target.checked
-                          ? serviceAssignment.customPrice || estimatedAssignmentPrice
+                          ? serviceAssignment.customPrice ||
+                            estimatedAssignmentPrice
                           : "",
                       })
                     }
