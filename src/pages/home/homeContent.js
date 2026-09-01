@@ -29,22 +29,13 @@ export const homeContent = {
       businessLink: "Explore business services",
     },
     capabilities: [
-      ["Advisory & Optimization", "/services/businesses/advisory-optimization"],
-      [
-        "Operations & Implementation",
-        "/services/businesses/operations-implementation",
-      ],
-      [
-        "Digital Business & Technology",
-        "/services/businesses/digital-business-technology",
-      ],
-      ["Business Readiness & Growth", "/services/businesses/readiness-growth"],
-      [
-        "Bookkeeping & Financial Reporting",
-        "/services/businesses/bookkeeping-financial-reporting",
-      ],
-      ["Payroll Processing", "/services/businesses/payroll-processing"],
-      ["Business Tax Support", "/services/businesses/business-tax-support"],
+      ["Business Consulting", "/services/businesses/advisory-optimization"],
+      ["Business Operations", "/services/businesses/operations-implementation"],
+      ["Web & Digital Solutions", "/web-digital"],
+      ["Business Readiness", "/services/businesses/readiness-growth"],
+      ["Bookkeeping", "/services/businesses/bookkeeping-financial-reporting"],
+      ["Payroll", "/services/businesses/payroll-processing"],
+      ["Business Tax", "/services/businesses/business-tax-support"],
     ],
     connect: {
       eyebrow: "Your responsibilities connect",
@@ -138,10 +129,7 @@ export const homeContent = {
         "Operaciones e implementación",
         "/services/businesses/operations-implementation",
       ],
-      [
-        "Tecnología para empresas",
-        "/services/businesses/digital-business-technology",
-      ],
+      ["Web y soluciones digitales", "/web-digital"],
       [
         "Preparación y crecimiento empresarial",
         "/services/businesses/readiness-growth",

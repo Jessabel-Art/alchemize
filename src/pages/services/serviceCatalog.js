@@ -391,7 +391,7 @@ const business = [
     audienceLabel: "Business Services",
     slug: "advisory-optimization",
     serviceKey: "business-advisory",
-    title: "Business Advisory & Optimization",
+    title: "Business Consulting",
     seoTitle: "Small Business Consulting & Advisory Services | Alchemize",
     seoDescription:
       "Small business consulting and advisory support for owners who need clearer priorities, process improvements, and practical next steps for what to change or improve.",
@@ -474,13 +474,10 @@ const business = [
     ],
     related: [
       [
-        "Operations & Implementation",
+        "Business Operations",
         "/services/businesses/operations-implementation",
       ],
-      [
-        "Digital Business & Technology",
-        "/services/businesses/digital-business-technology",
-      ],
+      ["Web & Digital Solutions", "/web-digital"],
     ],
     cta: "Not sure what is creating the friction?",
   },
@@ -489,7 +486,7 @@ const business = [
     audienceLabel: "Business Services",
     slug: "operations-implementation",
     serviceKey: "business-operations",
-    title: "Business Operations & Implementation",
+    title: "Business Operations",
     seoTitle: "Small Business Operations & Process Support | Alchemize",
     seoDescription:
       "Small business operations support for workflows, process improvement, administrative systems, and practical implementation that helps the business run more smoothly.",
@@ -573,14 +570,8 @@ const business = [
       ],
     ],
     related: [
-      [
-        "Business Advisory & Optimization",
-        "/services/businesses/advisory-optimization",
-      ],
-      [
-        "Digital Business & Technology",
-        "/services/businesses/digital-business-technology",
-      ],
+      ["Business Consulting", "/services/businesses/advisory-optimization"],
+      ["Web & Digital Solutions", "/web-digital"],
       [
         "Notary & Document Services",
         "/services/individuals/notary-document-services",
@@ -591,106 +582,9 @@ const business = [
   {
     audience: "businesses",
     audienceLabel: "Business Services",
-    slug: "digital-business-technology",
-    serviceKey: "business-digital",
-    title: "Digital Business & Technology",
-    Icon: MonitorCog,
-    statement:
-      "Use technology to support the business process, not complicate it.",
-    hero: "Make the tools support the way the business needs to work.",
-    overview:
-      "Technology implementation starts with the business process. Alchemize helps select, configure, connect, and document practical digital infrastructure so the tool has a clear purpose, owner, and place in the workflow.",
-    capabilities: [
-      "Website and domain setup",
-      "CRM and intake",
-      "Workflow automation",
-      "Digital workspace organization",
-    ],
-    for: [
-      "Businesses assembling their digital foundation",
-      "Owners replacing disconnected manual steps",
-      "Teams implementing booking, intake, CRM, or document systems",
-      "Businesses needing clearer ownership of digital accounts",
-    ],
-    situations: [
-      "The website or business email is not professionally configured",
-      "The same information is entered in several tools",
-      "Scheduling, intake, and follow-up do not connect",
-      "No one knows who owns accounts, access, or vendor relationships",
-    ],
-    helps: [
-      "Business website setup or improvement",
-      "Domain and professional email configuration",
-      "Booking and scheduling system setup",
-      "CRM implementation",
-      "Digital intake forms",
-      "Client portal setup",
-      "Business software selection and configuration",
-      "Workflow automation and tool integrations",
-      "Cloud workspace and digital file organization",
-      "Basic reporting setup",
-      "Digital account and vendor inventory",
-    ],
-    process: [
-      [
-        "Assess",
-        "Define the business process, current tools, pain points, ownership, and desired result.",
-      ],
-      [
-        "Select",
-        "Choose a fit-for-purpose tool or determine whether an existing tool should be retained.",
-      ],
-      [
-        "Configure",
-        "Set up the core structure, fields, permissions, templates, and workflow.",
-      ],
-      [
-        "Connect",
-        "Integrate supported steps, document ownership, and show the team how the system works.",
-      ],
-    ],
-    prepare: [
-      "Current tool and vendor inventory",
-      "Account owners and access information (shared securely only when instructed)",
-      "Description of the current process",
-      "Examples of forms, emails, and records",
-      "Required integrations",
-      "Budget, timeline, and responsible users",
-    ],
-    boundary:
-      "This service is business technology implementation, not managed IT, enterprise software development, penetration testing, or cybersecurity consulting. Security-sensitive work and unsupported integrations may require a specialized provider.",
-    checklist: [
-      "Digital Business Systems Assessment Checklist",
-      "/assets/downloads/digital-business-systems-assessment-checklist.pdf",
-    ],
-    resources: [
-      [
-        "When Your Business Needs a Process",
-        "/resources/business-needs-a-process",
-      ],
-      [
-        "A Simple Administrative System",
-        "/resources/simple-administrative-system",
-      ],
-    ],
-    related: [
-      [
-        "Operations & Implementation",
-        "/services/businesses/operations-implementation",
-      ],
-      [
-        "Business Advisory & Optimization",
-        "/services/businesses/advisory-optimization",
-      ],
-    ],
-    cta: "Need the tools to work together?",
-  },
-  {
-    audience: "businesses",
-    audienceLabel: "Business Services",
     slug: "readiness-growth",
     serviceKey: "business-readiness",
-    title: "Business Readiness & Growth",
+    title: "Business Readiness",
     seoTitle: "Small Business Startup & Readiness Support | Alchemize",
     seoDescription:
       "Small business startup support, readiness planning, and launch preparation for entrepreneurs who need stronger records, process clarity, and next-step organization.",
@@ -775,10 +669,7 @@ const business = [
         "Operations & Implementation",
         "/services/businesses/operations-implementation",
       ],
-      [
-        "Digital Business & Technology",
-        "/services/businesses/digital-business-technology",
-      ],
+      ["Web & Digital Solutions", "/web-digital"],
       ["Business Tax Support", "/services/businesses/business-tax-support"],
     ],
     cta: "Preparing the business for what comes next?",
@@ -788,7 +679,7 @@ const business = [
     audienceLabel: "Business Services",
     slug: "bookkeeping-financial-reporting",
     serviceKey: "business-bookkeeping",
-    title: "Bookkeeping & Financial Reporting",
+    title: "Bookkeeping",
     seoTitle: "Small Business Bookkeeping & Financial Reporting | Alchemize",
     seoDescription:
       "Small business bookkeeping and financial reporting support with reconciliations, recurring reporting, and virtual service options for growing businesses.",
@@ -872,8 +763,8 @@ const business = [
       ],
     ],
     related: [
-      ["Payroll Processing", "/services/businesses/payroll-processing"],
-      ["Business Tax Support", "/services/businesses/business-tax-support"],
+      ["Payroll", "/services/businesses/payroll-processing"],
+      ["Business Tax", "/services/businesses/business-tax-support"],
     ],
     cta: "Need the financial recordkeeping process made clearer and more reliable?",
   },
@@ -882,7 +773,7 @@ const business = [
     audienceLabel: "Business Services",
     slug: "payroll-processing",
     serviceKey: "business-payroll",
-    title: "Payroll Processing",
+    title: "Payroll",
     seoTitle: "Small Business Payroll Processing Services | Alchemize",
     seoDescription:
       "Payroll processing support for small businesses, including organized payroll records, recurring reporting, and virtual administration where the selected workflow allows.",
@@ -964,11 +855,8 @@ const business = [
       ],
     ],
     related: [
-      [
-        "Bookkeeping & Financial Reporting",
-        "/services/businesses/bookkeeping-financial-reporting",
-      ],
-      ["Business Tax Support", "/services/businesses/business-tax-support"],
+      ["Bookkeeping", "/services/businesses/bookkeeping-financial-reporting"],
+      ["Business Tax", "/services/businesses/business-tax-support"],
     ],
     cta: "Need payroll records and administration organized more reliably?",
   },
@@ -977,7 +865,7 @@ const business = [
     audienceLabel: "Business Services",
     slug: "business-tax-support",
     serviceKey: "business-financial",
-    title: "Business Tax Support",
+    title: "Business Tax",
     seoTitle: "Small Business Tax Preparation & Support | Alchemize",
     seoDescription:
       "Small business tax preparation and support for organized records, year-end readiness, and virtual tax document preparation where service requirements allow.",
@@ -1099,6 +987,7 @@ export const legacyServiceRoutes = {
   "business-tax": "/services/businesses/business-tax-support",
   "financial-tax-support": "/services/businesses/business-tax-support",
   "business-advisory": "/services/businesses/advisory-optimization",
+  "digital-business-technology": "/web-digital",
   "notary-administrative-services":
     "/services/individuals/notary-document-services",
 };

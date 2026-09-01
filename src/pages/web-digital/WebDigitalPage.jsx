@@ -14,8 +14,8 @@ const content = {
     hero: {
       eyebrow: "Web & Digital Solutions",
       title: "Professional digital presence for the work that matters.",
-      copy: "Alchemize creates clean, credible websites and practical digital support for businesses, professionals, and individuals who need a stronger online presence without unnecessary complexity.",
-      primary: "Schedule a Consultation",
+      copy: "Alchemize creates clean, credible websites and practical digital support for businesses, professionals, and individuals who need a stronger online presence without unnecessary complexity. We also help with local visibility and the digital systems that support the real work of the business.",
+      primary: "Request a Project Proposal",
       secondary: "Explore the process",
     },
     audiences: {
@@ -30,7 +30,7 @@ const content = {
       },
     },
     solutions: {
-      title: "Website solutions",
+      title: "Website and digital solutions",
       items: [
         [
           "Landing-page websites",
@@ -38,23 +38,31 @@ const content = {
         ],
         [
           "Small-business websites",
-          "Professional, well-structured sites that support credibility and inquiries.",
+          "Professional, well-structured sites that support credibility, inquiries, and client trust.",
         ],
         [
           "Professional and portfolio websites",
           "Clear presentation of services, projects, expertise, and contact information.",
         ],
         [
-          "Website redesigns",
+          "Local SEO and Google Business Profile setup",
+          "Improve local visibility with search-ready structure, profile setup, and clearer digital presence.",
+        ],
+        [
+          "Website redesigns and refreshes",
           "Refresh and improve an existing digital presence without losing the business’s core clarity.",
+        ],
+        [
+          "Business systems and integrations",
+          "Connect forms, scheduling, and business tools so the digital experience works with the real work behind it.",
         ],
         [
           "Responsive/mobile optimization",
           "Sites that remain easy to use and readable across devices.",
         ],
         [
-          "Contact and lead-generation forms",
-          "Simple conversion paths that help prospects get in touch with less friction.",
+          "Website maintenance and support",
+          "Keep content, forms, links, and digital basics reliable after launch with practical care after launch.",
         ],
       ],
     },
@@ -75,7 +83,7 @@ const content = {
     custom: {
       title: "Need more than a standard website?",
       copy: "Alchemize can evaluate custom digital requirements and determine the right approach for your business.",
-      cta: "Schedule a Consultation",
+      cta: "Request a Project Proposal",
     },
     process: {
       title: "Simple project process",
@@ -85,13 +93,13 @@ const content = {
         ["Design", "Refine layout, content flow, and the visual presentation."],
         ["Build", "Develop the site with a clear business-focused approach."],
         ["Review", "Check usability, content, and final accuracy."],
-        ["Launch", "Prepare the site for go-live and ongoing support."],
+        ["Launch", "Prepare the site for go-live and handoff."],
       ],
     },
     cta: {
       title: "Ready to plan the next step?",
       copy: "Tell us what you need the website or digital presence to accomplish. We can determine the right project path from there.",
-      button: "Request a Project Consultation",
+      button: "Request a Project Proposal",
     },
   },
   es: {
@@ -297,7 +305,7 @@ function WebDigitalPage() {
             "Ready to build a digital presence that fits the business?",
           finalCopy:
             "Tell us what you need, what already exists, and what you want the site or digital setup to accomplish.",
-          consultation: "Schedule a Consultation",
+          consultation: "Request a Project Proposal",
         };
 
   const enhancementGroups = [
@@ -370,7 +378,10 @@ function WebDigitalPage() {
             <h1>{content.hero.title}</h1>
             <p>{content.hero.copy}</p>
             <div className="webx-actions">
-              <Link className="button button-primary" to="/contact">
+              <Link
+                className="button button-primary"
+                to="/contact?service=business-digital&audience=business"
+              >
                 {content.hero.primary}
               </Link>
               <a className="text-link webx-light-link" href="#process">
@@ -505,21 +516,6 @@ function WebDigitalPage() {
         </div>
       </section>
 
-      <section className="webx-consult">
-        <div className="content-shell webx-consult-grid">
-          <Reveal>
-            <span className="eyebrow">{content.custom.title}</span>
-            <h2>{editorial.customTitle}</h2>
-          </Reveal>
-          <Reveal delay={70}>
-            <p>{editorial.customCopy}</p>
-            <Link className="button button-primary" to="/contact">
-              {content.custom.cta}
-            </Link>
-          </Reveal>
-        </div>
-      </section>
-
       <section className="webx-difference">
         <div className="content-shell webx-difference-grid">
           <Reveal>
@@ -576,21 +572,20 @@ function WebDigitalPage() {
         </div>
       </section>
 
-      <section className="webx-final">
-        <div className="content-shell webx-final-grid">
+      <section className="webx-consult webx-consult--bottom">
+        <div className="content-shell webx-consult-grid">
           <Reveal>
-            <span className="eyebrow eyebrow--gold">
-              {content.hero.eyebrow}
-            </span>
-            <h2>{editorial.finalTitle}</h2>
+            <span className="eyebrow">{content.custom.title}</span>
+            <h2>{editorial.customTitle}</h2>
           </Reveal>
           <Reveal delay={70}>
-            <p>{editorial.finalCopy}</p>
-            <div className="webx-actions">
-              <Link className="button button-primary" to="/contact">
-                {editorial.consultation}
-              </Link>
-            </div>
+            <p>{editorial.customCopy}</p>
+            <Link
+              className="button button-primary"
+              to="/contact?service=business-digital&audience=business"
+            >
+              {content.custom.cta}
+            </Link>
           </Reveal>
         </div>
       </section>

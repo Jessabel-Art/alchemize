@@ -5,10 +5,14 @@ const routes = [
   "/services/individuals/tax-preparation/",
   "/services/individuals/insurance/",
   "/services/individuals/notary-document-services/",
+  "/services/individuals/translation-services/",
+  "/services/individuals/apostille-services/",
   "/services/businesses/advisory-optimization/",
   "/services/businesses/operations-implementation/",
   "/services/businesses/digital-business-technology/",
   "/services/businesses/readiness-growth/",
+  "/services/businesses/bookkeeping-financial-reporting/",
+  "/services/businesses/payroll-processing/",
   "/services/businesses/business-tax-support/",
 ];
 
@@ -68,7 +72,7 @@ test("legacy business route redirects to its canonical service", async ({
 test("consultation links preselect the service family", async ({ page }) => {
   await page.goto("/services/businesses/digital-business-technology/");
   await page
-    .locator(".service-detail-actions")
+    .locator(".editorial-service-actions")
     .getByRole("link", { name: "Schedule a Consultation" })
     .click();
   await expect(page.locator("select[name=service]")).toHaveValue(

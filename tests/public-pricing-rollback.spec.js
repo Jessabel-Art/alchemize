@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 
 const affectedRoutes = [
+  "/services/individuals/tax-preparation/",
+  "/services/individuals/notary-document-services/",
   "/services/individuals/translation-services/",
   "/services/individuals/apostille-services/",
   "/services/businesses/advisory-optimization/",
@@ -9,6 +11,7 @@ const affectedRoutes = [
   "/services/businesses/readiness-growth/",
   "/services/businesses/bookkeeping-financial-reporting/",
   "/services/businesses/payroll-processing/",
+  "/services/businesses/business-tax-support/",
 ];
 
 for (const route of affectedRoutes) {
@@ -24,13 +27,15 @@ for (const route of affectedRoutes) {
     await expect(page.getByText(/\$\d[\d,]*(?:\.\d{2})?/)).toHaveCount(0);
     await expect(
       page.getByText("Who this is for", { exact: true }),
-    ).toBeVisible();
+    ).toHaveCount(0);
     await expect(
       page.getByRole("heading", { name: "Defined work. Practical output." }),
-    ).toBeVisible();
+    ).toHaveCount(0);
     await expect(
-      page.getByRole("heading", { name: "When this service becomes useful." }),
-    ).toBeVisible();
+      page.getByRole("heading", {
+        name: "When this service becomes useful.",
+      }),
+    ).toHaveCount(0);
   });
 }
 

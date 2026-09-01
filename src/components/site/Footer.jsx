@@ -20,35 +20,18 @@ const groups = {
     [
       "Businesses",
       [
-        [
-          "Advisory & Optimization",
-          "/services/businesses/advisory-optimization",
-        ],
-        [
-          "Operations & Implementation",
-          "/services/businesses/operations-implementation",
-        ],
-        [
-          "Digital Business & Technology",
-          "/services/businesses/digital-business-technology",
-        ],
-        [
-          "Business Readiness & Growth",
-          "/services/businesses/readiness-growth",
-        ],
-        [
-          "Bookkeeping & Financial Reporting",
-          "/services/businesses/bookkeeping-financial-reporting",
-        ],
-        ["Payroll Processing", "/services/businesses/payroll-processing"],
-        ["Business Tax Support", "/services/businesses/business-tax-support"],
+        ["Business Consulting", "/services/businesses/advisory-optimization"],
+        ["Business Operations", "/services/businesses/operations-implementation"],
+        ["Business Readiness", "/services/businesses/readiness-growth"],
+        ["Bookkeeping", "/services/businesses/bookkeeping-financial-reporting"],
+        ["Payroll", "/services/businesses/payroll-processing"],
+        ["Business Tax", "/services/businesses/business-tax-support"],
       ],
     ],
     [
       "Company",
       [
         ["Why Alchemize", "/why-alchemize"],
-        ["Web & Digital Solutions", "/web-digital"],
         ["Resources", "/resources"],
         ["FAQ", "/faq"],
         ["Contact", "/contact"],
@@ -91,10 +74,6 @@ const groups = {
           "Operaciones e implementación",
           "/services/businesses/operations-implementation",
         ],
-        [
-          "Tecnología para empresas",
-          "/services/businesses/digital-business-technology",
-        ],
         ["Preparación y crecimiento", "/services/businesses/readiness-growth"],
         [
           "Contabilidad y reportes financieros",
@@ -111,7 +90,6 @@ const groups = {
       "Empresa",
       [
         ["Por qué Alchemize", "/why-alchemize"],
-        ["Web y soluciones digitales", "/web-digital"],
         ["Recursos", "/resources"],
         ["Preguntas frecuentes", "/faq"],
         ["Contacto", "/contact"],

@@ -15,10 +15,13 @@ const legacyServiceAliases = {
   "insurance-review": "individual-insurance",
   "business-formation": "business-readiness",
   "business-tax": "business-financial",
+  "web-digital": "business-digital",
 };
 
 const serviceAudience = (serviceKey) =>
-  serviceKey?.startsWith("business-") ? "business" : "individual";
+  serviceKey === "business-digital" || serviceKey?.startsWith("business-")
+    ? "business"
+    : "individual";
 
 function normalizeServiceKey(value) {
   const normalized = legacyServiceAliases[value] ?? value;

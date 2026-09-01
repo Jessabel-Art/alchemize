@@ -18,6 +18,7 @@ const processIcons = [Search, Focus, Wrench];
 function HomePage() {
   const { language } = useLanguage();
   const content = homeContent[language];
+  const homeHighlights = content.capabilities.slice(0, 4);
   usePageMetadata({ en: homeContent.en.metadata, es: homeContent.es.metadata });
 
   return (
@@ -70,7 +71,7 @@ function HomePage() {
               <span>{content.paths.businessLabel}</span>
               <h3>{content.paths.businessTitle}</h3>
               <ul>
-                {content.capabilities.map(([title]) => (
+                {homeHighlights.map(([title]) => (
                   <li key={title}>{title}</li>
                 ))}
               </ul>
@@ -130,7 +131,7 @@ function HomePage() {
                 to={to}
                 key={title}
                 delay={index * 60}
-                aria-label={`${content.business.ariaPrefix} ${title}`}
+                aria-label={`${content.business.ariaPrefix} business service`}
               >
                 <h3>{title}</h3>
                 <ArrowRight aria-hidden="true" strokeWidth={1.5} />

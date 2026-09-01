@@ -144,6 +144,14 @@ function App() {
             element={<ServiceCategoryPage audience="businesses" />}
           />
           <Route
+            path="services/businesses/digital-business-technology"
+            element={<Navigate to="/es/web-digital" replace />}
+          />
+          <Route
+            path="services/businesses/digital-business-technology/"
+            element={<Navigate to="/es/web-digital" replace />}
+          />
+          <Route
             path="services/:audience/:slug"
             element={<ServiceDetailPage />}
           />
@@ -185,6 +193,14 @@ function App() {
           <Route
             path="/services/businesses"
             element={<ServiceCategoryPage audience="businesses" />}
+          />
+          <Route
+            path="/services/businesses/digital-business-technology"
+            element={<Navigate to="/web-digital" replace />}
+          />
+          <Route
+            path="/services/businesses/digital-business-technology/"
+            element={<Navigate to="/web-digital" replace />}
           />
           <Route
             path="/services/:audience/:slug"
