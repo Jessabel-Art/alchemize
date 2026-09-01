@@ -1,9 +1,11 @@
-import { mkdirSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import {
+  DOWNLOADABLE_RESOURCE_IDS,
   downloadableResources,
   downloadableResourceById,
+  getDownloadableResource,
 } from "../src/pages/resources/downloadableResources.js";
 
 const resourceSlugs = [
@@ -30,14 +32,15 @@ const canonicalDownloadableResourceIds = [
   "business-tax-preparation-organizer",
 ];
 
-test("downloadable library has five canonical unavailable resources", () => {
+test("downloadable library has five canonical English and Spanish resources", () => {
   const ids = downloadableResources.map(({ id }) => id);
   expect(downloadableResources).toHaveLength(5);
   expect(downloadableResourceById.size).toBe(5);
   expect(ids).toEqual(canonicalDownloadableResourceIds);
-  expect(downloadableResources.every(({ download }) => download === null)).toBe(
-    true,
-  );
+  expect(downloadableResources.every(({ download }) => !!download)).toBe(true);
+  expect(
+    downloadableResources.every(({ spanishDownload }) => !!spanishDownload),
+  ).toBe(true);
   expect(new Set(ids).size).toBe(5);
   expect(downloadableResources.map(({ title }) => title)).toEqual([
     "Consultation Preparation Workbook",
@@ -46,6 +49,48 @@ test("downloadable library has five canonical unavailable resources", () => {
     "Individual Tax Preparation Organizer",
     "Business Tax Preparation Organizer",
   ]);
+  expect(downloadableResources.map(({ download }) => download)).toEqual([
+    "/assets/downloads/consultation-preparation-workbook.pdf",
+    "/assets/downloads/business-startup-formation-workbook.pdf",
+    "/assets/downloads/business-operations-systems-workbook.pdf",
+    "/assets/downloads/individual-tax-preparation-organizer.pdf",
+    "/assets/downloads/business-tax-preparation-organizer.pdf",
+  ]);
+  expect(
+    downloadableResources.map(({ spanishDownload }) => spanishDownload),
+  ).toEqual([
+    "/assets/downloads/es/consultation-preparation-workbook-es.pdf",
+    "/assets/downloads/es/business-startup-formation-workbook-es.pdf",
+    "/assets/downloads/es/business-operations-systems-workbook-es.pdf",
+    "/assets/downloads/es/individual-tax-preparation-organizer-es.pdf",
+    "/assets/downloads/es/business-tax-preparation-organizer-es.pdf",
+  ]);
+});
+
+test("downloadable resources provide locale-specific English and Spanish PDF targets", () => {
+  const englishPaths = Object.values(DOWNLOADABLE_RESOURCE_IDS).map(
+    (id) => getDownloadableResource(id, "en").download,
+  );
+  const spanishPaths = Object.values(DOWNLOADABLE_RESOURCE_IDS).map(
+    (id) => getDownloadableResource(id, "es").download,
+  );
+
+  expect(englishPaths).toHaveLength(5);
+  expect(spanishPaths).toHaveLength(5);
+  expect(englishPaths.every(Boolean)).toBe(true);
+  expect(spanishPaths.every(Boolean)).toBe(true);
+  expect(
+    englishPaths.every((download) => download.startsWith("/assets/downloads/")),
+  ).toBe(true);
+  expect(
+    spanishPaths.every((download) => download.includes("/downloads/es/")),
+  ).toBe(true);
+  expect(spanishPaths.every((download) => download.endsWith("-es.pdf"))).toBe(
+    true,
+  );
+  for (const path of spanishPaths) {
+    expect(existsSync(`public${path}`)).toBe(true);
+  }
 });
 
 test("resource library filters the current collection accessibly", async ({

@@ -62,7 +62,7 @@ export const resourcesUi = {
       reviewed: "Revisado para",
       utilities: "Opciones del artículo",
       print: "Imprimir",
-      download: "Descargar PDF (en inglés)",
+      download: "Descargar PDF (en español)",
       intro:
         "Esta guía está diseñada para ayudarle a comprender la responsabilidad, organizar información útil e identificar preguntas que requieren orientación oficial vigente o revisión profesional.",
       important: "Importante",

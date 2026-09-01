@@ -79,15 +79,18 @@ export const homeContent = {
       items: [
         [
           "Taxes",
-          getDownloadableResource(DOWNLOADABLE_RESOURCE_IDS.individualTax),
+          getDownloadableResource(
+            DOWNLOADABLE_RESOURCE_IDS.individualTax,
+            "es",
+          ),
         ],
         [
           "Business",
-          getDownloadableResource(DOWNLOADABLE_RESOURCE_IDS.startup),
+          getDownloadableResource(DOWNLOADABLE_RESOURCE_IDS.startup, "es"),
         ],
         [
           "Getting started",
-          getDownloadableResource(DOWNLOADABLE_RESOURCE_IDS.consultation),
+          getDownloadableResource(DOWNLOADABLE_RESOURCE_IDS.consultation, "es"),
         ],
       ],
     },
