@@ -37,6 +37,25 @@ test("appointment metadata and availability persist through the backend schema",
   assert.doesNotMatch(migration, /ADD COLUMN IF NOT EXISTS/i);
 });
 
+test("migration and deploy runtime scripts resolve local and deployed bootstrap paths", () => {
+  const runMigrations = read("scripts/run-migrations.php");
+  const verifyRuntime = read("scripts/verify-deployment-runtime.php");
+
+  assert.match(
+    runMigrations,
+    /__DIR__\s*\.\s*'\/bootstrap\.php'|dirname\(__DIR__\)\s*\.\s*'\/server\/bootstrap\.php'/,
+  );
+  assert.match(
+    runMigrations,
+    /__DIR__\s*\.\s*'\/migrations'|dirname\(__DIR__\)\s*\.\s*'\/migrations'/,
+  );
+  assert.match(
+    verifyRuntime,
+    /__DIR__\s*\.\s*'\/bootstrap\.php'|dirname\(__DIR__\)\s*\.\s*'\/server\/bootstrap\.php'/,
+  );
+  assert.match(verifyRuntime, /public_html|public/);
+});
+
 test("appointment type and meeting method are canonicalized in the admin modal", () => {
   const page = read("src/pages/admin/AdminOperationalPages.jsx");
   assert.match(page, /Appointment type/i);

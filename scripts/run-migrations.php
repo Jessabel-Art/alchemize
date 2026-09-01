@@ -7,15 +7,46 @@ if (PHP_SAPI !== 'cli') {
     exit;
 }
 
-$projectRoot = dirname(__DIR__);
-$migrationsDir = $projectRoot . '/migrations';
+$scriptDir = __DIR__;
+$projectRoot = dirname($scriptDir);
 
-if (!is_dir($migrationsDir)) {
-    fwrite(STDERR, "MIGRATIONS_DIR_MISSING={$migrationsDir}\n");
+$bootstrapCandidates = [
+    $scriptDir . '/bootstrap.php',
+    $projectRoot . '/server/bootstrap.php',
+];
+$bootstrapPath = null;
+foreach ($bootstrapCandidates as $candidate) {
+    if (is_file($candidate)) {
+        $bootstrapPath = $candidate;
+        break;
+    }
+}
+
+if ($bootstrapPath === null) {
+    throw new RuntimeException(sprintf(
+        'Unable to resolve bootstrap.php. Checked: %s',
+        implode(', ', $bootstrapCandidates),
+    ));
+}
+
+$migrationsDirCandidates = [
+    $scriptDir . '/migrations',
+    $projectRoot . '/migrations',
+];
+$migrationsDir = null;
+foreach ($migrationsDirCandidates as $candidate) {
+    if (is_dir($candidate)) {
+        $migrationsDir = $candidate;
+        break;
+    }
+}
+
+if ($migrationsDir === null) {
+    fwrite(STDERR, "MIGRATIONS_DIR_MISSING=" . implode(', ', $migrationsDirCandidates) . "\n");
     exit(1);
 }
 
-$config = require $projectRoot . '/server/bootstrap.php';
+$config = require $bootstrapPath;
 $database = alchemize_database($config['database']);
 
 $database->exec(

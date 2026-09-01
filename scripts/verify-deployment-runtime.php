@@ -7,9 +7,63 @@ if (PHP_SAPI !== 'cli') {
     exit;
 }
 
-$root = rtrim((string) ($argv[1] ?? getcwd()), DIRECTORY_SEPARATOR);
-$privateRoot = $root . '/alchemize-server';
-$publicRoot = $root . '/public_html';
+$rootHint = rtrim((string) ($argv[1] ?? ''), DIRECTORY_SEPARATOR);
+$scriptDir = __DIR__;
+$projectRoot = dirname($scriptDir);
+
+$bootstrapCandidates = [
+    $scriptDir . '/bootstrap.php',
+    $projectRoot . '/server/bootstrap.php',
+];
+
+$bootstrapPath = null;
+foreach ($bootstrapCandidates as $candidate) {
+    if (is_file($candidate)) {
+        $bootstrapPath = $candidate;
+        break;
+    }
+}
+
+if ($bootstrapPath === null && $rootHint !== '') {
+    $bootstrapCandidates[] = $rootHint . '/alchemize-server/bootstrap.php';
+    foreach ($bootstrapCandidates as $candidate) {
+        if (is_file($candidate)) {
+            $bootstrapPath = $candidate;
+            break;
+        }
+    }
+}
+
+if ($bootstrapPath === null) {
+    throw new RuntimeException(sprintf(
+        'Unable to resolve bootstrap.php. Checked: %s',
+        implode(', ', $bootstrapCandidates),
+    ));
+}
+
+$privateRoot = dirname($bootstrapPath);
+$publicRootCandidates = [
+    $rootHint !== '' ? $rootHint . '/public_html' : null,
+    dirname($privateRoot) . '/public_html',
+    dirname($privateRoot) . '/public',
+    $projectRoot . '/public_html',
+    $projectRoot . '/public',
+];
+
+$publicRoot = null;
+foreach ($publicRootCandidates as $candidate) {
+    if (is_dir($candidate)) {
+        $publicRoot = $candidate;
+        break;
+    }
+}
+
+if ($publicRoot === null) {
+    throw new RuntimeException(sprintf(
+        'Unable to resolve the public web root. Checked: %s',
+        implode(', ', array_filter($publicRootCandidates, static fn ($value): bool => $value !== null)),
+    ));
+}
 
 $checks = [
     'private bootstrap' => $privateRoot . '/bootstrap.php',
@@ -34,7 +88,7 @@ if ($missing !== []) {
     exit(1);
 }
 
-require_once $privateRoot . '/bootstrap.php';
+require_once $bootstrapPath;
 
 foreach (['alchemize_external_integrations', 'AlchemizeExternalIntegrationService', 'AlchemizeExternalIntegrationRepository', 'AlchemizeGoogleDriveService', 'AlchemizeGoogleCalendarService'] as $symbol) {
     if (!function_exists($symbol) && !class_exists($symbol)) {
