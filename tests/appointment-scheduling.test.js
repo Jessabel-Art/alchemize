@@ -34,6 +34,7 @@ test("appointment metadata and availability persist through the backend schema",
     migration,
     /appointment_availability|appointment_scheduling_links|meeting_method|meeting_url|duration_minutes/,
   );
+  assert.doesNotMatch(migration, /ADD COLUMN IF NOT EXISTS/i);
 });
 
 test("appointment type and meeting method are canonicalized in the admin modal", () => {

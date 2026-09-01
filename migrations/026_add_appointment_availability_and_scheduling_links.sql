@@ -1,11 +1,108 @@
-ALTER TABLE appointments
-    ADD COLUMN IF NOT EXISTS meeting_method VARCHAR(50) NULL AFTER location_type,
-    ADD COLUMN IF NOT EXISTS meeting_url VARCHAR(255) NULL AFTER meeting_method,
-    ADD COLUMN IF NOT EXISTS location VARCHAR(255) NULL AFTER meeting_url,
-    ADD COLUMN IF NOT EXISTS duration_minutes INT UNSIGNED NOT NULL DEFAULT 60 AFTER location,
-    ADD COLUMN IF NOT EXISTS source VARCHAR(80) NULL AFTER owner_user_id,
-    ADD COLUMN IF NOT EXISTS scheduling_token VARCHAR(255) NULL AFTER source,
-    ADD COLUMN IF NOT EXISTS scheduling_context JSON NULL AFTER scheduling_token;
+SET @dbname = DATABASE();
+SET @stmt = IF(
+    (
+        SELECT COUNT(*)
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = @dbname
+          AND TABLE_NAME = 'appointments'
+          AND COLUMN_NAME = 'meeting_method'
+    ) = 0,
+    'ALTER TABLE appointments ADD COLUMN meeting_method VARCHAR(50) NULL AFTER location_type',
+    'SELECT 1'
+);
+PREPARE stmt FROM @stmt;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @stmt = IF(
+    (
+        SELECT COUNT(*)
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = @dbname
+          AND TABLE_NAME = 'appointments'
+          AND COLUMN_NAME = 'meeting_url'
+    ) = 0,
+    'ALTER TABLE appointments ADD COLUMN meeting_url VARCHAR(255) NULL AFTER meeting_method',
+    'SELECT 1'
+);
+PREPARE stmt FROM @stmt;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @stmt = IF(
+    (
+        SELECT COUNT(*)
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = @dbname
+          AND TABLE_NAME = 'appointments'
+          AND COLUMN_NAME = 'location'
+    ) = 0,
+    'ALTER TABLE appointments ADD COLUMN location VARCHAR(255) NULL AFTER meeting_url',
+    'SELECT 1'
+);
+PREPARE stmt FROM @stmt;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @stmt = IF(
+    (
+        SELECT COUNT(*)
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = @dbname
+          AND TABLE_NAME = 'appointments'
+          AND COLUMN_NAME = 'duration_minutes'
+    ) = 0,
+    'ALTER TABLE appointments ADD COLUMN duration_minutes INT UNSIGNED NOT NULL DEFAULT 60 AFTER location',
+    'SELECT 1'
+);
+PREPARE stmt FROM @stmt;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @stmt = IF(
+    (
+        SELECT COUNT(*)
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = @dbname
+          AND TABLE_NAME = 'appointments'
+          AND COLUMN_NAME = 'source'
+    ) = 0,
+    'ALTER TABLE appointments ADD COLUMN source VARCHAR(80) NULL AFTER owner_user_id',
+    'SELECT 1'
+);
+PREPARE stmt FROM @stmt;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @stmt = IF(
+    (
+        SELECT COUNT(*)
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = @dbname
+          AND TABLE_NAME = 'appointments'
+          AND COLUMN_NAME = 'scheduling_token'
+    ) = 0,
+    'ALTER TABLE appointments ADD COLUMN scheduling_token VARCHAR(255) NULL AFTER source',
+    'SELECT 1'
+);
+PREPARE stmt FROM @stmt;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @stmt = IF(
+    (
+        SELECT COUNT(*)
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = @dbname
+          AND TABLE_NAME = 'appointments'
+          AND COLUMN_NAME = 'scheduling_context'
+    ) = 0,
+    'ALTER TABLE appointments ADD COLUMN scheduling_context JSON NULL AFTER scheduling_token',
+    'SELECT 1'
+);
+PREPARE stmt FROM @stmt;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 CREATE TABLE IF NOT EXISTS appointment_availability (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
