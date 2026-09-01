@@ -12,12 +12,6 @@ const capabilityTargets = [
 
 const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-const resourceFiles = [
-  "alchemize-preparing-for-tax-season.pdf",
-  "alchemize-starting-a-business-organization-checklist.pdf",
-  "alchemize-consultation-document-checklist.pdf",
-];
-
 test("homepage capability rows reach their matching business service families", async ({
   page,
 }) => {
@@ -29,24 +23,19 @@ test("homepage capability rows reach their matching business service families", 
   }
 });
 
-test("homepage resource links deliver branded PDF files", async ({
+test("homepage preserves canonical resources without unavailable downloads", async ({
   page,
-  request,
 }) => {
   await page.goto("/", { waitUntil: "networkidle" });
   await expect(
     page.getByRole("link", { name: "Explore All Resources" }),
   ).toHaveAttribute("href", "/resources");
 
-  for (const filename of resourceFiles) {
-    const link = page.locator(`a[href$="${filename}"]`);
-    await expect(link).toHaveCount(1);
-    await expect(link).toHaveAttribute("target", "_blank");
-    const response = await request.get(`/assets/downloads/${filename}`);
-    expect(response.ok()).toBeTruthy();
-    expect(response.headers()["content-type"]).toContain("application/pdf");
-    expect((await response.body()).length).toBeGreaterThan(10000);
-  }
+  await expect(page.locator(".home-resource-list > div")).toHaveCount(3);
+  await expect(page.locator('.home-resource-list a[href$=".pdf"]')).toHaveCount(
+    0,
+  );
+  await expect(page.getByText("In development")).toHaveCount(3);
 });
 
 test("homepage refinement remains composed without horizontal overflow", async ({
@@ -56,7 +45,7 @@ test("homepage refinement remains composed without horizontal overflow", async (
   for (const width of [1440, 1024, 768, 430, 390, 360]) {
     await page.setViewportSize({ width, height: 1000 });
     await expect(page.locator(".home-connect-process")).toBeVisible();
-    await expect(page.locator(".home-resource-list a")).toHaveCount(3);
+    await expect(page.locator(".home-resource-item")).toHaveCount(3);
     const overflows = await page.evaluate(
       () =>
         document.documentElement.scrollWidth >

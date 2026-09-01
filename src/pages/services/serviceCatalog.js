@@ -84,12 +84,12 @@ const individual = [
     ],
     boundary:
       "Tax treatment depends on individual circumstances. Alchemize does not provide legal advice or representation services. Supported return types and jurisdictions must be confirmed before engagement; matters outside scope may require a CPA, attorney, enrolled agent, or other qualified professional.",
-    checklist: [
-      "Tax Preparation Checklist",
-      "/assets/downloads/individual-tax-preparation-checklist.pdf",
-    ],
+    checklist: ["Individual Tax Preparation Organizer", null],
     resources: [
-      ["Preparing for Tax Season", "/resources/preparing-for-tax-season"],
+      [
+        "Individual Tax Preparation Organizer",
+        "/resources/preparing-for-tax-season",
+      ],
       ["Tax Records: What to Keep", "/resources/tax-records-what-to-keep"],
       [
         "Estimated Taxes: Questions to Ask",
@@ -179,19 +179,12 @@ const individual = [
     ],
     boundary:
       "Alchemize does not determine whether a document is legally sufficient, select legal forms, draft legal language, interpret legal consequences, or provide legal advice. Requirements depend on the document, receiving party, applicable law, and commission authority.",
-    checklist: [
-      "Notary & Document Readiness Checklist",
-      "/assets/downloads/notary-appointment-checklist.pdf",
-    ],
     resources: [
       [
         "Preparing for a Notary Appointment",
         "/resources/preparing-for-a-notary-appointment",
       ],
-      [
-        "Documents to Bring to a Consultation",
-        "/assets/downloads/alchemize-consultation-document-checklist.pdf",
-      ],
+      ["Consultation Preparation Workbook", null],
     ],
     related: [
       ["Tax Preparation", "/services/individuals/tax-preparation"],
@@ -268,15 +261,9 @@ const individual = [
     ],
     boundary:
       "Translation services are design and document-support services and do not guarantee acceptance, certification, legal effect, or any agency-specific result. Some institutions, courts, immigration matters, foreign governments, or other authorities may impose specific translation or certification requirements, and those requirements should be confirmed before service begins.",
-    checklist: [
-      "Translation Services Preparation Checklist",
-      "/assets/downloads/alchemize-consultation-document-checklist.pdf",
-    ],
+    checklist: ["Consultation Preparation Workbook", null],
     resources: [
-      [
-        "Documents to Bring to a Consultation",
-        "/assets/downloads/alchemize-consultation-document-checklist.pdf",
-      ],
+      ["Consultation Preparation Workbook", null],
       [
         "Preparing for a Notary Appointment",
         "/resources/preparing-for-a-notary-appointment",
@@ -359,15 +346,9 @@ const individual = [
     ],
     boundary:
       "Alchemize provides facilitation and administrative document-coordination support. The apostille is issued by the appropriate government authority, not Alchemize. Government, shipping, courier, and third-party fees are separate. Processing times and issuance are controlled by the issuing authority. Alchemize does not provide legal or immigration advice and does not guarantee issuance or acceptance by a foreign authority.",
-    checklist: [
-      "Apostille Services Preparation Checklist",
-      "/assets/downloads/alchemize-consultation-document-checklist.pdf",
-    ],
+    checklist: ["Consultation Preparation Workbook", null],
     resources: [
-      [
-        "Documents to Bring to a Consultation",
-        "/assets/downloads/alchemize-consultation-document-checklist.pdf",
-      ],
+      ["Consultation Preparation Workbook", null],
       [
         "Preparing for a Notary Appointment",
         "/resources/preparing-for-a-notary-appointment",
@@ -457,10 +438,7 @@ const business = [
     ],
     boundary:
       "Consulting engagements identify issues, clarify priorities, and develop recommendations or implementation plans. Substantial implementation is priced separately unless explicitly included. Business advisory does not replace legal, accounting, tax, investment, or other regulated professional advice.",
-    checklist: [
-      "Business Advisory Preparation Guide",
-      "/assets/downloads/business-advisory-preparation-guide.pdf",
-    ],
+    checklist: ["Consultation Preparation Workbook", null],
     resources: [
       [
         "When Your Business Needs a Process",
@@ -551,10 +529,7 @@ const business = [
     ],
     boundary:
       "Operational support is limited to the agreed administrative and implementation scope. Legal, HR, accounting, cybersecurity, and other specialized matters may require another qualified provider.",
-    checklist: [
-      "Business Operations Organization Checklist",
-      "/assets/downloads/business-operations-organization-checklist.pdf",
-    ],
+    checklist: ["Business Operations & Systems Workbook", null],
     resources: [
       [
         "A Simple Administrative System",
@@ -649,10 +624,7 @@ const business = [
     ],
     boundary:
       "Business planning and financial-readiness support does not include financing procurement, lender matching, lender negotiation, application submission, or financing guarantees. Alchemize does not guarantee formation outcomes, certifications, registrations, vendor acceptance, or legal compliance. Legal, tax, lending, and procurement decisions may require qualified professionals.",
-    checklist: [
-      "Business Formation & Readiness Checklist",
-      "/assets/downloads/business-formation-startup-checklist.pdf",
-    ],
+    checklist: ["Business Startup & Formation Workbook", null],
     resources: [
       ["Your First Year in Business", "/resources/your-first-year-in-business"],
       [
@@ -744,10 +716,7 @@ const business = [
     ],
     boundary:
       "Recurring bookkeeping includes transaction categorization, reconciliations, income and expense tracking, recurring financial reporting, and support appropriate to the selected tier. Tax preparation is a separate service and is not included in monthly bookkeeping. Bookkeeping does not replace CPA, audit, payroll-processing, or investment-advisory services.",
-    checklist: [
-      "Bookkeeping & Financial Reporting Preparation Checklist",
-      "/assets/downloads/business-tax-preparation-checklist.pdf",
-    ],
+    checklist: ["Business Tax Preparation Organizer", null],
     resources: [
       [
         "Business Records: What Needs a Home",
@@ -836,10 +805,7 @@ const business = [
     ],
     boundary:
       "Payroll support is administrative and operational. Alchemize enters payroll and W-4 information as supplied and does not advise employees how to complete withholding elections. Alchemize does not provide HR, employment-law, legal, or individualized tax advice and does not replace the payroll platform’s tax filing or deposit functions. Platform/software charges are separate.",
-    checklist: [
-      "Payroll Processing Preparation Checklist",
-      "/assets/downloads/business-tax-preparation-checklist.pdf",
-    ],
+    checklist: ["Business Tax Preparation Organizer", null],
     resources: [
       [
         "Business Records: What Needs a Home",
@@ -928,10 +894,7 @@ const business = [
     ],
     boundary:
       "Business tax support is centered on organization, preparation, and readiness. Alchemize does not provide legal tax advice, representation, or professional tax strategy beyond the defined service scope. Supported return types, tax obligations, and jurisdictions must be confirmed before engagement; specialized work may require a CPA, attorney, enrolled agent, or other qualified professional.",
-    checklist: [
-      "Business Tax Support Preparation Checklist",
-      "/assets/downloads/business-tax-preparation-checklist.pdf",
-    ],
+    checklist: ["Business Tax Preparation Organizer", null],
     resources: [
       [
         "Business Records: What Needs a Home",
@@ -953,8 +916,41 @@ const business = [
   },
 ];
 
+const canonicalServiceOrder = [
+  "individual-tax",
+  "individual-notary",
+  "individual-translation",
+  "business-advisory",
+  "business-operations",
+  "business-digital",
+  "business-readiness",
+  "business-bookkeeping",
+  "business-payroll",
+  "business-financial",
+];
+
+const sortByCanonicalOrder = (services) => {
+  const indexMap = new Map(
+    canonicalServiceOrder.map((serviceKey, index) => [serviceKey, index]),
+  );
+
+  return [...services].sort((a, b) => {
+    const aIndex = indexMap.get(a.serviceKey) ?? Number.MAX_SAFE_INTEGER;
+    const bIndex = indexMap.get(b.serviceKey) ?? Number.MAX_SAFE_INTEGER;
+    return aIndex - bIndex;
+  });
+};
+
+const businessServiceEntries = [
+  ...business,
+  { serviceKey: "business-digital", title: "Web & Digital Solutions" },
+];
+
 export const serviceCatalog = [...individual, ...business];
-export const serviceGroups = { individuals: individual, businesses: business };
+export const serviceGroups = {
+  individuals: individual,
+  businesses: sortByCanonicalOrder(business),
+};
 export const contactServiceGroups = [
   {
     audience: "individual",
@@ -966,13 +962,9 @@ export const contactServiceGroups = [
   {
     audience: "business",
     label: "Business Services",
-    items: [
-      ...business.map(({ serviceKey, title }) => ({
-        value: serviceKey,
-        label: title,
-      })),
-      { value: "business-digital", label: "Web & Digital Solutions" },
-    ],
+    items: sortByCanonicalOrder(businessServiceEntries).map(
+      ({ serviceKey, title }) => ({ value: serviceKey, label: title }),
+    ),
   },
 ];
 export const findService = (audience, slug) =>

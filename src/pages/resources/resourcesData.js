@@ -34,7 +34,7 @@ const digitalDisclaimer =
 export const resources = [
   {
     slug: "preparing-for-tax-season",
-    title: "Preparing for Tax Season",
+    title: "Individual Tax Preparation Organizer",
     excerpt:
       "A practical framework for organizing tax records before filing begins, identifying missing information, and reducing the last-minute search for documents.",
     category: "Taxes",
@@ -44,7 +44,6 @@ export const resources = [
     updated,
     readTime: "9 min read",
     printable: true,
-    download: "/assets/downloads/alchemize-preparing-for-tax-season.pdf",
     sections: [
       {
         id: "prior-year",
@@ -481,7 +480,7 @@ export const resources = [
   },
   {
     slug: "starting-a-business-organization-checklist",
-    title: "Starting a Business: Organization Checklist",
+    title: "Business Startup & Formation Workbook",
     excerpt:
       "Organize the decisions, registrations, records, deadlines, and operating information behind a new business.",
     category: "Starting a Business",
@@ -490,8 +489,6 @@ export const resources = [
     updated,
     readTime: "10 min read",
     printable: true,
-    download:
-      "/assets/downloads/alchemize-starting-a-business-organization-checklist.pdf",
     sections: [
       {
         id: "define",

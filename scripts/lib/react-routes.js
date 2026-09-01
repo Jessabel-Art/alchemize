@@ -36,7 +36,6 @@ export const APP_ROUTE_PATHS = [
   "/resources",
   "/resources/meet-the-founder",
   ...RESOURCE_SLUGS.map((slug) => `/resources/${slug}`),
-  "/resources/documents-to-bring-to-a-consultation",
   "/faq",
   "/why-alchemize",
   "/privacy",
@@ -75,7 +74,6 @@ export const APP_ROUTE_PATHS = [
   "/es/resources",
   "/es/resources/meet-the-founder",
   ...RESOURCE_SLUGS.map((slug) => `/es/resources/${slug}`),
-  "/es/resources/documents-to-bring-to-a-consultation",
   "/es/faq",
   "/es/why-alchemize",
 ];
@@ -84,11 +82,9 @@ const REDIRECT_ROUTE_PATHS = new Set([
   "/about",
   "/services/individuals",
   "/services/businesses",
-  "/resources/documents-to-bring-to-a-consultation",
   "/es/about",
   "/es/services/individuals",
   "/es/services/businesses",
-  "/es/resources/documents-to-bring-to-a-consultation",
 ]);
 
 export const PUBLIC_SITEMAP_ROUTES = APP_ROUTE_PATHS.filter(

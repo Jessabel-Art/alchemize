@@ -52,8 +52,8 @@
       "Prior-year return, estimated-payment records, and tax correspondence"
     ],
     "scope": "Website content is general education. Actual preparation depends on your records, applicable law, and the accepted engagement. Alchemize does not promise a refund, deduction, tax savings, or specific outcome and does not represent itself as a CPA firm.",
-    "checklist": "Individual Tax Preparation Document Checklist",
-    "pdf": "individual-tax-preparation-checklist.pdf",
+    "checklist": "Individual Tax Preparation Organizer",
+    "pdf": null,
     "checkPurpose": "Organize the personal, income, deduction, credit, and prior-year records commonly reviewed before tax preparation.",
     "categories": {
       "Personal information": [
@@ -87,7 +87,10 @@
       "What happens if I am missing documents?"
     ],
     "resources": [
-      ["Preparing for Tax Season", "/resources/preparing-for-tax-season/"],
+      [
+        "Individual Tax Preparation Organizer",
+        "/resources/preparing-for-tax-season/"
+      ],
       ["Tax Documents Checklist", "/resources/tax-documents-checklist/"]
     ],
     "related": [
@@ -153,8 +156,7 @@
       "Questions about limits, exclusions, deductibles, costs, and effective dates"
     ],
     "scope": "Insurance availability, eligibility, premiums, underwriting, coverage, and policy terms depend on applicable products, carriers, licensing, jurisdiction, and formal policy documents. No approval or coverage is guaranteed.",
-    "checklist": "Insurance Consultation Preparation Checklist",
-    "pdf": "insurance-consultation-checklist.pdf",
+    "pdf": null,
     "checkPurpose": "Clarify your household context, existing coverage, priorities, and questions without collecting sensitive medical details.",
     "categories": {
       "About you": [
@@ -252,8 +254,7 @@
       "Payment and document return information where applicable"
     ],
     "scope": "A notary performs authorized notarial acts; a notary does not select legal forms, draft legal language, determine whether a document is appropriate, or provide legal advice unless separately authorized to do so.",
-    "checklist": "Notary Appointment Preparation Checklist",
-    "pdf": "notary-appointment-checklist.pdf",
+    "pdf": null,
     "checkPurpose": "Confirm the document, identification, signer, witness, and return details before a notary appointment.",
     "categories": {
       "Document": [
@@ -351,8 +352,8 @@
       "Registered-agent, EIN, licensing, banking, and record-storage information"
     ],
     "scope": "Alchemize provides practical administrative support and formation preparation within scope. It is not a law firm and does not select a legal entity for you, provide legal advice, or replace required advice from an attorney, accountant, or regulated specialist.",
-    "checklist": "Business Formation & Startup Checklist",
-    "pdf": "business-formation-startup-checklist.pdf",
+    "checklist": "Business Startup & Formation Workbook",
+    "pdf": null,
     "checkPurpose": "Organize business identity, ownership, formation, federal, operational, digital, and recurring responsibilities before launch.",
     "categories": {
       "Business identity": [
@@ -461,8 +462,8 @@
       "Access, backup, and security practices for digital accounts"
     ],
     "scope": "Operational support focuses on organization, documentation, and practical process improvement. It does not promise automation, legal compliance, cybersecurity certification, or guaranteed business performance.",
-    "checklist": "Business Operations Organization Checklist",
-    "pdf": "business-operations-organization-checklist.pdf",
+    "checklist": "Business Operations & Systems Workbook",
+    "pdf": null,
     "checkPurpose": "Assess company, financial, tax, insurance, client, vendor, contract, digital, deadline, procedure, storage, backup, and access organization.",
     "categories": {
       "Records": [
@@ -565,8 +566,8 @@
       "Prior returns, estimated payments, and tax correspondence"
     ],
     "scope": "Exact entity-return and filing availability must be confirmed before engagement. Tax outcomes are not guaranteed, and website content does not replace advice based on the business's facts and applicable law.",
-    "checklist": "Business Tax Preparation Document Checklist",
-    "pdf": "business-tax-preparation-checklist.pdf",
+    "checklist": "Business Tax Preparation Organizer",
+    "pdf": null,
     "checkPurpose": "Organize business identity, income, expenses, reports, payroll, contractors, assets, payments, prior returns, and correspondence.",
     "categories": {
       "Business information": [
@@ -605,7 +606,10 @@
         "Business Records Organization",
         "/resources/business-records-organization/"
       ],
-      ["Preparing for Tax Season", "/resources/preparing-for-tax-season/"]
+      [
+        "Individual Tax Preparation Organizer",
+        "/resources/preparing-for-tax-season/"
+      ]
     ],
     "related": [
       [
@@ -672,8 +676,8 @@
       "Known deadlines, desired outcome, and questions for the consultation"
     ],
     "scope": "Business Advisory provides practical decision and implementation support. It does not guarantee revenue, profitability, funding, growth, legal compliance, investment performance, or any specific business result. Specialized legal, accounting, investment, or other advice may be needed.",
-    "checklist": "Business Advisory Consultation Preparation Guide",
-    "pdf": "business-advisory-preparation-guide.pdf",
+    "checklist": "Consultation Preparation Workbook",
+    "pdf": null,
     "checkPurpose": "Prepare the context and reflection prompts needed for a focused advisory conversation.",
     "categories": {
       "About the business": [
@@ -772,8 +776,7 @@
       "Coverage goals and questions"
     ],
     "scope": "Product availability, eligibility, underwriting, terms, pricing, and jurisdiction vary. Alchemize does not guarantee approval or coverage and offers only insurance support within applicable licensing and available product scope.",
-    "checklist": "Business Insurance Consultation Checklist",
-    "pdf": "business-insurance-consultation-checklist.pdf",
+    "pdf": null,
     "checkPurpose": "Organize the business profile, operations, current coverage, exposures, requirements, goals, and questions for an insurance discussion.",
     "categories": {
       "Business profile": [
@@ -880,8 +883,7 @@
       "Delivery, return, and follow-up recordkeeping instructions"
     ],
     "scope": "Notarial acts, administrative support, and legal services are separate. Alchemize is not a law firm and does not select legal documents, draft legal language, determine signer authority as a legal matter, or provide legal advice.",
-    "checklist": "Business Document & Notary Preparation Checklist",
-    "pdf": "business-document-notary-checklist.pdf",
+    "pdf": null,
     "checkPurpose": "Coordinate the document, signers, identification, witnesses, business capacity, copies, delivery, and follow-up records.",
     "categories": {
       "Document": [

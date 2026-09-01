@@ -1,11 +1,4 @@
-import {
-  ArrowRight,
-  FileDown,
-  FileText,
-  Focus,
-  Search,
-  Wrench,
-} from "lucide-react";
+import { ArrowRight, FileText, Focus, Search, Wrench } from "lucide-react";
 import Reveal from "../../components/ui/Reveal.jsx";
 import { LocalizedLink as Link } from "../../i18n/LocalizedLink.jsx";
 import { useLanguage } from "../../i18n/LanguageContext.jsx";
@@ -188,29 +181,21 @@ function HomePage() {
             </Link>
           </Reveal>
           <div className="home-resource-list">
-            {content.resources.items.map(([category, title, href], index) => (
+            {content.resources.items.map(([category, resource], index) => (
               <Reveal
-                as="a"
-                href={href}
-                target="_blank"
-                rel="noopener noreferrer"
+                as="div"
+                className="home-resource-item"
                 delay={index * 70}
-                key={title}
-                aria-label={`${title}, ${content.resources.pdfAria}`}
+                key={resource.id}
               >
                 <span className="home-resource-category">{category}</span>
                 <span className="home-resource-title">
-                  <strong>{title}</strong>
+                  <strong>{resource.title}</strong>
                   <small>
                     <FileText aria-hidden="true" strokeWidth={1.5} />{" "}
                     {content.resources.pdfLabel}
                   </small>
                 </span>
-                <FileDown
-                  className="home-resource-download"
-                  aria-hidden="true"
-                  strokeWidth={1.5}
-                />
               </Reveal>
             ))}
           </div>

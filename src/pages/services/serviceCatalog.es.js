@@ -89,10 +89,7 @@ const translations = {
       ],
     ],
     cta: "¿Listo para organizar el proceso de declaración?",
-    checklist: [
-      "Lista de preparación de impuestos (PDF en inglés)",
-      "/assets/downloads/individual-tax-preparation-checklist.pdf",
-    ],
+    checklist: ["Individual Tax Preparation Organizer", null],
   },
   "notary-document-services": {
     title: "Servicios notariales y apoyo documental administrativo",
@@ -172,16 +169,9 @@ const translations = {
         "Cómo prepararse para una cita notarial",
         "/resources/preparing-for-a-notary-appointment",
       ],
-      [
-        "Documentos para una consulta (PDF en inglés)",
-        "/assets/downloads/alchemize-consultation-document-checklist.pdf",
-      ],
+      ["Consultation Preparation Workbook", null],
     ],
     cta: "¿Necesita organizar una cita notarial o un paquete documental no legal?",
-    checklist: [
-      "Lista de preparación notarial y documental (PDF en inglés)",
-      "/assets/downloads/notary-appointment-checklist.pdf",
-    ],
   },
   "translation-services": {
     title: "Servicios de traducción",
@@ -255,20 +245,14 @@ const translations = {
       ["Servicios de apostilla", "/services/individuals/apostille-services"],
     ],
     resources: [
-      [
-        "Documentos para preparar antes de una consulta",
-        "/assets/downloads/alchemize-consultation-document-checklist.pdf",
-      ],
+      ["Consultation Preparation Workbook", null],
       [
         "Cómo prepararse para una cita notarial",
         "/resources/preparing-for-a-notary-appointment",
       ],
     ],
     cta: "¿Necesita materiales traducidos con claridad y consistencia?",
-    checklist: [
-      "Lista de preparación para servicios de traducción",
-      "/assets/downloads/alchemize-consultation-document-checklist.pdf",
-    ],
+    checklist: ["Consultation Preparation Workbook", null],
   },
   "apostille-services": {
     title: "Facilitación y apoyo para apostillas de Carolina del Norte",
@@ -341,20 +325,14 @@ const translations = {
       ],
     ],
     resources: [
-      [
-        "Documentos para preparar antes de una consulta",
-        "/assets/downloads/alchemize-consultation-document-checklist.pdf",
-      ],
+      ["Consultation Preparation Workbook", null],
       [
         "Cómo prepararse para una cita notarial",
         "/resources/preparing-for-a-notary-appointment",
       ],
     ],
     cta: "¿Necesita organizar un paquete documental para autenticación o uso en el extranjero?",
-    checklist: [
-      "Lista de preparación para servicios de apostilla",
-      "/assets/downloads/alchemize-consultation-document-checklist.pdf",
-    ],
+    checklist: ["Consultation Preparation Workbook", null],
   },
   "advisory-optimization": {
     title: "Asesoría y optimización empresarial",
@@ -444,10 +422,7 @@ const translations = {
       ],
     ],
     cta: "¿No sabe qué está causando la fricción?",
-    checklist: [
-      "Guía de preparación para asesoría empresarial (PDF en inglés)",
-      "/assets/downloads/business-advisory-preparation-guide.pdf",
-    ],
+    checklist: ["Consultation Preparation Workbook", null],
   },
   "operations-implementation": {
     title: "Operaciones e implementación empresarial",
@@ -543,10 +518,7 @@ const translations = {
       ],
     ],
     cta: "¿Listo para poner el proceso en práctica?",
-    checklist: [
-      "Lista de organización de operaciones empresariales (PDF en inglés)",
-      "/assets/downloads/business-operations-organization-checklist.pdf",
-    ],
+    checklist: ["Business Operations & Systems Workbook", null],
   },
   "digital-business-technology": {
     title: "Negocios digitales y tecnología",
@@ -635,10 +607,7 @@ const translations = {
       ],
     ],
     cta: "¿Necesita que sus herramientas trabajen en conjunto?",
-    checklist: [
-      "Lista de evaluación de sistemas digitales (PDF en inglés)",
-      "/assets/downloads/digital-business-systems-assessment-checklist.pdf",
-    ],
+    checklist: ["Business Operations & Systems Workbook", null],
   },
   "readiness-growth": {
     title: "Preparación y crecimiento empresarial",
@@ -731,10 +700,7 @@ const translations = {
       ],
     ],
     cta: "¿Está preparando al negocio para lo que sigue?",
-    checklist: [
-      "Lista de formación y preparación empresarial (PDF en inglés)",
-      "/assets/downloads/business-formation-startup-checklist.pdf",
-    ],
+    checklist: ["Business Startup & Formation Workbook", null],
   },
   "bookkeeping-financial-reporting": {
     title: "Contabilidad y reportes financieros",
@@ -813,10 +779,7 @@ const translations = {
       ],
     ],
     cta: "¿Necesita que el proceso de registros financieros sea más claro y confiable?",
-    checklist: [
-      "Lista de preparación para contabilidad y reportes financieros",
-      "/assets/downloads/business-tax-preparation-checklist.pdf",
-    ],
+    checklist: ["Business Tax Preparation Organizer", null],
   },
   "payroll-processing": {
     title: "Procesamiento de nómina",
@@ -896,10 +859,7 @@ const translations = {
       ],
     ],
     cta: "¿Necesita que los registros y la administración de nómina estén más organizados?",
-    checklist: [
-      "Lista de preparación para procesamiento de nómina",
-      "/assets/downloads/business-tax-preparation-checklist.pdf",
-    ],
+    checklist: ["Business Tax Preparation Organizer", null],
   },
   "business-tax-support": {
     title: "Apoyo tributario para empresas",
@@ -986,10 +946,7 @@ const translations = {
       ],
     ],
     cta: "¿Necesita que los registros tributarios de su empresa estén organizados antes de la temporada de declaraciones?",
-    checklist: [
-      "Lista de preparación para apoyo tributario empresarial (PDF en inglés)",
-      "/assets/downloads/business-tax-preparation-checklist.pdf",
-    ],
+    checklist: ["Business Tax Preparation Organizer", null],
   },
 };
 

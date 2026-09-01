@@ -3,6 +3,10 @@ node_modules/
 vendor/
 .venv/
 dist/
+artifacts/
+generated/
+output/
+deploy-output/
 
 # Test and temporary output
 test-results/

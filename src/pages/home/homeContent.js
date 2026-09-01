@@ -1,3 +1,8 @@
+import {
+  DOWNLOADABLE_RESOURCE_IDS,
+  getDownloadableResource,
+} from "../resources/downloadableResources.js";
+
 export const homeContent = {
   en: {
     metadata: {
@@ -70,23 +75,19 @@ export const homeContent = {
       eyebrow: "Prepare with confidence",
       title: "Clear information for the decisions in front of you.",
       button: "Explore All Resources",
-      pdfLabel: "PDF guide",
-      pdfAria: "PDF guide, opens in a new tab",
+      pdfLabel: "In development",
       items: [
         [
           "Taxes",
-          "Preparing for Tax Season",
-          "/assets/downloads/alchemize-preparing-for-tax-season.pdf",
+          getDownloadableResource(DOWNLOADABLE_RESOURCE_IDS.individualTax),
         ],
         [
           "Business",
-          "Starting a Business: Organization Checklist",
-          "/assets/downloads/alchemize-starting-a-business-organization-checklist.pdf",
+          getDownloadableResource(DOWNLOADABLE_RESOURCE_IDS.startup),
         ],
         [
           "Getting started",
-          "Documents to Bring to a Consultation",
-          "/assets/downloads/alchemize-consultation-document-checklist.pdf",
+          getDownloadableResource(DOWNLOADABLE_RESOURCE_IDS.consultation),
         ],
       ],
     },
@@ -184,23 +185,19 @@ export const homeContent = {
       eyebrow: "Prepárese con confianza",
       title: "Información clara para las decisiones que tiene por delante.",
       button: "Explorar todos los recursos",
-      pdfLabel: "Guía en PDF (inglés)",
-      pdfAria: "guía en PDF en inglés, se abre en una pestaña nueva",
+      pdfLabel: "En desarrollo",
       items: [
         [
           "Impuestos",
-          "Cómo prepararse para la temporada de impuestos",
-          "/assets/downloads/alchemize-preparing-for-tax-season.pdf",
+          getDownloadableResource(DOWNLOADABLE_RESOURCE_IDS.individualTax),
         ],
         [
           "Empresas",
-          "Lista de organización para iniciar una empresa",
-          "/assets/downloads/alchemize-starting-a-business-organization-checklist.pdf",
+          getDownloadableResource(DOWNLOADABLE_RESOURCE_IDS.startup),
         ],
         [
           "Primeros pasos",
-          "Documentos para llevar a una consulta",
-          "/assets/downloads/alchemize-consultation-document-checklist.pdf",
+          getDownloadableResource(DOWNLOADABLE_RESOURCE_IDS.consultation),
         ],
       ],
     },

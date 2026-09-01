@@ -272,12 +272,15 @@ const profiles = {
 function LinkRows({ items }) {
   return (
     <div className="editorial-service-links">
-      {items.slice(0, 2).map(([label, to]) => (
-        <LocalizedLink key={label} to={to}>
-          <span>{label}</span>
-          <ArrowRight aria-hidden="true" />
-        </LocalizedLink>
-      ))}
+      {items
+        .filter(([, to]) => Boolean(to))
+        .slice(0, 2)
+        .map(([label, to]) => (
+          <LocalizedLink key={label} to={to}>
+            <span>{label}</span>
+            <ArrowRight aria-hidden="true" />
+          </LocalizedLink>
+        ))}
     </div>
   );
 }
@@ -602,14 +605,21 @@ function ServiceSpecific({ service, profile, language, labels }) {
                 ? "No necesita resolver cada pregunta antes de comunicarse. Los documentos disponibles ayudan a confirmar el alcance y detectar requisitos pendientes."
                 : "You do not need to resolve every question before reaching out. The available documents help confirm scope and identify requirements that still need attention."}
             </p>
-            <a
-              className="text-link"
-              href={service.checklist[1]}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Download aria-hidden="true" /> {labels.download}
-            </a>
+            {service.checklist[1] ? (
+              <a
+                className="text-link"
+                href={service.checklist[1]}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Download aria-hidden="true" /> {labels.download}
+              </a>
+            ) : (
+              <p className="text-link" role="status">
+                {service.checklist[0]} ·{" "}
+                {language === "es" ? "En desarrollo" : "In development"}
+              </p>
+            )}
           </Reveal>
           <div className="editorial-service-prepare-panel">
             <ServiceMotif profile={profile} />
@@ -695,13 +705,20 @@ export default function EditorialServicePage({ service, ui, language }) {
               >
                 {labels.consultation}
               </LocalizedLink>
-              <a
-                href={service.checklist[1]}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Download aria-hidden="true" /> {service.checklist[0]}
-              </a>
+              {service.checklist[1] ? (
+                <a
+                  href={service.checklist[1]}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Download aria-hidden="true" /> {service.checklist[0]}
+                </a>
+              ) : (
+                <span>
+                  {service.checklist[0]} ·{" "}
+                  {language === "es" ? "En desarrollo" : "In development"}
+                </span>
+              )}
             </div>
           </Reveal>
           <HeroMark profile={profile} Icon={Icon} />

@@ -1,6 +1,10 @@
 import { mkdirSync } from "node:fs";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
+import {
+  downloadableResources,
+  downloadableResourceById,
+} from "../src/pages/resources/downloadableResources.js";
 
 const resourceSlugs = [
   "preparing-for-tax-season",
@@ -18,12 +22,38 @@ const resourceSlugs = [
   "building-a-business-deadline-calendar",
 ];
 
+const canonicalDownloadableResourceIds = [
+  "consultation-preparation-workbook",
+  "business-startup-formation-workbook",
+  "business-operations-systems-workbook",
+  "individual-tax-preparation-organizer",
+  "business-tax-preparation-organizer",
+];
+
+test("downloadable library has five canonical unavailable resources", () => {
+  const ids = downloadableResources.map(({ id }) => id);
+  expect(downloadableResources).toHaveLength(5);
+  expect(downloadableResourceById.size).toBe(5);
+  expect(ids).toEqual(canonicalDownloadableResourceIds);
+  expect(downloadableResources.every(({ download }) => download === null)).toBe(
+    true,
+  );
+  expect(new Set(ids).size).toBe(5);
+  expect(downloadableResources.map(({ title }) => title)).toEqual([
+    "Consultation Preparation Workbook",
+    "Business Startup & Formation Workbook",
+    "Business Operations & Systems Workbook",
+    "Individual Tax Preparation Organizer",
+    "Business Tax Preparation Organizer",
+  ]);
+});
+
 test("resource library filters the current collection accessibly", async ({
   page,
 }) => {
   await page.goto("/resources", { waitUntil: "networkidle" });
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-    "Preparing for Tax Season",
+    "Individual Tax Preparation Organizer",
   );
   await expect(page.locator(".resource-row")).toHaveCount(13);
 
@@ -95,15 +125,6 @@ test("every current resource route renders unique metadata", async ({
     );
     await expect(page.locator("#resource-structured-data")).toHaveCount(1);
   }
-});
-
-test("retired consultation resource still redirects to the maintained library", async ({
-  page,
-}) => {
-  await page.goto("/resources/documents-to-bring-to-a-consultation", {
-    waitUntil: "networkidle",
-  });
-  await expect(page).toHaveURL(/\/resources\/your-first-year-in-business$/);
 });
 
 test("library and new digital articles have no serious accessibility violations", async ({
