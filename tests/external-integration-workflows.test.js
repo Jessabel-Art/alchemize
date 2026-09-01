@@ -55,12 +55,13 @@ test("Calendar uses one deterministic event and updates or cancels it", () => {
 test("notification delivery state records actual provider outcome", () => {
   const service = read("server/services/notification-service.php");
   const repository = read("server/repositories/notification-repository.php");
-  const ses = read("server/services/ses-email-provider.php");
+  const resend = read("server/services/resend-email-provider.php");
   assert.match(service, /deliver\(/);
   assert.match(service, /recordDelivery/);
   assert.match(repository, /delivery_status/);
-  assert.match(ses, /Alchemize Business Services/);
-  assert.doesNotMatch(ses, /SMTPDebug/);
+  assert.match(resend, /api\.resend\.com\/emails/);
+  assert.match(resend, /Authorization: Bearer/);
+  assert.doesNotMatch(resend, /SMTPDebug|SMTPAuth|PHPMailer/);
 });
 
 test("lead persistence precedes best-effort Admin notification with abuse guards", () => {

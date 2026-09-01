@@ -124,15 +124,13 @@ function alchemize_config(): array
             'client_root_folder_id' => (string) $env('GOOGLE_CLIENT_ROOT_FOLDER_ID', ''),
             'calendar_id' => (string) $env('GOOGLE_CALENDAR_ID', ''),
         ],
-        'ses' => [
-            'region' => (string) $env('AWS_REGION', ''),
-            'host' => (string) $env('SES_SMTP_HOST', ''),
-            'port' => (int) $env('SES_SMTP_PORT', 0),
-            'username' => (string) $env('SES_SMTP_USERNAME', ''),
-            'password' => (string) $env('SES_SMTP_PASSWORD', ''),
-            'from_email' => (string) $env('SES_FROM_EMAIL', ''),
-            'from_name' => (string) $env('SES_FROM_NAME', ''),
-            'reply_to_email' => (string) $env('SES_REPLY_TO_EMAIL', ''),
+        'email_provider' => (string) $env('EMAIL_PROVIDER', 'resend'),
+
+        'resend' => [
+            'api_key' => (string) $env('RESEND_API_KEY', ''),
+            'from_email' => (string) $env('RESEND_FROM_EMAIL', 'notifications@getalchemize.com'),
+            'from_name' => (string) $env('RESEND_FROM_NAME', 'Alchemize Business Services'),
+            'reply_to_email' => (string) $env('RESEND_REPLY_TO_EMAIL', 'admin@getalchemize.com'),
         ],
         'database' => [
             'host' => (string) $env(['ALCHEMIZE_DB_HOST', 'DB_HOST'], $localDatabase['host'] ?? ''),

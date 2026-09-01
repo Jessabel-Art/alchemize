@@ -14,7 +14,7 @@ if (is_file($composerAutoload)) {
 }
 require_once dirname(__DIR__, 2) . '/server/repositories/notification-repository.php';
 require_once dirname(__DIR__, 2) . '/server/services/notification-service.php';
-require_once dirname(__DIR__, 2) . '/server/services/ses-email-provider.php';
+require_once dirname(__DIR__, 2) . '/server/services/resend-email-provider.php';
 
 $tests = [];
 function test(string $name, Closure $test): void
@@ -232,24 +232,17 @@ test('validates Google service-account JSON without requiring live credentials',
     }
 });
 
-test('initializes the SES SMTP provider without connecting or sending', function (): void {
-    $provider = new AlchemizeSesSmtpEmailProvider([
-        'region' => 'us-east-1',
-        'host' => 'email-smtp.us-east-1.amazonaws.com',
-        'port' => 587,
-        'username' => 'local-test-user',
-        'password' => 'local-test-password',
-        'from_email' => 'verified-sender@example.com',
+test('initializes the Resend provider without connecting or sending', function (): void {
+    $provider = new AlchemizeResendEmailProvider([
+        'api_key' => 're_test_key',
+        'from_email' => 'notifications@getalchemize.com',
         'from_name' => 'Alchemize Business Services',
-        'reply_to_email' => 'reply@example.com',
+        'reply_to_email' => 'admin@getalchemize.com',
     ]);
     expect(!in_array(false, $provider->configurationStatus(), true));
-    $mailer = $provider->initialize();
-    expect($mailer instanceof PHPMailer\PHPMailer\PHPMailer);
-    expect($mailer->Mailer === 'smtp');
-    expect($mailer->Port === 587);
-    expect($mailer->SMTPSecure === PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS);
-    expect($mailer->SMTPAuth === true);
+    expect($provider instanceof AlchemizeResendEmailProvider);
+    expect($provider->configurationStatus()['RESEND_API_KEY'] === true);
+    expect($provider->configurationStatus()['RESEND_FROM_NAME'] === true);
 });
 
 test('calculates finalized catalog pricing and stops at complexity thresholds', function (): void {
