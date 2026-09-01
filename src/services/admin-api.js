@@ -213,6 +213,17 @@ export const appointments = {
       method: "PUT",
       body: JSON.stringify(payload),
     }),
+  listAvailability: () => apiRequest(buildApiUrl("appointments/availability")),
+  createAvailability: (payload) =>
+    apiRequest(buildApiUrl("appointments/availability"), {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  createSchedulingLink: (payload) =>
+    apiRequest(buildApiUrl("appointments/scheduling-links"), {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
 };
 
 export const documents = {

@@ -56,6 +56,23 @@ const appointmentStatuses = [
   "Follow-up Required",
 ];
 
+const appointmentTypeOptions = [
+  "Consultation",
+  "Follow-Up",
+  "Client Meeting",
+  "Document Review",
+  "Service Discussion",
+  "General Call",
+];
+
+const meetingMethodOptions = [
+  "Phone Call",
+  "Google Meet",
+  "Microsoft Teams",
+  "In Person",
+  "Zoom",
+];
+
 const billingStatuses = [
   "Draft",
   "Issued",
@@ -5276,6 +5293,7 @@ function AppointmentManagementPage() {
   const baseDraft = (appointment = null) => ({
     clientId: appointment?.clientId || "",
     type: appointment?.type || "Consultation",
+    meetingMethod: appointment?.meetingMethod || "Phone Call",
     serviceName: appointment?.serviceName || "Business Advisory",
     date: appointment?.date || toDateString(currentDate),
     startTime: toTimeInputValue(appointment?.time || "10:00 AM"),
@@ -5331,6 +5349,12 @@ function AppointmentManagementPage() {
           location_type: String(draftState.location)
             .toLowerCase()
             .replaceAll(" ", "_"),
+          meeting_method: String(draftState.meetingMethod || "Phone Call")
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "_")
+            .replace(/^_|_$/g, ""),
+          location: draftState.location || "Virtual",
+          duration_minutes: Number(draftState.duration) || 60,
           status: String(draftState.status).toLowerCase().replaceAll(" ", "_"),
           visibility: "admin",
           preparation_required: draftState.needsPreparation,
@@ -5342,6 +5366,7 @@ function AppointmentManagementPage() {
           clientId: draftState.clientId,
           title: `${snapshot.clients.find((client) => client.id === draftState.clientId)?.displayName || "Client"} ${draftState.type}`,
           type: draftState.type,
+          meetingMethod: draftState.meetingMethod || "Phone Call",
           serviceName: draftState.serviceName,
           date: draftState.date,
           time: formatDisplayTime(draftState.startTime),
@@ -5507,8 +5532,13 @@ function AppointmentManagementPage() {
         summary="Internal scheduling workspace for consultations, follow-ups, service meetings, and operational calendar commitments."
         actions={[
           {
-            label: "+ Schedule Appointment",
-            primary: true,
+            label: "Send Scheduling Link",
+            primary: false,
+            onClick: () => openDraftForm("create"),
+          },
+          {
+            label: "Manage Availability",
+            primary: false,
             onClick: () => openDraftForm("create"),
           },
         ]}
@@ -5576,7 +5606,12 @@ function AppointmentManagementPage() {
         <div className="scheduler-date-label">{visualDateLabel()}</div>
 
         <div className="scheduler-view-switcher">
-          {["month", "week", "day", "agenda"].map((mode) => (
+          {[
+            "month",
+            "week",
+            "day",
+            "agenda",
+          ].map((mode) => (
             <button
               key={mode}
               type="button"
@@ -5592,13 +5627,29 @@ function AppointmentManagementPage() {
           ))}
         </div>
 
-        <button
-          type="button"
-          className="primary-button"
-          onClick={() => openDraftForm("create")}
-        >
-          + Schedule Appointment
-        </button>
+        <div className="scheduler-action-group">
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => openDraftForm("create")}
+          >
+            Send Scheduling Link
+          </button>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => openDraftForm("create")}
+          >
+            Manage Availability
+          </button>
+          <button
+            type="button"
+            className="primary-button"
+            onClick={() => openDraftForm("create")}
+          >
+            + Schedule Appointment
+          </button>
+        </div>
       </div>
 
       <div className="scheduler-filter-row">
@@ -6256,13 +6307,22 @@ function AppointmentManagementPage() {
                       setDraftField("type", event.target.value)
                     }
                   >
-                    {Array.from(
-                      new Set(
-                        appointments
-                          .map((appointment) => appointment.type)
-                          .filter(Boolean),
-                      ),
-                    ).map((value) => (
+                    {appointmentTypeOptions.map((value) => (
+                      <option key={value} value={value}>
+                        {value}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span>Meeting method</span>
+                  <select
+                    value={draftState.meetingMethod || "Phone Call"}
+                    onChange={(event) =>
+                      setDraftField("meetingMethod", event.target.value)
+                    }
+                  >
+                    {meetingMethodOptions.map((value) => (
                       <option key={value} value={value}>
                         {value}
                       </option>

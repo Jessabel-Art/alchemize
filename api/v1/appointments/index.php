@@ -93,9 +93,70 @@ try {
         foreach(['client_id','lead_id','engagement_id','service_id','owner_user_id','preparation_required','follow_up_required'] as $field)if(array_key_exists($field,$payload))$values[$field]=$payload[$field]===''?null:$payload[$field];
         if(isset($payload['status'])&&in_array($payload['status'],['requested','scheduled','confirmed','completed','cancelled'],true))$values['status']=$payload['status'];
         if(isset($payload['visibility'])&&in_array($payload['visibility'],['admin','client','both'],true))$values['visibility']=$payload['visibility'];
+        if (array_key_exists('meeting_method', $payload) && trim((string) $payload['meeting_method']) !== '') { $values['meeting_method'] = trim((string) $payload['meeting_method']); }
+        if (array_key_exists('meeting_url', $payload)) { $values['meeting_url'] = trim((string) $payload['meeting_url']) !== '' ? trim((string) $payload['meeting_url']) : null; }
+        if (array_key_exists('location', $payload)) { $values['location'] = trim((string) $payload['location']) !== '' ? trim((string) $payload['location']) : null; }
+        if (array_key_exists('duration_minutes', $payload)) { $values['duration_minutes'] = max(15, (int) $payload['duration_minutes']); }
         $repository->update($id,$values);$sync=$integrations->synchronizeAppointment($id);$row=$repository->findById($id);
         if (!empty($row['client_id'])) $notifications->notifyClient((int)$row['client_id'], 'admin.appointment.updated', 'appointment', (string)$id, 'Appointment updated', 'An appointment in your client portal was updated.', 'appointment-updated:' . $id . ':' . (string)($row['updated_at'] ?? microtime(true)));
         $row['calendar_sync_status']=$sync['status'];alchemize_json_response(['data'=>$row],200);
+    }
+
+    if ($method === 'GET' && $parts === ['availability']) {
+        alchemize_require_read_only_or_higher();
+        alchemize_json_response(['data' => $repository->listAvailability()], 200);
+    }
+
+    if ($method === 'POST' && $parts === ['availability']) {
+        alchemize_require_staff_or_admin();
+        alchemize_require_csrf();
+        $payload = alchemize_read_json_request();
+        $weekday = isset($payload['weekday']) ? (int) $payload['weekday'] : null;
+        $startTime = trim((string) ($payload['start_time'] ?? ''));
+        $endTime = trim((string) ($payload['end_time'] ?? ''));
+        if ($startTime === '' || $endTime === '') {
+            throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Availability start and end times are required.');
+        }
+        $id = $repository->createAvailability([
+            'public_id' => alchemize_uuid_v4(),
+            'user_id' => isset($payload['user_id']) && $payload['user_id'] !== '' ? (int) $payload['user_id'] : null,
+            'weekday' => $weekday,
+            'date_override' => isset($payload['date_override']) && trim((string) $payload['date_override']) !== '' ? trim((string) $payload['date_override']) : null,
+            'start_time' => $startTime,
+            'end_time' => $endTime,
+            'is_available' => !empty($payload['is_available']) ? 1 : 1,
+            'kind' => trim((string) ($payload['kind'] ?? 'weekday')) !== '' ? trim((string) $payload['kind']) : 'weekday',
+            'notes' => trim((string) ($payload['notes'] ?? '')) !== '' ? trim((string) $payload['notes']) : null,
+            'created_by_user_id' => isset($payload['created_by_user_id']) && $payload['created_by_user_id'] !== '' ? (int) $payload['created_by_user_id'] : null,
+        ]);
+        alchemize_json_response(['data' => ['id' => $id, 'created' => true]], 201);
+    }
+
+    if ($method === 'POST' && $parts === ['scheduling-links']) {
+        alchemize_require_staff_or_admin();
+        alchemize_require_csrf();
+        $payload = alchemize_read_json_request();
+        $appointmentType = trim((string) ($payload['appointment_type'] ?? 'Consultation'));
+        $recipientEmail = trim((string) ($payload['recipient_email'] ?? ''));
+        if ($appointmentType === '' || $recipientEmail === '') {
+            throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Appointment type and recipient email are required.');
+        }
+        $expiresAt = isset($payload['expires_at']) && trim((string) $payload['expires_at']) !== '' ? trim((string) $payload['expires_at']) : date('Y-m-d H:i:s', time() + 86400);
+        $token = $repository->createSchedulingLink([
+            'public_id' => alchemize_uuid_v4(),
+            'client_id' => isset($payload['client_id']) && $payload['client_id'] !== '' ? (int) $payload['client_id'] : null,
+            'lead_id' => isset($payload['lead_id']) && $payload['lead_id'] !== '' ? (int) $payload['lead_id'] : null,
+            'appointment_type' => $appointmentType,
+            'meeting_method' => trim((string) ($payload['meeting_method'] ?? 'phone')) !== '' ? trim((string) $payload['meeting_method']) : 'phone',
+            'expires_at' => $expiresAt,
+            'created_by_user_id' => isset($payload['created_by_user_id']) && $payload['created_by_user_id'] !== '' ? (int) $payload['created_by_user_id'] : null,
+            'recipient_name' => trim((string) ($payload['recipient_name'] ?? '')) !== '' ? trim((string) $payload['recipient_name']) : null,
+            'recipient_email' => $recipientEmail,
+            'notes' => trim((string) ($payload['notes'] ?? '')) !== '' ? trim((string) $payload['notes']) : null,
+        ]);
+        $baseUrl = trim((string) ($_SERVER['APP_URL'] ?? $_SERVER['HTTP_ORIGIN'] ?? 'https://localhost'));
+        $baseUrl = rtrim($baseUrl, '/');
+        alchemize_json_response(['data' => ['token' => $token, 'url' => $baseUrl . '/appointment/schedule/' . $token, 'expires_at' => $expiresAt]], 201);
     }
 
     throw new AlchemizeRequestException(404, 'NOT_FOUND', 'The requested appointment route was not found.');
