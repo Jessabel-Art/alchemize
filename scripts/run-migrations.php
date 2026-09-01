@@ -177,7 +177,9 @@ if ($applied === []) {
                         ->execute(['migration' => $name]);
                     echo "MIGRATION_BASELINED={$name}\n";
                 }
-                $database->commit();
+                if ($database->inTransaction()) {
+                    $database->commit();
+                }
             } catch (Throwable $error) {
                 if ($database->inTransaction()) {
                     $database->rollBack();
@@ -207,11 +209,9 @@ foreach ($validFiles as $file) {
     }
 
     try {
-        $database->beginTransaction();
         $database->exec($sql);
         $insert = $database->prepare('INSERT INTO alchemize_schema_migrations (migration, applied_at) VALUES (:migration, CURRENT_TIMESTAMP(6))');
         $insert->execute(['migration' => $name]);
-        $database->commit();
     } catch (Throwable $error) {
         if ($database->inTransaction()) {
             $database->rollBack();

@@ -73,6 +73,29 @@ test("migration ledger is authoritative for fresh, legacy, and inconsistent data
   );
 });
 
+test("DDL migrations are executed without an invalid transaction wrapper", () => {
+  const script = read("scripts/run-migrations.php");
+
+  assert.doesNotMatch(
+    script,
+    /beginTransaction\(\);\s*\$database->exec\(\$sql\)/s,
+  );
+  assert.match(
+    script,
+    /\$database->exec\(\$sql\);\s*\$insert\s*=\s*\$database->prepare\(/,
+  );
+  assert.match(
+    script,
+    /if \(\$database->inTransaction\(\)\) \{\s*\$database->commit\(\);\s*\}/s,
+  );
+  assert.match(
+    script,
+    /if \(\$database->inTransaction\(\)\) \{\s*\$database->rollBack\(\);\s*\}/s,
+  );
+  assert.match(script, /MIGRATION_FAILED=\{\$name\}/);
+  assert.doesNotMatch(script, /There is no active transaction/);
+});
+
 test("appointment type and meeting method are canonicalized in the admin modal", () => {
   const page = read("src/pages/admin/AdminOperationalPages.jsx");
   assert.match(page, /Appointment type/i);
