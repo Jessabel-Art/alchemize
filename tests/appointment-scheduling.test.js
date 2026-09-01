@@ -41,19 +41,36 @@ test("migration and deploy runtime scripts resolve local and deployed bootstrap 
   const runMigrations = read("scripts/run-migrations.php");
   const verifyRuntime = read("scripts/verify-deployment-runtime.php");
 
+  assert.match(runMigrations, /\$scriptDir\s*\.\s*'\/bootstrap\.php'/);
   assert.match(
     runMigrations,
-    /__DIR__\s*\.\s*'\/bootstrap\.php'|dirname\(__DIR__\)\s*\.\s*'\/server\/bootstrap\.php'/,
+    /\$projectRoot\s*\.\s*'\/server\/bootstrap\.php'/,
   );
+  assert.match(runMigrations, /\$scriptDir\s*\.\s*'\/migrations'/);
+  assert.match(runMigrations, /\$projectRoot\s*\.\s*'\/migrations'/);
+  assert.match(runMigrations, /alchemize_schema_migrations/);
   assert.match(
     runMigrations,
-    /__DIR__\s*\.\s*'\/migrations'|dirname\(__DIR__\)\s*\.\s*'\/migrations'/,
+    /MIGRATION_BASELINED|MIGRATION_SKIPPED|MIGRATION_APPLYING|MIGRATION_APPLIED/,
   );
-  assert.match(
-    verifyRuntime,
-    /__DIR__\s*\.\s*'\/bootstrap\.php'|dirname\(__DIR__\)\s*\.\s*'\/server\/bootstrap\.php'/,
-  );
+  assert.match(runMigrations, /BASELINE_ABORT/);
   assert.match(verifyRuntime, /public_html|public/);
+});
+
+test("migration ledger is authoritative for fresh, legacy, and inconsistent databases", () => {
+  const script = read("scripts/run-migrations.php");
+
+  assert.match(script, /alchemize_schema_migrations/);
+  assert.match(script, /\$number\s*>=\s*1\s*&&\s*\$number\s*<=\s*25/);
+  assert.doesNotMatch(script, /\$number\s*>=\s*1\s*&&\s*\$number\s*<=\s*26/);
+  assert.match(
+    script,
+    /BASELINE_ABORT=Legacy Alchemize schema could not be verified/,
+  );
+  assert.match(
+    script,
+    /MIGRATION_SKIPPED=|MIGRATION_APPLYING=|MIGRATION_APPLIED=/,
+  );
 });
 
 test("appointment type and meeting method are canonicalized in the admin modal", () => {
