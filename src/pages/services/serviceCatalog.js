@@ -179,6 +179,7 @@ const individual = [
     ],
     boundary:
       "Alchemize does not determine whether a document is legally sufficient, select legal forms, draft legal language, interpret legal consequences, or provide legal advice. Requirements depend on the document, receiving party, applicable law, and commission authority.",
+    checklist: ["Consultation Preparation Workbook", null],
     resources: [
       [
         "Preparing for a Notary Appointment",
