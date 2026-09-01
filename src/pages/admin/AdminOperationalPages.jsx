@@ -1201,6 +1201,8 @@ function ClientManagementPage() {
     serviceId: "",
     tierId: "",
     agreedPrice: "",
+    customPrice: "",
+    useCustomPrice: false,
     startDate: new Date().toISOString().slice(0, 10),
     notes: "",
   });
@@ -1330,16 +1332,61 @@ function ClientManagementPage() {
 
   const refreshClientState = () => setRecordVersion((current) => current + 1);
 
+  const selectedCatalogService = useMemo(
+    () =>
+      snapshot.services.find((service) => service.id === serviceAssignment.serviceId) ||
+      null,
+    [snapshot.services, serviceAssignment.serviceId],
+  );
+
+  const selectedCatalogTier = useMemo(
+    () =>
+      (selectedCatalogService?.tiers || []).find(
+        (tier) => tier.id === serviceAssignment.tierId,
+      ) || null,
+    [selectedCatalogService, serviceAssignment.tierId],
+  );
+
+  const estimatedAssignmentPrice = useMemo(() => {
+    if (serviceAssignment.useCustomPrice) {
+      return Number(serviceAssignment.customPrice || 0);
+    }
+    if (selectedCatalogTier) {
+      return Number(
+        selectedCatalogTier.basePrice ??
+          selectedCatalogTier.minimumPrice ??
+          selectedCatalogService?.defaultPrice ??
+          0,
+      );
+    }
+    if (selectedCatalogService) {
+      return Number(selectedCatalogService.defaultPrice || 0);
+    }
+    return Number(serviceAssignment.agreedPrice || 0);
+  }, [
+    selectedCatalogService,
+    selectedCatalogTier,
+    serviceAssignment.agreedPrice,
+    serviceAssignment.customPrice,
+    serviceAssignment.useCustomPrice,
+  ]);
+
   const assignCatalogService = async (event) => {
     event.preventDefault();
     if (!selectedClient || !serviceAssignment.serviceId) return;
+    const targetPrice = serviceAssignment.useCustomPrice
+      ? Number(serviceAssignment.customPrice || 0)
+      : estimatedAssignmentPrice;
     try {
       await clientApi.assignService(selectedClient.id, {
         service_id: Number(serviceAssignment.serviceId),
         tier_id: serviceAssignment.tierId
           ? Number(serviceAssignment.tierId)
           : null,
-        agreed_base_price: Number(serviceAssignment.agreedPrice || 0),
+        agreed_base_price: targetPrice,
+        custom_price_override: serviceAssignment.useCustomPrice ? targetPrice : null,
+        pricing_model: selectedCatalogTier?.pricingType || selectedCatalogService?.pricingType || "FIXED",
+        use_custom_price: Boolean(serviceAssignment.useCustomPrice),
         start_date: serviceAssignment.startDate,
         notes: serviceAssignment.notes,
       });
@@ -1350,6 +1397,8 @@ function ClientManagementPage() {
         serviceId: "",
         tierId: "",
         agreedPrice: "",
+        customPrice: "",
+        useCustomPrice: false,
         startDate: new Date().toISOString().slice(0, 10),
         notes: "",
       });
@@ -1484,6 +1533,40 @@ function ClientManagementPage() {
     }
   };
 
+  const handleResendPortalInvitation = async () => {
+    if (!selectedClient) return;
+    const result = await clientApi.sendInvitation(selectedClient.id);
+    const email = selectedClient.email || result?.recipient_email || "the client";
+    if (result?.email_delivery === "sent") {
+      setPortalActionMessage(`Portal invitation sent to ${email}.`);
+      return;
+    }
+    if (result?.setup_url) {
+      setPortalActionMessage(
+        `Portal invitation was prepared for ${email}, but email delivery did not complete. ${result.setup_url}`,
+      );
+      return;
+    }
+    setPortalActionMessage(
+      `Portal invitation could not be delivered to ${email}.`,
+    );
+  };
+
+  const handleCopySetupLink = async () => {
+    if (!selectedClient) return;
+    const result = await clientApi.copySetupLink(selectedClient.id);
+    if (!result?.setup_url) {
+      setPortalActionMessage("The portal setup link could not be generated.");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(result.setup_url);
+      setPortalActionMessage("Portal setup link copied to clipboard.");
+    } catch {
+      setPortalActionMessage(`Portal setup link: ${result.setup_url}`);
+    }
+  };
+
   const runPortalAction = async (kind) => {
     if (!selectedClient || portalActionPending) return;
     setPortalActionPending(true);
@@ -1491,36 +1574,46 @@ function ClientManagementPage() {
     try {
       const actions = {
         reset: () => clientApi.sendPasswordReset(selectedClient.id),
-        invite: () => clientApi.sendInvitation(selectedClient.id),
+        invite: handleResendPortalInvitation,
         create: () => clientApi.createPortalAccess(selectedClient.id),
-        setupLink: () => clientApi.copySetupLink(selectedClient.id),
-        resetLink: () => clientApi.copyPasswordResetLink(selectedClient.id),
+        setupLink: handleCopySetupLink,
+        resetLink: async () => {
+          const result = await clientApi.copyPasswordResetLink(selectedClient.id);
+          if (!result?.setup_url) {
+            setPortalActionMessage("The password reset link could not be generated.");
+            return;
+          }
+          try {
+            await navigator.clipboard.writeText(result.setup_url);
+            setPortalActionMessage("Password reset link copied to clipboard.");
+          } catch {
+            setPortalActionMessage(`Password reset link: ${result.setup_url}`);
+          }
+        },
         disable: () => clientApi.disablePortal(selectedClient.id),
         enable: () => clientApi.enablePortal(selectedClient.id),
       };
-      const result = await actions[kind]();
-      let linkCopied = false;
-      if (result?.setup_url) {
-        try {
-          await navigator.clipboard.writeText(result.setup_url);
-          linkCopied = true;
-        } catch {
-          linkCopied = false;
+
+      if (kind === "invite" || kind === "setupLink") {
+        await actions[kind]();
+      } else {
+        const result = await actions[kind]();
+        if (kind === "disable") {
+          setPortalActionMessage("Portal access disabled.");
+        } else if (kind === "enable") {
+          setPortalActionMessage("Portal access re-enabled.");
+        } else if (kind === "reset") {
+          setPortalActionMessage(
+            result?.email_delivery === "sent"
+              ? `Password reset email sent to ${selectedClient.email}.`
+              : "The password reset email could not be delivered.",
+          );
+        } else if (result?.setup_url) {
+          setPortalActionMessage(`One-time portal link: ${result.setup_url}`);
+        } else {
+          setPortalActionMessage("The portal action completed.");
         }
       }
-      setPortalActionMessage(
-        result?.setup_url
-          ? linkCopied
-            ? "A new one-time portal link was copied to your clipboard."
-            : `One-time portal link: ${result.setup_url}`
-          : result?.email_delivery === "sent"
-            ? "The portal email was sent."
-            : kind === "disable"
-              ? "Portal access disabled."
-              : kind === "enable"
-                ? "Portal access re-enabled."
-                : "The portal action completed, but email delivery was unavailable.",
-      );
     } catch (error) {
       setPortalActionMessage(
         error.message || "The portal action could not be completed.",
@@ -2272,14 +2365,25 @@ function ClientManagementPage() {
                   <select
                     required
                     value={serviceAssignment.serviceId}
-                    onChange={(event) =>
+                    onChange={(event) => {
+                      const nextServiceId = event.target.value;
+                      const nextService =
+                        snapshot.services.find(
+                          (service) => service.id === nextServiceId,
+                        ) || null;
                       setServiceAssignment({
                         ...serviceAssignment,
-                        serviceId: event.target.value,
+                        serviceId: nextServiceId,
                         tierId: "",
                         agreedPrice: "",
-                      })
-                    }
+                        customPrice: "",
+                        useCustomPrice: false,
+                        pricingModel:
+                          nextService?.pricingType ||
+                          serviceAssignment.pricingModel ||
+                          "FIXED",
+                      });
+                    }}
                   >
                     <option value="">Select service</option>
                     {snapshot.services
@@ -2308,6 +2412,8 @@ function ClientManagementPage() {
                         tierId: event.target.value,
                         agreedPrice:
                           tier?.basePrice ?? tier?.minimumPrice ?? "",
+                        customPrice: "",
+                        useCustomPrice: false,
                       });
                     }}
                   >
@@ -2339,21 +2445,54 @@ function ClientManagementPage() {
                   </select>
                 </label>
                 <label>
-                  <span>Agreed price</span>
+                  <span>Estimated / Agreed Price</span>
                   <input
-                    required
                     type="number"
                     min="0.01"
                     step="0.01"
-                    value={serviceAssignment.agreedPrice}
+                    value={serviceAssignment.useCustomPrice ? serviceAssignment.customPrice : estimatedAssignmentPrice}
+                    readOnly={!serviceAssignment.useCustomPrice}
                     onChange={(event) =>
                       setServiceAssignment({
                         ...serviceAssignment,
-                        agreedPrice: event.target.value,
+                        customPrice: event.target.value,
                       })
                     }
                   />
                 </label>
+                <label className="checkbox-field">
+                  <input
+                    type="checkbox"
+                    checked={serviceAssignment.useCustomPrice}
+                    onChange={(event) =>
+                      setServiceAssignment({
+                        ...serviceAssignment,
+                        useCustomPrice: event.target.checked,
+                        customPrice: event.target.checked
+                          ? serviceAssignment.customPrice || estimatedAssignmentPrice
+                          : "",
+                      })
+                    }
+                  />
+                  <span>Use custom / SOW pricing</span>
+                </label>
+                {serviceAssignment.useCustomPrice ? (
+                  <label>
+                    <span>Custom price override</span>
+                    <input
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      value={serviceAssignment.customPrice}
+                      onChange={(event) =>
+                        setServiceAssignment({
+                          ...serviceAssignment,
+                          customPrice: event.target.value,
+                        })
+                      }
+                    />
+                  </label>
+                ) : null}
                 <label>
                   <span>Start date</span>
                   <input
@@ -4950,9 +5089,35 @@ function AppointmentManagementPage() {
   );
   const [formMode, setFormMode] = useState("create");
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isSchedulingLinkOpen, setIsSchedulingLinkOpen] = useState(false);
+  const [isAvailabilityOpen, setIsAvailabilityOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState("Client requested");
   const [appointmentError, setAppointmentError] = useState("");
   const [appointmentSaving, setAppointmentSaving] = useState(false);
+  const [linkDraft, setLinkDraft] = useState({
+    recipientType: "client",
+    recipientId: "",
+    recipientName: "",
+    recipientEmail: "",
+    appointmentType: "Consultation",
+    meetingMethod: "Phone Call",
+    notes: "",
+  });
+  const [generatedLink, setGeneratedLink] = useState("");
+  const [linkError, setLinkError] = useState("");
+  const [linkSaving, setLinkSaving] = useState(false);
+  const [availabilityRows, setAvailabilityRows] = useState([]);
+  const [availabilityDraft, setAvailabilityDraft] = useState({
+    weekday: "1",
+    startTime: "09:00",
+    endTime: "17:00",
+    available: true,
+    kind: "weekday",
+    notes: "",
+    dateOverride: "",
+  });
+  const [availabilityError, setAvailabilityError] = useState("");
+  const [availabilitySaving, setAvailabilitySaving] = useState(false);
 
   const clientOptions = [
     "All",
@@ -5310,15 +5475,150 @@ function AppointmentManagementPage() {
   const openDraftForm = (mode, appointment = null) => {
     setFormMode(mode);
     setIsFormOpen(true);
+    setIsSchedulingLinkOpen(false);
+    setIsAvailabilityOpen(false);
     setCancelReason("Client requested");
     setSelectedAppointmentId(appointment?.id || selectedAppointmentId);
     setDraftState(baseDraft(appointment));
+  };
+
+  const openSchedulingLinkModal = () => {
+    setIsSchedulingLinkOpen(true);
+    setIsFormOpen(false);
+    setIsAvailabilityOpen(false);
+    setGeneratedLink("");
+    setLinkError("");
+    setLinkDraft((current) => ({
+      ...current,
+      recipientType: current.recipientType || "client",
+      appointmentType: current.appointmentType || "Consultation",
+      meetingMethod: current.meetingMethod || "Phone Call",
+    }));
+  };
+
+  const openAvailabilityModal = async () => {
+    setIsAvailabilityOpen(true);
+    setIsFormOpen(false);
+    setIsSchedulingLinkOpen(false);
+    setAvailabilityError("");
+    try {
+      const rows = await appointmentApi.listAvailability();
+      setAvailabilityRows(Array.isArray(rows) ? rows : []);
+    } catch (error) {
+      setAvailabilityError(
+        error.message || "Unable to load the current availability.",
+      );
+    }
   };
 
   const [draftState, setDraftState] = useState(baseDraft());
 
   const setDraftField = (field, value) => {
     setDraftState((current) => ({ ...current, [field]: value }));
+  };
+
+  const setLinkField = (field, value) => {
+    setLinkDraft((current) => ({ ...current, [field]: value }));
+  };
+
+  const setAvailabilityField = (field, value) => {
+    setAvailabilityDraft((current) => ({ ...current, [field]: value }));
+  };
+
+  const saveSchedulingLink = async () => {
+    setLinkError("");
+    const recipientEmail = (linkDraft.recipientEmail || "").trim();
+    if (!recipientEmail) {
+      setLinkError("Add a recipient email before sending the scheduling link.");
+      return;
+    }
+
+    setLinkSaving(true);
+    try {
+      const payload = {
+        appointment_type: linkDraft.appointmentType || "Consultation",
+        meeting_method: (linkDraft.meetingMethod || "Phone Call")
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "_"),
+        recipient_name: linkDraft.recipientName || "",
+        recipient_email: recipientEmail,
+        notes: linkDraft.notes || "",
+      };
+
+      if (linkDraft.recipientType === "client" && linkDraft.recipientId) {
+        payload.client_id = Number(linkDraft.recipientId);
+      }
+
+      const result = await appointmentApi.createSchedulingLink(payload);
+      const link = result?.url || result?.link || "";
+      setGeneratedLink(link);
+      if (!link) {
+        setLinkError(
+          "A scheduling link was generated, but no URL was returned.",
+        );
+      }
+    } catch (error) {
+      setLinkError(
+        error.message || "The scheduling link could not be created.",
+      );
+    } finally {
+      setLinkSaving(false);
+    }
+  };
+
+  const saveAvailability = async () => {
+    setAvailabilityError("");
+    if (!availabilityDraft.startTime || !availabilityDraft.endTime) {
+      setAvailabilityError("Availability start and end times are required.");
+      return;
+    }
+
+    setAvailabilitySaving(true);
+    try {
+      const payload = {
+        weekday:
+          availabilityDraft.kind === "date_override"
+            ? null
+            : Number(availabilityDraft.weekday || 1),
+        date_override:
+          availabilityDraft.kind === "date_override"
+            ? availabilityDraft.dateOverride || ""
+            : "",
+        start_time: availabilityDraft.startTime,
+        end_time: availabilityDraft.endTime,
+        is_available: availabilityDraft.available,
+        kind: availabilityDraft.kind || "weekday",
+        notes: availabilityDraft.notes || "",
+      };
+
+      const created = await appointmentApi.createAvailability(payload);
+      const row = {
+        id: created?.id || `availability-${Date.now()}`,
+        weekday: payload.weekday,
+        date_override: payload.date_override || null,
+        start_time: payload.start_time,
+        end_time: payload.end_time,
+        is_available: payload.is_available,
+        kind: payload.kind,
+        notes: payload.notes,
+      };
+      setAvailabilityRows((current) => [row, ...current]);
+      setAvailabilityDraft({
+        weekday: "1",
+        startTime: "09:00",
+        endTime: "17:00",
+        available: true,
+        kind: "weekday",
+        notes: "",
+        dateOverride: "",
+      });
+    } catch (error) {
+      setAvailabilityError(
+        error.message || "The availability block could not be saved.",
+      );
+    } finally {
+      setAvailabilitySaving(false);
+    }
   };
 
   const saveAppointment = async () => {
@@ -5531,18 +5831,7 @@ function AppointmentManagementPage() {
         eyebrow="Appointments"
         title="Appointments"
         summary="Internal scheduling workspace for consultations, follow-ups, service meetings, and operational calendar commitments."
-        actions={[
-          {
-            label: "Send Scheduling Link",
-            primary: false,
-            onClick: () => openDraftForm("create"),
-          },
-          {
-            label: "Manage Availability",
-            primary: false,
-            onClick: () => openDraftForm("create"),
-          },
-        ]}
+        actions={[]}
       />
 
       <AdminMetrics
@@ -5627,14 +5916,14 @@ function AppointmentManagementPage() {
           <button
             type="button"
             className="secondary-button"
-            onClick={() => openDraftForm("create")}
+            onClick={openSchedulingLinkModal}
           >
             Send Scheduling Link
           </button>
           <button
             type="button"
             className="secondary-button"
-            onClick={() => openDraftForm("create")}
+            onClick={openAvailabilityModal}
           >
             Manage Availability
           </button>
@@ -6492,6 +6781,316 @@ function AppointmentManagementPage() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      ) : null}
+
+      {isSchedulingLinkOpen ? (
+        <div
+          className="scheduler-modal-backdrop"
+          onClick={() => setIsSchedulingLinkOpen(false)}
+        >
+          <div
+            className="scheduler-modal"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="scheduler-modal-header">
+              <h3>Send Scheduling Link</h3>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => setIsSchedulingLinkOpen(false)}
+              >
+                Close
+              </button>
+            </div>
+            <div className="scheduler-modal-body form-grid">
+              <label>
+                <span>Recipient type</span>
+                <select
+                  value={linkDraft.recipientType}
+                  onChange={(event) =>
+                    setLinkField("recipientType", event.target.value)
+                  }
+                >
+                  <option value="client">Client</option>
+                  <option value="lead">Lead</option>
+                </select>
+              </label>
+              <label>
+                <span>Recipient</span>
+                {linkDraft.recipientType === "client" ? (
+                  <select
+                    value={linkDraft.recipientId}
+                    onChange={(event) =>
+                      setLinkField("recipientId", event.target.value)
+                    }
+                  >
+                    <option value="">Select client</option>
+                    {snapshot.clients.map((client) => (
+                      <option key={client.id} value={client.id}>
+                        {client.displayName}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    value={linkDraft.recipientName}
+                    onChange={(event) =>
+                      setLinkField("recipientName", event.target.value)
+                    }
+                    placeholder="Lead name"
+                  />
+                )}
+              </label>
+              <label>
+                <span>Name</span>
+                <input
+                  value={linkDraft.recipientName}
+                  onChange={(event) =>
+                    setLinkField("recipientName", event.target.value)
+                  }
+                  placeholder="Client or lead name"
+                />
+              </label>
+              <label>
+                <span>Email</span>
+                <input
+                  type="email"
+                  value={linkDraft.recipientEmail}
+                  onChange={(event) =>
+                    setLinkField("recipientEmail", event.target.value)
+                  }
+                  placeholder="name@example.com"
+                />
+              </label>
+              <label>
+                <span>Appointment type</span>
+                <select
+                  value={linkDraft.appointmentType}
+                  onChange={(event) =>
+                    setLinkField("appointmentType", event.target.value)
+                  }
+                >
+                  {appointmentTypeOptions.map((value) => (
+                    <option key={value} value={value}>
+                      {value}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span>Meeting method</span>
+                <select
+                  value={linkDraft.meetingMethod}
+                  onChange={(event) =>
+                    setLinkField("meetingMethod", event.target.value)
+                  }
+                >
+                  {meetingMethodOptions.map((value) => (
+                    <option key={value} value={value}>
+                      {value}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="full-span">
+                <span>Notes</span>
+                <textarea
+                  rows="3"
+                  value={linkDraft.notes}
+                  onChange={(event) =>
+                    setLinkField("notes", event.target.value)
+                  }
+                />
+              </label>
+              {generatedLink ? (
+                <div className="full-span">
+                  <span>Scheduling link</span>
+                  <a href={generatedLink} target="_blank" rel="noreferrer">
+                    {generatedLink}
+                  </a>
+                </div>
+              ) : null}
+              <div className="scheduler-action-row full-span">
+                {linkError ? (
+                  <p className="admin-feedback error" role="alert">
+                    {linkError}
+                  </p>
+                ) : null}
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => setIsSchedulingLinkOpen(false)}
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  className="primary-button"
+                  onClick={saveSchedulingLink}
+                  disabled={linkSaving}
+                >
+                  {linkSaving ? "Generating…" : "Send Link"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {isAvailabilityOpen ? (
+        <div
+          className="scheduler-modal-backdrop"
+          onClick={() => setIsAvailabilityOpen(false)}
+        >
+          <div
+            className="scheduler-modal"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="scheduler-modal-header">
+              <h3>Manage Availability</h3>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => setIsAvailabilityOpen(false)}
+              >
+                Close
+              </button>
+            </div>
+            <div className="scheduler-modal-body form-grid">
+              <label>
+                <span>Type</span>
+                <select
+                  value={availabilityDraft.kind}
+                  onChange={(event) =>
+                    setAvailabilityField("kind", event.target.value)
+                  }
+                >
+                  <option value="weekday">Weekly</option>
+                  <option value="date_override">Date override</option>
+                </select>
+              </label>
+              {availabilityDraft.kind === "weekday" ? (
+                <label>
+                  <span>Weekday</span>
+                  <select
+                    value={availabilityDraft.weekday}
+                    onChange={(event) =>
+                      setAvailabilityField("weekday", event.target.value)
+                    }
+                  >
+                    {[
+                      ["1", "Monday"],
+                      ["2", "Tuesday"],
+                      ["3", "Wednesday"],
+                      ["4", "Thursday"],
+                      ["5", "Friday"],
+                      ["6", "Saturday"],
+                      ["0", "Sunday"],
+                    ].map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : (
+                <label>
+                  <span>Override date</span>
+                  <input
+                    type="date"
+                    value={availabilityDraft.dateOverride}
+                    onChange={(event) =>
+                      setAvailabilityField("dateOverride", event.target.value)
+                    }
+                  />
+                </label>
+              )}
+              <label>
+                <span>Start time</span>
+                <input
+                  type="time"
+                  value={availabilityDraft.startTime}
+                  onChange={(event) =>
+                    setAvailabilityField("startTime", event.target.value)
+                  }
+                />
+              </label>
+              <label>
+                <span>End time</span>
+                <input
+                  type="time"
+                  value={availabilityDraft.endTime}
+                  onChange={(event) =>
+                    setAvailabilityField("endTime", event.target.value)
+                  }
+                />
+              </label>
+              <label className="checkbox-field">
+                <input
+                  type="checkbox"
+                  checked={availabilityDraft.available}
+                  onChange={(event) =>
+                    setAvailabilityField("available", event.target.checked)
+                  }
+                />
+                <span>Available</span>
+              </label>
+              <label className="full-span">
+                <span>Notes</span>
+                <textarea
+                  rows="3"
+                  value={availabilityDraft.notes}
+                  onChange={(event) =>
+                    setAvailabilityField("notes", event.target.value)
+                  }
+                />
+              </label>
+              <div className="scheduler-action-row full-span">
+                {availabilityError ? (
+                  <p className="admin-feedback error" role="alert">
+                    {availabilityError}
+                  </p>
+                ) : null}
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => setIsAvailabilityOpen(false)}
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  className="primary-button"
+                  onClick={saveAvailability}
+                  disabled={availabilitySaving}
+                >
+                  {availabilitySaving ? "Saving…" : "Save Availability"}
+                </button>
+              </div>
+              {availabilityRows.length ? (
+                <div className="full-span">
+                  <h4>Current availability</h4>
+                  <ul className="admin-list compact-list">
+                    {availabilityRows.map((row) => (
+                      <li
+                        key={
+                          row.id ||
+                          `${row.kind}-${row.start_time}-${row.end_time}`
+                        }
+                      >
+                        {row.kind === "date_override"
+                          ? `Date override ${row.date_override || "—"}`
+                          : `Weekday ${row.weekday ?? "—"}`}
+                        • {row.start_time || "—"}–{row.end_time || "—"}
+                        {row.notes ? ` • ${row.notes}` : ""}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
       ) : null}

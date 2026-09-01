@@ -72,6 +72,27 @@ test("portal account admin actions are authorized and never return password mate
   assert.match(frontend, /Send Portal Invitation/);
   assert.match(frontend, /Resend Portal Invitation/);
   assert.match(frontend, /Send Password Reset/);
+  assert.match(frontend, /handleResendPortalInvitation|handleCopySetupLink/);
+  assert.match(
+    frontend,
+    /Portal invitation sent to .*\.|Portal setup link copied to clipboard\./,
+  );
+});
+
+test("active service pricing derives from the canonical service catalog and rejects browser tampering", () => {
+  const frontend = read("src/pages/admin/AdminOperationalPages.jsx");
+  const repository = read("server/repositories/service-repository.php");
+  const pricing = read("server/services/catalog-pricing-service.php");
+
+  assert.match(frontend, /Estimated Price|Estimated \/ Agreed Price/);
+  assert.match(frontend, /serviceAssignment\.tierId|selectedService.*tiers/);
+  assert.match(frontend, /useCustomPrice|customPrice/);
+  assert.match(repository, /custom_price_override|use_custom_price/);
+  assert.match(pricing, /display_price|manual_review_required/);
+  assert.doesNotMatch(
+    repository,
+    /agreed_base_price.*\$payload\['agreed_base_price'\]/,
+  );
 });
 
 test("portal provisioning persists a hashed token before best-effort email delivery", () => {

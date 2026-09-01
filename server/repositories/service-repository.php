@@ -99,15 +99,62 @@ final class AlchemizeServiceRepository
     {
         $service = $this->findById($serviceId);
         $tier = $tierId === null ? null : $this->findTier($tierId);
-        if ($service === null || ($tierId !== null && ($tier === null || (int) $tier['service_id'] !== $serviceId))) throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Select a valid catalog service and tier.');
+        if ($service === null || ($tierId !== null && ($tier === null || (int) $tier['service_id'] !== $serviceId))) {
+            throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Select a valid catalog service and tier.');
+        }
         (new AlchemizeCatalogPricingService())->assertSelectable($service, $tier);
-        $agreed = isset($payload['agreed_base_price']) && $payload['agreed_base_price'] !== '' ? max(0, (float) $payload['agreed_base_price']) : ($tier['base_price'] ?? $service['default_price']);
-        if ($agreed === null || (float) $agreed <= 0) throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'An approved agreed price is required.');
-        $snapshot = ['service_name'=>$service['service_name'],'tier_name'=>$tier['tier_name'] ?? null,'pricing_type'=>$tier['pricing_type'] ?? $service['pricing_type'],'base_catalog_price'=>$tier['base_price'] ?? $service['default_price'],'agreed_price'=>(float)$agreed,'add_ons'=>(array)($payload['selected_addons'] ?? []),'billing_frequency'=>$payload['billing_frequency'] ?? $tier['billing_frequency'] ?? $service['billing_type'],'catalog_version'=>$tier['catalog_version'] ?? $service['catalog_version'],'assigned_at'=>date(DATE_ATOM)];
+
+        $baseCatalogPrice = $tier['base_price'] ?? $tier['minimum_price'] ?? $service['default_price'];
+        if ($baseCatalogPrice === null || (float) $baseCatalogPrice <= 0) {
+            $baseCatalogPrice = $service['default_price'];
+        }
+        if ($baseCatalogPrice === null || (float) $baseCatalogPrice <= 0) {
+            throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'This catalog item does not have an approved base price available.');
+        }
+
+        $useCustomPrice = filter_var($payload['use_custom_price'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        $customOverride = null;
+        if ($useCustomPrice) {
+            $customOverride = isset($payload['custom_price_override']) && $payload['custom_price_override'] !== '' ? max(0, (float) $payload['custom_price_override']) : null;
+            if ($customOverride === null || (float) $customOverride <= 0) {
+                throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'A valid custom or SOW price is required before assignment can be saved.');
+            }
+        }
+
+        $agreed = $customOverride ?? (float) $baseCatalogPrice;
+        $snapshot = [
+            'service_name' => $service['service_name'],
+            'tier_name' => $tier['tier_name'] ?? null,
+            'pricing_type' => $tier['pricing_type'] ?? $service['pricing_type'],
+            'base_catalog_price' => (float) $baseCatalogPrice,
+            'agreed_price' => (float) $agreed,
+            'add_ons' => (array) ($payload['selected_addons'] ?? []),
+            'billing_frequency' => $payload['billing_frequency'] ?? $tier['billing_frequency'] ?? $service['billing_type'],
+            'catalog_version' => $tier['catalog_version'] ?? $service['catalog_version'],
+            'assigned_at' => date(DATE_ATOM),
+            'custom_price_override' => $customOverride !== null ? (float) $customOverride : null,
+            'use_custom_price' => $useCustomPrice,
+        ];
+
         $statement = $this->database->prepare('INSERT INTO client_service_assignments (public_id,client_id,service_id,tier_id,agreed_base_price,agreed_recurring_amount,custom_price_override,selected_addons,billing_frequency,start_date,status,pricing_snapshot,catalog_version,notes) VALUES (:public_id,:client_id,:service_id,:tier_id,:agreed_base_price,:agreed_recurring_amount,:custom_price_override,:selected_addons,:billing_frequency,:start_date,:status,:pricing_snapshot,:catalog_version,:notes)');
         $publicId = alchemize_uuid_v4();
-        $statement->execute(['public_id'=>$publicId,'client_id'=>$clientId,'service_id'=>$serviceId,'tier_id'=>$tierId,'agreed_base_price'=>number_format((float)$agreed,2,'.',''),'agreed_recurring_amount'=>isset($payload['agreed_recurring_amount'])?number_format((float)$payload['agreed_recurring_amount'],2,'.',''):null,'custom_price_override'=>isset($payload['custom_price_override'])?number_format((float)$payload['custom_price_override'],2,'.',''):null,'selected_addons'=>json_encode((array)($payload['selected_addons'] ?? []),JSON_THROW_ON_ERROR),'billing_frequency'=>$snapshot['billing_frequency'],'start_date'=>trim((string)($payload['start_date'] ?? '')) ?: null,'status'=>in_array(($payload['status'] ?? 'active'),['proposed','active','paused','completed','cancelled'],true)?$payload['status']:'active','pricing_snapshot'=>json_encode($snapshot,JSON_THROW_ON_ERROR),'catalog_version'=>$snapshot['catalog_version'],'notes'=>trim((string)($payload['notes'] ?? '')) ?: null]);
-        return ['id'=>(int)$this->database->lastInsertId(),'public_id'=>$publicId,'pricing_snapshot'=>$snapshot];
+        $statement->execute([
+            'public_id' => $publicId,
+            'client_id' => $clientId,
+            'service_id' => $serviceId,
+            'tier_id' => $tierId,
+            'agreed_base_price' => number_format((float) $agreed, 2, '.', ''),
+            'agreed_recurring_amount' => isset($payload['agreed_recurring_amount']) && $payload['agreed_recurring_amount'] !== '' ? number_format((float) $payload['agreed_recurring_amount'], 2, '.', '') : null,
+            'custom_price_override' => $customOverride !== null ? number_format((float) $customOverride, 2, '.', '') : null,
+            'selected_addons' => json_encode((array) ($payload['selected_addons'] ?? []), JSON_THROW_ON_ERROR),
+            'billing_frequency' => $snapshot['billing_frequency'],
+            'start_date' => trim((string) ($payload['start_date'] ?? '')) ?: null,
+            'status' => in_array(($payload['status'] ?? 'active'), ['proposed', 'active', 'paused', 'completed', 'cancelled'], true) ? $payload['status'] : 'active',
+            'pricing_snapshot' => json_encode($snapshot, JSON_THROW_ON_ERROR),
+            'catalog_version' => $snapshot['catalog_version'],
+            'notes' => trim((string) ($payload['notes'] ?? '')) ?: null,
+        ]);
+        return ['id' => (int) $this->database->lastInsertId(), 'public_id' => $publicId, 'pricing_snapshot' => $snapshot];
     }
 
     public function findByCode(string $code): ?array
