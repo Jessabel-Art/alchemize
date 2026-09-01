@@ -16,7 +16,7 @@ jobs:
     env:
       PUBLIC_WEB_ROOT: public_html
       PRIVATE_BACKEND_ROOT: alchemize-server
-      HOSTINGER_SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT || '65002' }}
+      HOSTINGER_SSH_PORT: 65002
       HOSTINGER_SSH_KEY_B64: ${{ secrets.HOSTINGER_SSH_KEY_B64 }}
       HOSTINGER_HOST: ${{ secrets.HOSTINGER_HOST }}
       HOSTINGER_USER: ${{ secrets.HOSTINGER_USER }}
@@ -79,7 +79,7 @@ jobs:
           test ! -e deploy-output/${PUBLIC_WEB_ROOT}/.env
           test ! -e deploy-output/${PUBLIC_WEB_ROOT}/migrations
 
-      - name: Sync private backend runtime to Hostinger
+      - name: Deploy and verify private backend on Hostinger
         if: ${{ env.HOSTINGER_SSH_KEY_B64 != '' && env.HOSTINGER_HOST != '' && env.HOSTINGER_USER != '' && env.HOSTINGER_PRIVATE_ROOT != '' }}
         shell: bash
         env:
@@ -88,44 +88,50 @@ jobs:
           SSH_USER: ${{ secrets.HOSTINGER_USER }}
           SSH_PRIVATE_ROOT: ${{ secrets.HOSTINGER_PRIVATE_ROOT }}
         run: |
+          set -euo pipefail
+
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
+
           printf '%s' "$SSH_KEY_B64" | base64 --decode > ~/.ssh/hostinger_ed25519
           chmod 600 ~/.ssh/hostinger_ed25519
+
           ssh-keygen -y -f ~/.ssh/hostinger_ed25519 > /dev/null
+
           ssh-keyscan -H -p "$HOSTINGER_SSH_PORT" "$SSH_HOST" >> ~/.ssh/known_hosts
 
+          SSH_CMD="ssh -o BatchMode=yes -o IdentitiesOnly=yes -o ConnectTimeout=20 -p $HOSTINGER_SSH_PORT -i ~/.ssh/hostinger_ed25519"
+
+          echo "Testing Hostinger SSH connection..."
+          $SSH_CMD "$SSH_USER@$SSH_HOST" "echo SSH_CONNECTION_OK"
+
+          echo "Syncing private backend..."
           rsync -avz --delete \
-            -e "ssh -p $HOSTINGER_SSH_PORT -i ~/.ssh/hostinger_ed25519" \
+            -e "$SSH_CMD" \
             --filter='P .env' \
             --filter='P logs/' \
             --filter='P storage/' \
             --filter='P tmp/' \
             --filter='P private/' \
-            ./deploy-output/${PRIVATE_BACKEND_ROOT}/ "$SSH_USER@$SSH_HOST:$SSH_PRIVATE_ROOT/"
+            ./deploy-output/${PRIVATE_BACKEND_ROOT}/ \
+            "$SSH_USER@$SSH_HOST:$SSH_PRIVATE_ROOT/"
 
-      - name: Execute pending database migrations
-        if: ${{ env.HOSTINGER_SSH_KEY_B64 != '' && env.HOSTINGER_HOST != '' && env.HOSTINGER_USER != '' && env.HOSTINGER_PRIVATE_ROOT != '' }}
-        shell: bash
-        env:
-          SSH_KEY_B64: ${{ secrets.HOSTINGER_SSH_KEY_B64 }}
-          SSH_HOST: ${{ secrets.HOSTINGER_HOST }}
-          SSH_USER: ${{ secrets.HOSTINGER_USER }}
-          SSH_PRIVATE_ROOT: ${{ secrets.HOSTINGER_PRIVATE_ROOT }}
-        run: |
-          ssh -p "$HOSTINGER_SSH_PORT" -i ~/.ssh/hostinger_ed25519 "$SSH_USER@$SSH_HOST" "php '$SSH_PRIVATE_ROOT/run-migrations.php'"
+          echo "Verifying deployment files..."
+          $SSH_CMD "$SSH_USER@$SSH_HOST" "
+            set -e
+            test -f '$SSH_PRIVATE_ROOT/run-migrations.php'
+            test -f '$SSH_PRIVATE_ROOT/verify-deployment-runtime.php'
+            echo DEPLOYMENT_FILES_OK
+          "
 
-      - name: Verify deployed production runtime
-        if: ${{ env.HOSTINGER_SSH_KEY_B64 != '' && env.HOSTINGER_HOST != '' && env.HOSTINGER_USER != '' && env.HOSTINGER_PRIVATE_ROOT != '' }}
-        shell: bash
-        env:
-          SSH_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
-          SSH_HOST: ${{ secrets.HOSTINGER_HOST }}
-          SSH_USER: ${{ secrets.HOSTINGER_USER }}
-          SSH_PRIVATE_ROOT: ${{ secrets.HOSTINGER_PRIVATE_ROOT }}
-        run: |
+          echo "Running migrations..."
+          $SSH_CMD "$SSH_USER@$SSH_HOST" \
+            "php '$SSH_PRIVATE_ROOT/run-migrations.php'"
+
+          echo "Running production verification..."
           SSH_DOMAIN_ROOT=$(dirname "$SSH_PRIVATE_ROOT")
-          ssh -p "$HOSTINGER_SSH_PORT" -i ~/.ssh/hostinger_ed25519 "$SSH_USER@$SSH_HOST" "php '$SSH_PRIVATE_ROOT/verify-deployment-runtime.php' '$SSH_DOMAIN_ROOT'"
+          $SSH_CMD "$SSH_USER@$SSH_HOST" \
+            "php '$SSH_PRIVATE_ROOT/verify-deployment-runtime.php' '$SSH_DOMAIN_ROOT'"
 
       - name: Publish deploy branch
         if: ${{ always() }}
