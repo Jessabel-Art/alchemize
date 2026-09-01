@@ -87,7 +87,10 @@ test("registration requests are submitted as lead-intake instead of blocking cre
 
   assert.match(authPage, /requestAccess/);
   assert.match(authPage, /auth\.requestAccess/);
-  assert.doesNotMatch(authPage, /Account creation is not enabled in this phase\./);
+  assert.doesNotMatch(
+    authPage,
+    /Account creation is not enabled in this phase\./,
+  );
   assert.match(apiClient, /requestAccess:\s*\(/);
   assert.match(apiClient, /buildApiUrl\("leads"\)/);
 });
@@ -96,7 +99,10 @@ test("admin manual lead creation persists through the authenticated lead API", (
   const apiClient = read("src/services/admin-api.js");
   const adminPage = read("src/pages/admin/AdminOperationalPages.jsx");
 
-  assert.match(apiClient, /create:\s*\(payload\)\s*=>\s*apiRequest\(buildApiUrl\("leads"\),\s*\{\s*method:\s*"POST"/);
+  assert.match(
+    apiClient,
+    /create:\s*\(payload\)\s*=>\s*apiRequest\(buildApiUrl\("leads"\),\s*\{\s*method:\s*"POST"/,
+  );
   assert.match(adminPage, /leadApi\.create\(/);
   assert.doesNotMatch(adminPage, /Manual lead draft created locally\./);
 });

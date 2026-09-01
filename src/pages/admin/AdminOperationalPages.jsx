@@ -874,8 +874,9 @@ function LeadManagementPage() {
             </label>
           </div>
           <p className="admin-note-text">
-            Manual entries are now saved through the same lead API used for public
-            inquiries so they remain visible in the lead queue after refresh.
+            Manual entries are now saved through the same lead API used for
+            public inquiries so they remain visible in the lead queue after
+            refresh.
           </p>
           <div className="admin-header-actions">
             <button type="button" className="primary-button" onClick={addLead}>
@@ -5606,12 +5607,7 @@ function AppointmentManagementPage() {
         <div className="scheduler-date-label">{visualDateLabel()}</div>
 
         <div className="scheduler-view-switcher">
-          {[
-            "month",
-            "week",
-            "day",
-            "agenda",
-          ].map((mode) => (
+          {["month", "week", "day", "agenda"].map((mode) => (
             <button
               key={mode}
               type="button"
