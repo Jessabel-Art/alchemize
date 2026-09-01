@@ -36,7 +36,7 @@ test("service index exposes one audience catalog at a time", async ({
 }) => {
   await page.goto("/services/#businesses");
   await expect(
-    page.getByRole("heading", { name: "Business Advisory & Optimization" }),
+    page.getByRole("heading", { name: "Business Consulting" }),
   ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Tax Preparation" }),
@@ -70,10 +70,10 @@ test("legacy business route redirects to its canonical service", async ({
 });
 
 test("consultation links preselect the service family", async ({ page }) => {
-  await page.goto("/services/businesses/digital-business-technology/");
+  await page.goto("/web-digital");
   await page
-    .locator(".editorial-service-actions")
-    .getByRole("link", { name: "Schedule a Consultation" })
+    .getByRole("link", { name: "Request a Project Proposal" })
+    .first()
     .click();
   await expect(page.locator("select[name=service]")).toHaveValue(
     "business-digital",

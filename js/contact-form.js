@@ -16,6 +16,7 @@ const legacyServiceAliases = {
   "business-formation": "business-readiness",
   "business-tax": "business-financial",
   "web-digital": "business-digital",
+  "digital-business-technology": "business-digital",
 };
 
 const serviceAudience = (serviceKey) =>

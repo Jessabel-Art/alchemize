@@ -147,7 +147,7 @@ function HomePage() {
                 to={to}
                 key={title}
                 delay={index * 60}
-                aria-label={`${content.business.ariaPrefix} business service`}
+                aria-label={`Explore ${title}`}
               >
                 <h3>{title}</h3>
                 <ArrowRight aria-hidden="true" strokeWidth={1.5} />

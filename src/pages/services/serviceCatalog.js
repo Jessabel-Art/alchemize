@@ -966,10 +966,13 @@ export const contactServiceGroups = [
   {
     audience: "business",
     label: "Business Services",
-    items: business.map(({ serviceKey, title }) => ({
-      value: serviceKey,
-      label: title,
-    })),
+    items: [
+      ...business.map(({ serviceKey, title }) => ({
+        value: serviceKey,
+        label: title,
+      })),
+      { value: "business-digital", label: "Web & Digital Solutions" },
+    ],
   },
 ];
 export const findService = (audience, slug) =>

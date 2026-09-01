@@ -91,12 +91,14 @@ test("public navigation shows only one digital service family", async ({
     page.getByRole("link", { name: "Digital Business & Tech" }),
   ).toHaveCount(0);
   await expect(
-    page.getByRole("link", { name: "Business Consulting" }),
+    page.getByRole("link", { name: "Business Consulting", exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("link", { name: "Business Operations" }),
+    page.getByRole("link", { name: "Business Operations", exact: true }),
   ).toBeVisible();
-  await expect(page.getByRole("link", { name: "Bookkeeping" })).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Bookkeeping", exact: true }),
+  ).toBeVisible();
 });
 
 test("merged web & digital content is visible beyond a website-only landing page", async ({

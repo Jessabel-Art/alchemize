@@ -1,12 +1,16 @@
 import { expect, test } from "@playwright/test";
 
 const capabilityTargets = [
-  ["Advisory & Optimization", "advisory-optimization"],
-  ["Operations & Implementation", "operations-implementation"],
-  ["Digital Business & Technology", "digital-business-technology"],
-  ["Business Readiness & Growth", "readiness-growth"],
-  ["Business Tax Support", "business-tax-support"],
+  ["Business Consulting", "/services/businesses/advisory-optimization"],
+  ["Business Operations", "/services/businesses/operations-implementation"],
+  ["Web & Digital Solutions", "/web-digital"],
+  ["Business Readiness", "/services/businesses/readiness-growth"],
+  ["Bookkeeping", "/services/businesses/bookkeeping-financial-reporting"],
+  ["Payroll", "/services/businesses/payroll-processing"],
+  ["Business Tax", "/services/businesses/business-tax-support"],
 ];
+
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 const resourceFiles = [
   "alchemize-preparing-for-tax-season.pdf",
@@ -20,9 +24,7 @@ test("homepage capability rows reach their matching business service families", 
   for (const [label, target] of capabilityTargets) {
     await page.goto("/", { waitUntil: "networkidle" });
     await page.getByRole("link", { name: `Explore ${label}` }).click();
-    await expect(page).toHaveURL(
-      new RegExp(`/services/businesses/${target}/?$`),
-    );
+    await expect(page).toHaveURL(new RegExp(`${escapeRegExp(target)}/?$`));
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   }
 });
