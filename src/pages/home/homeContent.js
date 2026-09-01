@@ -1,16 +1,18 @@
 export const homeContent = {
   en: {
     metadata: {
-      title:
-        "Alchemize Business Services | Business Advisory, Taxes & Operations Support",
+      title: "Alchemize Business Services | Modern Business & Digital Support",
       description:
-        "Practical support for business operations, tax preparation, digital systems, document services, and administrative planning for entrepreneurs and small businesses.",
+        "A modern business-services partner for individuals, entrepreneurs, and small businesses, connecting operations, administration, financial organization, documents, and digital capability.",
     },
     hero: {
       eyebrow: "Alchemize Business Services",
       titleStart: "Transform Complexity Into",
       titleEmphasis: "Opportunity.",
-      copy: "Practical business advisory, operations, technology, readiness, and financial support—organized around what needs to work better.",
+      descriptor: "Your Tech-Savvy Business Partner",
+      copy: "Alchemize is a modern business-services partner for individuals, entrepreneurs, and small businesses. We handle the operational, administrative, financial, document, and digital work behind the next move.",
+      difference:
+        "Practical business support and technology-minded problem solving stay connected, so clients do not have to coordinate a different provider for every related responsibility.",
       primary: "Schedule a Consultation",
       secondary: "Explore Services",
       alt: "Professional reviewing organized business materials at a desk",
@@ -22,10 +24,12 @@ export const homeContent = {
       individualLabel: "For me",
       individualTitle: "Individual Services",
       individualCopy:
-        "Personal tax preparation, notary and document support, and practical guidance for important responsibilities.",
+        "Personal and business responsibilities often overlap. Tax preparation, documents, and practical organization can become part of a business decision—or the first step toward one.",
       individualLink: "Explore individual services",
       businessLabel: "Entrepreneurs · Freelancers · Businesses",
       businessTitle: "Business Services",
+      businessCopy:
+        "For owners who need the operation, records, administration, and digital presence to work together.",
       businessLink: "Explore business services",
     },
     capabilities: [
@@ -52,6 +56,7 @@ export const homeContent = {
       eyebrow: "Business capabilities",
       title:
         "More than recommendations. Support for putting the work into place.",
+      copy: "Alchemize can identify the issue, organize the information, recommend the next move, and complete practical implementation when it falls within our scope. When it does not, we make the boundary clear and point to the kind of qualified professional the work requires.",
       ariaPrefix: "Explore",
     },
     trust: {
@@ -99,13 +104,16 @@ export const homeContent = {
       title:
         "Alchemize Business Services | Asesoría empresarial y apoyo operativo en español",
       description:
-        "Apoyo práctico para operaciones empresariales, impuestos, sistemas digitales, servicios documentales y planificación administrativa para emprendedores y pequeñas empresas.",
+        "Un socio moderno de servicios empresariales para personas, emprendedores y pequeñas empresas que conecta operaciones, administración, organización financiera, documentos y capacidad digital.",
     },
     hero: {
       eyebrow: "Alchemize Business Services",
       titleStart: "Transformamos la complejidad en",
       titleEmphasis: "oportunidad.",
-      copy: "Asesoría empresarial y apoyo práctico en operaciones, tecnología, preparación y finanzas, organizados en torno a lo que necesita funcionar mejor.",
+      descriptor: "Su socio empresarial con dominio digital",
+      copy: "Alchemize es un socio moderno de servicios empresariales para personas, emprendedores y pequeñas empresas. Atendemos el trabajo operativo, administrativo, financiero, documental y digital detrás del próximo paso.",
+      difference:
+        "El apoyo empresarial práctico y la resolución de problemas con mentalidad tecnológica permanecen conectados, para que el cliente no tenga que coordinar un proveedor distinto para cada responsabilidad relacionada.",
       primary: "Programar una consulta",
       secondary: "Explorar servicios",
       alt: "Profesional revisando materiales empresariales organizados en un escritorio",
@@ -117,10 +125,12 @@ export const homeContent = {
       individualLabel: "Para mí",
       individualTitle: "Servicios para personas",
       individualCopy:
-        "Preparación de impuestos personales, servicios de notaría y documentos, y orientación práctica para responsabilidades importantes.",
+        "Las responsabilidades personales y empresariales suelen superponerse. Los impuestos, los documentos y la organización práctica pueden formar parte de una decisión empresarial o ser su primer paso.",
       individualLink: "Explorar servicios para personas",
       businessLabel: "Emprendedores · Profesionales independientes · Empresas",
       businessTitle: "Servicios para empresas",
+      businessCopy:
+        "Para propietarios que necesitan que la operación, los registros, la administración y la presencia digital funcionen de manera coordinada.",
       businessLink: "Explorar servicios para empresas",
     },
     capabilities: [
@@ -160,6 +170,7 @@ export const homeContent = {
       eyebrow: "Capacidades empresariales",
       title:
         "Más que recomendaciones. Apoyo para poner el trabajo en práctica.",
+      copy: "Alchemize puede identificar el problema, organizar la información, recomendar el próximo paso y realizar la implementación práctica cuando esté dentro de nuestro alcance. Cuando no lo esté, aclaramos el límite e indicamos qué tipo de profesional calificado requiere el trabajo.",
       ariaPrefix: "Explorar",
     },
     trust: {

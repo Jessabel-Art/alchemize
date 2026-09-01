@@ -1,16 +1,15 @@
 export const whyContent = {
   en: {
     metadata: {
-      title:
-        "Why Alchemize | Business Support for Taxes, Operations & Digital Needs",
+      title: "Why Alchemize | Connected Business Services & Digital Capability",
       description:
-        "Alchemize helps individuals and small businesses move through taxes, documents, business operations, administration, and digital support with clearer next steps and practical guidance.",
+        "Learn why Alchemize connects operations, administration, financial organization, documents, and digital capability in one modern professional-services model.",
     },
     hero: {
       eyebrow: "Why Alchemize",
       start: "Clarity across the responsibilities that",
       emphasis: "connect.",
-      copy: "Alchemize Business Services provides practical professional support for individuals, entrepreneurs, and small businesses across taxes, business operations, documents, digital services, and administrative responsibilities. Instead of treating every responsibility as a separate problem, Alchemize helps organize the situation, identify what matters, and connect you with the right service or next step.",
+      copy: "Alchemize is a modern professional-services partner for individuals, entrepreneurs, and small businesses. Business operations, administration, financial organization, documents, and digital capability sit within one connected model because the responsibilities themselves rarely stay separate.",
       primary: "Schedule a Consultation",
       secondary: "See the difference",
       orbit: ["Taxes", "Digital", "Documents", "Business"],
@@ -21,7 +20,7 @@ export const whyContent = {
       paragraphs: [
         "A tax question may connect to a business decision. Starting a company creates tax, administrative, operational, and digital responsibilities. A document may need notarization, translation, or apostille support. A growing business may need bookkeeping, payroll, website support, or stronger internal processes.",
         "These responsibilities are often spread across different providers, systems, deadlines, and conversations. That can make a manageable task unnecessarily difficult to organize.",
-        "Alchemize is designed to help bring those responsibilities into a clearer process.",
+        "Modern work moves between records, documents, communication, websites, and digital systems. Alchemize brings those responsibilities into a clearer process and works with the tools a business actually uses.",
       ],
       sequence: [
         "Start with the situation.",
@@ -81,7 +80,7 @@ export const whyContent = {
         ],
         [
           "Connected support",
-          "A business or personal responsibility rarely exists by itself. When services overlap, Alchemize looks at how the pieces relate instead of treating each one as an isolated transaction.",
+          "A business or personal responsibility rarely exists by itself. Alchemize works across traditional administration, records, documents, websites, workflows, and modern business systems instead of treating each one as an isolated transaction.",
         ],
         [
           "Practical solutions",
@@ -100,7 +99,7 @@ export const whyContent = {
     continuity: {
       eyebrow: "One relationship. Changing needs.",
       title: "Your needs will change. The support can evolve with them.",
-      copy: "An individual may begin with tax preparation and later need document, notary, translation, apostille, or digital support. An entrepreneur may begin with business formation and later need bookkeeping, payroll, taxes, operations support, or a stronger digital presence. Alchemize is built to support those changing needs without requiring every new responsibility to begin from zero.",
+      copy: "An individual may begin with tax or document support and later turn an idea into a business. An entrepreneur may begin with readiness work, then need bookkeeping, payroll, a digital presence, or stronger operating systems. The relationship can continue as the responsibility changes, without treating each next step as an unrelated transaction.",
       paths: [
         [
           "For individuals",
@@ -141,13 +140,13 @@ export const whyContent = {
       title:
         "Por qué Alchemize | Apoyo para impuestos, operaciones y necesidades digitales",
       description:
-        "Alchemize ayuda a personas y pequeñas empresas a abordar impuestos, documentos, operaciones, administración y apoyo digital con pasos claros y orientación práctica.",
+        "Conozca por qué Alchemize conecta operaciones, administración, organización financiera, documentos y capacidad digital en un modelo moderno de servicios profesionales.",
     },
     hero: {
       eyebrow: "Por qué Alchemize",
       start: "Claridad para las responsabilidades que están",
       emphasis: "conectadas.",
-      copy: "Alchemize Business Services ofrece apoyo profesional práctico para personas, emprendedores y pequeñas empresas en impuestos, operaciones comerciales, documentos, servicios digitales y responsabilidades administrativas. En lugar de tratar cada responsabilidad como un problema separado, Alchemize ayuda a organizar la situación, identificar lo que importa y conectar a la persona con el servicio o el próximo paso correcto.",
+      copy: "Alchemize es un socio moderno de servicios profesionales para personas, emprendedores y pequeñas empresas. Las operaciones, la administración, la organización financiera, los documentos y la capacidad digital forman parte de un modelo conectado porque las responsabilidades rara vez permanecen separadas.",
       primary: "Programar una consulta",
       secondary: "Conocer la diferencia",
       orbit: ["Impuestos", "Digital", "Documentos", "Empresa"],
@@ -158,7 +157,7 @@ export const whyContent = {
       paragraphs: [
         "Una pregunta tributaria puede conectarse con una decisión empresarial. El inicio de una empresa crea responsabilidades fiscales, administrativas, operativas y digitales. Un documento puede requerir notaría, traducción o apostilla. Un negocio en crecimiento puede necesitar contabilidad, nómina, apoyo web o procesos internos más sólidos.",
         "Estas responsabilidades suelen distribuirse entre diferentes proveedores, sistemas, plazos y conversaciones. Eso puede hacer que una tarea manejable sea mucho más difícil de organizar.",
-        "Alchemize está diseñado para llevar esas responsabilidades a un proceso más claro.",
+        "El trabajo moderno se mueve entre registros, documentos, comunicación, sitios web y sistemas digitales. Alchemize integra esas responsabilidades en un proceso más claro y trabaja con las herramientas que la empresa realmente utiliza.",
       ],
       sequence: [
         "Comience con la situación.",
@@ -218,7 +217,7 @@ export const whyContent = {
         ],
         [
           "Apoyo conectado",
-          "Una responsabilidad empresarial o personal rara vez existe por sí sola. Cuando los servicios se superponen, Alchemize observa cómo se relacionan las piezas en lugar de tratarlas como una transacción aislada.",
+          "Una responsabilidad empresarial o personal rara vez existe por sí sola. Alchemize trabaja entre la administración tradicional, los registros, los documentos, los sitios web, los flujos de trabajo y los sistemas empresariales modernos, en lugar de tratar cada elemento como una transacción aislada.",
         ],
         [
           "Soluciones prácticas",
@@ -237,7 +236,7 @@ export const whyContent = {
     continuity: {
       eyebrow: "Una relación. Necesidades que cambian.",
       title: "Sus necesidades cambiarán. El apoyo puede evolucionar con ellas.",
-      copy: "Una persona puede comenzar con la preparación de impuestos y luego necesitar apoyo con documentos, notaría, traducción, apostilla o servicios digitales. Un emprendedor puede comenzar con la formación de la empresa y más adelante necesitar contabilidad, nómina, impuestos, apoyo operativo o una presencia digital más sólida. Alchemize está diseñado para apoyar esas necesidades cambiantes sin exigir que cada nueva responsabilidad empiece desde cero.",
+      copy: "Una persona puede comenzar con impuestos o documentos y después convertir una idea en un negocio. Un emprendedor puede comenzar con preparación empresarial y luego necesitar contabilidad, nómina, presencia digital o sistemas operativos más sólidos. La relación puede continuar a medida que cambia la responsabilidad, sin tratar cada paso como una transacción sin conexión.",
       paths: [
         [
           "Para personas",

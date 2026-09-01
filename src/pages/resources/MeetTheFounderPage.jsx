@@ -17,12 +17,12 @@ export default function MeetTheFounderPage() {
     en: {
       title: "Meet the Founder | Business Operations & Digital Experience",
       description:
-        "Learn about Jessy Santos and the business operations, client-service, and digital experience behind Alchemize Business Services.",
+        "Meet Jessy Santos and learn how 15+ years in business operations, administration, client service, UX, and web development shape Alchemize's connected service model.",
     },
     es: {
       title: "Conozca a la fundadora | Experiencia en operaciones y digital",
       description:
-        "Conozca a Jessy Santos y la experiencia en operaciones empresariales, atención al cliente y digital detrás de Alchemize Business Services.",
+        "Conozca a Jessy Santos y cómo más de 15 años en operaciones, administración, servicio al cliente, UX y desarrollo web dan forma al modelo conectado de Alchemize.",
     },
   });
 
@@ -115,12 +115,13 @@ export default function MeetTheFounderPage() {
       digitalCopy: [
         "Jessy’s experience with websites and digital business began well before formal UX or web-development study. Over the years, she created websites, managed e-commerce businesses, worked with online presence, and advised on SEO and digital visibility alongside her broader business responsibilities.",
         "UX study through Full Sail University gave that existing background a more structured understanding of user experience, usability, information architecture, and the ways people interact with digital systems. Continued web-development work then expanded the technical side of that experience.",
-        "Together, those disciplines inform Alchemize’s approach to digital work: a website should not be separated from the business behind it. It should communicate clearly, support how services are delivered, and make the experience more useful for both the business and the people it serves.",
+        "Together, those disciplines explain why Alchemize does not treat technology and business operations as separate worlds. A website, interface, or digital tool should communicate clearly and fit the way the business actually serves people and moves work forward.",
+        "For clients, that means each problem can be considered from both sides: whether the process needs clearer information, better organization, a more useful digital tool, hands-on human support, or another qualified specialist.",
       ],
       perspectiveEyebrow: "Perspective",
       perspectiveTitle: "The Perspective Behind Alchemize",
       perspectiveCopy:
-        "The Alchemize model comes from understanding how business and personal responsibilities often overlap across systems, deadlines, providers, and practical needs. Jessy’s experience has shaped a connected way of thinking—one that considers administrative, financial, operational, and digital needs in relation to one another rather than as isolated tasks.",
+        "The Alchemize model is intentional. It reflects Jessy’s experience across the operational work that keeps a business moving and the digital work that shapes how it communicates, serves clients, and uses modern systems. Administrative, financial, operational, and digital needs are considered in relation to one another rather than as isolated tasks.",
       quote:
         "Business support works best when it brings clarity, order, and useful momentum to the work that matters most.",
       ctaCopy:
@@ -192,12 +193,13 @@ export default function MeetTheFounderPage() {
       digitalCopy: [
         "La experiencia de Jessy con sitios web y negocios digitales comenzó mucho antes de sus estudios formales de UX o desarrollo web. A lo largo de los años, creó sitios web, administró negocios de comercio electrónico, trabajó con presencia en línea y asesoró sobre SEO y visibilidad digital junto con sus responsabilidades empresariales más amplias.",
         "Los estudios de UX a través de Full Sail University aportaron a esa experiencia una comprensión más estructurada de la experiencia de usuario, la usabilidad, la arquitectura de la información y la forma en que las personas interactúan con los sistemas digitales. El trabajo continuo en desarrollo web amplió luego el aspecto técnico de esa experiencia.",
-        "En conjunto, esas disciplinas orientan el enfoque de Alchemize hacia el trabajo digital: un sitio web no debe estar separado del negocio que lo sostiene. Debe comunicar con claridad, apoyar la prestación de servicios y hacer la experiencia más útil tanto para la empresa como para las personas a las que sirve.",
+        "En conjunto, esas disciplinas explican por qué Alchemize no trata la tecnología y las operaciones empresariales como mundos separados. Un sitio web, una interfaz o una herramienta digital debe comunicar con claridad y adaptarse a la forma en que la empresa atiende a las personas y hace avanzar el trabajo.",
+        "Para los clientes, esto significa que cada problema puede analizarse desde ambos lados: si el proceso necesita información más clara, mejor organización, una herramienta digital más útil, apoyo humano directo u otro especialista calificado.",
       ],
       perspectiveEyebrow: "Perspectiva",
       perspectiveTitle: "La Perspectiva Detrás de Alchemize",
       perspectiveCopy:
-        "El modelo de Alchemize surge de comprender cómo las responsabilidades empresariales y personales suelen superponerse entre sistemas, plazos, proveedores y necesidades prácticas. La experiencia de Jessy ha formado una manera conectada de pensar que considera las necesidades administrativas, financieras, operativas y digitales en relación unas con otras, en lugar de tratarlas como tareas aisladas.",
+        "El modelo de Alchemize es intencional. Refleja la experiencia de Jessy tanto en el trabajo operativo que mantiene una empresa en movimiento como en el trabajo digital que influye en su comunicación, servicio al cliente y uso de sistemas modernos. Las necesidades administrativas, financieras, operativas y digitales se consideran en relación unas con otras, no como tareas aisladas.",
       quote:
         "El apoyo empresarial funciona mejor cuando aporta claridad, orden e impulso útil al trabajo que más importa.",
       ctaCopy:
@@ -229,6 +231,9 @@ export default function MeetTheFounderPage() {
       </section>
 
       <section className="founder-background founder-section">
+        <div className="founder-background-watermark" aria-hidden="true">
+          Experience
+        </div>
         <div className="content-shell founder-narrative-grid">
           <Reveal className="founder-section-heading">
             <span className="section-kicker">{content.backgroundEyebrow}</span>
@@ -239,6 +244,11 @@ export default function MeetTheFounderPage() {
               <p key={paragraph}>{paragraph}</p>
             ))}
           </Reveal>
+          <div className="founder-experience-rule" aria-hidden="true">
+            <span>15+</span>
+            <span>MBA</span>
+            <span>Business + Digital</span>
+          </div>
         </div>
       </section>
 
@@ -266,11 +276,16 @@ export default function MeetTheFounderPage() {
             <p>{content.capabilitiesIntro}</p>
           </Reveal>
 
+          <div className="founder-experience-axis" aria-hidden="true">
+            <span>Business experience</span>
+            <i>A</i>
+            <span>Digital experience</span>
+          </div>
           <div className="founder-capabilities">
             {content.capabilities.map((item, index) => (
               <Reveal
                 as="article"
-                className="founder-capability"
+                className={`founder-capability founder-capability--${index + 1}`}
                 delay={(index % 3) * 45}
                 key={item.title}
               >
@@ -284,6 +299,11 @@ export default function MeetTheFounderPage() {
       </section>
 
       <section className="founder-digital founder-section">
+        <div className="founder-intersection" aria-hidden="true">
+          <span>Business</span>
+          <i>A</i>
+          <span>Digital</span>
+        </div>
         <div className="content-shell founder-narrative-grid">
           <Reveal className="founder-section-heading">
             <span className="section-kicker">{content.digitalEyebrow}</span>
@@ -300,19 +320,21 @@ export default function MeetTheFounderPage() {
       </section>
 
       <section className="founder-perspective founder-section">
-        <div className="content-shell founder-perspective-grid">
-          <Reveal>
-            <span className="section-kicker">{content.perspectiveEyebrow}</span>
-            <h2>{content.perspectiveTitle}</h2>
-          </Reveal>
-          <Reveal as="p" delay={70}>
-            {content.perspectiveCopy}
-          </Reveal>
+        <div className="founder-perspective-watermark" aria-hidden="true">
+          Alchemize
         </div>
-      </section>
-
-      <section className="founder-closing founder-section">
-        <div className="content-shell">
+        <div className="content-shell founder-perspective-composition">
+          <div className="founder-perspective-grid">
+            <Reveal>
+              <span className="section-kicker">
+                {content.perspectiveEyebrow}
+              </span>
+              <h2>{content.perspectiveTitle}</h2>
+            </Reveal>
+            <Reveal as="p" delay={70}>
+              {content.perspectiveCopy}
+            </Reveal>
+          </div>
           <Reveal as="blockquote" className="founder-quote">
             <span aria-hidden="true">“</span>
             {content.quote}

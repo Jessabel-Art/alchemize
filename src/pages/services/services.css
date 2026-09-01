@@ -1463,7 +1463,11 @@
   place-items: center;
   overflow: clip;
   border-block: 1px solid rgba(215, 176, 95, 0.48);
-  background: radial-gradient(circle at 50% 50%, rgba(215, 176, 95, 0.08), transparent 58%);
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(215, 176, 95, 0.08),
+    transparent 58%
+  );
 }
 
 .editorial-service-mark > span {
@@ -1584,7 +1588,11 @@
 }
 
 .editorial-service--business-digital .editorial-service-hero {
-  background: linear-gradient(180deg, var(--navy) 0%, rgba(6, 43, 43, 0.92) 100%);
+  background: linear-gradient(
+    180deg,
+    var(--navy) 0%,
+    rgba(6, 43, 43, 0.92) 100%
+  );
 }
 
 .editorial-service--business-digital .editorial-service-mark {
@@ -1607,11 +1615,15 @@
     border-top: 1px solid rgba(6, 43, 43, 0.18);
   }
 
-  .editorial-service--business-digital .editorial-service-process li:nth-child(odd) {
+  .editorial-service--business-digital
+    .editorial-service-process
+    li:nth-child(odd) {
     padding-right: 0.8rem;
   }
 
-  .editorial-service--business-digital .editorial-service-process li:nth-child(even) {
+  .editorial-service--business-digital
+    .editorial-service-process
+    li:nth-child(even) {
     padding-left: 0.8rem;
     border-left: 1px solid rgba(6, 43, 43, 0.12);
   }

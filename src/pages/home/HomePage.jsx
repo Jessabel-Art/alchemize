@@ -29,10 +29,14 @@ function HomePage() {
             <span className="eyebrow eyebrow--gold">
               {content.hero.eyebrow}
             </span>
+            <span className="home-positioning-descriptor">
+              {content.hero.descriptor}
+            </span>
             <h1>
               {content.hero.titleStart} <em>{content.hero.titleEmphasis}</em>
             </h1>
             <p>{content.hero.copy}</p>
+            <p className="home-hero-difference">{content.hero.difference}</p>
             <div className="home-actions">
               <Link className="button button-primary" to="/contact">
                 {content.hero.primary}
@@ -59,6 +63,9 @@ function HomePage() {
             <h2>{content.paths.title}</h2>
           </Reveal>
           <div className="home-path-grid">
+            <div className="home-path-bridge" aria-hidden="true">
+              <span>A</span>
+            </div>
             <Reveal as="article">
               <span>{content.paths.individualLabel}</span>
               <h3>{content.paths.individualTitle}</h3>
@@ -70,6 +77,7 @@ function HomePage() {
             <Reveal as="article" delay={100}>
               <span>{content.paths.businessLabel}</span>
               <h3>{content.paths.businessTitle}</h3>
+              <p>{content.paths.businessCopy}</p>
               <ul>
                 {homeHighlights.map(([title]) => (
                   <li key={title}>{title}</li>
@@ -84,7 +92,9 @@ function HomePage() {
       </section>
 
       <section className="home-connect">
-        <div className="home-watermark" aria-hidden="true" />
+        <div className="home-watermark" aria-hidden="true">
+          <span>Direction</span>
+        </div>
         <div className="content-shell home-connect-grid">
           <Reveal>
             <span className="eyebrow eyebrow--gold">
@@ -118,10 +128,16 @@ function HomePage() {
       </section>
 
       <section className="home-capabilities">
+        <div className="home-capability-watermark" aria-hidden="true">
+          Business
+        </div>
         <div className="content-shell">
           <Reveal className="home-heading">
             <span className="eyebrow">{content.business.eyebrow}</span>
-            <h2>{content.business.title}</h2>
+            <div>
+              <h2>{content.business.title}</h2>
+              <p className="home-capabilities-intro">{content.business.copy}</p>
+            </div>
           </Reveal>
           <div className="home-capability-list">
             {content.capabilities.map(([title, to], index) => (

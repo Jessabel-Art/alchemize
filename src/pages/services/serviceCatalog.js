@@ -3,7 +3,6 @@ import {
   Compass,
   FileCheck2,
   Landmark,
-  MonitorCog,
   Workflow,
   ClipboardCheck,
 } from "lucide-react";
@@ -473,10 +472,7 @@ const business = [
       ],
     ],
     related: [
-      [
-        "Business Operations",
-        "/services/businesses/operations-implementation",
-      ],
+      ["Business Operations", "/services/businesses/operations-implementation"],
       ["Web & Digital Solutions", "/web-digital"],
     ],
     cta: "Not sure what is creating the friction?",

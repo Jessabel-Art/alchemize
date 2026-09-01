@@ -285,7 +285,11 @@ function LinkRows({ items }) {
 function ServiceMotif({ profile, type = "default" }) {
   const motifs = {
     "ledger-grid": (
-      <svg viewBox="0 0 520 360" aria-hidden="true" className="service-motif service-motif--ledger">
+      <svg
+        viewBox="0 0 520 360"
+        aria-hidden="true"
+        className="service-motif service-motif--ledger"
+      >
         <g fill="none" stroke="currentColor" strokeLinecap="round">
           <path d="M72 118H446" opacity="0.32" />
           <path d="M72 156H446" opacity="0.2" />
@@ -298,18 +302,39 @@ function ServiceMotif({ profile, type = "default" }) {
       </svg>
     ),
     "cycle-rhythm": (
-      <svg viewBox="0 0 520 360" aria-hidden="true" className="service-motif service-motif--cycle">
-        <g fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.5">
+      <svg
+        viewBox="0 0 520 360"
+        aria-hidden="true"
+        className="service-motif service-motif--cycle"
+      >
+        <g
+          fill="none"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeWidth="1.5"
+        >
           <circle cx="160" cy="180" r="74" opacity="0.25" />
           <circle cx="330" cy="180" r="76" opacity="0.25" />
-          <path d="M160 106V54M160 254v52M330 104V52M330 256v52" opacity="0.35" />
+          <path
+            d="M160 106V54M160 254v52M330 104V52M330 256v52"
+            opacity="0.35"
+          />
           <path d="M234 180h52M268 144v72" opacity="0.35" />
         </g>
       </svg>
     ),
     "direction-nodes": (
-      <svg viewBox="0 0 520 360" aria-hidden="true" className="service-motif service-motif--direction">
-        <g fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.5">
+      <svg
+        viewBox="0 0 520 360"
+        aria-hidden="true"
+        className="service-motif service-motif--direction"
+      >
+        <g
+          fill="none"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeWidth="1.5"
+        >
           <path d="M118 246L226 178L312 206L420 118" opacity="0.4" />
           <circle cx="118" cy="246" r="12" opacity="0.35" />
           <circle cx="226" cy="178" r="12" opacity="0.35" />
@@ -319,55 +344,136 @@ function ServiceMotif({ profile, type = "default" }) {
       </svg>
     ),
     "workflow-map": (
-      <svg viewBox="0 0 520 360" aria-hidden="true" className="service-motif service-motif--workflow">
-        <g fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.5">
+      <svg
+        viewBox="0 0 520 360"
+        aria-hidden="true"
+        className="service-motif service-motif--workflow"
+      >
+        <g
+          fill="none"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeWidth="1.5"
+        >
           <rect x="94" y="88" width="104" height="76" rx="10" opacity="0.26" />
           <rect x="316" y="84" width="118" height="82" rx="10" opacity="0.26" />
-          <rect x="188" y="206" width="150" height="72" rx="10" opacity="0.24" />
+          <rect
+            x="188"
+            y="206"
+            width="150"
+            height="72"
+            rx="10"
+            opacity="0.24"
+          />
           <path d="M198 126h118M314 126l2 80M246 206V126" opacity="0.38" />
         </g>
       </svg>
     ),
     "grid-foundation": (
-      <svg viewBox="0 0 520 360" aria-hidden="true" className="service-motif service-motif--grid">
+      <svg
+        viewBox="0 0 520 360"
+        aria-hidden="true"
+        className="service-motif service-motif--grid"
+      >
         <g fill="none" stroke="currentColor" strokeLinecap="round">
-          <path d="M88 86H432M88 146H432M88 206H432M88 266H432" opacity="0.28" />
-          <path d="M128 70V292M212 70V292M296 70V292M380 70V292" opacity="0.22" />
+          <path
+            d="M88 86H432M88 146H432M88 206H432M88 266H432"
+            opacity="0.28"
+          />
+          <path
+            d="M128 70V292M212 70V292M296 70V292M380 70V292"
+            opacity="0.22"
+          />
         </g>
       </svg>
     ),
     "language-lines": (
-      <svg viewBox="0 0 520 360" aria-hidden="true" className="service-motif service-motif--language">
-        <g fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.5">
+      <svg
+        viewBox="0 0 520 360"
+        aria-hidden="true"
+        className="service-motif service-motif--language"
+      >
+        <g
+          fill="none"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeWidth="1.5"
+        >
           <path d="M92 118H428M92 186H428M92 254H428" opacity="0.28" />
           <path d="M188 82v196M332 82v196" opacity="0.25" />
-          <path d="M120 118l54 68M208 186l54-68M294 118l54 68M382 186l-54-68" opacity="0.4" />
+          <path
+            d="M120 118l54 68M208 186l54-68M294 118l54 68M382 186l-54-68"
+            opacity="0.4"
+          />
         </g>
       </svg>
     ),
     "document-frame": (
-      <svg viewBox="0 0 520 360" aria-hidden="true" className="service-motif service-motif--document">
-        <g fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.5">
-          <rect x="132" y="74" width="250" height="210" rx="16" opacity="0.26" />
-          <path d="M170 126h170M170 162h132M170 198h148M170 234h112" opacity="0.38" />
+      <svg
+        viewBox="0 0 520 360"
+        aria-hidden="true"
+        className="service-motif service-motif--document"
+      >
+        <g
+          fill="none"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeWidth="1.5"
+        >
+          <rect
+            x="132"
+            y="74"
+            width="250"
+            height="210"
+            rx="16"
+            opacity="0.26"
+          />
+          <path
+            d="M170 126h170M170 162h132M170 198h148M170 234h112"
+            opacity="0.38"
+          />
           <circle cx="336" cy="146" r="32" opacity="0.22" />
         </g>
       </svg>
     ),
     "document-stack": (
-      <svg viewBox="0 0 520 360" aria-hidden="true" className="service-motif service-motif--document-stack">
-        <g fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.5">
+      <svg
+        viewBox="0 0 520 360"
+        aria-hidden="true"
+        className="service-motif service-motif--document-stack"
+      >
+        <g
+          fill="none"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeWidth="1.5"
+        >
           <path d="M148 90h194l36 40v118H148V90Z" opacity="0.18" />
-          <path d="M176 122h184M176 156h134M176 190h148M176 224h146" opacity="0.38" />
+          <path
+            d="M176 122h184M176 156h134M176 190h148M176 224h146"
+            opacity="0.38"
+          />
           <path d="M118 220l30-16v98l-30 16z" opacity="0.18" />
           <path d="M366 112l30 18v114l-30-18z" opacity="0.18" />
         </g>
       </svg>
     ),
     "route-path": (
-      <svg viewBox="0 0 520 360" aria-hidden="true" className="service-motif service-motif--route">
-        <g fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.5">
-          <path d="M110 246c40-46 88-72 145-80 53-7 96 12 161 78" opacity="0.35" />
+      <svg
+        viewBox="0 0 520 360"
+        aria-hidden="true"
+        className="service-motif service-motif--route"
+      >
+        <g
+          fill="none"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeWidth="1.5"
+        >
+          <path
+            d="M110 246c40-46 88-72 145-80 53-7 96 12 161 78"
+            opacity="0.35"
+          />
           <circle cx="110" cy="246" r="12" opacity="0.3" />
           <circle cx="254" cy="166" r="12" opacity="0.3" />
           <circle cx="415" cy="244" r="12" opacity="0.3" />
@@ -376,19 +482,38 @@ function ServiceMotif({ profile, type = "default" }) {
       </svg>
     ),
     "calendar-grid": (
-      <svg viewBox="0 0 520 360" aria-hidden="true" className="service-motif service-motif--calendar">
+      <svg
+        viewBox="0 0 520 360"
+        aria-hidden="true"
+        className="service-motif service-motif--calendar"
+      >
         <g fill="none" stroke="currentColor" strokeLinecap="round">
           <path d="M110 110h290M110 174h290M110 238h290" opacity="0.28" />
-          <path d="M150 90V270M218 90V270M286 90V270M354 90V270" opacity="0.2" />
+          <path
+            d="M150 90V270M218 90V270M286 90V270M354 90V270"
+            opacity="0.2"
+          />
           <path d="M164 134h40M228 198h40M292 162h40" opacity="0.34" />
         </g>
       </svg>
     ),
-    "wireframe": (
-      <svg viewBox="0 0 520 360" aria-hidden="true" className="service-motif service-motif--wireframe">
-        <g fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.5">
+    wireframe: (
+      <svg
+        viewBox="0 0 520 360"
+        aria-hidden="true"
+        className="service-motif service-motif--wireframe"
+      >
+        <g
+          fill="none"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeWidth="1.5"
+        >
           <rect x="94" y="82" width="332" height="192" rx="14" opacity="0.2" />
-          <path d="M130 112h42M130 146h110M130 180h92M130 214h126" opacity="0.38" />
+          <path
+            d="M130 112h42M130 146h110M130 180h92M130 214h126"
+            opacity="0.38"
+          />
           <rect x="282" y="110" width="108" height="66" rx="8" opacity="0.18" />
           <rect x="282" y="190" width="108" height="50" rx="8" opacity="0.18" />
           <path d="M196 256h122" opacity="0.25" />
@@ -397,7 +522,11 @@ function ServiceMotif({ profile, type = "default" }) {
     ),
   };
 
-  return <div className="service-motif-wrap">{motifs[profile.motif || type] || motifs["default"]}</div>;
+  return (
+    <div className="service-motif-wrap">
+      {motifs[profile.motif || type] || motifs["default"]}
+    </div>
+  );
 }
 
 function HeroMark({ profile, Icon }) {
@@ -551,7 +680,9 @@ export default function EditorialServicePage({ service, ui, language }) {
         <span aria-hidden="true">/</span>
         <span aria-current="page">{service.title}</span>
       </nav>
-      <section className={`editorial-service-hero editorial-service-hero--${profile.motif || "default"}`}>
+      <section
+        className={`editorial-service-hero editorial-service-hero--${profile.motif || "default"}`}
+      >
         <div className="content-shell editorial-service-hero-grid">
           <Reveal>
             <span className="eyebrow eyebrow--gold">{service.title}</span>

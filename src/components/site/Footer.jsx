@@ -21,7 +21,10 @@ const groups = {
       "Businesses",
       [
         ["Business Consulting", "/services/businesses/advisory-optimization"],
-        ["Business Operations", "/services/businesses/operations-implementation"],
+        [
+          "Business Operations",
+          "/services/businesses/operations-implementation",
+        ],
         ["Business Readiness", "/services/businesses/readiness-growth"],
         ["Bookkeeping", "/services/businesses/bookkeeping-financial-reporting"],
         ["Payroll", "/services/businesses/payroll-processing"],

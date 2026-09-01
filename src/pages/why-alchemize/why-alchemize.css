@@ -3,6 +3,12 @@
   color: var(--navy);
 }
 
+.why-page *,
+.why-page *::before,
+.why-page *::after {
+  box-sizing: border-box;
+}
+
 .why-page h1,
 .why-page h2,
 .why-page h3 {
@@ -770,6 +776,77 @@
     padding-top: 2.5rem;
     border-top: 1px solid rgba(215, 176, 95, 0.34);
   }
+  .why-principle-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .why-principle-list article,
+  .why-principle-list article:nth-child(4),
+  .why-principle-list article:nth-child(5) {
+    grid-column: auto;
+    border-right: 1px solid rgba(255, 255, 255, 0.16);
+    border-top: 0;
+  }
+  .why-principle-list article:nth-child(3n) {
+    border-right: 0;
+  }
+  .why-principle-list article:nth-child(n + 4) {
+    border-top: 1px solid rgba(255, 255, 255, 0.16);
+  }
+}
+
+@media (max-width: 1024px) {
+  .why-hero-grid,
+  .why-problem-grid,
+  .why-section-intro,
+  .why-continuity-copy,
+  .why-final-grid {
+    grid-template-columns: 1fr;
+  }
+  .why-hero {
+    min-height: auto;
+    padding-bottom: 3rem;
+  }
+  .why-hero::before {
+    inset: 50% 0 0;
+    clip-path: polygon(0 16%, 100% 0, 100% 100%, 0 100%);
+  }
+  .why-hero-field {
+    width: min(80vw, 570px);
+    right: -20%;
+    top: 72%;
+  }
+  .why-orbit {
+    width: min(72vw, 430px);
+  }
+  .why-problem-copy {
+    padding-top: 0;
+  }
+  .why-continuity-copy .eyebrow {
+    grid-column: auto;
+  }
+  .why-sequence {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .why-sequence li:nth-child(2) {
+    border-right: 0;
+  }
+  .why-principle-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .why-principle-list article,
+  .why-principle-list article:nth-child(4),
+  .why-principle-list article:nth-child(5),
+  .why-principle-list article:last-child {
+    grid-column: auto;
+    border-right: 1px solid rgba(255, 255, 255, 0.16);
+    border-top: 1px solid rgba(255, 255, 255, 0.16);
+  }
+  .why-principle-list article:nth-child(even) {
+    border-right: 0;
+  }
+  .why-principle-list article:nth-child(n + 3) {
+    border-top: 1px solid rgba(255, 255, 255, 0.16);
+  }
 }
 
 @media (max-width: 900px) {
@@ -790,6 +867,12 @@
   }
   .why-pathway-item:nth-child(even) .why-pathway-link {
     margin-left: 0;
+  }
+  .why-approach-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .why-approach-steps article:nth-child(odd) {
+    border-left: 0;
   }
 }
 
@@ -928,6 +1011,13 @@
   }
   .why-founder-portrait {
     width: min(100%, 470px);
+  }
+  .why-hero-copy > p,
+  .why-problem-copy p,
+  .why-founder-narrative > p:not(.why-founder-positioning),
+  .why-continuity-copy p,
+  .why-final p {
+    max-width: 100%;
   }
 }
 
