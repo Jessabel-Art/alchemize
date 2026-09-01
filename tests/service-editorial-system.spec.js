@@ -63,17 +63,26 @@ test("legacy digital route redirects to the consolidated web & digital page", as
   await page.goto("/services/businesses/digital-business-technology/");
   await expect(page).toHaveURL(/\/web-digital(?:\/)?$/);
   await expect(
-    page.getByRole("heading", { level: 1, name: /Professional digital presence/i }),
+    page.getByRole("heading", {
+      level: 1,
+      name: /Professional digital presence/i,
+    }),
   ).toBeVisible();
 });
 
-test("public navigation shows only one digital service family", async ({ page }) => {
+test("public navigation shows only one digital service family", async ({
+  page,
+}) => {
   await page.goto("/");
   await expect(
-    page.getByRole("navigation").getByRole("link", { name: "Web & Digital Solutions" }),
+    page
+      .getByRole("navigation")
+      .getByRole("link", { name: "Web & Digital Solutions" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("contentinfo").getByRole("link", { name: "Web & Digital Solutions" }),
+    page
+      .getByRole("contentinfo")
+      .getByRole("link", { name: "Web & Digital Solutions" }),
   ).toHaveCount(0);
   await expect(
     page.getByRole("link", { name: "Digital Business & Technology" }),
@@ -81,8 +90,12 @@ test("public navigation shows only one digital service family", async ({ page })
   await expect(
     page.getByRole("link", { name: "Digital Business & Tech" }),
   ).toHaveCount(0);
-  await expect(page.getByRole("link", { name: "Business Consulting" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Business Operations" })).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Business Consulting" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Business Operations" }),
+  ).toBeVisible();
   await expect(page.getByRole("link", { name: "Bookkeeping" })).toBeVisible();
 });
 
@@ -91,12 +104,25 @@ test("merged web & digital content is visible beyond a website-only landing page
 }) => {
   await page.goto("/web-digital");
   await expect(
-    page.getByRole("heading", { level: 1, name: /Professional digital presence|digital presence/i }),
+    page.getByRole("heading", {
+      level: 1,
+      name: /Professional digital presence|digital presence/i,
+    }),
   ).toBeVisible();
-  await expect(page.getByText(/SEO|Local SEO|Google Business Profile|automation/i)).toBeVisible();
-  await expect(page.getByText(/website maintenance|ongoing support|workflow automation/i)).toBeVisible();
-  await expect(page.getByRole("link", { name: "Request a Project Proposal" })).toHaveCount(2);
-  await expect(page.locator(".webx-actions").getByRole("link", { name: "Request a Project Proposal" })).toHaveCount(1);
+  await expect(
+    page.getByText(/SEO|Local SEO|Google Business Profile|automation/i),
+  ).toBeVisible();
+  await expect(
+    page.getByText(/website maintenance|ongoing support|workflow automation/i),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Request a Project Proposal" }),
+  ).toHaveCount(2);
+  await expect(
+    page
+      .locator(".webx-actions")
+      .getByRole("link", { name: "Request a Project Proposal" }),
+  ).toHaveCount(1);
 });
 
 const responsiveRoutes = [
