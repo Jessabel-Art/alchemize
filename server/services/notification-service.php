@@ -40,19 +40,46 @@ final class AlchemizeNotificationService
 
     public function notifyExternal(string $recipientEmail, string $title, string $body, string $actionUrl = '', string $actionLabel = ''): string
     {
+        if (trim($recipientEmail) === '') {
+            return 'unavailable';
+        }
+        return $this->notifyExternalDetailed($recipientEmail, $title, $body, $actionUrl, $actionLabel)['status'];
+    }
+
+    public function notifyExternalDetailed(string $recipientEmail, string $title, string $body, string $actionUrl = '', string $actionLabel = ''): array
+    {
+        $notification = [
+            'public_id' => alchemize_uuid_v4(),
+            'recipient_email' => $recipientEmail,
+            'title' => $title,
+            'message_body' => $body,
+            'action_url' => $actionUrl,
+            'action_label' => $actionLabel,
+            'secondary_text' => 'If you did not expect this message, you may ignore it.',
+        ];
+
         try {
-            return $this->emailProvider->deliver([
-                'public_id' => alchemize_uuid_v4(),
-                'recipient_email' => $recipientEmail,
-                'title' => $title,
-                'message_body' => $body,
-                'action_url' => $actionUrl,
-                'action_label' => $actionLabel,
-                'secondary_text' => 'If you did not expect this message, you may ignore it.',
-            ]);
+            if (method_exists($this->emailProvider, 'deliverDetailed')) {
+                $result = $this->emailProvider->deliverDetailed($notification);
+                return [
+                    'status' => $result['status'] ?? 'failed',
+                    'provider' => 'resend',
+                    'provider_id' => $result['provider_id'] ?? null,
+                    'error' => $result['error'] ?? null,
+                    'attempted' => !empty($result['attempted']),
+                ];
+            }
+
+            return [
+                'status' => $this->emailProvider->deliver($notification),
+                'provider' => 'resend',
+                'provider_id' => null,
+                'error' => null,
+                'attempted' => true,
+            ];
         } catch (Throwable $error) {
             error_log(sprintf('External transactional notification delivery failed [%s].', get_class($error)));
-            return 'failed';
+            return ['status' => 'failed', 'provider' => 'resend', 'provider_id' => null, 'error' => 'provider_exception', 'attempted' => true];
         }
     }
 

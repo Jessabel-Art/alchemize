@@ -5116,6 +5116,8 @@ function AppointmentManagementPage() {
     recipientId: "",
     recipientName: "",
     recipientEmail: "",
+    notificationEmail: "",
+    sendConfirmationEmail: true,
     appointmentType: "Consultation",
     meetingMethod: "Phone Call",
     serviceId: "",
@@ -5483,6 +5485,9 @@ function AppointmentManagementPage() {
     recipientType: appointment?.leadId ? "lead" : "client",
     clientId: appointment?.clientId || "",
     leadId: appointment?.leadId || "",
+    recipientName: appointment?.recipientName || "",
+    notificationEmail: appointment?.notificationEmail || "",
+    sendConfirmationEmail: appointment?.sendConfirmationEmail ?? true,
     type: appointment?.type || "Consultation",
     meetingMethod: appointment?.meetingMethod || "Phone Call",
     serviceName: appointment?.serviceName || "Business Advisory",
@@ -5551,12 +5556,23 @@ function AppointmentManagementPage() {
   const selectSchedulingRecipient = (type, id) => {
     const collection = type === "client" ? snapshot.clients : snapshot.leads;
     const record = collection.find((item) => String(item.id) === String(id));
+    const fallbackEmail = record?.primaryEmail || record?.email || "";
     setLinkDraft((current) => ({
       ...current,
       recipientType: type,
       recipientId: id,
       recipientName: record?.displayName || record?.name || "",
-      recipientEmail: record?.primaryEmail || record?.email || "",
+      recipientEmail: fallbackEmail,
+      notificationEmail:
+        current.notificationEmail ||
+        fallbackEmail ||
+        current.recipientEmail ||
+        "",
+      sendConfirmationEmail:
+        current.sendConfirmationEmail !== false &&
+        Boolean(
+          fallbackEmail || current.notificationEmail || current.recipientEmail,
+        ),
     }));
   };
 
@@ -5581,6 +5597,10 @@ function AppointmentManagementPage() {
           .replace(/[^a-z0-9]+/g, "_"),
         recipient_name: linkDraft.recipientName || "",
         recipient_email: recipientEmail,
+        notification_email: (
+          linkDraft.notificationEmail || recipientEmail
+        ).trim(),
+        send_confirmation_email: Boolean(linkDraft.sendConfirmationEmail),
         notes: linkDraft.notes || "",
         service_id: linkDraft.serviceId || "",
         duration_minutes: Number(linkDraft.duration || 60),
@@ -5690,6 +5710,22 @@ function AppointmentManagementPage() {
       setAppointmentError("Date and start time are required.");
       return;
     }
+    const canonicalRecipientEmail =
+      draftState.recipientType === "client"
+        ? snapshot.clients.find(
+            (client) => String(client.id) === String(draftState.clientId),
+          )?.primaryEmail ||
+          snapshot.clients.find(
+            (client) => String(client.id) === String(draftState.clientId),
+          )?.email ||
+          ""
+        : snapshot.leads.find(
+            (lead) => String(lead.id) === String(draftState.leadId),
+          )?.primaryEmail ||
+          snapshot.leads.find(
+            (lead) => String(lead.id) === String(draftState.leadId),
+          )?.email ||
+          "";
 
     if (formMode === "create") {
       setAppointmentSaving(true);
@@ -5707,6 +5743,8 @@ function AppointmentManagementPage() {
             draftState.recipientType === "lead"
               ? Number(draftState.leadId)
               : null,
+          notification_email: canonicalRecipientEmail,
+          send_confirmation_email: canonicalRecipientEmail !== "",
           appointment_type: String(draftState.type)
             .toLowerCase()
             .replaceAll(" ", "_"),
@@ -6646,8 +6684,21 @@ function AppointmentManagementPage() {
                   >
                     <option value="client">Client</option>
                     <option value="lead">Lead</option>
+                    <option value="other">Other</option>
                   </select>
                 </label>
+                {draftState.recipientType === "other" ? (
+                  <label>
+                    <span>Name</span>
+                    <input
+                      value={draftState.recipientName || ""}
+                      onChange={(event) =>
+                        setDraftField("recipientName", event.target.value)
+                      }
+                      placeholder="External recipient"
+                    />
+                  </label>
+                ) : null}
                 <label>
                   <span>
                     {draftState.recipientType === "client" ? "Client" : "Lead"}
@@ -6655,9 +6706,23 @@ function AppointmentManagementPage() {
                   {draftState.recipientType === "client" ? (
                     <select
                       value={draftState.clientId}
-                      onChange={(event) =>
-                        setDraftField("clientId", event.target.value)
-                      }
+                      onChange={(event) => {
+                        const selectedClientId = event.target.value;
+                        const selectedClient = snapshot.clients.find(
+                          (client) =>
+                            String(client.id) === String(selectedClientId),
+                        );
+                        const nextEmail =
+                          selectedClient?.primaryEmail ||
+                          selectedClient?.email ||
+                          "";
+                        setDraftField("clientId", selectedClientId);
+                        setDraftField("notificationEmail", nextEmail);
+                        setDraftField(
+                          "sendConfirmationEmail",
+                          nextEmail !== "",
+                        );
+                      }}
                     >
                       <option value="">Select client</option>
                       {snapshot.clients.map((client) => (
@@ -6669,9 +6734,22 @@ function AppointmentManagementPage() {
                   ) : (
                     <select
                       value={draftState.leadId}
-                      onChange={(event) =>
-                        setDraftField("leadId", event.target.value)
-                      }
+                      onChange={(event) => {
+                        const selectedLeadId = event.target.value;
+                        const selectedLead = snapshot.leads.find(
+                          (lead) => String(lead.id) === String(selectedLeadId),
+                        );
+                        const nextEmail =
+                          selectedLead?.primaryEmail ||
+                          selectedLead?.email ||
+                          "";
+                        setDraftField("leadId", selectedLeadId);
+                        setDraftField("notificationEmail", nextEmail);
+                        setDraftField(
+                          "sendConfirmationEmail",
+                          nextEmail !== "",
+                        );
+                      }}
                     >
                       <option value="">Select lead</option>
                       {snapshot.leads.map((lead) => (
@@ -6681,6 +6759,35 @@ function AppointmentManagementPage() {
                       ))}
                     </select>
                   )}
+                </label>
+                <label className="full-span">
+                  <span>Notification email</span>
+                  <input
+                    type="email"
+                    value={draftState.notificationEmail || ""}
+                    onChange={(event) =>
+                      setDraftField("notificationEmail", event.target.value)
+                    }
+                    placeholder="name@example.com"
+                  />
+                </label>
+                <label className="checkbox-field full-span">
+                  <input
+                    type="checkbox"
+                    checked={
+                      draftState.sendConfirmationEmail !== false &&
+                      Boolean(
+                        draftState.notificationEmail || canonicalRecipientEmail,
+                      )
+                    }
+                    onChange={(event) =>
+                      setDraftField(
+                        "sendConfirmationEmail",
+                        event.target.checked,
+                      )
+                    }
+                  />
+                  <span>Send confirmation email</span>
                 </label>
                 <label>
                   <span>Appointment type</span>
@@ -6963,11 +7070,48 @@ function AppointmentManagementPage() {
                 <input
                   type="email"
                   value={linkDraft.recipientEmail}
+                  onChange={(event) => {
+                    const nextValue = event.target.value;
+                    setLinkField("recipientEmail", nextValue);
+                    if (
+                      !linkDraft.notificationEmail ||
+                      linkDraft.notificationEmail === linkDraft.recipientEmail
+                    ) {
+                      setLinkField("notificationEmail", nextValue);
+                    }
+                  }}
+                  placeholder="name@example.com"
+                />
+              </label>
+              <label className="full-span">
+                <span>Notification email</span>
+                <input
+                  type="email"
+                  value={
+                    linkDraft.notificationEmail ||
+                    linkDraft.recipientEmail ||
+                    ""
+                  }
                   onChange={(event) =>
-                    setLinkField("recipientEmail", event.target.value)
+                    setLinkField("notificationEmail", event.target.value)
                   }
                   placeholder="name@example.com"
                 />
+              </label>
+              <label className="checkbox-field full-span">
+                <input
+                  type="checkbox"
+                  checked={
+                    linkDraft.sendConfirmationEmail !== false &&
+                    Boolean(
+                      linkDraft.notificationEmail || linkDraft.recipientEmail,
+                    )
+                  }
+                  onChange={(event) =>
+                    setLinkField("sendConfirmationEmail", event.target.checked)
+                  }
+                />
+                <span>Send confirmation email</span>
               </label>
               <label>
                 <span>Appointment type</span>

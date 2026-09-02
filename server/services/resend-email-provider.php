@@ -4,7 +4,19 @@ declare(strict_types=1);
 
 final class AlchemizeResendEmailProvider implements AlchemizeEmailProvider
 {
+    private array $lastDeliveryResult = [
+        'status' => 'unavailable',
+        'provider_id' => null,
+        'error' => null,
+        'attempted' => false,
+    ];
+
     public function __construct(private readonly array $config) {}
+
+    public function lastDeliveryResult(): array
+    {
+        return $this->lastDeliveryResult;
+    }
 
     public function configurationStatus(): array
     {
@@ -21,8 +33,15 @@ final class AlchemizeResendEmailProvider implements AlchemizeEmailProvider
         $this->deliver($notification);
     }
 
-    public function deliver(array $notification): string
+    public function deliverDetailed(array $notification): array
     {
+        $this->lastDeliveryResult = [
+            'status' => 'unavailable',
+            'provider_id' => null,
+            'error' => null,
+            'attempted' => false,
+        ];
+
         try {
             $recipient = (string) ($notification['recipient_email'] ?? '');
             if (filter_var($recipient, FILTER_VALIDATE_EMAIL) === false) {
@@ -30,7 +49,10 @@ final class AlchemizeResendEmailProvider implements AlchemizeEmailProvider
             }
 
             if (in_array(false, $this->configurationStatus(), true)) {
-                return 'unavailable';
+                $this->lastDeliveryResult['status'] = 'unavailable';
+                $this->lastDeliveryResult['error'] = 'missing_resend_configuration';
+                $this->lastDeliveryResult['attempted'] = false;
+                return $this->lastDeliveryResult;
             }
 
             $fromName = (string) ($this->config['from_name'] ?? 'Alchemize Business Services');
@@ -71,16 +93,24 @@ final class AlchemizeResendEmailProvider implements AlchemizeEmailProvider
             ]);
 
             $response = @file_get_contents('https://api.resend.com/emails', false, $context);
+            $this->lastDeliveryResult['attempted'] = true;
             if ($response === false || !is_string($response)) {
-                return 'failed';
+                $this->lastDeliveryResult['status'] = 'failed';
+                $this->lastDeliveryResult['error'] = 'resend_request_failed';
+                return $this->lastDeliveryResult;
             }
 
             $decoded = json_decode($response, true);
             if (!is_array($decoded) || empty($decoded['id'])) {
-                return 'failed';
+                $this->lastDeliveryResult['status'] = 'failed';
+                $this->lastDeliveryResult['error'] = is_array($decoded) && isset($decoded['message']) ? (string) $decoded['message'] : 'resend_rejected_request';
+                return $this->lastDeliveryResult;
             }
 
-            return 'sent';
+            $this->lastDeliveryResult['status'] = 'sent';
+            $this->lastDeliveryResult['provider_id'] = (string) $decoded['id'];
+            $this->lastDeliveryResult['error'] = null;
+            return $this->lastDeliveryResult;
         } catch (Throwable $error) {
             $notificationId = preg_replace('/[^A-Za-z0-9-]/', '', (string) ($notification['public_id'] ?? 'unknown'));
             error_log(sprintf(
@@ -88,8 +118,16 @@ final class AlchemizeResendEmailProvider implements AlchemizeEmailProvider
                 $notificationId !== '' ? $notificationId : 'unknown',
                 get_class($error),
             ));
-            return in_array(false, $this->configurationStatus(), true) ? 'unavailable' : 'failed';
+            $this->lastDeliveryResult['status'] = in_array(false, $this->configurationStatus(), true) ? 'unavailable' : 'failed';
+            $this->lastDeliveryResult['error'] = in_array(false, $this->configurationStatus(), true) ? 'missing_resend_configuration' : 'provider_exception';
+            $this->lastDeliveryResult['attempted'] = true;
+            return $this->lastDeliveryResult;
         }
+    }
+
+    public function deliver(array $notification): string
+    {
+        return $this->deliverDetailed($notification)['status'];
     }
 }
 

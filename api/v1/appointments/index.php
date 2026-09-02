@@ -93,14 +93,20 @@ try {
         }
         $sync = $integrations->synchronizeAppointment($id);
         $recipientEmail = trim((string) ($payload['email'] ?? $link['recipient_email']));
-        $delivery = $notifications->notifyExternal(
+        $emailResult = $notifications->notifyExternalDetailed(
             $recipientEmail,
             'Appointment confirmed',
             sprintf('%s is confirmed for %s (%s, %d minutes) via %s.', $link['appointment_type'], (new DateTimeImmutable($slot['start']))->format('F j, Y g:i A'), $link['timezone'], $link['duration_minutes'], $link['meeting_method'])
         );
+        $delivery = $emailResult['status'] ?? 'unavailable';
         alchemize_json_response(['data' => [
             'appointment_created' => true, 'appointment_id' => $id,
             'calendar_sync' => $sync['status'], 'email_delivery' => $delivery,
+            'email_attempted' => !empty($emailResult['attempted']),
+            'email_delivered_to_provider' => ($delivery === 'sent'),
+            'email_provider' => 'resend',
+            'email_provider_id' => $emailResult['provider_id'] ?? null,
+            'email_error' => $emailResult['error'] ?? null,
             'appointment' => ['type' => $link['appointment_type'], 'start' => $slot['start'], 'end' => $slot['end'], 'timezone' => $link['timezone'], 'meeting_method' => $link['meeting_method']],
         ]], 201);
     }
@@ -163,10 +169,23 @@ try {
         $repository->recordAppointmentEvents($id, $appointment, 'appointment.admin_created', 'Appointment created by an administrator.');
 
         $sync = $integrations->synchronizeAppointment($id);
-        $delivery = !empty($payload['client_id'])
-            ? $notifications->notifyClient((int) $payload['client_id'], 'admin.appointment.created', 'appointment', (string) $id, 'Appointment scheduled', 'An appointment was added to your client portal.', 'appointment-created:' . $id)
-            : (!empty($payload['recipient_email']) ? $notifications->notifyExternal((string) $payload['recipient_email'], 'Appointment scheduled', 'Your appointment with Alchemize has been scheduled.') : 'unavailable');
-        alchemize_json_response(['data' => ['id' => $id, 'appointment_type' => $appointmentType, 'appointment_created' => true, 'calendar_sync' => $sync['status'], 'email_delivery' => $delivery]], 201);
+        $notificationEmail = trim((string) ($payload['notification_email'] ?? $payload['recipient_email'] ?? ''));
+        $sendConfirmationEmail = !empty($payload['send_confirmation_email']) || $notificationEmail !== '';
+        $emailResult = [];
+        if ($sendConfirmationEmail && $notificationEmail !== '') {
+            $emailResult = $notifications->notifyExternalDetailed(
+                $notificationEmail,
+                'Appointment scheduled',
+                'Your appointment with Alchemize has been scheduled.'
+            );
+        } elseif (!empty($payload['client_id']) && $sendConfirmationEmail) {
+            $delivery = $notifications->notifyClient((int) $payload['client_id'], 'admin.appointment.created', 'appointment', (string) $id, 'Appointment scheduled', 'An appointment was added to your client portal.', 'appointment-created:' . $id);
+            $emailResult = ['status' => $delivery, 'provider' => 'resend', 'provider_id' => null, 'error' => null, 'attempted' => $delivery !== 'unavailable'];
+        } else {
+            $emailResult = ['status' => 'unavailable', 'provider' => 'resend', 'provider_id' => null, 'error' => 'email_disabled_or_missing', 'attempted' => false];
+        }
+        $delivery = $emailResult['status'] ?? 'unavailable';
+        alchemize_json_response(['data' => ['id' => $id, 'appointment_type' => $appointmentType, 'appointment_created' => true, 'calendar_sync' => $sync['status'], 'email_delivery' => $delivery, 'email_attempted' => !empty($emailResult['attempted']), 'email_delivered_to_provider' => ($delivery === 'sent'), 'email_provider' => $emailResult['provider'] ?? 'resend', 'email_provider_id' => $emailResult['provider_id'] ?? null, 'email_error' => $emailResult['error'] ?? null]], 201);
     }
 
     if (count($parts) === 1 && ctype_digit((string)$parts[0]) && $method === 'GET') {
@@ -270,16 +289,31 @@ try {
         $baseUrl = trim((string) ($_SERVER['APP_URL'] ?? $_SERVER['HTTP_ORIGIN'] ?? 'https://localhost'));
         $baseUrl = rtrim($baseUrl, '/');
         $url = $baseUrl . '/appointment/schedule/' . $token;
-        $delivery = $notifications->notifyExternal(
-            $recipientEmail,
-            'Schedule your Alchemize appointment',
-            sprintf('Hello %s, use the secure scheduling page to choose a time for your %s. This invitation expires %s.', trim((string) ($payload['recipient_name'] ?? '')) ?: 'there', $appointmentType, $expiresAt),
-            $url,
-            'Schedule Appointment'
-        );
+        $sendConfirmationEmail = !empty($payload['send_confirmation_email']) || $recipientEmail !== '';
+        $emailResult = ['status' => 'unavailable', 'provider' => 'resend', 'provider_id' => null, 'error' => 'email_disabled_or_missing', 'attempted' => false];
+        if ($sendConfirmationEmail && $recipientEmail !== '') {
+            $emailResult = $notifications->notifyExternalDetailed(
+                $recipientEmail,
+                'Schedule your Alchemize appointment',
+                sprintf('Hello %s, use the secure scheduling page to choose a time for your %s. This invitation expires %s.', trim((string) ($payload['recipient_name'] ?? '')) ?: 'there', $appointmentType, $expiresAt),
+                $url,
+                'Schedule Appointment'
+            );
+        }
+        $delivery = $emailResult['status'] ?? 'unavailable';
         $linkId = $repository->schedulingLinkIdByToken($token);
         if ($linkId !== null) $repository->recordSchedulingLinkDelivery($linkId, $delivery);
-        $response = ['expires_at' => $expiresAt, 'delivery_status' => $delivery, 'recipient_email' => $recipientEmail];
+        $response = [
+            'scheduling_link_created' => true,
+            'expires_at' => $expiresAt,
+            'delivery_status' => $delivery,
+            'recipient_email' => $recipientEmail,
+            'email_attempted' => !empty($emailResult['attempted']),
+            'email_delivered_to_provider' => ($delivery === 'sent'),
+            'email_provider' => 'resend',
+            'email_provider_id' => $emailResult['provider_id'] ?? null,
+            'email_error' => $emailResult['error'] ?? null,
+        ];
         if ($delivery !== 'sent') $response['copy_url'] = $url;
         alchemize_json_response(['data' => $response], 201);
     }

@@ -7,7 +7,33 @@ if (PHP_SAPI !== 'cli') {
     exit;
 }
 
-$config = require dirname(__DIR__) . '/server/bootstrap.php';
+function alchemize_resolve_existing_path(array $candidates): ?string
+{
+    foreach ($candidates as $candidate) {
+        if (is_string($candidate) && $candidate !== '' && is_file($candidate)) {
+            return $candidate;
+        }
+    }
+
+    return null;
+}
+
+$scriptDir = __DIR__;
+$projectRoot = dirname($scriptDir);
+
+$bootstrapPath = alchemize_resolve_existing_path([
+    $scriptDir . '/bootstrap.php',
+    $projectRoot . '/server/bootstrap.php',
+]);
+
+if ($bootstrapPath === null) {
+    throw new RuntimeException(sprintf(
+        'Unable to resolve bootstrap.php. Checked: %s',
+        implode(', ', [$scriptDir . '/bootstrap.php', $projectRoot . '/server/bootstrap.php'])
+    ));
+}
+
+$config = require $bootstrapPath;
 $provider = alchemize_email_provider($config);
 $recipient = trim((string) ($argv[1] ?? 'admin@getalchemize.com'));
 
