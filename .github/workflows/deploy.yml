@@ -54,6 +54,7 @@ jobs:
           cp -R migrations deploy-output/${PRIVATE_BACKEND_ROOT}/migrations
           cp scripts/run-migrations.php deploy-output/${PRIVATE_BACKEND_ROOT}/run-migrations.php
           cp scripts/verify-deployment-runtime.php deploy-output/${PRIVATE_BACKEND_ROOT}/verify-deployment-runtime.php
+          cp scripts/test-resend-email.php deploy-output/${PRIVATE_BACKEND_ROOT}/test-resend-email.php
 
       - name: Verify deployment package
         shell: bash
@@ -74,6 +75,7 @@ jobs:
           test -d deploy-output/${PRIVATE_BACKEND_ROOT}/migrations
           test -f deploy-output/${PRIVATE_BACKEND_ROOT}/run-migrations.php
           test -f deploy-output/${PRIVATE_BACKEND_ROOT}/verify-deployment-runtime.php
+          test -f deploy-output/${PRIVATE_BACKEND_ROOT}/test-resend-email.php
 
           test ! -e deploy-output/${PUBLIC_WEB_ROOT}/server
           test ! -e deploy-output/${PUBLIC_WEB_ROOT}/.env
