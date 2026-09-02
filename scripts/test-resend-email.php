@@ -87,15 +87,14 @@ if ($response === false || !is_string($response)) {
 
 $decoded = json_decode($response, true);
 $body = is_array($decoded) ? $decoded : ['raw_response' => $response];
-$httpStatus = 200;
-$headers = http_get_last_response_headers();
-if (is_array($headers)) {
-    foreach ($headers as $headerName => $headerValue) {
-        if (strtolower((string) $headerName) === 'status') {
-            $statusParts = preg_split('/\s+/', (string) $headerValue);
-            if (isset($statusParts[1])) {
-                $httpStatus = (int) $statusParts[1];
-            }
+$httpStatus = 0;
+
+global $http_response_header;
+
+if (isset($http_response_header) && is_array($http_response_header)) {
+    foreach ($http_response_header as $header) {
+        if (preg_match('#^HTTP/\S+\s+(\d{3})#i', (string) $header, $matches)) {
+            $httpStatus = (int) $matches[1];
         }
     }
 }
