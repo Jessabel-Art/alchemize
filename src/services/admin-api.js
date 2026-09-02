@@ -219,6 +219,15 @@ export const appointments = {
       method: "POST",
       body: JSON.stringify(payload),
     }),
+  updateAvailability: (id, payload) =>
+    apiRequest(buildApiUrl(`appointments/availability/${id}`), {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+  deleteAvailability: (id) =>
+    apiRequest(buildApiUrl(`appointments/availability/${id}`), {
+      method: "DELETE",
+    }),
   createSchedulingLink: (payload) =>
     apiRequest(buildApiUrl("appointments/scheduling-links"), {
       method: "POST",

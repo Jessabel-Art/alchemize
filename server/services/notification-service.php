@@ -28,14 +28,35 @@ final class AlchemizeNotificationService
         }
     }
 
-    public function notifyClient(int $clientId, string $eventType, string $entityType, string $entityId, string $title, string $body, string $dedupeKey): void
+    public function notifyClient(int $clientId, string $eventType, string $entityType, string $entityId, string $title, string $body, string $dedupeKey): string
     {
+        $statuses = [];
         foreach ($this->repository->clientRecipients($clientId) as $recipient) {
-            $this->create((int) $recipient['id'], (string) $recipient['email'], $clientId, $eventType, $entityType, $entityId, $title, $body, (string) $recipient['language_preference'], $dedupeKey);
+            $statuses[] = $this->create((int) $recipient['id'], (string) $recipient['email'], $clientId, $eventType, $entityType, $entityId, $title, $body, (string) $recipient['language_preference'], $dedupeKey);
+        }
+        if ($statuses === []) return 'unavailable';
+        return in_array('failed', $statuses, true) ? 'failed' : (in_array('unavailable', $statuses, true) ? 'unavailable' : 'sent');
+    }
+
+    public function notifyExternal(string $recipientEmail, string $title, string $body, string $actionUrl = '', string $actionLabel = ''): string
+    {
+        try {
+            return $this->emailProvider->deliver([
+                'public_id' => alchemize_uuid_v4(),
+                'recipient_email' => $recipientEmail,
+                'title' => $title,
+                'message_body' => $body,
+                'action_url' => $actionUrl,
+                'action_label' => $actionLabel,
+                'secondary_text' => 'If you did not expect this message, you may ignore it.',
+            ]);
+        } catch (Throwable $error) {
+            error_log(sprintf('External transactional notification delivery failed [%s].', get_class($error)));
+            return 'failed';
         }
     }
 
-    private function create(int $userId, string $recipientEmail, ?int $clientId, string $eventType, string $entityType, string $entityId, string $title, string $body, string $language, string $dedupeKey): void
+    private function create(int $userId, string $recipientEmail, ?int $clientId, string $eventType, string $entityType, string $entityId, string $title, string $body, string $language, string $dedupeKey): string
     {
         $notification = [
             'public_id' => alchemize_uuid_v4(), 'recipient_user_id' => $userId, 'client_id' => $clientId,
@@ -51,6 +72,8 @@ final class AlchemizeNotificationService
                 $delivery = 'failed';
             }
             $this->repository->recordDelivery($notification['public_id'], $delivery);
+            return $delivery;
         }
+        return 'sent';
     }
 }

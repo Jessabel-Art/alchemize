@@ -164,7 +164,7 @@ if ($applied === []) {
         foreach ($validFiles as $file) {
             $name = basename($file);
             $number = alchemize_migration_number($name);
-            if ($number >= 1 && $number <= 25) {
+            if ($number >= 1 && $number <= 26) {
                 $baselineFiles[] = $name;
             }
         }

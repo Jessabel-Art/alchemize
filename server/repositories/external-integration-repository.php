@@ -51,14 +51,15 @@ final class AlchemizeExternalIntegrationRepository
         );
     }
 
-    public function setCalendarState(int $appointmentId, string $status, ?string $eventId = null, ?string $error = null): void
+    public function setCalendarState(int $appointmentId, string $status, ?string $eventId = null, ?string $error = null, ?string $meetingUrl = null): void
     {
         $this->database->prepare(
             'UPDATE appointments SET google_calendar_event_id = COALESCE(:event_id, google_calendar_event_id),
+             meeting_url = COALESCE(:meeting_url, meeting_url),
              calendar_sync_status = :status, calendar_sync_attempted_at = CURRENT_TIMESTAMP(6),
              calendar_synced_at = IF(:status = \'synchronized\', CURRENT_TIMESTAMP(6), calendar_synced_at), calendar_sync_error = :error
              WHERE id = :id'
-        )->execute(['event_id' => $eventId, 'status' => $status, 'error' => $error, 'id' => $appointmentId]);
+        )->execute(['event_id' => $eventId, 'meeting_url' => $meetingUrl, 'status' => $status, 'error' => $error, 'id' => $appointmentId]);
     }
 
     public function invoiceForClient(string $publicId, int $clientId): ?array

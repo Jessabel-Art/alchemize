@@ -44,6 +44,7 @@ import ClientPortalPage from "../pages/portal/ClientPortalPage.jsx";
 import ClientPortalDashboardPage from "../pages/portal/ClientPortalDashboardPage.jsx";
 import ServiceCategoryPage from "../pages/services/ServiceCategoryPage.jsx";
 import ServiceDetailPage from "../pages/services/ServiceDetailPage.jsx";
+import PublicSchedulingPage from "../pages/appointments/PublicSchedulingPage.jsx";
 
 function ScrollRestoration() {
   const location = useLocation();
@@ -206,6 +207,10 @@ function App() {
             element={<ServiceDetailPage />}
           />
           <Route path="/contact" element={<ContactPage />} />
+          <Route
+            path="/appointment/schedule/:token"
+            element={<PublicSchedulingPage />}
+          />
           <Route path="/resources" element={<ResourcesPage />} />
           <Route
             path="/resources/client-resources"

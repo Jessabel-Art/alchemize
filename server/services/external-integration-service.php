@@ -66,13 +66,26 @@ final class AlchemizeExternalIntegrationService
             return ['status' => 'not_configured'];
         }
         try {
-            $eventId = $this->calendar->synchronizeAppointment($appointment);
-            $this->repository->setCalendarState($appointmentId, 'synchronized', $eventId);
-            return ['status' => 'synchronized'];
+            $calendarResult = $this->calendar->synchronizeAppointment($appointment);
+            $this->repository->setCalendarState($appointmentId, 'synchronized', $calendarResult['event_id'], null, $calendarResult['meeting_url']);
+            return ['status' => 'synchronized', 'meeting_url' => $calendarResult['meeting_url']];
         } catch (Throwable $error) {
             error_log(sprintf('Google Calendar appointment sync failed [%s].', get_class($error)));
             $this->repository->setCalendarState($appointmentId, 'failed', null, 'provider_error');
             return ['status' => 'failed'];
+        }
+    }
+
+    public function appointmentBusyPeriods(string $date, string $timezone): array
+    {
+        if ($this->calendar === null || !$this->calendar->configured()) return [];
+        try {
+            $zone = new DateTimeZone($timezone);
+            $start = new DateTimeImmutable($date . ' 00:00:00', $zone);
+            return $this->calendar->busyPeriods($start, $start->modify('+1 day'), $timezone);
+        } catch (Throwable $error) {
+            error_log(sprintf('Google Calendar busy-period lookup failed [%s].', get_class($error)));
+            return [];
         }
     }
 }

@@ -5109,6 +5109,7 @@ function AppointmentManagementPage() {
   const [isAvailabilityOpen, setIsAvailabilityOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState("Client requested");
   const [appointmentError, setAppointmentError] = useState("");
+  const [appointmentSuccess, setAppointmentSuccess] = useState("");
   const [appointmentSaving, setAppointmentSaving] = useState(false);
   const [linkDraft, setLinkDraft] = useState({
     recipientType: "client",
@@ -5117,9 +5118,13 @@ function AppointmentManagementPage() {
     recipientEmail: "",
     appointmentType: "Consultation",
     meetingMethod: "Phone Call",
+    serviceId: "",
+    duration: 60,
+    expiresAt: "",
     notes: "",
   });
   const [generatedLink, setGeneratedLink] = useState("");
+  const [linkSuccess, setLinkSuccess] = useState("");
   const [linkError, setLinkError] = useState("");
   const [linkSaving, setLinkSaving] = useState(false);
   const [availabilityRows, setAvailabilityRows] = useState([]);
@@ -5131,6 +5136,8 @@ function AppointmentManagementPage() {
     kind: "weekday",
     notes: "",
     dateOverride: "",
+    endDate: "",
+    timezone: "America/New_York",
   });
   const [availabilityError, setAvailabilityError] = useState("");
   const [availabilitySaving, setAvailabilitySaving] = useState(false);
@@ -5473,7 +5480,9 @@ function AppointmentManagementPage() {
   };
 
   const baseDraft = (appointment = null) => ({
+    recipientType: appointment?.leadId ? "lead" : "client",
     clientId: appointment?.clientId || "",
+    leadId: appointment?.leadId || "",
     type: appointment?.type || "Consultation",
     meetingMethod: appointment?.meetingMethod || "Phone Call",
     serviceName: appointment?.serviceName || "Business Advisory",
@@ -5494,6 +5503,7 @@ function AppointmentManagementPage() {
     setIsSchedulingLinkOpen(false);
     setIsAvailabilityOpen(false);
     setCancelReason("Client requested");
+    setAppointmentSuccess("");
     setSelectedAppointmentId(appointment?.id || selectedAppointmentId);
     setDraftState(baseDraft(appointment));
   };
@@ -5503,6 +5513,7 @@ function AppointmentManagementPage() {
     setIsFormOpen(false);
     setIsAvailabilityOpen(false);
     setGeneratedLink("");
+    setLinkSuccess("");
     setLinkError("");
     setLinkDraft((current) => ({
       ...current,
@@ -5537,6 +5548,18 @@ function AppointmentManagementPage() {
     setLinkDraft((current) => ({ ...current, [field]: value }));
   };
 
+  const selectSchedulingRecipient = (type, id) => {
+    const collection = type === "client" ? snapshot.clients : snapshot.leads;
+    const record = collection.find((item) => String(item.id) === String(id));
+    setLinkDraft((current) => ({
+      ...current,
+      recipientType: type,
+      recipientId: id,
+      recipientName: record?.displayName || record?.name || "",
+      recipientEmail: record?.primaryEmail || record?.email || "",
+    }));
+  };
+
   const setAvailabilityField = (field, value) => {
     setAvailabilityDraft((current) => ({ ...current, [field]: value }));
   };
@@ -5559,19 +5582,27 @@ function AppointmentManagementPage() {
         recipient_name: linkDraft.recipientName || "",
         recipient_email: recipientEmail,
         notes: linkDraft.notes || "",
+        service_id: linkDraft.serviceId || "",
+        duration_minutes: Number(linkDraft.duration || 60),
+        expires_at: linkDraft.expiresAt || "",
       };
 
       if (linkDraft.recipientType === "client" && linkDraft.recipientId) {
         payload.client_id = Number(linkDraft.recipientId);
       }
+      if (linkDraft.recipientType === "lead" && linkDraft.recipientId) {
+        payload.lead_id = Number(linkDraft.recipientId);
+      }
 
       const result = await appointmentApi.createSchedulingLink(payload);
-      const link = result?.url || result?.link || "";
-      setGeneratedLink(link);
-      if (!link) {
+      if (result?.delivery_status === "sent") {
+        setLinkSuccess(`Scheduling invitation sent to ${recipientEmail}.`);
+        setGeneratedLink("");
+      } else {
         setLinkError(
-          "A scheduling link was generated, but no URL was returned.",
+          `Scheduling invitation could not be delivered to ${recipientEmail}. You can retry or copy the scheduling link.`,
         );
+        setGeneratedLink(result?.copy_url || "");
       }
     } catch (error) {
       setLinkError(
@@ -5584,7 +5615,10 @@ function AppointmentManagementPage() {
 
   const saveAvailability = async () => {
     setAvailabilityError("");
-    if (!availabilityDraft.startTime || !availabilityDraft.endTime) {
+    if (
+      !["full_day", "time_off"].includes(availabilityDraft.kind) &&
+      (!availabilityDraft.startTime || !availabilityDraft.endTime)
+    ) {
       setAvailabilityError("Availability start and end times are required.");
       return;
     }
@@ -5593,11 +5627,11 @@ function AppointmentManagementPage() {
     try {
       const payload = {
         weekday:
-          availabilityDraft.kind === "date_override"
+          availabilityDraft.kind !== "weekday"
             ? null
             : Number(availabilityDraft.weekday || 1),
         date_override:
-          availabilityDraft.kind === "date_override"
+          availabilityDraft.kind !== "weekday"
             ? availabilityDraft.dateOverride || ""
             : "",
         start_time: availabilityDraft.startTime,
@@ -5605,6 +5639,8 @@ function AppointmentManagementPage() {
         is_available: availabilityDraft.available,
         kind: availabilityDraft.kind || "weekday",
         notes: availabilityDraft.notes || "",
+        end_date: availabilityDraft.endDate || "",
+        timezone: availabilityDraft.timezone,
       };
 
       const created = await appointmentApi.createAvailability(payload);
@@ -5627,6 +5663,8 @@ function AppointmentManagementPage() {
         kind: "weekday",
         notes: "",
         dateOverride: "",
+        endDate: "",
+        timezone: "America/New_York",
       });
     } catch (error) {
       setAvailabilityError(
@@ -5639,8 +5677,13 @@ function AppointmentManagementPage() {
 
   const saveAppointment = async () => {
     setAppointmentError("");
-    if (!draftState.clientId) {
-      setAppointmentError("Select a client before creating the appointment.");
+    if (
+      (draftState.recipientType === "client" && !draftState.clientId) ||
+      (draftState.recipientType === "lead" && !draftState.leadId)
+    ) {
+      setAppointmentError(
+        "Select a client or lead before creating the appointment.",
+      );
       return;
     }
     if (!draftState.date || !draftState.startTime) {
@@ -5656,7 +5699,14 @@ function AppointmentManagementPage() {
           start.getTime() + (Number(draftState.duration) || 60) * 60000,
         );
         const created = await appointmentApi.create({
-          client_id: Number(draftState.clientId),
+          client_id:
+            draftState.recipientType === "client"
+              ? Number(draftState.clientId)
+              : null,
+          lead_id:
+            draftState.recipientType === "lead"
+              ? Number(draftState.leadId)
+              : null,
           appointment_type: String(draftState.type)
             .toLowerCase()
             .replaceAll(" ", "_"),
@@ -5678,6 +5728,9 @@ function AppointmentManagementPage() {
           follow_up_required: draftState.followUpRequired,
           internal_notes: draftState.notes,
         });
+        setAppointmentSuccess(
+          `Appointment created. Calendar sync: ${created.calendar_sync}. Confirmation email: ${created.email_delivery}.`,
+        );
         const nextAppointment = {
           id: String(created.id),
           clientId: draftState.clientId,
@@ -5700,7 +5753,6 @@ function AppointmentManagementPage() {
           appointments: [nextAppointment, ...appointments],
         });
         setSelectedAppointmentId(nextAppointment.id);
-        setIsFormOpen(false);
       } catch (error) {
         setAppointmentError(
           error.message || "The appointment could not be created.",
@@ -6585,20 +6637,50 @@ function AppointmentManagementPage() {
             ) : (
               <div className="scheduler-modal-body form-grid">
                 <label>
-                  <span>Client</span>
+                  <span>Recipient type</span>
                   <select
-                    value={draftState.clientId}
+                    value={draftState.recipientType}
                     onChange={(event) =>
-                      setDraftField("clientId", event.target.value)
+                      setDraftField("recipientType", event.target.value)
                     }
                   >
-                    <option value="">Select client</option>
-                    {snapshot.clients.map((client) => (
-                      <option key={client.id} value={client.id}>
-                        {client.displayName}
-                      </option>
-                    ))}
+                    <option value="client">Client</option>
+                    <option value="lead">Lead</option>
                   </select>
+                </label>
+                <label>
+                  <span>
+                    {draftState.recipientType === "client" ? "Client" : "Lead"}
+                  </span>
+                  {draftState.recipientType === "client" ? (
+                    <select
+                      value={draftState.clientId}
+                      onChange={(event) =>
+                        setDraftField("clientId", event.target.value)
+                      }
+                    >
+                      <option value="">Select client</option>
+                      {snapshot.clients.map((client) => (
+                        <option key={client.id} value={client.id}>
+                          {client.displayName}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <select
+                      value={draftState.leadId}
+                      onChange={(event) =>
+                        setDraftField("leadId", event.target.value)
+                      }
+                    >
+                      <option value="">Select lead</option>
+                      {snapshot.leads.map((lead) => (
+                        <option key={lead.id} value={lead.id}>
+                          {lead.displayName || lead.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </label>
                 <label>
                   <span>Appointment type</span>
@@ -6826,26 +6908,33 @@ function AppointmentManagementPage() {
                 <select
                   value={linkDraft.recipientType}
                   onChange={(event) =>
-                    setLinkField("recipientType", event.target.value)
+                    selectSchedulingRecipient(event.target.value, "")
                   }
                 >
                   <option value="client">Client</option>
                   <option value="lead">Lead</option>
+                  <option value="other">Other</option>
                 </select>
               </label>
               <label>
                 <span>Recipient</span>
-                {linkDraft.recipientType === "client" ? (
+                {linkDraft.recipientType !== "other" ? (
                   <select
                     value={linkDraft.recipientId}
                     onChange={(event) =>
-                      setLinkField("recipientId", event.target.value)
+                      selectSchedulingRecipient(
+                        linkDraft.recipientType,
+                        event.target.value,
+                      )
                     }
                   >
-                    <option value="">Select client</option>
-                    {snapshot.clients.map((client) => (
-                      <option key={client.id} value={client.id}>
-                        {client.displayName}
+                    <option value="">Select {linkDraft.recipientType}</option>
+                    {(linkDraft.recipientType === "client"
+                      ? snapshot.clients
+                      : snapshot.leads
+                    ).map((recipient) => (
+                      <option key={recipient.id} value={recipient.id}>
+                        {recipient.displayName || recipient.name}
                       </option>
                     ))}
                   </select>
@@ -6855,7 +6944,7 @@ function AppointmentManagementPage() {
                     onChange={(event) =>
                       setLinkField("recipientName", event.target.value)
                     }
-                    placeholder="Lead name"
+                    placeholder="External recipient"
                   />
                 )}
               </label>
@@ -6911,6 +7000,47 @@ function AppointmentManagementPage() {
                 </select>
               </label>
               <label className="full-span">
+                <span>Service (optional)</span>
+                <select
+                  value={linkDraft.serviceId}
+                  onChange={(event) =>
+                    setLinkField("serviceId", event.target.value)
+                  }
+                >
+                  <option value="">No specific service</option>
+                  {snapshot.services.map((service) => (
+                    <option key={service.id} value={service.id}>
+                      {service.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span>Duration</span>
+                <select
+                  value={linkDraft.duration}
+                  onChange={(event) =>
+                    setLinkField("duration", event.target.value)
+                  }
+                >
+                  {[30, 45, 60, 90].map((minutes) => (
+                    <option key={minutes} value={minutes}>
+                      {minutes} minutes
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span>Link expiration (optional)</span>
+                <input
+                  type="datetime-local"
+                  value={linkDraft.expiresAt}
+                  onChange={(event) =>
+                    setLinkField("expiresAt", event.target.value)
+                  }
+                />
+              </label>
+              <label className="full-span">
                 <span>Notes</span>
                 <textarea
                   rows="3"
@@ -6922,16 +7052,29 @@ function AppointmentManagementPage() {
               </label>
               {generatedLink ? (
                 <div className="full-span">
-                  <span>Scheduling link</span>
-                  <a href={generatedLink} target="_blank" rel="noreferrer">
-                    {generatedLink}
-                  </a>
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => navigator.clipboard.writeText(generatedLink)}
+                  >
+                    Copy Link
+                  </button>
                 </div>
               ) : null}
               <div className="scheduler-action-row full-span">
                 {linkError ? (
                   <p className="admin-feedback error" role="alert">
                     {linkError}
+                  </p>
+                ) : null}
+                {appointmentSuccess ? (
+                  <p className="admin-feedback success" role="status">
+                    {appointmentSuccess}
+                  </p>
+                ) : null}
+                {linkSuccess ? (
+                  <p className="admin-feedback success" role="status">
+                    {linkSuccess}
                   </p>
                 ) : null}
                 <button
@@ -6947,7 +7090,7 @@ function AppointmentManagementPage() {
                   onClick={saveSchedulingLink}
                   disabled={linkSaving}
                 >
-                  {linkSaving ? "Generating…" : "Send Link"}
+                  {linkSaving ? "Sending…" : "Send Link"}
                 </button>
               </div>
             </div>
@@ -6985,6 +7128,9 @@ function AppointmentManagementPage() {
                 >
                   <option value="weekday">Weekly</option>
                   <option value="date_override">Date override</option>
+                  <option value="blocked">Time Block</option>
+                  <option value="full_day">Full Day</option>
+                  <option value="time_off">Multi-Day / Time Off</option>
                 </select>
               </label>
               {availabilityDraft.kind === "weekday" ? (
@@ -7003,7 +7149,7 @@ function AppointmentManagementPage() {
                       ["4", "Thursday"],
                       ["5", "Friday"],
                       ["6", "Saturday"],
-                      ["0", "Sunday"],
+                      ["7", "Sunday"],
                     ].map(([value, label]) => (
                       <option key={value} value={value}>
                         {label}
@@ -7013,7 +7159,7 @@ function AppointmentManagementPage() {
                 </label>
               ) : (
                 <label>
-                  <span>Override date</span>
+                  <span>Start date</span>
                   <input
                     type="date"
                     value={availabilityDraft.dateOverride}
@@ -7023,35 +7169,62 @@ function AppointmentManagementPage() {
                   />
                 </label>
               )}
+              {availabilityDraft.kind === "time_off" ? (
+                <label>
+                  <span>End date</span>
+                  <input
+                    type="date"
+                    value={availabilityDraft.endDate}
+                    onChange={(event) =>
+                      setAvailabilityField("endDate", event.target.value)
+                    }
+                  />
+                </label>
+              ) : null}
+              {!["full_day", "time_off"].includes(availabilityDraft.kind) ? (
+                <label>
+                  <span>Start time</span>
+                  <input
+                    type="time"
+                    value={availabilityDraft.startTime}
+                    onChange={(event) =>
+                      setAvailabilityField("startTime", event.target.value)
+                    }
+                  />
+                </label>
+              ) : null}
+              {!["full_day", "time_off"].includes(availabilityDraft.kind) ? (
+                <label>
+                  <span>End time</span>
+                  <input
+                    type="time"
+                    value={availabilityDraft.endTime}
+                    onChange={(event) =>
+                      setAvailabilityField("endTime", event.target.value)
+                    }
+                  />
+                </label>
+              ) : null}
+              {["weekday", "date_override"].includes(availabilityDraft.kind) ? (
+                <label className="checkbox-field">
+                  <input
+                    type="checkbox"
+                    checked={availabilityDraft.available}
+                    onChange={(event) =>
+                      setAvailabilityField("available", event.target.checked)
+                    }
+                  />
+                  <span>Available</span>
+                </label>
+              ) : null}
               <label>
-                <span>Start time</span>
+                <span>Timezone</span>
                 <input
-                  type="time"
-                  value={availabilityDraft.startTime}
+                  value={availabilityDraft.timezone}
                   onChange={(event) =>
-                    setAvailabilityField("startTime", event.target.value)
+                    setAvailabilityField("timezone", event.target.value)
                   }
                 />
-              </label>
-              <label>
-                <span>End time</span>
-                <input
-                  type="time"
-                  value={availabilityDraft.endTime}
-                  onChange={(event) =>
-                    setAvailabilityField("endTime", event.target.value)
-                  }
-                />
-              </label>
-              <label className="checkbox-field">
-                <input
-                  type="checkbox"
-                  checked={availabilityDraft.available}
-                  onChange={(event) =>
-                    setAvailabilityField("available", event.target.checked)
-                  }
-                />
-                <span>Available</span>
               </label>
               <label className="full-span">
                 <span>Notes</span>

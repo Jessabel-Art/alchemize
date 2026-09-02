@@ -29,7 +29,7 @@ final class AlchemizeGoogleCalendarService
         return trim((string) ($this->config['calendar_id'] ?? '')) !== '';
     }
 
-    public function synchronizeAppointment(array $appointment): string
+    public function synchronizeAppointment(array $appointment): array
     {
         if (!$this->configured()) throw new RuntimeException('Google Calendar is not configured.');
         if (!class_exists('Google\\Service\\Calendar')) throw new RuntimeException('The Google Calendar service library is not installed.');
@@ -41,7 +41,7 @@ final class AlchemizeGoogleCalendarService
             try { $calendar->events->delete($calendarId, $eventId); } catch (Google\Service\Exception $error) {
                 if ((int) $error->getCode() !== 404) throw $error;
             }
-            return $eventId;
+            return ['event_id' => $eventId, 'meeting_url' => null];
         }
         $timezone = trim((string) ($appointment['timezone'] ?? 'UTC')) ?: 'UTC';
         $start = new DateTimeImmutable((string) $appointment['scheduled_at'], new DateTimeZone($timezone));
@@ -53,14 +53,41 @@ final class AlchemizeGoogleCalendarService
             'description' => 'Managed by Alchemize. Reference: ' . (string) $appointment['public_id'],
             'start' => ['dateTime' => $start->format(DateTimeInterface::RFC3339), 'timeZone' => $timezone],
             'end' => ['dateTime' => $end->format(DateTimeInterface::RFC3339), 'timeZone' => $timezone],
+            'location' => (string) ($appointment['location'] ?? ''),
         ]);
+        $requiresMeet = (string) ($appointment['meeting_method'] ?? '') === 'google_meet';
+        if ($requiresMeet && empty($appointment['meeting_url'])) {
+            $event->setConferenceData(new Google\Service\Calendar\ConferenceData([
+                'createRequest' => [
+                    'requestId' => 'alchemize-' . substr(hash('sha256', (string) $appointment['public_id']), 0, 24),
+                    'conferenceSolutionKey' => ['type' => 'hangoutsMeet'],
+                ],
+            ]));
+        }
+        $options = $requiresMeet ? ['conferenceDataVersion' => 1] : [];
         try {
-            if (!empty($appointment['google_calendar_event_id'])) $calendar->events->update($calendarId, $eventId, $event);
-            else $calendar->events->insert($calendarId, $event);
+            if (!empty($appointment['google_calendar_event_id'])) $saved = $calendar->events->update($calendarId, $eventId, $event, $options);
+            else $saved = $calendar->events->insert($calendarId, $event, $options);
         } catch (Google\Service\Exception $error) {
             if ((int) $error->getCode() !== 409) throw $error;
-            $calendar->events->update($calendarId, $eventId, $event);
+            $saved = $calendar->events->update($calendarId, $eventId, $event, $options);
         }
-        return $eventId;
+        return ['event_id' => $eventId, 'meeting_url' => $requiresMeet ? (string) $saved->getHangoutLink() : null];
+    }
+
+    public function busyPeriods(DateTimeImmutable $start, DateTimeImmutable $end, string $timezone): array
+    {
+        if (!$this->configured() || !class_exists('Google\\Service\\Calendar')) return [];
+        $calendar = new Google\Service\Calendar($this->clients->create(['https://www.googleapis.com/auth/calendar.readonly']));
+        $request = new Google\Service\Calendar\FreeBusyRequest([
+            'timeMin' => $start->format(DateTimeInterface::RFC3339),
+            'timeMax' => $end->format(DateTimeInterface::RFC3339),
+            'timeZone' => $timezone,
+            'items' => [['id' => (string) $this->config['calendar_id']]],
+        ]);
+        $response = $calendar->freebusy->query($request);
+        $calendarBusy = $response->getCalendars()[(string) $this->config['calendar_id']] ?? null;
+        if ($calendarBusy === null) return [];
+        return array_map(static fn ($period): array => ['start' => $period->getStart(), 'end' => $period->getEnd()], $calendarBusy->getBusy());
     }
 }

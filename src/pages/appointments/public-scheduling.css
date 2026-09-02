@@ -1,0 +1,80 @@
+.public-scheduler {
+  min-height: 75vh;
+  padding: clamp(3rem, 8vw, 7rem) 1rem;
+  background: var(--ivory);
+  color: var(--navy);
+}
+.scheduler-card {
+  width: min(860px, 100%);
+  margin: 0 auto;
+  padding: clamp(1.5rem, 4vw, 3rem);
+  background: white;
+  border-top: 4px solid var(--gold);
+  box-shadow: 0 24px 70px rgba(33, 55, 69, 0.1);
+}
+.scheduler-card h1 {
+  margin: 0.4rem 0 1rem;
+}
+.scheduler-context {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.4rem;
+  padding: 1rem 0 1.5rem;
+  border-bottom: 1px solid #d7d1c8;
+}
+.scheduler-context span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.scheduler-context svg {
+  width: 18px;
+}
+.scheduler-step {
+  padding: 1.5rem 0;
+  border-bottom: 1px solid #e4dfd8;
+}
+.scheduler-step h2 {
+  font-size: 1.15rem;
+}
+.slot-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+.slot-grid button {
+  border: 1px solid var(--navy);
+  padding: 0.65rem 0.9rem;
+  background: white;
+  color: var(--navy);
+}
+.slot-grid button.selected {
+  background: var(--navy);
+  color: white;
+}
+.scheduler-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.scheduler-fields label {
+  display: grid;
+  gap: 0.35rem;
+}
+.scheduler-fields .full {
+  grid-column: 1 / -1;
+}
+.scheduler-error {
+  color: var(--color-error);
+}
+.scheduler-confirmation {
+  text-align: center;
+}
+@media (max-width: 640px) {
+  .scheduler-fields {
+    grid-template-columns: 1fr;
+  }
+  .scheduler-fields .full {
+    grid-column: auto;
+  }
+}
