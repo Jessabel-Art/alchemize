@@ -23,9 +23,12 @@ ALTER TABLE appointment_scheduling_links
         ON UPDATE RESTRICT ON DELETE SET NULL;
 
 ALTER TABLE appointments
-    DROP COLUMN scheduling_token,
     ADD COLUMN scheduling_link_id BIGINT UNSIGNED NULL AFTER source,
     ADD CONSTRAINT fk_appointments_scheduling_link
         FOREIGN KEY (scheduling_link_id) REFERENCES appointment_scheduling_links (id)
         ON UPDATE RESTRICT ON DELETE SET NULL,
     ADD KEY idx_appointments_scheduling_link_id (scheduling_link_id);
+
+-- The legacy scheduling_token column is intentionally left in place for compatibility.
+-- Public scheduling now relies on appointment_scheduling_links.token_hash and
+-- appointment.scheduling_link_id, and the application never persists raw tokens.

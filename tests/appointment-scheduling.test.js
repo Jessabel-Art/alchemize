@@ -157,7 +157,8 @@ test("raw scheduling tokens are never persisted or written to audit metadata", (
   );
   const repository = read("server/repositories/appointment-repository.php");
   assert.match(repository, /token_hash.*hash\('sha256', \$token\)/s);
-  assert.match(migration, /DROP COLUMN scheduling_token/);
+  assert.match(migration, /scheduling_link_id/);
+  assert.doesNotMatch(migration, /DROP\s+COLUMN\s+scheduling_token/i);
   assert.doesNotMatch(repository, /request_metadata[\s\S]{0,200}token/);
 });
 
