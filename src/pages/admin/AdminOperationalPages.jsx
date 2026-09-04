@@ -6329,6 +6329,23 @@ function AppointmentManagementPage() {
 
   const [draftState, setDraftState] = useState(baseDraft());
 
+  const canonicalRecipientEmail =
+    draftState.recipientType === "client"
+      ? snapshot.clients.find(
+          (client) => String(client.id) === String(draftState.clientId),
+        )?.primaryEmail ||
+        snapshot.clients.find(
+          (client) => String(client.id) === String(draftState.clientId),
+        )?.email ||
+        ""
+      : snapshot.leads.find(
+          (lead) => String(lead.id) === String(draftState.leadId),
+        )?.primaryEmail ||
+        snapshot.leads.find(
+          (lead) => String(lead.id) === String(draftState.leadId),
+        )?.email ||
+        "";
+
   const setDraftField = (field, value) => {
     setDraftState((current) => ({ ...current, [field]: value }));
   };
@@ -6499,23 +6516,6 @@ function AppointmentManagementPage() {
       setAppointmentError("Date and start time are required.");
       return;
     }
-    const canonicalRecipientEmail =
-      draftState.recipientType === "client"
-        ? snapshot.clients.find(
-            (client) => String(client.id) === String(draftState.clientId),
-          )?.primaryEmail ||
-          snapshot.clients.find(
-            (client) => String(client.id) === String(draftState.clientId),
-          )?.email ||
-          ""
-        : snapshot.leads.find(
-            (lead) => String(lead.id) === String(draftState.leadId),
-          )?.primaryEmail ||
-          snapshot.leads.find(
-            (lead) => String(lead.id) === String(draftState.leadId),
-          )?.email ||
-          "";
-
     if (formMode === "create") {
       setAppointmentSaving(true);
       try {
