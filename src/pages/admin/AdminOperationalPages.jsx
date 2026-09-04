@@ -15,6 +15,7 @@ import {
   serviceStageCatalog,
   staffOptions,
 } from "../../../js/data/admin-store.js";
+import { getDocumentTypeOptionsForEngagement } from "../../data/documentTypeCatalog.js";
 import {
   appointments as appointmentApi,
   clients as clientApi,
@@ -5456,42 +5457,118 @@ function DocumentManagementPage() {
     visibility: "shared",
     requested_date: new Date().toISOString().slice(0, 10),
   });
+
+  const syncDocumentTypeOptions = (engagementId) => {
+    const engagement = snapshot.engagements.find(
+      (item) => String(item.id) === String(engagementId),
+    );
+
+    const resolvedOptions = getDocumentTypeOptionsForEngagement(
+      engagement || {},
+      {
+        byId: Object.fromEntries(
+          snapshot.services.map((service) => [String(service.id), service]),
+        ),
+      },
+    );
+
+    setDocumentTypeOptions(resolvedOptions);
+    setDocumentForm((current) => {
+      if (!engagementId) {
+        return {
+          ...current,
+          engagement_id: "",
+          document_type: "",
+          custom_document_type: "",
+          document_name: "",
+        };
+      }
+
+      const currentValueIsValid =
+        current.document_type &&
+        resolvedOptions.some(
+          (option) => option.value === current.document_type,
+        );
+
+      return {
+        ...current,
+        engagement_id: engagementId,
+        document_type: currentValueIsValid ? current.document_type : "",
+        custom_document_type:
+          current.document_type === "custom_document"
+            ? current.custom_document_type
+            : "",
+        document_name: currentValueIsValid ? current.document_name : "",
+      };
+    });
+  };
+
   const selectDocumentEngagement = async (engagementId) => {
-    setDocumentForm((current) => ({
-      ...current,
-      engagement_id: engagementId,
-      document_type: "",
-      custom_document_type: "",
-      document_name: "",
-    }));
     if (!engagementId) {
       setDocumentTypeOptions([]);
+      setDocumentForm((current) => ({
+        ...current,
+        engagement_id: "",
+        document_type: "",
+        custom_document_type: "",
+        document_name: "",
+      }));
       return;
     }
-    try {
-      const data = await engagementApi.documentTypes(engagementId);
-      setDocumentTypeOptions(data?.items || []);
-    } catch (error) {
-      setDocumentFeedback(error.message || "Unable to load document types.");
-      setDocumentTypeOptions([]);
-    }
+
+    syncDocumentTypeOptions(engagementId);
   };
   const createDocumentRequest = async (event) => {
     event.preventDefault();
     setDocumentFeedback("");
+    const selectedType = documentTypeOptions.find(
+      (option) => option.value === documentForm.document_type,
+    );
+
+    if (!documentForm.client_id) {
+      setDocumentFeedback(
+        "Select a client before creating the document request.",
+      );
+      return;
+    }
+
+    if (!documentForm.engagement_id) {
+      setDocumentFeedback(
+        "Select an active engagement before creating the document request.",
+      );
+      return;
+    }
+
+    if (!documentForm.document_type) {
+      setDocumentFeedback(
+        "Select a document type before creating the request.",
+      );
+      return;
+    }
+
+    if (
+      documentForm.document_type === "custom_document" &&
+      !documentForm.custom_document_type.trim()
+    ) {
+      setDocumentFeedback(
+        "Custom document name is required when Other / Custom Document is selected.",
+      );
+      return;
+    }
     try {
       const created = await documentApi.create({
         ...documentForm,
         document_type:
-          documentForm.document_type === "other"
-            ? documentForm.custom_document_type.trim()
+          documentForm.document_type === "custom_document"
+            ? "custom_document"
             : documentForm.document_type,
         document_name:
-          documentForm.document_type === "other"
+          documentForm.document_type === "custom_document"
             ? documentForm.custom_document_type.trim()
-            : documentTypeOptions.find(
-                (option) => option.value === documentForm.document_type,
-              )?.label || documentForm.document_name,
+            : selectedType?.label ||
+              documentForm.document_name ||
+              selectedType?.value ||
+              "Document request",
         client_id: Number(documentForm.client_id),
         engagement_id: documentForm.engagement_id
           ? Number(documentForm.engagement_id)
@@ -5769,21 +5846,41 @@ function DocumentManagementPage() {
                     setDocumentForm({
                       ...documentForm,
                       document_type: event.target.value,
+                      custom_document_type:
+                        event.target.value === "custom_document"
+                          ? documentForm.custom_document_type
+                          : "",
                     })
                   }
                 >
                   <option value="">Select document type</option>
-                  {documentTypeOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
+                  {documentTypeOptions.length === 0 ? (
+                    <option value="custom_document">
+                      Other / Custom Document
                     </option>
-                  ))}
-                  <option value="other">Other / Custom Request</option>
+                  ) : (
+                    documentTypeOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))
+                  )}
                 </select>
+                {!documentForm.engagement_id ? (
+                  <small style={{ display: "block", marginTop: "6px" }}>
+                    Select an engagement to populate the available document
+                    types.
+                  </small>
+                ) : documentTypeOptions.length === 0 ? (
+                  <small style={{ display: "block", marginTop: "6px" }}>
+                    No predefined document types are configured for this
+                    engagement.
+                  </small>
+                ) : null}
               </label>
-              {documentForm.document_type === "other" ? (
+              {documentForm.document_type === "custom_document" ? (
                 <label className="full-span">
-                  <span>Custom document request</span>
+                  <span>Custom Document Name</span>
                   <input
                     required
                     value={documentForm.custom_document_type}
@@ -5793,6 +5890,7 @@ function DocumentManagementPage() {
                         custom_document_type: event.target.value,
                       })
                     }
+                    placeholder="Describe the custom document needed"
                   />
                 </label>
               ) : null}
