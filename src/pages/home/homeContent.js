@@ -149,7 +149,7 @@ export const homeContent = {
         "/services/businesses/readiness-growth",
       ],
       [
-        "Contabilidad y reportes financieros",
+        "Teneduría de libros y reportes financieros",
         "/services/businesses/bookkeeping-financial-reporting",
       ],
       ["Procesamiento de nómina", "/services/businesses/payroll-processing"],

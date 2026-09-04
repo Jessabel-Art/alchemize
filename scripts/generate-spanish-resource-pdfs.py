@@ -80,7 +80,7 @@ DOCS = {
         "subtitle": "Organizador para la preparación de impuestos del negocio",
         "pages": [
             [p("Organice los registros del negocio, las preguntas de conciliación, los elementos faltantes y la preparación para la presentación del impuesto del año fiscal.", "subtitle"), p("Este formato está pensado para registrar los hechos reales del negocio antes de preparar la declaración. Un buen organizador tributario responde: qué cambió, qué registros existen, qué falta y qué puede explicarse con claridad.", "body")],
-            [p("Ingresos y preparación contable", "section"), p("El organizador tributario más valioso no solo recopila totales. Ayuda a determinar si los totales son consistentes, si falta respaldo y si la contabilidad refleja la actividad real del negocio.", "body")],
+            [p("Ingresos y preparación contable", "section"), p("El organizador tributario más valioso no solo recopila totales. Ayuda a determinar si los totales son consistentes, si falta respaldo y si la Teneduría de libros refleja la actividad real del negocio.", "body")],
             [p("Organización de gastos", "section"), p("Esto no es solo un ejercicio de clasificación. Es un ejercicio de organización de registros.", "body")],
             [p("Personas, activos y otros registros", "section"), p("Un organizador tributario empresarial es más útil cuando captura no solo las cuentas, sino también a las personas y los activos que impulsan la actividad y la presentación de informes.", "body")],
             [p("Preguntas de conciliación", "section"), p("Las diferencias entre totales no siempre significan un error; a veces reflejan diferencias de tiempo, comisiones, reembolsos, duplicados o informes brutos versus netos.", "body")],

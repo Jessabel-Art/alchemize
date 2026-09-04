@@ -703,15 +703,15 @@ const translations = {
     checklist: ["Business Startup & Formation Workbook", null],
   },
   "bookkeeping-financial-reporting": {
-    title: "Contabilidad y reportes financieros",
-    seoTitle: "Contabilidad para Pequeños Negocios | Alchemize",
+    title: "Teneduría de libros y reportes financieros",
+    seoTitle: "Teneduría de libros para Pequeños Negocios | Alchemize",
     seoDescription:
-      "Contabilidad para pequeños negocios con conciliación, reportes financieros y apoyo virtual para empresas en crecimiento.",
-    hero: "Una contabilidad organizada le da al negocio un historial financiero confiable de lo que entra, sale, debe y en qué situación se encuentra.",
+      "Teneduría de libros para pequeños negocios con conciliación, reportes financieros y apoyo virtual para empresas en crecimiento.",
+    hero: "Una Teneduría de libros organizada le da al negocio un historial financiero confiable de lo que entra, sale, debe y en qué situación se encuentra.",
     overview:
-      "La contabilidad no es solo la captura de transacciones. Es un proceso de registros confiable que ayuda al negocio a entender su posición financiera y mantener información útil para reportes, revisión y preparación de fin de año. Con sede en Carolina del Norte, Alchemize puede ofrecer apoyo virtual de contabilidad en Estados Unidos cuando el servicio lo permita, mientras estructura los registros, concilia los libros y organiza un proceso recurrente según el nivel de servicio seleccionado.",
+      "La Teneduría de libros no es solo la captura de transacciones. Es un proceso de registros confiable que ayuda al negocio a entender su posición financiera y mantener información útil para reportes, revisión y preparación de fin de año. Con sede en Carolina del Norte, Alchemize puede ofrecer apoyo virtual de Teneduría de libros en Estados Unidos cuando el servicio lo permita, mientras estructura los registros, concilia los libros y organiza un proceso recurrente según el nivel de servicio seleccionado.",
     statement:
-      "Una contabilidad organizada le da al negocio un historial financiero confiable de lo que entra, sale, debe y en qué situación se encuentra.",
+      "Una Teneduría de libros organizada le da al negocio un historial financiero confiable de lo que entra, sale, debe y en qué situación se encuentra.",
     capabilities: [
       "Categorización de transacciones",
       "Conciliación bancaria",
@@ -720,7 +720,7 @@ const translations = {
     ],
     for: [
       "Negocios que necesitan mejor visibilidad financiera",
-      "Propietarios que requieren contabilidad más clara antes de impuestos o revisión",
+      "Propietarios que requieren Teneduría de libros más clara antes de impuestos o revisión",
       "Empresas con recibos, facturas y estados dispersos",
       "Negocios que desean apoyo recurrente con reportes financieros",
     ],
@@ -746,7 +746,7 @@ const translations = {
     process: [
       [
         "Reunir",
-        "Reúna los registros legales, bancarios, de ingresos, gastos y la información relevante de nómina o contratistas necesarios para la contabilidad.",
+        "Reúna los registros legales, bancarios, de ingresos, gastos y la información relevante de nómina o contratistas necesarios para la Teneduría de libros.",
       ],
       [
         "Revisar",
@@ -850,7 +850,7 @@ const translations = {
       "El apoyo de nómina es administrativo y operativo. Alchemize no asume responsabilidad directa por remesas fiscales salvo que se establezca específicamente a través de la plataforma seleccionada y el flujo acordado. Las capacidades admitidas, los requisitos de la plataforma y las obligaciones legales deben confirmarse antes del compromiso.",
     related: [
       [
-        "Contabilidad y reportes financieros",
+        "Teneduría de libros y reportes financieros",
         "/services/businesses/bookkeeping-financial-reporting",
       ],
       [
@@ -930,7 +930,7 @@ const translations = {
       "El apoyo tributario para empresas se centra en organización, preparación y disposición. Alchemize no brinda asesoría legal tributaria ni representación ni estrategia tributaria profesional más allá del alcance definido del servicio. Los tipos de declaraciones admitidas, las obligaciones tributarias y las jurisdicciones deben confirmarse antes del compromiso; el trabajo especializado puede requerir un CPA, abogado, agente registrado u otro profesional calificado.",
     related: [
       [
-        "Contabilidad y reportes financieros",
+        "Teneduría de libros y reportes financieros",
         "/services/businesses/bookkeeping-financial-reporting",
       ],
       ["Procesamiento de nómina", "/services/businesses/payroll-processing"],

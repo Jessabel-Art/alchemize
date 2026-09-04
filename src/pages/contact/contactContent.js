@@ -140,7 +140,7 @@ export const contactContent = {
       "business-operations": "Operaciones e implementación",
       "business-digital": "Soluciones web y digitales",
       "business-readiness": "Formación y preparación empresarial",
-      "business-bookkeeping": "Contabilidad y reportes financieros",
+      "business-bookkeeping": "Teneduría de libros y reportes financieros",
       "business-payroll": "Procesamiento de nómina",
       "business-financial": "Apoyo financiero y tributario",
     },

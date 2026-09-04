@@ -155,7 +155,7 @@ export const whyContent = {
       eyebrow: "La realidad",
       title: "Las responsabilidades importantes rara vez llegan de una en una.",
       paragraphs: [
-        "Una pregunta tributaria puede conectarse con una decisión empresarial. El inicio de una empresa crea responsabilidades fiscales, administrativas, operativas y digitales. Un documento puede requerir notaría, traducción o apostilla. Un negocio en crecimiento puede necesitar contabilidad, nómina, apoyo web o procesos internos más sólidos.",
+        "Una pregunta tributaria puede conectarse con una decisión empresarial. El inicio de una empresa crea responsabilidades fiscales, administrativas, operativas y digitales. Un documento puede requerir notaría, traducción o apostilla. Un negocio en crecimiento puede necesitar Teneduría de libros, nómina, apoyo web o procesos internos más sólidos.",
         "Estas responsabilidades suelen distribuirse entre diferentes proveedores, sistemas, plazos y conversaciones. Eso puede hacer que una tarea manejable sea mucho más difícil de organizar.",
         "El trabajo moderno se mueve entre registros, documentos, comunicación, sitios web y sistemas digitales. Alchemize integra esas responsabilidades en un proceso más claro y trabaja con las herramientas que la empresa realmente utiliza.",
       ],
@@ -180,7 +180,7 @@ export const whyContent = {
       business: {
         eyebrow: "Para empresas",
         title: "Estructura para cada etapa de la empresa.",
-        copy: "Inicio. Contabilidad. Nómina. Impuestos. Operaciones. Servicios digitales. Administración. Asesoría.",
+        copy: "Inicio. Teneduría de libros. Nómina. Impuestos. Operaciones. Servicios digitales. Administración. Asesoría.",
         link: "Explorar servicios para empresas",
       },
     },
@@ -236,7 +236,7 @@ export const whyContent = {
     continuity: {
       eyebrow: "Una relación. Necesidades que cambian.",
       title: "Sus necesidades cambiarán. El apoyo puede evolucionar con ellas.",
-      copy: "Una persona puede comenzar con impuestos o documentos y después convertir una idea en un negocio. Un emprendedor puede comenzar con preparación empresarial y luego necesitar contabilidad, nómina, presencia digital o sistemas operativos más sólidos. La relación puede continuar a medida que cambia la responsabilidad, sin tratar cada paso como una transacción sin conexión.",
+      copy: "Una persona puede comenzar con impuestos o documentos y después convertir una idea en un negocio. Un emprendedor puede comenzar con preparación empresarial y luego necesitar Teneduría de libros, nómina, presencia digital o sistemas operativos más sólidos. La relación puede continuar a medida que cambia la responsabilidad, sin tratar cada paso como una transacción sin conexión.",
       paths: [
         [
           "Para personas",
@@ -254,7 +254,7 @@ export const whyContent = {
           "businesses",
           [
             "Inicio",
-            "Contabilidad y nómina",
+            "Teneduría de libros y nómina",
             "Impuestos empresariales",
             "Operaciones y administración",
             "Apoyo digital",
