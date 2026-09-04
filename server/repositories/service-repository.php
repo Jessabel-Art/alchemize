@@ -137,7 +137,12 @@ final class AlchemizeServiceRepository
         ];
 
         $startDate = trim((string) ($payload['start_date'] ?? '')) ?: null;
-        $status = in_array(($payload['status'] ?? 'active'), ['proposed', 'active', 'paused', 'completed', 'cancelled'], true) ? $payload['status'] : 'active';
+        $assignmentStatus = (string) ($payload['status'] ?? 'active');
+        $status = in_array(
+            $assignmentStatus,
+            ['proposed', 'active', 'paused', 'completed', 'cancelled'],
+            true
+        ) ? $assignmentStatus : 'active';
         $notes = trim((string) ($payload['notes'] ?? '')) ?: null;
         $engagementTitle = trim((string) ($payload['engagement_title'] ?? $service['service_name'] . ($tier !== null ? ' — ' . $tier['tier_name'] : '')));
         $description = trim((string) ($payload['description'] ?? $notes ?? '')) ?: null;
