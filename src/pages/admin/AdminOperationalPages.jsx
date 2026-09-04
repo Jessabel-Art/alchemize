@@ -7229,14 +7229,25 @@ function AppointmentManagementPage() {
       }
 
       const result = await appointmentApi.createSchedulingLink(payload);
-      if (result?.delivery_status === "sent") {
-        setLinkSuccess(`Scheduling invitation sent to ${recipientEmail}.`);
-        setGeneratedLink("");
+      const created = Boolean(result?.scheduling_link_created ?? result?.id ?? result?.expires_at);
+      const copyUrl = result?.copy_url || result?.url || "";
+
+      if (created) {
+        if (result?.delivery_status === "sent") {
+          setLinkSuccess(`Scheduling invitation sent to ${recipientEmail}.`);
+          setGeneratedLink("");
+        } else {
+          setLinkSuccess(
+            `Scheduling link created for ${recipientEmail}. Email delivery is unavailable, but the link is ready to copy.`,
+          );
+          setGeneratedLink(copyUrl || "");
+        }
+        setLinkError("");
       } else {
         setLinkError(
-          `Scheduling invitation could not be delivered to ${recipientEmail}. You can retry or copy the scheduling link.`,
+          `Scheduling invitation could not be created for ${recipientEmail}. Please retry.`,
         );
-        setGeneratedLink(result?.copy_url || "");
+        setGeneratedLink(copyUrl || "");
       }
     } catch (error) {
       setLinkError(

@@ -42,6 +42,10 @@ final class AlchemizeAppointmentSchedulingService
         $working = $overrides !== []
             ? array_values(array_filter($overrides, static fn (array $row): bool => (int) $row['is_available'] === 1))
             : array_values(array_filter($rows, static fn (array $row): bool => $row['kind'] === 'weekday' && (int) $row['is_available'] === 1));
+        if ($working === []) {
+            $working = $this->defaultBusinessScheduleForDate($date);
+        }
+
         $blocks = array_values(array_filter($rows, static fn (array $row): bool => in_array($row['kind'], ['blocked','full_day','time_off'], true)));
         if (array_filter($blocks, static fn (array $row): bool => in_array($row['kind'], ['full_day','time_off'], true))) return [];
         if ($overrides !== [] && $working === []) return [];
@@ -66,6 +70,43 @@ final class AlchemizeAppointmentSchedulingService
             }
         }
         return $slots;
+    }
+
+    private function defaultBusinessScheduleForDate(string $date): array
+    {
+        $weekday = (int) (new DateTimeImmutable($date))->format('N');
+        $weekdayNames = [
+            1 => 'Monday',
+            2 => 'Tuesday',
+            3 => 'Wednesday',
+            4 => 'Thursday',
+            5 => 'Friday',
+            6 => 'Saturday',
+            7 => 'Sunday',
+        ];
+        $name = $weekdayNames[$weekday] ?? 'Weekday';
+
+        if ($weekday === 7) {
+            return [];
+        }
+
+        if ($weekday === 6) {
+            return [[
+                'kind' => 'weekday',
+                'is_available' => 1,
+                'start_time' => '09:00:00',
+                'end_time' => '14:00:00',
+                'notes' => $name . ' has a 2:00 PM cutoff.',
+            ]];
+        }
+
+        return [[
+            'kind' => 'weekday',
+            'is_available' => 1,
+            'start_time' => '09:00:00',
+            'end_time' => '17:00:00',
+            'notes' => $name . ' is open for regular business hours.',
+        ]];
     }
 
     public function requireAvailable(array $link, string $selectedStart, array $externalBusy = []): array

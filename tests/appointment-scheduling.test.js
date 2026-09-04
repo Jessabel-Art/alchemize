@@ -151,6 +151,25 @@ test("appointment persistence returns independent calendar and email outcomes", 
   assert.match(endpoint, /synchronizeAppointment\(\$id\)[\s\S]*notify/);
 });
 
+test("scheduling links treat successful creation as success even when email delivery is unavailable", () => {
+  const page = read("src/pages/admin/AdminOperationalPages.jsx");
+  assert.match(page, /scheduling_link_created|expires_at|copy_url/);
+  assert.match(
+    page,
+    /result\?\.scheduling_link_created|result\?\.expires_at|copy_url \|\| ""/,
+  );
+  assert.doesNotMatch(page, /delivery_status === "sent"\s*\?\s*\w+\s*:\s*\w+/);
+});
+
+test("public availability uses a baseline business schedule with Saturday cutoff and Sunday closure", () => {
+  const service = read("server/services/appointment-scheduling-service.php");
+  assert.match(service, /Monday|Tuesday|Wednesday|Thursday|Friday/);
+  assert.match(service, /09:00[\s\S]*17:00/);
+  assert.match(service, /Saturday[\s\S]*14:00|14:00[\s\S]*Saturday/);
+  assert.match(service, /Sunday[\s\S]*return \[\]|Sunday[\s\S]*\[\]/);
+  assert.match(service, /baseline.*schedule|default.*schedule|business.*hours/);
+});
+
 test("raw scheduling tokens are never persisted or written to audit metadata", () => {
   const migration = read(
     "migrations/027_complete_public_appointment_scheduling.sql",
