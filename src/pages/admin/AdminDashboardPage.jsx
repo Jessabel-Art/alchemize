@@ -2,6 +2,10 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { adminStore } from "../../../js/data/admin-store.js";
 import { portalAdmin } from "../../services/admin-api.js";
+import {
+  getOpenInvoiceBalance,
+  getInvoiceRemainingBalance,
+} from "../../utils/admin-metrics.js";
 import { isActiveClient } from "../../utils/client-status.js";
 import "./admin.css";
 
@@ -236,12 +240,10 @@ function AdminDashboardPage() {
     ]).size + portalAttention.items.length;
 
   const openInvoiceRows = snapshot.invoices.filter(
-    (invoice) => !["Paid", "Cancelled"].includes(invoice.status),
+    (invoice) =>
+      !["Paid", "Cancelled", "Void", "Closed"].includes(invoice.status),
   );
-  const totalOutstanding = openInvoiceRows.reduce(
-    (total, invoice) => total + Number(invoice.amount || 0),
-    0,
-  );
+  const totalOutstanding = getOpenInvoiceBalance(openInvoiceRows);
 
   const upcomingAppointments = snapshot.appointments
     .filter(
@@ -733,7 +735,8 @@ function AdminDashboardPage() {
                   billingWatch
                     .filter((invoice) => invoice.status === "Past Due")
                     .reduce(
-                      (total, invoice) => total + Number(invoice.amount || 0),
+                      (total, invoice) =>
+                        total + getInvoiceRemainingBalance(invoice),
                       0,
                     ),
                 )}
@@ -749,7 +752,9 @@ function AdminDashboardPage() {
                     <small>{getClientName(snapshot, invoice.clientId)}</small>
                   </div>
                   <div className="mini-meta">
-                    <span>{formatCurrency(invoice.amount)}</span>
+                    <span>
+                      {formatCurrency(getInvoiceRemainingBalance(invoice))}
+                    </span>
                     <span>{invoice.status}</span>
                   </div>
                 </li>

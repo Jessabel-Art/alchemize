@@ -17,6 +17,11 @@ import {
 } from "../../../js/data/admin-store.js";
 import { getDocumentTypeOptionsForEngagement } from "../../data/documentTypeCatalog.js";
 import {
+  getInvoiceRemainingBalance,
+  getOpenInvoiceBalance,
+} from "../../utils/admin-metrics.js";
+import { isActiveClient } from "../../utils/client-status.js";
+import {
   appointments as appointmentApi,
   clients as clientApi,
   documents as documentApi,
@@ -1382,8 +1387,7 @@ function ClientManagementPage() {
     },
     {
       label: "Active Clients",
-      value: snapshot.clients.filter((client) => client.status === "Active")
-        .length,
+      value: snapshot.clients.filter((client) => isActiveClient(client)).length,
     },
     {
       label: "Inactive Clients",
@@ -11697,7 +11701,7 @@ function ReportsPage() {
         },
         {
           label: "Active clients",
-          value: snapshot.clients.filter((client) => client.status === "Active")
+          value: snapshot.clients.filter((client) => isActiveClient(client))
             .length,
           hint: "Live roster",
         },
@@ -11753,21 +11757,20 @@ function ReportsPage() {
         },
         {
           label: "Outstanding",
-          value: formatCurrency(
-            snapshot.invoices
-              .filter(
-                (invoice) => !["Paid", "Cancelled"].includes(invoice.status),
-              )
-              .reduce((sum, invoice) => sum + Number(invoice.amount || 0), 0),
-          ),
+          value: formatCurrency(getOpenInvoiceBalance(snapshot.invoices)),
           hint: "Open balance",
         },
         {
           label: "Past due",
           value: formatCurrency(
             snapshot.invoices
-              .filter((invoice) => invoice.status === "Past Due")
-              .reduce((sum, invoice) => sum + Number(invoice.amount || 0), 0),
+              .filter(
+                (invoice) => getEffectiveInvoiceStatus(invoice) === "Past Due",
+              )
+              .reduce(
+                (sum, invoice) => sum + getInvoiceRemainingBalance(invoice),
+                0,
+              ),
           ),
           hint: "Past due balance",
         },
@@ -11785,7 +11788,7 @@ function ReportsPage() {
     const topSummary = [
       {
         label: "Active clients",
-        value: snapshot.clients.filter((client) => client.status === "Active")
+        value: snapshot.clients.filter((client) => isActiveClient(client))
           .length,
         hint: "Current roster",
       },
@@ -11815,21 +11818,20 @@ function ReportsPage() {
       },
       {
         label: "Outstanding balance",
-        value: formatCurrency(
-          snapshot.invoices
-            .filter(
-              (invoice) => !["Paid", "Cancelled"].includes(invoice.status),
-            )
-            .reduce((sum, invoice) => sum + Number(invoice.amount || 0), 0),
-        ),
+        value: formatCurrency(getOpenInvoiceBalance(snapshot.invoices)),
         hint: "Open invoices",
       },
       {
         label: "Past due balance",
         value: formatCurrency(
           snapshot.invoices
-            .filter((invoice) => invoice.status === "Past Due")
-            .reduce((sum, invoice) => sum + Number(invoice.amount || 0), 0),
+            .filter(
+              (invoice) => getEffectiveInvoiceStatus(invoice) === "Past Due",
+            )
+            .reduce(
+              (sum, invoice) => sum + getInvoiceRemainingBalance(invoice),
+              0,
+            ),
         ),
         hint: "Past due",
       },
