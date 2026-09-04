@@ -82,7 +82,7 @@ jobs:
           test ! -e deploy-output/${PUBLIC_WEB_ROOT}/migrations
 
       - name: Deploy and verify private backend on Hostinger
-        if: ${{ env.HOSTINGER_SSH_KEY_B64 != '' && env.HOSTINGER_HOST != '' && env.HOSTINGER_USER != '' && env.HOSTINGER_PRIVATE_ROOT != '' }}
+        if: ${{ secrets.HOSTINGER_SSH_KEY_B64 != '' && secrets.HOSTINGER_HOST != '' && secrets.HOSTINGER_USER != '' && secrets.HOSTINGER_PRIVATE_ROOT != '' }}
         shell: bash
         env:
           SSH_KEY_B64: ${{ secrets.HOSTINGER_SSH_KEY_B64 }}
@@ -91,6 +91,11 @@ jobs:
           SSH_PRIVATE_ROOT: ${{ secrets.HOSTINGER_PRIVATE_ROOT }}
         run: |
           set -euo pipefail
+
+          if [[ -z "${SSH_KEY_B64:-}" || -z "${SSH_HOST:-}" || -z "${SSH_USER:-}" || -z "${SSH_PRIVATE_ROOT:-}" || -z "${HOSTINGER_SSH_PORT:-}" ]]; then
+            echo "Skipping Hostinger deployment because required secrets or SSH settings are not configured."
+            exit 0
+          fi
 
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
