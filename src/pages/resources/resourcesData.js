@@ -479,6 +479,188 @@ export const resources = [
     disclaimer: digitalDisclaimer,
   },
   {
+    slug: "hostinger-for-small-business-websites",
+    title: "Why I Recommend Hostinger for Many Small Business Websites",
+    excerpt:
+      "A practical website hosting recommendation for small businesses, including why I often consider Hostinger and when a different environment may be the better fit.",
+    category: "Web & Digital Solutions",
+    audience: "Small businesses and professionals",
+    type: "Founder perspective",
+    updated: "September 4, 2026",
+    modifiedDate: "2026-09-04",
+    readTime: "7 min read",
+    servicePath: "/web-digital",
+    serviceLabel: "Explore Alchemize web and digital services",
+    sections: [
+      {
+        id: "why-hosting-matters",
+        title: "Why hosting matters",
+        paragraphs: [
+          "Building a website is only one part of putting a business online. The finished site still needs a dependable place to live, the domain has to point to the right location, SSL and security settings need attention, and someone needs a manageable way to control the accounts behind it.",
+          "I treat hosting as part of the website's working foundation. A platform can affect how the site is deployed, how domains and email are managed, what access the business retains, and how practical future updates will be. The right choice should support the website without creating infrastructure the owner does not need or cannot reasonably manage.",
+        ],
+      },
+      {
+        id: "why-hostinger",
+        title: "Why I often recommend Hostinger",
+        paragraphs: [
+          "For many small businesses and newer businesses, Hostinger offers an approachable combination of website hosting, domain management, email options, SSL and security features, and tools for managing a growing website. Keeping those common responsibilities in a clear interface can make the online setup easier to understand after launch.",
+          "It can also support a professionally built website without requiring the business owner to manage an unnecessarily complicated server environment. That balance matters to me: the website should be built well, while the account and routine controls should remain accessible to the business that owns them.",
+          "This is a practical recommendation, not a claim that one host is best for every website. I consider Hostinger when its capabilities fit the build, the owner's comfort level, and the way the site is expected to grow.",
+        ],
+      },
+      {
+        id: "different-fit",
+        title: "When I might recommend something different",
+        paragraphs: [
+          "Hosting recommendations depend on the project. A more complex application, unusual infrastructure requirements, very high traffic, specialized compliance obligations, or a provider-specific integration may point to a different environment.",
+          "I also consider who will maintain the site, what deployment workflow the project needs, which services must connect to it, and how much control or isolation is appropriate. The goal is to choose infrastructure for the business in front of me, not to sell the same platform to every client.",
+        ],
+      },
+      {
+        id: "how-alchemize-helps",
+        title: "How Alchemize helps",
+        paragraphs: [
+          "Alchemize can help with the broader setup around a business website, not only the visible pages. Depending on the engagement, that work may include website development, hosting configuration, domain connection, SSL, DNS configuration, business email configuration where applicable, deployment, ongoing website support, and third-party integrations.",
+          "I also encourage clients to retain ownership of business-critical accounts whenever practical. That creates a cleaner foundation for access, billing, maintenance, and any future work with another provider.",
+        ],
+        links: [
+          {
+            label: "Learn about Alchemize web and digital services",
+            href: "/web-digital",
+          },
+        ],
+      },
+      {
+        id: "hostinger-referral",
+        title: "Explore Hostinger",
+        paragraphs: [
+          "If you have reviewed your website's needs and Hostinger appears to be an appropriate fit, you can use the link below to explore its current hosting options. The guidance in this article is still intended to help you make a sound decision whether or not you use the referral link.",
+        ],
+        links: [
+          {
+            label: "Explore Hostinger hosting",
+            href: "https://www.hostinger.com?REFERRALCODE=JZBJESSABFQ9",
+            external: true,
+          },
+        ],
+        disclosure:
+          "If you sign up through this link, Alchemize may receive a referral benefit at no additional cost to you.",
+      },
+    ],
+    official: [],
+    related: [
+      "professional-website-design-process",
+      "digital-presence-audit",
+      "api-integrations-for-small-business",
+    ],
+    nextSteps: [
+      "List what the website needs from its hosting environment.",
+      "Confirm who will own and manage the domain, hosting, and email accounts.",
+      "Review expected traffic, integrations, security, and maintenance needs.",
+      "Choose a provider only after confirming that it fits the project.",
+    ],
+    disclaimer: digitalDisclaimer,
+  },
+  {
+    slug: "api-integrations-for-small-business",
+    title: "API Integrations: How We Connect the Tools Behind Your Business",
+    excerpt:
+      "A plain-language look at small business API integrations, with a closer look at secure payment-processing connections and how Alchemize implements them.",
+    category: "Web & Digital Solutions",
+    audience: "Small businesses and professionals",
+    type: "Plain-language guide",
+    updated: "September 4, 2026",
+    modifiedDate: "2026-09-04",
+    readTime: "9 min read",
+    servicePath: "/web-digital",
+    serviceLabel: "Explore Alchemize web and digital services",
+    sections: [
+      {
+        id: "business-problem",
+        title: "The business problem comes first",
+        paragraphs: [
+          "A business may use one system for its website, another for payments, another for scheduling, and others for email, customer records, or daily operations. When those tools cannot exchange the right information, someone is often left copying details by hand, checking several dashboards, or following up on steps that should have happened automatically.",
+          "An API integration can give approved systems a structured way to exchange information and trigger actions. The useful question is not simply whether a tool has an API. It is what the business needs to happen, which systems are responsible for each step, and what information should move between them.",
+        ],
+      },
+      {
+        id: "what-an-api-does",
+        title: "What an API integration actually does",
+        paragraphs: [
+          "Consider a customer submitting information through a website. The website sends the appropriate data to a connected service, that service processes the request, the website receives a result, and the customer or business receives the appropriate confirmation. Each system keeps its own role, but the handoff no longer depends on a person re-entering the same information.",
+          "The objective is to reduce disconnected manual processes and help the business's systems work together appropriately. A good integration defines what starts the workflow, what data is necessary, what happens after a successful response, and what the customer or team should see when something fails.",
+        ],
+        callout:
+          "Customer submits information → website sends the required data → connected service processes it → website receives the result → customer and/or business receives confirmation.",
+      },
+      {
+        id: "payment-processing",
+        title: "Payment-processing integrations",
+        paragraphs: [
+          "For a payment integration, an Alchemize-built website or application can create the technical connection to a selected payment provider. The customer begins on the website or application, the provider's secure payment infrastructure handles the financial transaction, and the result returns so the site can show an appropriate confirmation, issue or trigger a receipt, or update an internal business record when that is part of the approved workflow.",
+          "Sensitive payment information should be handled by the payment provider through its secure payment tools rather than being unnecessarily stored as raw card data inside the business website. The exact approach depends on the provider and project, but minimizing sensitive-data exposure is an important design decision.",
+          "Alchemize does not process, hold, or settle the customer's funds. The payment provider performs the financial transaction; Alchemize implements the connection between the business's website or application and that provider.",
+        ],
+        callout:
+          "Customer → Alchemize-built website or application → payment provider → payment result → website or application → confirmation, receipt, and/or approved internal record.",
+      },
+      {
+        id: "implementation-process",
+        title: "Our implementation process",
+        paragraphs: [
+          "API implementation is more than connecting an API key. The connection has to fit the actual workflow and account for security, errors, customer experience, and the actions that should occur after the provider responds.",
+        ],
+        ordered: [
+          "Understand the business workflow.",
+          "Determine which systems need to communicate.",
+          "Review the provider's API and available capabilities.",
+          "Determine what information actually needs to move between systems.",
+          "Build the integration.",
+          "Secure credentials and sensitive configuration appropriately.",
+          "Handle success and failure responses.",
+          "Test the complete workflow.",
+          "Deploy the integration.",
+          "Verify the live workflow.",
+        ],
+      },
+      {
+        id: "other-possibilities",
+        title: "Other API possibilities",
+        paragraphs: [
+          "The same general approach can support many other business workflows when the selected provider offers an appropriate API. Examples include scheduling, transactional email, CRM or customer management, document workflows, cloud storage, accounting or bookkeeping platforms, shipping or fulfillment, form submissions, and internal business automation.",
+          "These are examples of what APIs can make possible, not a promise that every provider or workflow can be supported. Feasibility depends on the provider's available API, its access and security requirements, and what the client actually needs the systems to do.",
+        ],
+      },
+      {
+        id: "closing-perspective",
+        title: "The technical layers should serve the business",
+        paragraphs: [
+          "I do not expect a small business owner to understand every technical layer behind a website. My role is to understand what you need the business to do, identify which systems need to work together, and build a connection that makes sense for the workflow, the customer, and the people who will manage it after launch.",
+        ],
+        links: [
+          {
+            label: "Learn about Alchemize web and digital services",
+            href: "/web-digital",
+          },
+        ],
+      },
+    ],
+    official: [],
+    related: [
+      "professional-website-design-process",
+      "hostinger-for-small-business-websites",
+      "business-needs-a-process",
+    ],
+    nextSteps: [
+      "Describe the business outcome before choosing a technical approach.",
+      "List the systems involved and who is responsible for each step.",
+      "Confirm the provider offers the API capabilities the workflow requires.",
+      "Plan for security, errors, testing, and the live handoff—not only the successful path.",
+    ],
+    disclaimer: digitalDisclaimer,
+  },
+  {
     slug: "starting-a-business-organization-checklist",
     title: "Business Startup & Formation Workbook",
     excerpt:

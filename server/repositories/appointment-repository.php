@@ -8,7 +8,11 @@ final class AlchemizeAppointmentRepository
 
     public function listAll(): array
     {
-        $statement = $this->database->query('SELECT * FROM appointments ORDER BY scheduled_at ASC');
+        $statement = $this->database->query(
+            'SELECT a.*, s.service_name FROM appointments a
+             LEFT JOIN services s ON s.id = a.service_id
+             ORDER BY a.scheduled_at ASC'
+        );
         return $statement->fetchAll();
     }
 
@@ -38,7 +42,7 @@ final class AlchemizeAppointmentRepository
     public function findSchedulingLink(string $token): ?array
     {
         $statement = $this->database->prepare(
-            'SELECT asl.*, s.name AS service_name
+            'SELECT asl.*, s.service_name
              FROM appointment_scheduling_links asl
              LEFT JOIN services s ON s.id = asl.service_id
              WHERE asl.token_hash = :token_hash

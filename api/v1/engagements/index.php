@@ -49,16 +49,20 @@ try {
         alchemize_require_csrf();
         $payload = alchemize_read_json_request();
         $clientId = isset($payload['client_id']) && $payload['client_id'] !== '' ? (int) $payload['client_id'] : null;
-        $title = trim((string) ($payload['title'] ?? ''));
-        if ($clientId === null || $title === '') {
-            throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Client and title are required.');
+        $serviceId = isset($payload['service_id']) && $payload['service_id'] !== '' ? (int) $payload['service_id'] : null;
+        $catalog = new AlchemizeServiceRepository($database);
+        $selectedService = $serviceId === null ? null : $catalog->findById($serviceId);
+        if ($clientId === null || $selectedService === null || empty($selectedService['active_flag']) || in_array((string)($selectedService['catalog_status'] ?? ''), ['NOT_OFFERED','FUTURE_EXPANSION'], true)) {
+            throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Client and an approved catalog service are required.');
         }
+        $title = trim((string)($selectedService['public_name'] ?? $selectedService['service_name']));
 
         $publicId = alchemize_uuid_v4();
         $id = $repository->create([
             'public_id' => $publicId,
             'engagement_number' => trim((string) ($payload['engagement_number'] ?? 'ENG-' . $clientId . '-' . time())),
             'client_id' => $clientId,
+            'service_id' => $serviceId,
             'title' => $title,
             'description' => trim((string) ($payload['description'] ?? '')) !== '' ? trim((string) ($payload['description'] ?? '')) : null,
             'status' => in_array((string) ($payload['status'] ?? 'preparing'), ['preparing','waiting_on_client','waiting_on_alchemize','scheduled','in_progress','review','ready_for_client','completed','archived'], true) ? (string) $payload['status'] : 'preparing',
@@ -104,6 +108,28 @@ try {
             throw new AlchemizeRequestException(404, 'NOT_FOUND', 'Engagement was not found.');
         }
         alchemize_json_response(['data' => $engagement], 200);
+    }
+
+    if ($method === 'GET' && count($parts) === 2 && ctype_digit((string) $parts[0]) && $parts[1] === 'document-types') {
+        alchemize_require_read_only_or_higher();
+        $engagement = $repository->findById((int)$parts[0]);
+        if ($engagement === null) throw new AlchemizeRequestException(404, 'NOT_FOUND', 'Engagement was not found.');
+        $serviceCode = (string)($engagement['service_code'] ?? '');
+        $family = match ($serviceCode) {
+            'website-design', 'website-maintenance', 'seo', 'digital-automation' => 'web_digital',
+            'administrative-support', 'translation' => 'document_admin',
+            default => null,
+        };
+        $types = [];
+        $definition = $family === null ? null : (alchemize_intake_definitions()[$family] ?? null);
+        foreach ((array)($definition['modules'] ?? []) as $module) {
+            foreach ((array)($module['requirements'] ?? []) as $requirement) {
+                if (in_array((string)($requirement['type'] ?? ''), ['document','asset'], true)) {
+                    $types[] = ['value'=>(string)$requirement['key'],'label'=>(string)$requirement['name']];
+                }
+            }
+        }
+        alchemize_json_response(['data'=>['items'=>$types]],200);
     }
 
     throw new AlchemizeRequestException(404, 'NOT_FOUND', 'The requested engagement route was not found.');

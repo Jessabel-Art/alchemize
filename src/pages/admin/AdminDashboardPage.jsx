@@ -74,6 +74,8 @@ function AdminDashboardPage() {
     error: "",
   });
   const [portalReplies, setPortalReplies] = useState({});
+  const [replacementItem, setReplacementItem] = useState(null);
+  const [replacementNote, setReplacementNote] = useState("");
   const loadPortalAttention = async () => {
     try {
       const data = await portalAdmin.attention();
@@ -89,7 +91,7 @@ function AdminDashboardPage() {
   useEffect(() => {
     loadPortalAttention();
   }, []);
-  const resolvePortalItem = async (item, decision) => {
+  const resolvePortalItem = async (item, decision, payload = {}) => {
     const type = {
       task_action: "task",
       document_submission: "document",
@@ -100,7 +102,12 @@ function AdminDashboardPage() {
     }[item.kind];
     if (!type) return;
     try {
-      const result = await portalAdmin.resolve(type, item.id, decision);
+      const result = await portalAdmin.resolve(
+        type,
+        item.id,
+        decision,
+        payload,
+      );
       if (result?.setup_url) {
         await navigator.clipboard.writeText(result.setup_url);
         setPortalAttention((current) => ({
@@ -110,6 +117,8 @@ function AdminDashboardPage() {
         }));
       }
       await loadPortalAttention();
+      setReplacementItem(null);
+      setReplacementNote("");
     } catch (error) {
       setPortalAttention((current) => ({ ...current, error: error.message }));
     }
@@ -301,7 +310,7 @@ function AdminDashboardPage() {
       to: "/admin/dashboard#attention",
     },
     {
-      label: "Active clients",
+      label: "Open active clients",
       value: snapshot.clients.filter((client) => client.status === "Active")
         .length,
       detail: "Current client relationships",
@@ -420,9 +429,10 @@ function AdminDashboardPage() {
                           </button>
                           <button
                             type="button"
-                            onClick={() =>
-                              resolvePortalItem(item, "replacement")
-                            }
+                            onClick={() => {
+                              setReplacementItem(item);
+                              setReplacementNote("");
+                            }}
                           >
                             Request replacement
                           </button>
@@ -461,6 +471,43 @@ function AdminDashboardPage() {
                           Send reply
                         </button>
                       </div>
+                    ) : null}
+                    {replacementItem?.id === item.id ? (
+                      <form
+                        className="portal-admin-reply"
+                        onSubmit={(event) => {
+                          event.preventDefault();
+                          if (!replacementNote.trim()) return;
+                          resolvePortalItem(item, "replacement", {
+                            note: replacementNote.trim(),
+                          });
+                        }}
+                      >
+                        <label htmlFor={`replacement-${item.id}`}>
+                          Replacement request or explanation
+                        </label>
+                        <textarea
+                          id={`replacement-${item.id}`}
+                          required
+                          maxLength={500}
+                          value={replacementNote}
+                          onChange={(event) =>
+                            setReplacementNote(event.target.value)
+                          }
+                          placeholder={`Explain what should replace ${item.title || "this document"}.`}
+                        />
+                        <div className="portal-admin-actions">
+                          <button type="submit">
+                            Send replacement request
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setReplacementItem(null)}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
                     ) : null}
                   </li>
                 ))}

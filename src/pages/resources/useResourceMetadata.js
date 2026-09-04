@@ -87,7 +87,7 @@ export default function useResourceMetadata(resource, language = "en") {
             "@type": "Article",
             headline: resource.title,
             description: resource.excerpt,
-            dateModified: "2026-08-18",
+            dateModified: resource.modifiedDate || "2026-08-18",
             inLanguage: language === "es" ? "es" : "en",
             author: {
               "@type": "Organization",

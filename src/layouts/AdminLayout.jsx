@@ -8,6 +8,7 @@ import {
   documents,
   engagements,
   invoices,
+  leads,
   payments,
   services,
   tasks,
@@ -91,6 +92,7 @@ const mapAppointment = (row) => {
   return {
     id: String(row.id),
     clientId: row.client_id == null ? "" : String(row.client_id),
+    serviceId: row.service_id == null ? "" : String(row.service_id),
     type: titleCase(row.appointment_type),
     title: titleCase(row.appointment_type),
     serviceName: row.service_name || "",
@@ -98,7 +100,9 @@ const mapAppointment = (row) => {
     time,
     status: titleCase(row.status),
     deliveryMethod: titleCase(row.location_type || "virtual"),
-    duration: 60,
+    duration: Number(row.duration_minutes || 60),
+    notes: row.internal_notes || "",
+    meetingMethod: titleCase(row.meeting_method || "phone"),
     needsPreparation: Boolean(Number(row.preparation_required)),
     followUpRequired: Boolean(Number(row.follow_up_required)),
     calendarSyncStatus: titleCase(row.calendar_sync_status || "not_configured"),
@@ -108,6 +112,7 @@ const mapEngagement = (row) => ({
   id: String(row.id),
   publicId: row.public_id,
   clientId: String(row.client_id),
+  serviceId: row.service_id == null ? "" : String(row.service_id),
   serviceName: row.title,
   title: row.title,
   description: row.description || "",
@@ -203,7 +208,6 @@ const navItems = [
   { label: "Communications", to: "/admin/communications" },
   { label: "Appointments", to: "/admin/appointments" },
   { label: "Billing", to: "/admin/billing" },
-  { label: "Content", to: "/admin/content" },
   { label: "Reports", to: "/admin/reports" },
   { label: "Settings", to: "/admin/settings" },
 ];
@@ -227,6 +231,7 @@ function AdminLayout() {
       documents.list(),
       invoices.list(),
       payments.list(),
+      leads.list(),
     ])
       .then(
         ([
@@ -238,17 +243,40 @@ function AdminLayout() {
           documentRows,
           invoiceRows,
           paymentRows,
+          leadRows,
         ]) => {
           if (!active) return;
           adminStore.replaceCollections({
             clients: (clientRows || []).map(mapClient),
-            services: (serviceRows || []).map(mapService),
+            services: (serviceRows || [])
+              .filter(
+                (row) =>
+                  row.catalog_status !== "NOT_OFFERED" &&
+                  row.service_code !== "business-financing",
+              )
+              .map(mapService),
             appointments: (appointmentRows || []).map(mapAppointment),
             engagements: (engagementRows || []).map(mapEngagement),
             tasks: (taskRows || []).map(mapTask),
             documents: (documentRows || []).map(mapDocument),
             invoices: (invoiceRows || []).map(mapInvoice),
             payments: (paymentRows || []).map(mapPayment),
+            leads: (leadRows || []).map((row) => ({
+              id: String(row.id),
+              name: row.full_name,
+              email: row.email || "",
+              phone: row.phone || "",
+              audience: titleCase(row.audience),
+              serviceInterest: row.service_key
+                ? titleCase(row.service_key)
+                : "General consultation",
+              source: titleCase(row.source || "website_contact"),
+              status: titleCase(row.status),
+              receivedAt: row.created_at,
+              lastContact: row.updated_at,
+              assignedTo: row.assigned_owner || "Owner / Administrator",
+              nextAction: row.next_action || "Review inquiry",
+            })),
           });
           setLoadState({ loading: false, error: "" });
         },

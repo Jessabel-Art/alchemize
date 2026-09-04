@@ -25,6 +25,7 @@ import {
   leads as leadApi,
   portalAdmin,
   services as serviceApi,
+  settings as settingsApi,
   tasks as taskApi,
 } from "../../services/admin-api.js";
 
@@ -3290,7 +3291,7 @@ function ServiceManagementPage() {
   const [isNewEngagementOpen, setIsNewEngagementOpen] = useState(false);
   const [engagementForm, setEngagementForm] = useState({
     client_id: "",
-    title: "",
+    service_id: "",
     description: "",
     status: "preparing",
     start_date: "",
@@ -3301,13 +3302,22 @@ function ServiceManagementPage() {
     event.preventDefault();
     setServiceError("");
     try {
-      await engagementApi.create(engagementForm);
+      const selectedService = snapshot.services.find(
+        (service) => service.id === engagementForm.service_id,
+      );
+      if (!selectedService) throw new Error("Select an approved service.");
+      await engagementApi.create({
+        ...engagementForm,
+        service_id: Number(selectedService.id),
+        title: selectedService.publicName || selectedService.serviceName,
+      });
       const rows = await engagementApi.list();
       adminStore.replaceCollections({
         engagements: rows.map((row) => ({
           id: String(row.id),
           publicId: row.public_id,
           clientId: String(row.client_id),
+          serviceId: row.service_id == null ? "" : String(row.service_id),
           serviceName: row.title,
           title: row.title,
           description: row.description || "",
@@ -3323,7 +3333,7 @@ function ServiceManagementPage() {
       setIsNewEngagementOpen(false);
       setEngagementForm({
         client_id: "",
-        title: "",
+        service_id: "",
         description: "",
         status: "preparing",
         start_date: "",
@@ -3415,6 +3425,38 @@ function ServiceManagementPage() {
         billing_type: payload.billingType,
         default_price: payload.defaultPrice,
       });
+      const serviceRows = await serviceApi.list();
+      adminStore.replaceCollections({
+        services: (serviceRows || [])
+          .filter(
+            (row) =>
+              row.catalog_status !== "NOT_OFFERED" &&
+              row.service_code !== "business-financing",
+          )
+          .map((row) => ({
+            id: String(row.id),
+            serviceName: row.service_name,
+            serviceCode: row.service_code,
+            publicName: row.public_name || row.service_name,
+            category: row.category || "General",
+            audience: toTitleCase(row.audience),
+            status: toTitleCase(row.catalog_status || row.status),
+            catalogStatus: row.catalog_status || "ACTIVE",
+            pricingType: row.pricing_type || "FIXED",
+            billingType: toTitleCase(row.billing_type || "custom"),
+            defaultPrice:
+              row.default_price == null ? null : Number(row.default_price),
+            active: Boolean(Number(row.active_flag)),
+            selectable:
+              Boolean(Number(row.active_flag)) &&
+              ["ACTIVE", "CUSTOM_SOW_ONLY", "MANUAL_REVIEW"].includes(
+                row.catalog_status,
+              ),
+            shortDescription: row.description || "",
+            tiers: row.tiers || [],
+            addOns: row.add_ons || [],
+          })),
+      });
       setServiceSavedMessage(`Service added: ${created.service_name}`);
       setServiceError("");
       setIsNewServiceOpen(false);
@@ -3467,6 +3509,25 @@ function ServiceManagementPage() {
         billing_type: payload.billingType,
         default_price: payload.defaultPrice,
       });
+      const serviceRows = await serviceApi.list();
+      const updated = serviceRows.find(
+        (row) => String(row.id) === String(editingServiceId),
+      );
+      if (updated) {
+        adminStore.updateService(String(updated.id), {
+          serviceCode: updated.service_code,
+          serviceName: updated.service_name,
+          shortDescription: updated.description || "",
+          category: updated.category || "General",
+          audience: toTitleCase(updated.audience),
+          status: toTitleCase(updated.catalog_status || updated.status),
+          billingType: toTitleCase(updated.billing_type || "custom"),
+          defaultPrice:
+            updated.default_price == null
+              ? null
+              : Number(updated.default_price),
+        });
+      }
       setServiceSavedMessage(`Service updated: ${payload.serviceName}`);
       setServiceError("");
       setEditingServiceId(null);
@@ -3777,17 +3838,26 @@ function ServiceManagementPage() {
                 </select>
               </label>
               <label>
-                <span>Service / engagement title</span>
-                <input
+                <span>Engagement / service type</span>
+                <select
                   required
-                  value={engagementForm.title}
+                  value={engagementForm.service_id}
                   onChange={(event) =>
                     setEngagementForm({
                       ...engagementForm,
-                      title: event.target.value,
+                      service_id: event.target.value,
                     })
                   }
-                />
+                >
+                  <option value="">Select approved service</option>
+                  {snapshot.services
+                    .filter((service) => service.selectable)
+                    .map((service) => (
+                      <option key={service.id} value={service.id}>
+                        {service.publicName || service.serviceName}
+                      </option>
+                    ))}
+                </select>
               </label>
               <label className="full-span">
                 <span>Client-visible description</span>
@@ -5373,23 +5443,55 @@ function DocumentManagementPage() {
   const [rows, setRows] = useState(snapshot.documents);
   const [documentFormOpen, setDocumentFormOpen] = useState(false);
   const [documentFeedback, setDocumentFeedback] = useState("");
+  const [documentTypeOptions, setDocumentTypeOptions] = useState([]);
   const [documentForm, setDocumentForm] = useState({
     client_id: "",
     engagement_id: "",
     document_name: "",
     document_type: "",
+    custom_document_type: "",
     due_date: "",
     client_instructions: "",
     status: "awaiting_upload",
     visibility: "shared",
     requested_date: new Date().toISOString().slice(0, 10),
   });
+  const selectDocumentEngagement = async (engagementId) => {
+    setDocumentForm((current) => ({
+      ...current,
+      engagement_id: engagementId,
+      document_type: "",
+      custom_document_type: "",
+      document_name: "",
+    }));
+    if (!engagementId) {
+      setDocumentTypeOptions([]);
+      return;
+    }
+    try {
+      const data = await engagementApi.documentTypes(engagementId);
+      setDocumentTypeOptions(data?.items || []);
+    } catch (error) {
+      setDocumentFeedback(error.message || "Unable to load document types.");
+      setDocumentTypeOptions([]);
+    }
+  };
   const createDocumentRequest = async (event) => {
     event.preventDefault();
     setDocumentFeedback("");
     try {
       const created = await documentApi.create({
         ...documentForm,
+        document_type:
+          documentForm.document_type === "other"
+            ? documentForm.custom_document_type.trim()
+            : documentForm.document_type,
+        document_name:
+          documentForm.document_type === "other"
+            ? documentForm.custom_document_type.trim()
+            : documentTypeOptions.find(
+                (option) => option.value === documentForm.document_type,
+              )?.label || documentForm.document_name,
         client_id: Number(documentForm.client_id),
         engagement_id: documentForm.engagement_id
           ? Number(documentForm.engagement_id)
@@ -5644,10 +5746,7 @@ function DocumentManagementPage() {
                 <select
                   value={documentForm.engagement_id}
                   onChange={(event) =>
-                    setDocumentForm({
-                      ...documentForm,
-                      engagement_id: event.target.value,
-                    })
+                    selectDocumentEngagement(event.target.value)
                   }
                 >
                   <option value="">No engagement</option>
@@ -5660,22 +5759,11 @@ function DocumentManagementPage() {
                     ))}
                 </select>
               </label>
-              <label className="full-span">
-                <span>Document name</span>
-                <input
-                  required
-                  value={documentForm.document_name}
-                  onChange={(event) =>
-                    setDocumentForm({
-                      ...documentForm,
-                      document_name: event.target.value,
-                    })
-                  }
-                />
-              </label>
               <label>
                 <span>Document type</span>
-                <input
+                <select
+                  required
+                  disabled={!documentForm.engagement_id}
                   value={documentForm.document_type}
                   onChange={(event) =>
                     setDocumentForm({
@@ -5683,8 +5771,31 @@ function DocumentManagementPage() {
                       document_type: event.target.value,
                     })
                   }
-                />
+                >
+                  <option value="">Select document type</option>
+                  {documentTypeOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                  <option value="other">Other / Custom Request</option>
+                </select>
               </label>
+              {documentForm.document_type === "other" ? (
+                <label className="full-span">
+                  <span>Custom document request</span>
+                  <input
+                    required
+                    value={documentForm.custom_document_type}
+                    onChange={(event) =>
+                      setDocumentForm({
+                        ...documentForm,
+                        custom_document_type: event.target.value,
+                      })
+                    }
+                  />
+                </label>
+              ) : null}
               <label>
                 <span>Due date</span>
                 <input
@@ -5753,6 +5864,7 @@ function AppointmentManagementPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isSchedulingLinkOpen, setIsSchedulingLinkOpen] = useState(false);
   const [isAvailabilityOpen, setIsAvailabilityOpen] = useState(false);
+  const [availabilityMode, setAvailabilityMode] = useState("weekly");
   const [cancelReason, setCancelReason] = useState("Client requested");
   const [appointmentError, setAppointmentError] = useState("");
   const [appointmentSuccess, setAppointmentSuccess] = useState("");
@@ -5789,6 +5901,24 @@ function AppointmentManagementPage() {
   });
   const [availabilityError, setAvailabilityError] = useState("");
   const [availabilitySaving, setAvailabilitySaving] = useState(false);
+
+  useEffect(() => {
+    settingsApi
+      .get()
+      .then((configured) => {
+        setDraftState((current) => ({
+          ...current,
+          duration:
+            Number(configured?.appointment_default_duration) ||
+            current.duration,
+        }));
+        setAvailabilityDraft((current) => ({
+          ...current,
+          timezone: configured?.timezone || current.timezone,
+        }));
+      })
+      .catch(() => undefined);
+  }, []);
 
   const clientOptions = [
     "All",
@@ -6137,6 +6267,7 @@ function AppointmentManagementPage() {
     type: appointment?.type || "Consultation",
     meetingMethod: appointment?.meetingMethod || "Phone Call",
     serviceName: appointment?.serviceName || "Business Advisory",
+    serviceId: appointment?.serviceId || "",
     date: appointment?.date || toDateString(currentDate),
     startTime: toTimeInputValue(appointment?.time || "10:00 AM"),
     duration: appointment?.duration || 60,
@@ -6174,11 +6305,18 @@ function AppointmentManagementPage() {
     }));
   };
 
-  const openAvailabilityModal = async () => {
+  const openAvailabilityModal = async (mode = "weekly") => {
+    setAvailabilityMode(mode);
     setIsAvailabilityOpen(true);
     setIsFormOpen(false);
     setIsSchedulingLinkOpen(false);
     setAvailabilityError("");
+    setAvailabilityDraft((current) => ({
+      ...current,
+      kind: mode === "block" ? "blocked" : "weekday",
+      available: mode !== "block",
+      dateOverride: mode === "block" ? toDateString(new Date()) : "",
+    }));
     try {
       const rows = await appointmentApi.listAvailability();
       setAvailabilityRows(Array.isArray(rows) ? rows : []);
@@ -6281,6 +6419,10 @@ function AppointmentManagementPage() {
 
   const saveAvailability = async () => {
     setAvailabilityError("");
+    if (availabilityMode === "block" && !availabilityDraft.dateOverride) {
+      setAvailabilityError("Choose the date to block out.");
+      return;
+    }
     if (
       !["full_day", "time_off"].includes(availabilityDraft.kind) &&
       (!availabilityDraft.startTime || !availabilityDraft.endTime)
@@ -6326,9 +6468,10 @@ function AppointmentManagementPage() {
         startTime: "09:00",
         endTime: "17:00",
         available: true,
-        kind: "weekday",
+        kind: availabilityMode === "block" ? "blocked" : "weekday",
         notes: "",
-        dateOverride: "",
+        dateOverride:
+          availabilityMode === "block" ? toDateString(new Date()) : "",
         endDate: "",
         timezone: "America/New_York",
       });
@@ -6394,6 +6537,9 @@ function AppointmentManagementPage() {
           appointment_type: String(draftState.type)
             .toLowerCase()
             .replaceAll(" ", "_"),
+          service_id: draftState.serviceId
+            ? Number(draftState.serviceId)
+            : null,
           scheduled_at: `${draftState.date} ${draftState.startTime}:00`,
           end_at: `${toDateString(end)} ${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}:00`,
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -6422,6 +6568,7 @@ function AppointmentManagementPage() {
           type: draftState.type,
           meetingMethod: draftState.meetingMethod || "Phone Call",
           serviceName: draftState.serviceName,
+          serviceId: draftState.serviceId,
           date: draftState.date,
           time: formatDisplayTime(draftState.startTime),
           duration: Number(draftState.duration) || 60,
@@ -6437,6 +6584,7 @@ function AppointmentManagementPage() {
           appointments: [nextAppointment, ...appointments],
         });
         setSelectedAppointmentId(nextAppointment.id);
+        setIsFormOpen(false);
       } catch (error) {
         setAppointmentError(
           error.message || "The appointment could not be created.",
@@ -6675,9 +6823,16 @@ function AppointmentManagementPage() {
           <button
             type="button"
             className="secondary-button"
-            onClick={openAvailabilityModal}
+            onClick={() => openAvailabilityModal("weekly")}
           >
             Manage Availability
+          </button>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => openAvailabilityModal("block")}
+          >
+            Block Out Time
           </button>
           <button
             type="button"
@@ -7468,30 +7623,23 @@ function AppointmentManagementPage() {
                 <label>
                   <span>Service</span>
                   <select
-                    value={draftState.serviceName}
-                    onChange={(event) =>
-                      setDraftField("serviceName", event.target.value)
-                    }
+                    value={draftState.serviceId}
+                    onChange={(event) => {
+                      const selected = snapshot.services.find(
+                        (service) => service.id === event.target.value,
+                      );
+                      setDraftField("serviceId", event.target.value);
+                      setDraftField("serviceName", selected?.serviceName || "");
+                    }}
                   >
-                    {Array.from(
-                      new Set(
-                        snapshot.engagements
-                          .map((engagement) => engagement.serviceName)
-                          .concat(
-                            snapshot.services.map(
-                              (service) => service.serviceName,
-                            ),
-                            appointments.map(
-                              (appointment) => appointment.serviceName,
-                            ),
-                          )
-                          .filter(Boolean),
-                      ),
-                    ).map((value) => (
-                      <option key={value} value={value}>
-                        {value}
-                      </option>
-                    ))}
+                    <option value="">No specific service</option>
+                    {snapshot.services
+                      .filter((service) => service.selectable)
+                      .map((service) => (
+                        <option key={service.id} value={service.id}>
+                          {service.serviceName}
+                        </option>
+                      ))}
                   </select>
                 </label>
                 <label>
@@ -7898,7 +8046,11 @@ function AppointmentManagementPage() {
             onClick={(event) => event.stopPropagation()}
           >
             <div className="scheduler-modal-header">
-              <h3>Manage Availability</h3>
+              <h3>
+                {availabilityMode === "block"
+                  ? "Block Out Time"
+                  : "Manage Weekly Availability"}
+              </h3>
               <button
                 type="button"
                 className="secondary-button"
@@ -7908,22 +8060,12 @@ function AppointmentManagementPage() {
               </button>
             </div>
             <div className="scheduler-modal-body form-grid">
-              <label>
-                <span>Type</span>
-                <select
-                  value={availabilityDraft.kind}
-                  onChange={(event) =>
-                    setAvailabilityField("kind", event.target.value)
-                  }
-                >
-                  <option value="weekday">Weekly</option>
-                  <option value="date_override">Date override</option>
-                  <option value="blocked">Time Block</option>
-                  <option value="full_day">Full Day</option>
-                  <option value="time_off">Multi-Day / Time Off</option>
-                </select>
-              </label>
-              {availabilityDraft.kind === "weekday" ? (
+              <p className="full-span">
+                {availabilityMode === "block"
+                  ? "Add a date-specific exception to prevent scheduling during this period."
+                  : "Add one or more recurring working-hour ranges for each enabled day."}
+              </p>
+              {availabilityMode === "weekly" ? (
                 <label>
                   <span>Weekday</span>
                   <select
@@ -8045,27 +8187,50 @@ function AppointmentManagementPage() {
                   onClick={saveAvailability}
                   disabled={availabilitySaving}
                 >
-                  {availabilitySaving ? "Saving…" : "Save Availability"}
+                  {availabilitySaving
+                    ? "Saving…"
+                    : availabilityMode === "block"
+                      ? "Block Out Time"
+                      : "Add Time Range"}
                 </button>
               </div>
               {availabilityRows.length ? (
                 <div className="full-span">
-                  <h4>Current availability</h4>
+                  <h4>
+                    {availabilityMode === "block"
+                      ? "Current block-outs"
+                      : "Weekly schedule"}
+                  </h4>
                   <ul className="admin-list compact-list">
-                    {availabilityRows.map((row) => (
-                      <li
-                        key={
-                          row.id ||
-                          `${row.kind}-${row.start_time}-${row.end_time}`
-                        }
-                      >
-                        {row.kind === "date_override"
-                          ? `Date override ${row.date_override || "—"}`
-                          : `Weekday ${row.weekday ?? "—"}`}
-                        • {row.start_time || "—"}–{row.end_time || "—"}
-                        {row.notes ? ` • ${row.notes}` : ""}
-                      </li>
-                    ))}
+                    {availabilityRows
+                      .filter((row) =>
+                        availabilityMode === "block"
+                          ? row.kind === "blocked"
+                          : row.kind === "weekday",
+                      )
+                      .map((row) => (
+                        <li
+                          key={
+                            row.id ||
+                            `${row.kind}-${row.start_time}-${row.end_time}`
+                          }
+                        >
+                          {row.kind === "blocked"
+                            ? `Blocked ${row.date_override || "—"}`
+                            : [
+                                "",
+                                "Monday",
+                                "Tuesday",
+                                "Wednesday",
+                                "Thursday",
+                                "Friday",
+                                "Saturday",
+                                "Sunday",
+                              ][row.weekday] || "Day"}
+                          • {row.start_time || "—"}–{row.end_time || "—"}
+                          {row.notes ? ` • ${row.notes}` : ""}
+                        </li>
+                      ))}
                   </ul>
                 </div>
               ) : null}

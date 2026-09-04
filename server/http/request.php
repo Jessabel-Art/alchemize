@@ -34,12 +34,13 @@ function alchemize_decode_json_request(
     }
 
     try {
+        $decoded = json_decode($rawBody, false, 32, JSON_THROW_ON_ERROR);
         $payload = json_decode($rawBody, true, 32, JSON_THROW_ON_ERROR);
     } catch (JsonException) {
         throw new AlchemizeRequestException(400, 'INVALID_JSON', 'The request body contains invalid JSON.');
     }
 
-    if (!is_array($payload) || array_is_list($payload)) {
+    if (!is_object($decoded) || !is_array($payload)) {
         throw new AlchemizeRequestException(400, 'INVALID_REQUEST', 'The request body must be a JSON object.');
     }
 

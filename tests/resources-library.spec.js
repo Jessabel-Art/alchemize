@@ -15,6 +15,8 @@ const resourceSlugs = [
   "professional-website-design-process",
   "digital-presence-audit",
   "seo-and-website-metadata",
+  "hostinger-for-small-business-websites",
+  "api-integrations-for-small-business",
   "starting-a-business-organization-checklist",
   "your-first-year-in-business",
   "business-formation-information-to-gather",
@@ -100,16 +102,16 @@ test("resource library filters the current collection accessibly", async ({
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
     "Individual Tax Preparation Organizer",
   );
-  await expect(page.locator(".resource-row")).toHaveCount(13);
+  await expect(page.locator(".resource-row")).toHaveCount(15);
 
   const digitalFilter = page.getByRole("button", {
     name: "Web & Digital Solutions",
   });
   await digitalFilter.click();
   await expect(digitalFilter).toHaveAttribute("aria-pressed", "true");
-  await expect(page.locator(".resource-row")).toHaveCount(3);
+  await expect(page.locator(".resource-row")).toHaveCount(5);
   await expect(page.locator(".resource-result-count")).toContainText(
-    "3 resources",
+    "5 resources",
   );
 });
 
@@ -172,6 +174,42 @@ test("every current resource route renders unique metadata", async ({
   }
 });
 
+test("new hosting and API guides expose their intended links and disclosures", async ({
+  page,
+}) => {
+  await page.goto("/resources/hostinger-for-small-business-websites");
+  const referral = page.getByRole("link", {
+    name: "Explore Hostinger hosting",
+  });
+  await expect(referral).toHaveAttribute(
+    "href",
+    "https://www.hostinger.com?REFERRALCODE=JZBJESSABFQ9",
+  );
+  await expect(referral).toHaveAttribute("target", "_blank");
+  await expect(referral).toHaveAttribute("rel", /sponsored/);
+  await expect(page.locator(".resource-referral-disclosure")).toContainText(
+    "at no additional cost to you",
+  );
+  await expect(
+    page.getByRole("link", {
+      name: "Learn about Alchemize web and digital services",
+    }),
+  ).toHaveAttribute("href", "/web-digital");
+
+  await page.goto("/resources/api-integrations-for-small-business");
+  await expect(
+    page.getByRole("heading", { name: "Payment-processing integrations" }),
+  ).toBeVisible();
+  await expect(page.locator(".resource-article")).toContainText(
+    "Alchemize does not process, hold, or settle the customer's funds",
+  );
+  await expect(
+    page.getByRole("link", {
+      name: "Explore Alchemize web and digital services",
+    }),
+  ).toHaveAttribute("href", "/web-digital");
+});
+
 test("library and new digital articles have no serious accessibility violations", async ({
   page,
 }) => {
@@ -180,6 +218,8 @@ test("library and new digital articles have no serious accessibility violations"
     "/resources/professional-website-design-process",
     "/resources/digital-presence-audit",
     "/resources/seo-and-website-metadata",
+    "/resources/hostinger-for-small-business-websites",
+    "/resources/api-integrations-for-small-business",
   ]) {
     await page.goto(path, { waitUntil: "domcontentloaded" });
     const results = await new AxeBuilder({ page }).analyze();
@@ -213,7 +253,11 @@ test("library and digital article layouts avoid horizontal overflow", async ({
 
   for (const width of [1440, 1024, 768, 390, 320]) {
     await page.setViewportSize({ width, height: 1000 });
-    for (const path of ["/resources", "/resources/digital-presence-audit"]) {
+    for (const path of [
+      "/resources",
+      "/resources/hostinger-for-small-business-websites",
+      "/resources/api-integrations-for-small-business",
+    ]) {
       await page.goto(path, { waitUntil: "domcontentloaded" });
       const hasOverflow = await page.evaluate(
         () =>

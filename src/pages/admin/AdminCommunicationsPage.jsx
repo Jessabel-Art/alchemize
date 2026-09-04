@@ -4,6 +4,7 @@ import {
   AdminStatusBadge,
 } from "../../components/admin/admin-components.jsx";
 import { portalAdmin } from "../../services/admin-api.js";
+import { adminStore } from "../../../js/data/admin-store.js";
 
 const labels = {
   open: "Open",
@@ -23,6 +24,13 @@ export default function AdminCommunicationsPage() {
   const [relation, setRelation] = useState({ type: "", id: "" });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [composeOpen, setComposeOpen] = useState(false);
+  const [compose, setCompose] = useState({
+    clientId: "",
+    subject: "",
+    message: "",
+  });
+  const clients = adminStore.getSnapshot().clients;
 
   const load = async () => {
     try {
@@ -75,6 +83,26 @@ export default function AdminCommunicationsPage() {
     }
   };
 
+  const startConversation = async (event) => {
+    event.preventDefault();
+    setBusy(true);
+    try {
+      const result = await portalAdmin.createMessage({
+        client_id: Number(compose.clientId),
+        subject: compose.subject.trim(),
+        message: compose.message.trim(),
+      });
+      setComposeOpen(false);
+      setCompose({ clientId: "", subject: "", message: "" });
+      await load();
+      if (result?.thread_id) await open(result.thread_id);
+    } catch (composeError) {
+      setError(composeError.message || "Unable to start the conversation.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const setStatus = async (status) => {
     if (!opened) return;
     setBusy(true);
@@ -112,7 +140,67 @@ export default function AdminCommunicationsPage() {
         eyebrow="Client communications"
         title="Communication center"
         summary="Review client conversations, respond, and keep ownership of the next step clear."
+        actions={[
+          {
+            label: "+ New Conversation",
+            primary: true,
+            onClick: () => setComposeOpen(true),
+          },
+        ]}
       />
+      {composeOpen ? (
+        <form
+          className="admin-section setting-group"
+          onSubmit={startConversation}
+        >
+          <h2>New client conversation</h2>
+          <label>
+            <span>Client</span>
+            <select
+              required
+              value={compose.clientId}
+              onChange={(event) =>
+                setCompose({ ...compose, clientId: event.target.value })
+              }
+            >
+              <option value="">Select client</option>
+              {clients.map((client) => (
+                <option key={client.id} value={client.id}>
+                  {client.displayName}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span>Subject</span>
+            <input
+              required
+              maxLength={180}
+              value={compose.subject}
+              onChange={(event) =>
+                setCompose({ ...compose, subject: event.target.value })
+              }
+            />
+          </label>
+          <label>
+            <span>Message</span>
+            <textarea
+              required
+              maxLength={5000}
+              value={compose.message}
+              onChange={(event) =>
+                setCompose({ ...compose, message: event.target.value })
+              }
+            />
+          </label>
+          <div className="portal-action-group">
+            <button disabled={busy}>Send message</button>
+            <button type="button" onClick={() => setComposeOpen(false)}>
+              Cancel
+            </button>
+          </div>
+        </form>
+      ) : null}
       {error ? (
         <p className="admin-feedback error" role="alert">
           {error}

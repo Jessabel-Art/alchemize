@@ -37,10 +37,9 @@ import {
   AppointmentManagementPage,
   BillingManagementPage,
   InvoiceDetailPage,
-  ContentManagementPage,
   ReportsPage,
-  SettingsPage,
 } from "../pages/admin/AdminOperationalPages.jsx";
+import AdminSettingsPage from "../pages/admin/AdminSettingsPage.jsx";
 import ClientPortalPage from "../pages/portal/ClientPortalPage.jsx";
 import ClientPortalDashboardPage from "../pages/portal/ClientPortalDashboardPage.jsx";
 import ServiceCategoryPage from "../pages/services/ServiceCategoryPage.jsx";
@@ -300,9 +299,12 @@ function App() {
             path="billing/invoices/:invoiceId"
             element={<InvoiceDetailPage />}
           />
-          <Route path="content" element={<ContentManagementPage />} />
+          <Route
+            path="content"
+            element={<Navigate to="/admin/dashboard" replace />}
+          />
           <Route path="reports" element={<ReportsPage />} />
-          <Route path="settings" element={<SettingsPage />} />
+          <Route path="settings" element={<AdminSettingsPage />} />
         </Route>
 
         <Route path="/client-portal/*" element={<ClientPortalLayout />}>

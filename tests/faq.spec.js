@@ -22,6 +22,25 @@ test.describe("FAQ page", () => {
       "Working With Alchemize",
     );
 
+    await page.getByLabel("Search questions").fill("hosting provider");
+    const hostingQuestion = page.getByRole("button", {
+      name: "Do you have a website hosting provider you recommend?",
+    });
+    await hostingQuestion.click();
+    await expect(
+      page.getByRole("link", { name: "Read why I often recommend Hostinger" }),
+    ).toHaveAttribute(
+      "href",
+      "/resources/hostinger-for-small-business-websites",
+    );
+    await expect(
+      page.getByRole("link", { name: "Explore Hostinger" }),
+    ).toHaveAttribute(
+      "href",
+      "https://www.hostinger.com?REFERRALCODE=JZBJESSABFQ9",
+    );
+    await expect(page.locator(".faq-referral-disclosure")).toBeVisible();
+
     const search = page.locator("#faq-query");
     await expect(search).toBeVisible();
 

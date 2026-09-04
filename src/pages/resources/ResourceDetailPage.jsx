@@ -93,6 +93,36 @@ function SectionContent({ section, important }) {
           <p>{section.callout}</p>
         </aside>
       )}
+      {section.links?.length ? (
+        <div className="resource-section-links">
+          {section.links.map((link) =>
+            link.external ? (
+              <a
+                className="text-link"
+                href={link.href}
+                key={link.href}
+                target="_blank"
+                rel="noopener noreferrer sponsored"
+              >
+                {link.label} <ExternalLink aria-hidden="true" />
+              </a>
+            ) : (
+              <LocalizedLink
+                className="text-link"
+                key={link.href}
+                to={link.href}
+              >
+                {link.label}
+              </LocalizedLink>
+            ),
+          )}
+        </div>
+      ) : null}
+      {section.disclosure ? (
+        <small className="resource-referral-disclosure">
+          {section.disclosure}
+        </small>
+      ) : null}
     </section>
   );
 }
@@ -186,8 +216,11 @@ export default function ResourceDetailPage({ resource }) {
                 <li key={step}>{step}</li>
               ))}
             </ol>
-            <LocalizedLink className="text-link" to="/services">
-              {ui.serviceLink}
+            <LocalizedLink
+              className="text-link"
+              to={resource.servicePath || "/services"}
+            >
+              {resource.serviceLabel || ui.serviceLink}
             </LocalizedLink>
           </section>
           <aside className="resource-disclaimer">

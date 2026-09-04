@@ -47,6 +47,10 @@ try {
     if ($method === 'GET' && $parts === ['messages']) {
         alchemize_json_response(['data' => $service->threads()], 200);
     }
+    if ($method === 'POST' && $parts === ['messages']) {
+        alchemize_require_csrf();
+        alchemize_json_response(['data' => $service->startThread($user, alchemize_read_json_request())], 201);
+    }
     if ($method === 'GET' && $parts === ['intakes']) {
         alchemize_json_response(['data' => $intakes->list()], 200);
     }

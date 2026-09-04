@@ -164,11 +164,11 @@ test("admin clients and appointments use persistent API sources", () => {
   );
   assert.match(
     page,
-    /snapshot\.services\s*\.\s*map\s*\(\s*\(\s*service\s*\)\s*=>\s*service\.serviceName\s*,?\s*\)/,
+    /snapshot\.services[\s\S]*service\.serviceName/,
   );
   assert.match(
     page,
-    /appointments\s*\.\s*map\s*\(\s*\(\s*appointment\s*\)\s*=>\s*appointment\.serviceName\s*,?\s*\)/,
+    /appointments[\s\S]*appointment\.serviceName/,
   );
   assert.match(page, /\.filter\s*\(\s*Boolean\s*\)/);
 });

@@ -1,6 +1,7 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import PageShell from "../../components/ui/PageShell.jsx";
 import { useLanguage } from "../../i18n/LanguageContext.jsx";
+import LocalizedLink from "../../i18n/LocalizedLink.jsx";
 import usePageMetadata from "../../i18n/usePageMetadata.js";
 import { buildFaqSchema, ensureJsonLd } from "../../seo/siteSchema.js";
 import { faqCategoriesEs, faqUiEs } from "./faqContent.es.js";
@@ -170,6 +171,24 @@ const faqCategories = [
         question: "Do you provide hosting or domain registration?",
         answer:
           "Alchemize can help configure and connect domains, hosting, DNS, SSL, and deployment environments as part of a web engagement. Ownership of business-critical accounts should remain with the client whenever practical.",
+      },
+      {
+        question: "Do you have a website hosting provider you recommend?",
+        answer:
+          "I work with different hosting environments depending on the website, its technical requirements, integrations, expected traffic, and the client's needs. For many small businesses, I recommend considering Hostinger because it brings hosting, domain management, email options, SSL and security features, and practical website-management tools into an approachable platform. It is not the right fit for every project, so I still evaluate the actual requirements before recommending a hosting environment.",
+        links: [
+          {
+            label: "Read why I often recommend Hostinger",
+            href: "/resources/hostinger-for-small-business-websites",
+          },
+          {
+            label: "Explore Hostinger",
+            href: "https://www.hostinger.com?REFERRALCODE=JZBJESSABFQ9",
+            external: true,
+          },
+        ],
+        disclosure:
+          "If you choose Hostinger through this link, Alchemize may receive a referral benefit at no additional cost to you.",
       },
       {
         question: "Will I be able to update my website after it is built?",
@@ -491,48 +510,80 @@ function FaqPage() {
                   </header>
 
                   <div className="faq-accordion" role="list">
-                    {category.items.map(({ question, answer }) => {
-                      const itemId = `faq-${slugify(category.category)}-${slugify(
-                        question,
-                      )}`;
-                      const isOpen = openQuestion === question;
+                    {category.items.map(
+                      ({ question, answer, links, disclosure }) => {
+                        const itemId = `faq-${slugify(category.category)}-${slugify(
+                          question,
+                        )}`;
+                        const isOpen = openQuestion === question;
 
-                      return (
-                        <article
-                          key={question}
-                          className="faq-accordion-item"
-                          role="listitem"
-                        >
-                          <button
-                            type="button"
-                            className="faq-question"
-                            aria-expanded={isOpen}
-                            aria-controls={itemId}
-                            onClick={() =>
-                              setOpenQuestion((current) =>
-                                current === question ? "" : question,
-                              )
-                            }
+                        return (
+                          <article
+                            key={question}
+                            className="faq-accordion-item"
+                            role="listitem"
                           >
-                            <span>{question}</span>
-                            <span
-                              className="faq-question-icon"
-                              aria-hidden="true"
+                            <button
+                              type="button"
+                              className="faq-question"
+                              aria-expanded={isOpen}
+                              aria-controls={itemId}
+                              onClick={() =>
+                                setOpenQuestion((current) =>
+                                  current === question ? "" : question,
+                                )
+                              }
                             >
-                              {isOpen ? "−" : "+"}
-                            </span>
-                          </button>
+                              <span>{question}</span>
+                              <span
+                                className="faq-question-icon"
+                                aria-hidden="true"
+                              >
+                                {isOpen ? "−" : "+"}
+                              </span>
+                            </button>
 
-                          <div
-                            id={itemId}
-                            className={`faq-answer ${isOpen ? "is-open" : ""}`}
-                            hidden={!isOpen}
-                          >
-                            <p>{answer}</p>
-                          </div>
-                        </article>
-                      );
-                    })}
+                            <div
+                              id={itemId}
+                              className={`faq-answer ${isOpen ? "is-open" : ""}`}
+                              hidden={!isOpen}
+                            >
+                              <p>{answer}</p>
+                              {links?.length ? (
+                                <div className="faq-answer-links">
+                                  {links.map((link) =>
+                                    link.external ? (
+                                      <a
+                                        className="text-link"
+                                        href={link.href}
+                                        key={link.href}
+                                        target="_blank"
+                                        rel="noopener noreferrer sponsored"
+                                      >
+                                        {link.label}
+                                      </a>
+                                    ) : (
+                                      <LocalizedLink
+                                        className="text-link"
+                                        key={link.href}
+                                        to={link.href}
+                                      >
+                                        {link.label}
+                                      </LocalizedLink>
+                                    ),
+                                  )}
+                                </div>
+                              ) : null}
+                              {disclosure ? (
+                                <small className="faq-referral-disclosure">
+                                  {disclosure}
+                                </small>
+                              ) : null}
+                            </div>
+                          </article>
+                        );
+                      },
+                    )}
                   </div>
                 </section>
               ))

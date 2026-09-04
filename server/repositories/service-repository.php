@@ -8,7 +8,11 @@ final class AlchemizeServiceRepository
 
     public function listAll(): array
     {
-        $statement = $this->database->query('SELECT * FROM services ORDER BY sort_order ASC, service_name ASC');
+        $statement = $this->database->query(
+            "SELECT * FROM services
+             WHERE catalog_status NOT IN ('NOT_OFFERED','FUTURE_EXPANSION')
+             ORDER BY sort_order ASC, service_name ASC"
+        );
         return array_map(fn (array $row): array => $this->withCatalogRelations($row), $statement->fetchAll());
     }
 

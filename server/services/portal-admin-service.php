@@ -39,7 +39,7 @@ final class AlchemizePortalAdminService
                 'actor_user_id' => $user['user_id'], 'entity_type' => 'message_thread', 'entity_id' => $threadId,
                 'client_id' => $thread['client_id'], 'summary' => 'Alchemize replied to a secure portal conversation.', 'visibility' => 'both',
             ]);
-            $this->notifications->notifyClient(
+            if ($this->portalEmailNotificationsEnabled()) $this->notifications->notifyClient(
                 (int) $thread['client_id'], 'admin.message.sent', 'message_thread', $threadId,
                 'New message from Alchemize', 'Alchemize replied to your secure conversation.',
                 'admin-message:' . $threadId . ':' . microtime(true),
@@ -53,6 +53,26 @@ final class AlchemizePortalAdminService
     public function threads(): array
     {
         return ['items' => $this->repository->listThreads()];
+    }
+
+    public function startThread(array $user, array $payload): array
+    {
+        $clientId = (int) ($payload['client_id'] ?? 0);
+        $subject = trim((string) ($payload['subject'] ?? ''));
+        $body = trim((string) ($payload['message'] ?? ''));
+        if ($clientId < 1 || $subject === '' || $body === '' || alchemize_text_length($subject) > 180 || alchemize_text_length($body) > 5000) {
+            throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Client, subject, and a message of 5,000 characters or fewer are required.');
+        }
+        $database = $this->repository->database(); $database->beginTransaction();
+        try {
+            $threadId = $this->repository->createThread($clientId, (int)$user['user_id'], $subject, $body);
+            $this->activities->create(['public_id'=>alchemize_uuid_v4(),'event_type'=>'admin.message.sent','actor_type'=>'staff','actor_user_id'=>$user['user_id'],'entity_type'=>'message_thread','entity_id'=>$threadId,'client_id'=>$clientId,'summary'=>'Alchemize started a secure portal conversation.','visibility'=>'both']);
+            if ($this->portalEmailNotificationsEnabled()) $this->notifications->notifyClient($clientId,'admin.message.sent','message_thread',$threadId,'New message from Alchemize','A new secure conversation is available in your client portal.','admin-message-start:'.$threadId);
+            $database->commit();
+            return ['thread_id'=>$threadId];
+        } catch (Throwable $error) {
+            if ($database->inTransaction()) $database->rollBack(); throw $error;
+        }
     }
 
     public function thread(string $threadId): array
@@ -123,6 +143,7 @@ final class AlchemizePortalAdminService
                 $row = $this->repository->findSubmission($id, true);
                 if ($row === null) $this->notFound();
                 if (!in_array($row['status'], ['received', 'under_review'], true)) $this->conflict();
+                if ($decision === 'replacement' && $note === null) throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Provide a concise replacement request for the client.');
                 $this->repository->reviewSubmission($row, $decision, (int) $user['user_id'], $note, $internalNote);
                 $entityType = 'document'; $entityId = $row['document_public_id']; $clientId = $row['client_id']; $engagementId = $row['engagement_id'];
             } elseif ($type === 'access') {
@@ -174,4 +195,11 @@ final class AlchemizePortalAdminService
 
     private function notFound(): never { throw new AlchemizeRequestException(404, 'NOT_FOUND', 'The requested portal action was not found.'); }
     private function conflict(): never { throw new AlchemizeRequestException(409, 'STATE_CONFLICT', 'This request has already been resolved.'); }
+    private function portalEmailNotificationsEnabled(): bool
+    {
+        $statement = $this->repository->database()->prepare('SELECT setting_value FROM application_settings WHERE setting_key = \'portal_message_email_notifications\' LIMIT 1');
+        $statement->execute();
+        $value = $statement->fetchColumn();
+        return $value === false || json_decode((string)$value, true) !== false;
+    }
 }

@@ -14,6 +14,11 @@ const RESOURCE_SLUGS = [
   "building-a-business-deadline-calendar",
 ];
 
+const ENGLISH_ONLY_RESOURCE_SLUGS = [
+  "hostinger-for-small-business-websites",
+  "api-integrations-for-small-business",
+];
+
 const SERVICE_DETAIL_PATHS = [
   "/services/individuals/tax-preparation",
   "/services/individuals/notary-document-services",
@@ -36,6 +41,7 @@ export const APP_ROUTE_PATHS = [
   "/resources",
   "/resources/meet-the-founder",
   ...RESOURCE_SLUGS.map((slug) => `/resources/${slug}`),
+  ...ENGLISH_ONLY_RESOURCE_SLUGS.map((slug) => `/resources/${slug}`),
   "/faq",
   "/why-alchemize",
   "/privacy",
@@ -100,7 +106,11 @@ export function getSitemapRoutes() {
   return PUBLIC_SITEMAP_ROUTES.map((path) => {
     const isSpanish = path === "/es" || path.startsWith("/es/");
     const base = isSpanish ? (path === "/es" ? "/" : path.slice(3)) : path;
-    const hasTranslation = !["/privacy", "/terms"].includes(base);
+    const hasTranslation =
+      !["/privacy", "/terms"].includes(base) &&
+      !ENGLISH_ONLY_RESOURCE_SLUGS.some(
+        (slug) => base === `/resources/${slug}`,
+      );
     return {
       path,
       alternates: hasTranslation

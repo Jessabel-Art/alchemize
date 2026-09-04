@@ -49,6 +49,23 @@ final class AlchemizePortalAdminRepository
         )->fetchAll();
     }
 
+    public function createThread(int $clientId, int $actorId, string $subject, string $body): string
+    {
+        $client = $this->one('SELECT id FROM clients WHERE id = :id AND status <> \'archived\' LIMIT 1', ['id' => $clientId]);
+        if ($client === null) throw new AlchemizeRequestException(404, 'NOT_FOUND', 'Client was not found.');
+        $threadId = alchemize_uuid_v4();
+        $this->database->prepare(
+            'INSERT INTO message_threads (public_id, client_id, subject, status, client_action_required, client_action_required_at, created_by_user_id, last_message_at)
+             VALUES (:public_id,:client_id,:subject,\'waiting_on_client\',1,CURRENT_TIMESTAMP(6),:actor,CURRENT_TIMESTAMP(6))'
+        )->execute(['public_id'=>$threadId,'client_id'=>$clientId,'subject'=>$subject,'actor'=>$actorId]);
+        $internalId = (int) $this->database->lastInsertId();
+        $this->database->prepare(
+            'INSERT INTO messages (public_id, thread_id, client_id, sender_user_id, sender_type, message_body, read_by_admin_at)
+             VALUES (:public_id,:thread_id,:client_id,:actor,\'staff\',:body,CURRENT_TIMESTAMP(6))'
+        )->execute(['public_id'=>alchemize_uuid_v4(),'thread_id'=>$internalId,'client_id'=>$clientId,'actor'=>$actorId,'body'=>$body]);
+        return $threadId;
+    }
+
     public function getThread(string $publicId, bool $markRead = false): ?array
     {
         $thread = $this->one(

@@ -45,6 +45,7 @@ $allowedRoutes = [
     'leads',
     'clients',
     'services',
+    'settings',
     'engagements',
     'tasks',
     'appointments',

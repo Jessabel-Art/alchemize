@@ -176,6 +176,20 @@
   line-height: 1.8;
 }
 
+.faq-answer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1.25rem;
+  margin-top: 0.85rem;
+}
+
+.faq-referral-disclosure {
+  display: block;
+  margin-top: 0.75rem;
+  color: var(--color-text-muted);
+  line-height: 1.55;
+}
+
 .faq-empty-state {
   padding: 2rem;
   border: 1px solid var(--color-border);

@@ -170,6 +170,15 @@ export const services = {
     }),
 };
 
+export const settings = {
+  get: () => apiRequest(buildApiUrl("settings")),
+  update: (payload) =>
+    apiRequest(buildApiUrl("settings"), {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    }),
+};
+
 export const engagements = {
   list: () => apiRequest(buildApiUrl("engagements")),
   get: (id) => apiRequest(buildApiUrl(`engagements/${id}`)),
@@ -183,6 +192,8 @@ export const engagements = {
       method: "PUT",
       body: JSON.stringify(payload),
     }),
+  documentTypes: (id) =>
+    apiRequest(buildApiUrl(`engagements/${id}/document-types`)),
 };
 
 export const tasks = {
@@ -303,6 +314,11 @@ export const portalAdmin = {
       body: JSON.stringify({ message }),
     }),
   messages: () => apiRequest(buildApiUrl("portal-admin/messages")),
+  createMessage: (payload) =>
+    apiRequest(buildApiUrl("portal-admin/messages"), {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
   message: (id) => apiRequest(buildApiUrl(`portal-admin/messages/${id}`)),
   updateMessage: (id, status) =>
     apiRequest(buildApiUrl(`portal-admin/messages/${id}`), {
@@ -383,6 +399,7 @@ export default {
   auth,
   clients,
   services,
+  settings,
   engagements,
   tasks,
   appointments,

@@ -30,6 +30,7 @@ require_once __DIR__ . '/repositories/role-repository.php';
 require_once __DIR__ . '/repositories/user-repository.php';
 require_once __DIR__ . '/repositories/client-repository.php';
 require_once __DIR__ . '/repositories/service-repository.php';
+require_once __DIR__ . '/repositories/settings-repository.php';
 require_once __DIR__ . '/repositories/engagement-repository.php';
 require_once __DIR__ . '/repositories/task-repository.php';
 require_once __DIR__ . '/repositories/appointment-repository.php';
