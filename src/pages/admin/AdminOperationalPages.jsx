@@ -4374,6 +4374,631 @@ function ServiceManagementPage() {
   );
 }
 
+function ClientRequestsPage() {
+  const snapshot = adminStore.getSnapshot();
+  const [search, setSearch] = useState("");
+  const [requestTypeFilter, setRequestTypeFilter] = useState("All");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [clientFilter, setClientFilter] = useState("All");
+  const [ownerFilter, setOwnerFilter] = useState("All");
+  const [priorityFilter, setPriorityFilter] = useState("All");
+  const [newRequestOpen, setNewRequestOpen] = useState(false);
+  const [requestType, setRequestType] = useState("Document Request");
+  const [requestForm, setRequestForm] = useState({
+    clientId: "",
+    engagementId: "",
+    title: "",
+    instructions: "",
+    dueDate: "",
+    priority: "Normal",
+    owner: "Owner / Administrator",
+    documentType: "",
+    intakeType: "",
+    visibility: "Client Visible",
+  });
+
+  const rows = useMemo(() => {
+    const merged = [
+      ...snapshot.documents.map((item) => ({
+        id: item.id,
+        type: "Document",
+        requestType: "Document Request",
+        request: item.name || "Untitled document request",
+        clientId: item.clientId,
+        clientName:
+          snapshot.clients.find((client) => client.id === item.clientId)
+            ?.displayName || "Unknown client",
+        engagementId: item.engagementId,
+        engagementName:
+          snapshot.engagements.find((eng) => eng.id === item.engagementId)
+            ?.title ||
+          item.serviceName ||
+          "No engagement",
+        serviceName: item.serviceName || "General admin support",
+        dueDate: item.dueDate || item.requestedAt,
+        status: item.status || "Requested",
+        priority: item.priority || "Normal",
+        owner: item.assignedReviewer || "Owner / Administrator",
+        nextAction: item.status === "Requested" ? "Upload required" : "Review",
+      })),
+      ...snapshot.tasks.map((item) => ({
+        id: item.id,
+        type: "Task",
+        requestType: "Task / Action Item",
+        request: item.title || "Untitled task",
+        clientId: item.clientId,
+        clientName:
+          snapshot.clients.find((client) => client.id === item.clientId)
+            ?.displayName || "Unknown client",
+        engagementId: item.engagementId,
+        engagementName:
+          snapshot.engagements.find((eng) => eng.id === item.engagementId)
+            ?.title ||
+          item.serviceName ||
+          "No engagement",
+        serviceName: item.serviceName || "General admin support",
+        dueDate: item.dueDate,
+        status: item.status || "Waiting on Client",
+        priority: item.priority || "Normal",
+        owner: item.assignedTo || "Owner / Administrator",
+        nextAction: item.description || "Client response",
+      })),
+    ];
+
+    return merged;
+  }, [snapshot]);
+
+  const filteredRows = useMemo(() => {
+    return rows.filter((row) => {
+      const text =
+        `${row.request} ${row.clientName} ${row.engagementName} ${row.owner}`.toLowerCase();
+      const matchesSearch = !search || text.includes(search.toLowerCase());
+      const matchesType =
+        requestTypeFilter === "All" || row.type === requestTypeFilter;
+      const matchesStatus =
+        statusFilter === "All" || row.status === statusFilter;
+      const matchesClient =
+        clientFilter === "All" || row.clientName === clientFilter;
+      const matchesOwner = ownerFilter === "All" || row.owner === ownerFilter;
+      const matchesPriority =
+        priorityFilter === "All" || row.priority === priorityFilter;
+      return (
+        matchesSearch &&
+        matchesType &&
+        matchesStatus &&
+        matchesClient &&
+        matchesOwner &&
+        matchesPriority
+      );
+    });
+  }, [
+    rows,
+    search,
+    requestTypeFilter,
+    statusFilter,
+    clientFilter,
+    ownerFilter,
+    priorityFilter,
+  ]);
+
+  const summary = useMemo(
+    () => ({
+      open: rows.filter((row) =>
+        ["Requested", "Waiting on Client", "Open", "In Progress"].includes(
+          row.status,
+        ),
+      ).length,
+      waiting: rows.filter((row) =>
+        ["Waiting on Client", "Requested"].includes(row.status),
+      ).length,
+      ready: rows.filter((row) =>
+        ["Ready for Review", "Under Review"].includes(row.status),
+      ).length,
+      overdue: rows.filter(
+        (row) => row.dueDate && new Date(row.dueDate) < new Date(),
+      ).length,
+      completed: rows.filter((row) =>
+        ["Completed", "Received", "Approved"].includes(row.status),
+      ).length,
+    }),
+    [rows],
+  );
+
+  const clientOptions = [
+    "All",
+    ...Array.from(new Set(rows.map((row) => row.clientName).filter(Boolean))),
+  ];
+  const ownerOptions = [
+    "All",
+    ...Array.from(new Set(rows.map((row) => row.owner).filter(Boolean))),
+  ];
+  const engagementOptions = useMemo(() => {
+    if (!requestForm.clientId) return [];
+    return snapshot.engagements.filter(
+      (item) => item.clientId === requestForm.clientId,
+    );
+  }, [requestForm.clientId, snapshot.engagements]);
+
+  const createRequest = (event) => {
+    event.preventDefault();
+    const clientId = requestForm.clientId;
+    const engagementId = requestForm.engagementId;
+    if (!clientId || !engagementId) {
+      return;
+    }
+    if (requestType === "Document Request") {
+      const created = {
+        id: `doc-${Date.now().toString().slice(-6)}`,
+        clientId,
+        engagementId,
+        name:
+          requestForm.title || requestForm.documentType || "Document request",
+        category: requestForm.documentType || "Document",
+        status: "Requested",
+        requestedAt:
+          requestForm.dueDate || new Date().toISOString().slice(0, 10),
+        receivedAt: null,
+        reviewedAt: null,
+        serviceName:
+          snapshot.engagements.find((eng) => eng.id === engagementId)
+            ?.serviceName || "General admin support",
+        instructions: requestForm.instructions,
+        dueDate: requestForm.dueDate,
+        assignedReviewer: requestForm.owner,
+        priority: requestForm.priority,
+      };
+      adminStore.replaceCollections({
+        documents: [created, ...snapshot.documents],
+      });
+      setNewRequestOpen(false);
+      setRequestForm({
+        clientId: "",
+        engagementId: "",
+        title: "",
+        instructions: "",
+        dueDate: "",
+        priority: "Normal",
+        owner: "Owner / Administrator",
+        documentType: "",
+        intakeType: "",
+        visibility: "Client Visible",
+      });
+      return;
+    }
+    if (requestType === "Intake Form") {
+      const created = {
+        id: `task-${Date.now().toString().slice(-6)}`,
+        clientId,
+        engagementId,
+        title: requestForm.title || "Intake assignment",
+        description: requestForm.instructions,
+        dueDate: requestForm.dueDate,
+        status: "Waiting on Client",
+        priority: requestForm.priority,
+        assignedTo: requestForm.owner,
+        serviceName:
+          snapshot.engagements.find((eng) => eng.id === engagementId)
+            ?.serviceName || "General admin support",
+        category: "Intake",
+      };
+      adminStore.replaceCollections({ tasks: [created, ...snapshot.tasks] });
+      setNewRequestOpen(false);
+      return;
+    }
+    const created = {
+      id: `task-${Date.now().toString().slice(-6)}`,
+      clientId,
+      engagementId,
+      title: requestForm.title || "Action item",
+      description: requestForm.instructions,
+      dueDate: requestForm.dueDate,
+      status: "Waiting on Client",
+      priority: requestForm.priority,
+      assignedTo: requestForm.owner,
+      serviceName:
+        snapshot.engagements.find((eng) => eng.id === engagementId)
+          ?.serviceName || "General admin support",
+      category: "Action",
+    };
+    adminStore.replaceCollections({ tasks: [created, ...snapshot.tasks] });
+    setNewRequestOpen(false);
+  };
+
+  return (
+    <div className="admin-module">
+      <AdminPageHeader
+        eyebrow="Client operations"
+        title="Client Requests"
+        summary="Manage client documents, intake forms, action items, dependencies, and completion status from one workspace."
+        actions={[
+          {
+            label: "New Request",
+            primary: true,
+            onClick: () => setNewRequestOpen(true),
+          },
+        ]}
+      />
+      <div
+        className="admin-metrics-row"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
+          gap: "12px",
+          marginBottom: "18px",
+        }}
+      >
+        <div
+          className="admin-metric-card"
+          style={{
+            background: "#fff",
+            border: "1px solid #d9d5c9",
+            padding: "14px",
+            borderRadius: "12px",
+          }}
+        >
+          <small>Open Requests</small>
+          <strong style={{ display: "block", fontSize: "24px" }}>
+            {summary.open}
+          </strong>
+        </div>
+        <div
+          className="admin-metric-card"
+          style={{
+            background: "#fff",
+            border: "1px solid #d9d5c9",
+            padding: "14px",
+            borderRadius: "12px",
+          }}
+        >
+          <small>Waiting on Client</small>
+          <strong style={{ display: "block", fontSize: "24px" }}>
+            {summary.waiting}
+          </strong>
+        </div>
+        <div
+          className="admin-metric-card"
+          style={{
+            background: "#fff",
+            border: "1px solid #d9d5c9",
+            padding: "14px",
+            borderRadius: "12px",
+          }}
+        >
+          <small>Ready for Review</small>
+          <strong style={{ display: "block", fontSize: "24px" }}>
+            {summary.ready}
+          </strong>
+        </div>
+        <div
+          className="admin-metric-card"
+          style={{
+            background: "#fff",
+            border: "1px solid #d9d5c9",
+            padding: "14px",
+            borderRadius: "12px",
+          }}
+        >
+          <small>Overdue</small>
+          <strong style={{ display: "block", fontSize: "24px" }}>
+            {summary.overdue}
+          </strong>
+        </div>
+        <div
+          className="admin-metric-card"
+          style={{
+            background: "#fff",
+            border: "1px solid #d9d5c9",
+            padding: "14px",
+            borderRadius: "12px",
+          }}
+        >
+          <small>Completed</small>
+          <strong style={{ display: "block", fontSize: "24px" }}>
+            {summary.completed}
+          </strong>
+        </div>
+      </div>
+      <AdminToolbar
+        searchValue={search}
+        onSearchChange={setSearch}
+        filters={[
+          {
+            label: "Request Type",
+            value: requestTypeFilter,
+            onChange: setRequestTypeFilter,
+            options: ["All", "Document", "Task"].map((option) => ({
+              value: option,
+              label: option,
+            })),
+          },
+          {
+            label: "Client",
+            value: clientFilter,
+            onChange: setClientFilter,
+            options: clientOptions.map((option) => ({
+              value: option,
+              label: option,
+            })),
+          },
+          {
+            label: "Status",
+            value: statusFilter,
+            onChange: setStatusFilter,
+            options: [
+              "All",
+              "Requested",
+              "Waiting on Client",
+              "Ready for Review",
+              "Completed",
+              "Under Review",
+            ].map((option) => ({ value: option, label: option })),
+          },
+          {
+            label: "Priority",
+            value: priorityFilter,
+            onChange: setPriorityFilter,
+            options: ["All", "Low", "Normal", "High", "Urgent"].map(
+              (option) => ({ value: option, label: option }),
+            ),
+          },
+          {
+            label: "Owner",
+            value: ownerFilter,
+            onChange: setOwnerFilter,
+            options: ownerOptions.map((option) => ({
+              value: option,
+              label: option,
+            })),
+          },
+        ]}
+      />
+      <AdminSection title="Unified work queue">
+        <div className="admin-table-wrap">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Request</th>
+                <th>Type</th>
+                <th>Client</th>
+                <th>Engagement / Service</th>
+                <th>Due Date</th>
+                <th>Status</th>
+                <th>Next Action</th>
+                <th>Owner</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredRows.map((row) => (
+                <tr key={`${row.type}-${row.id}`}>
+                  <td>{row.request}</td>
+                  <td>{row.type}</td>
+                  <td>{row.clientName}</td>
+                  <td>{row.engagementName || row.serviceName}</td>
+                  <td>{formatDate(row.dueDate)}</td>
+                  <td>
+                    <AdminStatusBadge
+                      status={row.status}
+                      tone={statusTone[row.status] || "neutral"}
+                    />
+                  </td>
+                  <td>{row.nextAction}</td>
+                  <td>{row.owner}</td>
+                  <td>
+                    <button type="button" className="link-button">
+                      Review
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </AdminSection>
+
+      {newRequestOpen ? (
+        <div
+          className="admin-detail-overlay"
+          onClick={() => setNewRequestOpen(false)}
+        >
+          <aside
+            className="admin-detail-drawer"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="admin-detail-header">
+              <h2>New Request</h2>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => setNewRequestOpen(false)}
+              >
+                Close
+              </button>
+            </div>
+            <form
+              className="admin-detail-body client-detail-editor-grid"
+              onSubmit={createRequest}
+            >
+              <label className="full-span">
+                <span>Request type</span>
+                <select
+                  value={requestType}
+                  onChange={(event) => setRequestType(event.target.value)}
+                >
+                  <option>Document Request</option>
+                  <option>Intake Form</option>
+                  <option>Task / Action Item</option>
+                </select>
+              </label>
+              <label>
+                <span>Client</span>
+                <select
+                  required
+                  value={requestForm.clientId}
+                  onChange={(event) =>
+                    setRequestForm((current) => ({
+                      ...current,
+                      clientId: event.target.value,
+                      engagementId: "",
+                    }))
+                  }
+                >
+                  <option value="">Select client</option>
+                  {snapshot.clients.map((client) => (
+                    <option key={client.id} value={client.id}>
+                      {client.displayName}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span>Engagement</span>
+                <select
+                  required
+                  value={requestForm.engagementId}
+                  onChange={(event) =>
+                    setRequestForm((current) => ({
+                      ...current,
+                      engagementId: event.target.value,
+                    }))
+                  }
+                >
+                  <option value="">Select engagement</option>
+                  {engagementOptions.map((eng) => (
+                    <option key={eng.id} value={eng.id}>
+                      {eng.title || eng.serviceName}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {requestType === "Document Request" ? (
+                <>
+                  <label className="full-span">
+                    <span>Document name</span>
+                    <input
+                      value={requestForm.title}
+                      onChange={(event) =>
+                        setRequestForm((current) => ({
+                          ...current,
+                          title: event.target.value,
+                        }))
+                      }
+                      placeholder="e.g. Business tax organizer"
+                    />
+                  </label>
+                  <label>
+                    <span>Document type</span>
+                    <input
+                      value={requestForm.documentType}
+                      onChange={(event) =>
+                        setRequestForm((current) => ({
+                          ...current,
+                          documentType: event.target.value,
+                        }))
+                      }
+                      placeholder="Other / Custom Document"
+                    />
+                  </label>
+                </>
+              ) : null}
+              {requestType === "Intake Form" ? (
+                <label className="full-span">
+                  <span>Intake form</span>
+                  <input
+                    value={requestForm.title}
+                    onChange={(event) =>
+                      setRequestForm((current) => ({
+                        ...current,
+                        title: event.target.value,
+                      }))
+                    }
+                    placeholder="Business Consulting intake"
+                  />
+                </label>
+              ) : null}
+              {requestType === "Task / Action Item" ? (
+                <label className="full-span">
+                  <span>Task title</span>
+                  <input
+                    value={requestForm.title}
+                    onChange={(event) =>
+                      setRequestForm((current) => ({
+                        ...current,
+                        title: event.target.value,
+                      }))
+                    }
+                    placeholder="Confirm business address"
+                  />
+                </label>
+              ) : null}
+              <label>
+                <span>Due date</span>
+                <input
+                  type="date"
+                  value={requestForm.dueDate}
+                  onChange={(event) =>
+                    setRequestForm((current) => ({
+                      ...current,
+                      dueDate: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+              <label>
+                <span>Priority</span>
+                <select
+                  value={requestForm.priority}
+                  onChange={(event) =>
+                    setRequestForm((current) => ({
+                      ...current,
+                      priority: event.target.value,
+                    }))
+                  }
+                >
+                  <option>Low</option>
+                  <option>Normal</option>
+                  <option>High</option>
+                  <option>Urgent</option>
+                </select>
+              </label>
+              <label>
+                <span>Owner</span>
+                <select
+                  value={requestForm.owner}
+                  onChange={(event) =>
+                    setRequestForm((current) => ({
+                      ...current,
+                      owner: event.target.value,
+                    }))
+                  }
+                >
+                  <option>Owner / Administrator</option>
+                </select>
+              </label>
+              <label className="full-span">
+                <span>Client instructions</span>
+                <textarea
+                  rows="4"
+                  value={requestForm.instructions}
+                  onChange={(event) =>
+                    setRequestForm((current) => ({
+                      ...current,
+                      instructions: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+              <button type="submit" className="primary-button full-span">
+                Create request
+              </button>
+            </form>
+          </aside>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function TaskManagementPage() {
   const snapshot = adminStore.getSnapshot();
   const [search, setSearch] = useState("");
@@ -11083,6 +11708,7 @@ export {
   LeadManagementPage,
   ClientManagementPage,
   ServiceManagementPage,
+  ClientRequestsPage,
   TaskManagementPage,
   DocumentManagementPage,
   AppointmentManagementPage,

@@ -31,6 +31,7 @@ import {
   LeadManagementPage,
   ClientManagementPage,
   ServiceManagementPage,
+  ClientRequestsPage,
   TaskManagementPage,
   DocumentManagementPage,
   AppointmentManagementPage,
@@ -268,10 +269,30 @@ function App() {
           <Route path="leads" element={<LeadManagementPage />} />
           <Route path="clients" element={<ClientManagementPage />} />
           <Route path="clients/:clientId" element={<ClientManagementPage />} />
-          <Route path="intakes" element={<AdminIntakePage />} />
           <Route path="services" element={<ServiceManagementPage />} />
-          <Route path="tasks" element={<TaskManagementPage />} />
-          <Route path="documents" element={<DocumentManagementPage />} />
+          <Route path="client-requests" element={<ClientRequestsPage />} />
+          <Route
+            path="intakes"
+            element={
+              <Navigate to="/admin/client-requests?type=intake" replace />
+            }
+          />
+          <Route
+            path="intake"
+            element={
+              <Navigate to="/admin/client-requests?type=intake" replace />
+            }
+          />
+          <Route
+            path="tasks"
+            element={<Navigate to="/admin/client-requests?type=task" replace />}
+          />
+          <Route
+            path="documents"
+            element={
+              <Navigate to="/admin/client-requests?type=document" replace />
+            }
+          />
           <Route path="communications" element={<AdminCommunicationsPage />} />
           <Route path="appointments" element={<AppointmentManagementPage />} />
           <Route path="billing" element={<BillingManagementPage />} />

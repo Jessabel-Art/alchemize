@@ -201,4 +201,23 @@ test.describe("Authenticated admin state workflows", () => {
     );
     expect(afterReload).toBeUndefined();
   });
+
+  test("consolidates admin workspaces into a single Client Requests route", async ({
+    page,
+  }) => {
+    await openAdminPage(page, "/admin/client-requests/");
+
+    const navLabels = await page.locator("nav a, a").allTextContents();
+    expect(navLabels.some((label) => label.includes("Client Requests"))).toBe(
+      true,
+    );
+    expect(navLabels.some((label) => label.includes("Intake"))).toBe(false);
+    expect(navLabels.some((label) => label.includes("Tasks"))).toBe(false);
+    expect(navLabels.some((label) => label.includes("Documents"))).toBe(false);
+
+    await expect(
+      page.getByRole("heading", { name: "Client Requests" }),
+    ).toBeVisible();
+    await expect(page.getByRole("button", { name: /New Request/i })).toBeVisible();
+  });
 });

@@ -196,10 +196,8 @@ const navItems = [
   { label: "Dashboard", to: "/admin/dashboard" },
   { label: "Leads", to: "/admin/leads" },
   { label: "Clients", to: "/admin/clients" },
-  { label: "Intake", to: "/admin/intakes" },
   { label: "Services", to: "/admin/services" },
-  { label: "Tasks", to: "/admin/tasks" },
-  { label: "Documents", to: "/admin/documents" },
+  { label: "Client Requests", to: "/admin/client-requests" },
   { label: "Communications", to: "/admin/communications" },
   { label: "Appointments", to: "/admin/appointments" },
   { label: "Billing", to: "/admin/billing" },
@@ -275,7 +273,7 @@ function AdminLayout() {
           {loadState.error} Refresh to try again.
         </div>
       ) : null}
-      {!loadState.loading && !loadState.error ? <Outlet /> : null}
+      {!loadState.loading ? <Outlet /> : null}
     </PortalShell>
   );
 }
