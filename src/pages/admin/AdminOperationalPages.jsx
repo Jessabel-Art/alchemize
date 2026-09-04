@@ -7229,7 +7229,9 @@ function AppointmentManagementPage() {
       }
 
       const result = await appointmentApi.createSchedulingLink(payload);
-      const created = Boolean(result?.scheduling_link_created ?? result?.id ?? result?.expires_at);
+      const created = Boolean(
+        result?.scheduling_link_created ?? result?.id ?? result?.expires_at,
+      );
       const copyUrl = result?.copy_url || result?.url || "";
 
       if (created) {

@@ -309,25 +309,25 @@ function AdminDashboardPage() {
     {
       label: "Needs attention",
       value: needsAttentionCount,
-      detail: "Open tasks, due items, and active follow-up",
+      detail: "Open work and follow-up",
       to: "/admin/dashboard#attention",
     },
     {
-      label: "Open active clients",
+      label: "Active clients",
       value: snapshot.clients.filter((client) => isActiveClient(client)).length,
       detail: "Current client relationships",
       to: "/admin/clients",
     },
     {
       label: "Open invoices",
-      value: `${openInvoiceRows.length} invoices`,
+      value: openInvoiceRows.length,
       detail: `${formatCurrency(totalOutstanding)} outstanding`,
       to: "/admin/billing",
     },
     {
-      label: "Upcoming appointments",
+      label: "Upcoming",
       value: upcomingAppointments.length,
-      detail: "Within the next 7 days",
+      detail: "Appointments in the next 7 days",
       to: "/admin/appointments",
     },
   ];
@@ -346,15 +346,12 @@ function AdminDashboardPage() {
         </p>
       </header>
 
-      <section
-        className="admin-metrics dashboard-metrics"
-        aria-label="Summary metrics"
-      >
+      <section className="dashboard-summary-strip" aria-label="Summary metrics">
         {dashboardMetrics.map((metric) => (
           <Link
             key={metric.label}
             to={metric.to}
-            className="admin-metric-card metric-link-card"
+            className="dashboard-summary-item metric-link-card"
           >
             <span>{metric.label}</span>
             <strong>{metric.value}</strong>
@@ -380,11 +377,11 @@ function AdminDashboardPage() {
               </div>
             ) : null}
             {!portalAttention.loading && portalAttention.items.length ? (
-              <ul className="attention-list">
+              <ul className="attention-list compact-list">
                 {portalAttention.items.map((item) => (
                   <li
                     key={`${item.kind}-${item.id}`}
-                    className="attention-item"
+                    className="attention-item compact-row"
                   >
                     <div className="attention-item-copy">
                       <div className="attention-item-topline">
@@ -474,43 +471,6 @@ function AdminDashboardPage() {
                         </button>
                       </div>
                     ) : null}
-                    {replacementItem?.id === item.id ? (
-                      <form
-                        className="portal-admin-reply"
-                        onSubmit={(event) => {
-                          event.preventDefault();
-                          if (!replacementNote.trim()) return;
-                          resolvePortalItem(item, "replacement", {
-                            note: replacementNote.trim(),
-                          });
-                        }}
-                      >
-                        <label htmlFor={`replacement-${item.id}`}>
-                          Replacement request or explanation
-                        </label>
-                        <textarea
-                          id={`replacement-${item.id}`}
-                          required
-                          maxLength={500}
-                          value={replacementNote}
-                          onChange={(event) =>
-                            setReplacementNote(event.target.value)
-                          }
-                          placeholder={`Explain what should replace ${item.title || "this document"}.`}
-                        />
-                        <div className="portal-admin-actions">
-                          <button type="submit">
-                            Send replacement request
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setReplacementItem(null)}
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </form>
-                    ) : null}
                   </li>
                 ))}
               </ul>
@@ -521,6 +481,7 @@ function AdminDashboardPage() {
               </div>
             ) : null}
           </article>
+
           <article id="attention" className="dashboard-panel">
             <div className="panel-heading">
               <h2>Today / Needs your attention</h2>
@@ -529,9 +490,9 @@ function AdminDashboardPage() {
               </Link>
             </div>
             {attentionItems.length ? (
-              <ul className="attention-list">
+              <ul className="attention-list compact-list">
                 {attentionItems.map((item) => (
-                  <li key={item.key} className="attention-item">
+                  <li key={item.key} className="attention-item compact-row">
                     <div className="attention-item-copy">
                       <div className="attention-item-topline">
                         <span className="attention-kind">{item.type}</span>
@@ -573,14 +534,20 @@ function AdminDashboardPage() {
               </Link>
             </div>
             {upcomingAppointments.length ? (
-              <ul className="schedule-list">
+              <ul className="schedule-list compact-list">
                 {upcomingAppointments.map((appointment) => (
-                  <li key={appointment.id} className="schedule-item">
+                  <li
+                    key={appointment.id}
+                    className="schedule-item compact-row"
+                  >
                     <div className="schedule-date-block">
                       <span>
                         {new Date(appointment.date).toLocaleDateString(
                           undefined,
-                          { month: "short", day: "numeric" },
+                          {
+                            month: "short",
+                            day: "numeric",
+                          },
                         )}
                       </span>
                     </div>
@@ -604,7 +571,7 @@ function AdminDashboardPage() {
               </ul>
             ) : (
               <div className="dashboard-empty-state">
-                No appointments scheduled in the next 7 days.
+                No appointments in the next 7 days.
               </div>
             )}
           </article>
@@ -614,13 +581,13 @@ function AdminDashboardPage() {
       <section className="dashboard-secondary-grid">
         <article className="dashboard-panel">
           <div className="panel-heading">
-            <h2>Leads awaiting response</h2>
+            <h2>Prospect follow-up</h2>
             <Link to="/admin/leads" className="dashboard-view-link">
               View all
             </Link>
           </div>
           {leadQueue.length ? (
-            <ul className="mini-list">
+            <ul className="mini-list compact-list">
               {leadQueue.map((lead) => (
                 <li key={lead.id}>
                   <div>
@@ -638,7 +605,7 @@ function AdminDashboardPage() {
             </ul>
           ) : (
             <div className="dashboard-empty-state">
-              No leads are currently waiting for follow-up.
+              No prospects currently awaiting follow-up.
             </div>
           )}
         </article>
@@ -651,7 +618,7 @@ function AdminDashboardPage() {
             </Link>
           </div>
           {activeServiceWork.length ? (
-            <ul className="mini-list">
+            <ul className="mini-list compact-list">
               {activeServiceWork.map((engagement) => (
                 <li key={engagement.id}>
                   <div>
@@ -672,9 +639,7 @@ function AdminDashboardPage() {
               ))}
             </ul>
           ) : (
-            <div className="dashboard-empty-state">
-              No active service work is currently tracked.
-            </div>
+            <div className="dashboard-empty-state">No active service work.</div>
           )}
         </article>
       </section>
@@ -688,7 +653,7 @@ function AdminDashboardPage() {
             </Link>
           </div>
           {documentActions.length ? (
-            <ul className="mini-list">
+            <ul className="mini-list compact-list">
               {documentActions.map((document) => (
                 <li key={document.id}>
                   <div>
@@ -744,7 +709,7 @@ function AdminDashboardPage() {
             </div>
           </div>
           {billingWatch.length ? (
-            <ul className="mini-list">
+            <ul className="mini-list compact-list">
               {billingWatch.map((invoice) => (
                 <li key={invoice.id}>
                   <div>
@@ -775,7 +740,7 @@ function AdminDashboardPage() {
             </Link>
           </div>
           {recentActivity.length ? (
-            <ul className="activity-list">
+            <ul className="activity-list compact-list">
               {recentActivity.map((entry) => (
                 <li key={entry.id}>
                   <span
@@ -805,20 +770,20 @@ function AdminDashboardPage() {
             <h2>Quick actions</h2>
           </div>
           <div className="quick-actions-grid">
-            <Link to="/admin/leads" className="quick-action-link">
-              Open leads
-            </Link>
             <Link to="/admin/clients" className="quick-action-link">
-              Open clients
+              Client management
             </Link>
             <Link to="/admin/appointments" className="quick-action-link">
               Appointments
             </Link>
+            <Link
+              to="/admin/clients?view=requests"
+              className="quick-action-link"
+            >
+              Client requests
+            </Link>
             <Link to="/admin/billing" className="quick-action-link">
               Billing
-            </Link>
-            <Link to="/admin/documents" className="quick-action-link">
-              Documents
             </Link>
             <Link to="/admin/services" className="quick-action-link">
               Service work
@@ -826,6 +791,69 @@ function AdminDashboardPage() {
           </div>
         </aside>
       </section>
+
+      {replacementItem ? (
+        <div
+          className="replacement-modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="replacement-modal">
+            <div className="panel-heading replacement-header">
+              <h2>Request replacement</h2>
+            </div>
+            <div className="replacement-context">
+              <p>
+                <strong>Client:</strong>{" "}
+                {replacementItem.client_name || "Client"}
+              </p>
+              <p>
+                <strong>Document:</strong>{" "}
+                {replacementItem.title || replacementItem.name || "Document"}
+              </p>
+            </div>
+            <label
+              className="replacement-label"
+              htmlFor="replacement-request-field"
+            >
+              Replacement request or explanation
+            </label>
+            <textarea
+              id="replacement-request-field"
+              className="replacement-textarea"
+              required
+              maxLength={500}
+              value={replacementNote}
+              onChange={(event) => setReplacementNote(event.target.value)}
+              placeholder="Explain what should be replaced or resubmitted."
+            />
+            <div className="replacement-actions">
+              <button
+                type="button"
+                className="primary-button"
+                onClick={() => {
+                  if (!replacementNote.trim()) return;
+                  resolvePortalItem(replacementItem, "replacement", {
+                    note: replacementNote.trim(),
+                  });
+                }}
+              >
+                Send replacement request
+              </button>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => {
+                  setReplacementItem(null);
+                  setReplacementNote("");
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

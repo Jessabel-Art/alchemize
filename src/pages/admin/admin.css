@@ -4,11 +4,11 @@
 
 .admin-dashboard {
   display: grid;
-  gap: 2rem;
+  gap: 1.5rem;
 }
 
 .admin-dashboard-header {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
 }
 
 .admin-module {
@@ -284,13 +284,48 @@
   min-width: 0;
 }
 
+.dashboard-summary-strip {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.75rem;
+  padding: 0.65rem 0;
+}
+
+.dashboard-summary-item {
+  display: grid;
+  gap: 0.28rem;
+  padding: 0.9rem 0.9rem 0.8rem;
+  border: 1px solid rgba(6, 43, 43, 0.08);
+  border-radius: 0.9rem;
+  background: rgba(255, 255, 255, 0.62);
+  text-decoration: none;
+  color: inherit;
+}
+
+.dashboard-summary-item span {
+  color: var(--color-text-soft);
+  font-size: 0.67rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dashboard-summary-item strong {
+  font-size: clamp(1.7rem, 2vw, 2.2rem);
+  line-height: 1.08;
+}
+
+.dashboard-summary-item small {
+  color: var(--color-text-soft);
+  line-height: 1.4;
+}
+
 .dashboard-panel {
   display: grid;
-  gap: 0.9rem;
-  padding: 1.1rem 1rem 0.9rem;
-  border: 1px solid rgba(6, 43, 43, 0.08);
-  border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.72);
+  gap: 0.8rem;
+  padding: 1rem 1rem 0.9rem;
+  border: 1px solid rgba(6, 43, 43, 0.07);
+  border-radius: 0.95rem;
+  background: rgba(255, 255, 255, 0.7);
   min-height: 0;
 }
 
@@ -344,10 +379,21 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: 0.75rem;
-  padding: 0.8rem 0.9rem;
-  border: 1px solid rgba(6, 43, 43, 0.06);
-  border-radius: 0.9rem;
-  background: rgba(6, 43, 43, 0.015);
+  padding: 0.75rem 0.8rem;
+  border-top: 1px solid rgba(6, 43, 43, 0.08);
+  border-bottom: 1px solid rgba(6, 43, 43, 0.08);
+  border-left: 0;
+  border-right: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.compact-list .attention-item,
+.compact-list .schedule-item,
+.compact-list .mini-list li,
+.compact-list .activity-list li {
+  padding-left: 0;
+  padding-right: 0;
 }
 
 .attention-item-copy,
@@ -360,19 +406,22 @@
 }
 
 .portal-client-attention {
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
+
 .portal-admin-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.45rem;
+  align-items: center;
   justify-content: flex-end;
+  gap: 0.45rem;
 }
+
 .portal-admin-actions button,
 .portal-admin-actions a {
-  min-height: 38px;
-  padding: 0.5rem 0.7rem;
-  border: 1px solid rgba(6, 43, 43, 0.25);
+  min-height: 36px;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid rgba(6, 43, 43, 0.2);
   background: transparent;
   color: var(--emerald-deep);
   font: 600 0.72rem/1.2 var(--font-body);
@@ -487,28 +536,88 @@
 }
 
 .quick-actions-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.7rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .quick-action-link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 2.8rem;
-  padding: 0.7rem 0.8rem;
-  border-radius: 0.8rem;
+  min-height: 2.5rem;
+  padding: 0.55rem 0.8rem;
+  border-radius: 0.7rem;
   border: 1px solid rgba(6, 43, 43, 0.08);
   background: rgba(6, 43, 43, 0.02);
   text-align: center;
 }
 
-.dashboard-empty-state {
+.replacement-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(9, 25, 24, 0.52);
+  z-index: 1000;
   padding: 1rem;
-  border: 1px dashed rgba(6, 43, 43, 0.18);
+}
+
+.replacement-modal {
+  display: grid;
+  gap: 0.9rem;
+  width: min(100%, 32rem);
+  padding: 1.25rem;
+  background: #fffdf9;
+  border: 1px solid rgba(6, 43, 43, 0.08);
+  border-radius: 1rem;
+  box-shadow: 0 22px 44px rgba(12, 21, 22, 0.18);
+}
+
+.replacement-header {
+  border-bottom: 1px solid rgba(6, 43, 43, 0.08);
+  padding-bottom: 0.4rem;
+}
+
+.replacement-context {
+  display: grid;
+  gap: 0.2rem;
+  color: var(--color-text-soft);
+}
+
+.replacement-context p {
+  margin: 0;
+}
+
+.replacement-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-soft);
+}
+
+.replacement-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid rgba(6, 43, 43, 0.15);
   border-radius: 0.8rem;
-  background: rgba(255, 255, 255, 0.32);
+  background: #fff;
+  resize: vertical;
+}
+
+.replacement-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+}
+
+.dashboard-empty-state {
+  padding: 0.8rem 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   color: var(--color-text-soft);
 }
 
