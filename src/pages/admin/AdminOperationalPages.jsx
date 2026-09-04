@@ -7968,8 +7968,8 @@ function BillingManagementPage() {
           className="admin-detail-overlay"
           onClick={() => setIsCreateOpen(false)}
         >
-          <aside
-            className="admin-detail-drawer invoice-builder"
+          <div
+            className="admin-detail-panel invoice-builder"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="admin-detail-header">
@@ -8328,7 +8328,7 @@ function BillingManagementPage() {
                 </button>
               </div>
             </div>
-          </aside>
+          </div>
         </div>
       ) : null}
     </div>
@@ -8438,9 +8438,105 @@ function InvoiceDetailPage() {
   };
 
   const effectiveStatus = getEffectiveInvoiceStatus(invoiceSnapshot);
+  const printInvoice = {
+    lineItems: invoiceSnapshot.lineItems || [],
+    subtotal: totals.subtotal,
+    adjustments: totals.adjustments,
+    creditsApplied: totals.creditsApplied,
+    total: totals.total,
+    paidAmount: totals.paidAmount,
+    balance: totals.balance,
+    paymentTerms: invoiceSnapshot.paymentTerms || "Net 14",
+    clientName: client?.displayName || client?.businessName || "Client",
+    clientAddress: client?.businessName || "",
+    billingMeta: [
+      client?.businessName || "",
+      client?.email || "",
+      client?.phone || "",
+    ].filter(Boolean),
+  };
 
   return (
     <div className="admin-module">
+      <div className="invoice-print-sheet" aria-label="Invoice print view">
+        <div className="invoice-print-header">
+          <div className="invoice-print-brand">
+            <img
+              src="/assets/logo-dark.svg"
+              alt="Alchemize"
+              className="invoice-print-logo"
+            />
+            <div>
+              <strong>Alchemize Business Services</strong>
+              <span>Invoice</span>
+            </div>
+          </div>
+          <div className="invoice-print-meta">
+            <h2>{invoiceSnapshot.invoiceNumber || invoiceSnapshot.id}</h2>
+            <p>Invoice date: {formatDate(invoiceSnapshot.invoiceDate)}</p>
+            <p>Due date: {formatDate(invoiceSnapshot.dueAt)}</p>
+            <p>Terms: {printInvoice.paymentTerms}</p>
+          </div>
+        </div>
+
+        <div className="invoice-print-grid">
+          <div>
+            <h3>Bill To</h3>
+            <p>{printInvoice.clientName}</p>
+            {printInvoice.billingMeta.length ? (
+              <div className="invoice-print-address">
+                {printInvoice.billingMeta.map((line) => (
+                  <p key={line}>{line}</p>
+                ))}
+              </div>
+            ) : null}
+          </div>
+          <div>
+            <h3>Invoice Summary</h3>
+            {engagement ? <p>Engagement: {engagement.serviceName}</p> : null}
+            <p>Status: {effectiveStatus}</p>
+            <p>Outstanding: {formatCurrency(printInvoice.balance)}</p>
+          </div>
+        </div>
+
+        <table className="invoice-print-table">
+          <thead>
+            <tr>
+              <th>Description</th>
+              <th>Qty</th>
+              <th>Rate</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {printInvoice.lineItems.map((lineItem) => (
+              <tr key={lineItem.id}>
+                <td>{lineItem.description || "Custom invoice line"}</td>
+                <td>{lineItem.quantity || 1}</td>
+                <td>{formatCurrency(lineItem.unitPrice || 0)}</td>
+                <td>{formatCurrency(lineItem.amount || 0)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        <div className="invoice-print-totals">
+          <div><span>Subtotal</span><strong>{formatCurrency(printInvoice.subtotal)}</strong></div>
+          <div><span>Adjustments</span><strong>{formatCurrency(printInvoice.adjustments)}</strong></div>
+          <div><span>Credits / deposits</span><strong>{formatCurrency(printInvoice.creditsApplied)}</strong></div>
+          <div><span>Payments</span><strong>{formatCurrency(printInvoice.paidAmount)}</strong></div>
+          <div><span>Invoice total</span><strong>{formatCurrency(printInvoice.total)}</strong></div>
+          <div><span>Remaining balance</span><strong>{formatCurrency(printInvoice.balance)}</strong></div>
+        </div>
+
+        {invoiceSnapshot.notes ? (
+          <div className="invoice-print-notes">
+            <h3>Client-facing notes</h3>
+            <p>{invoiceSnapshot.notes}</p>
+          </div>
+        ) : null}
+      </div>
+
       <AdminPageHeader
         eyebrow="Billing"
         title={`Invoice ${invoiceSnapshot.invoiceNumber || invoiceSnapshot.id}`}

@@ -1,11 +1,16 @@
 import { useEffect, useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import Logo from "../brand/Logo.jsx";
 import "./portal-shell.css";
 
 function PortalShell({ title, navItems, children }) {
   const isAdminShell = title === "Alchemize Admin";
+  const location = useLocation();
   const [navOpen, setNavOpen] = useState(false);
+
+  useEffect(() => {
+    setNavOpen(false);
+  }, [location.pathname]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -56,6 +61,7 @@ function PortalShell({ title, navItems, children }) {
             <NavLink
               key={item.to}
               to={item.to}
+              end={item.to === "/admin/dashboard" || item.to === "/client-portal/dashboard"}
               onClick={() => setNavOpen(false)}
               className={({ isActive }) =>
                 isActive ? "portal-nav-item active" : "portal-nav-item"

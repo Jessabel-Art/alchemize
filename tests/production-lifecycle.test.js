@@ -66,6 +66,26 @@ test("Admin billing reloads invoices and payments from persistent APIs", () => {
   assert.match(api, /export const payments = {[\s\S]*list:/);
 });
 
+test("Admin sidebar routes re-evaluate on path changes and keep exact route matching active", () => {
+  const shell = read("src/components/ui/PortalShell.jsx");
+  assert.match(shell, /useLocation\(\)/);
+  assert.match(shell, /setNavOpen\(false\);/);
+  assert.match(
+    shell,
+    /end=\{item\.to === "\/admin\/dashboard" \|\| item\.to === "\/client-portal\/dashboard"\}/,
+  );
+  assert.match(shell, /NavLink/);
+});
+
+test("invoice print view renders branded invoice content instead of empty application chrome", () => {
+  const invoiceView = read("src/pages/admin/AdminOperationalPages.jsx");
+  assert.match(invoiceView, /Alchemize Business Services/);
+  assert.match(invoiceView, /Invoice print view/i);
+  assert.match(invoiceView, /invoice-print-sheet/);
+  assert.match(invoiceView, /Remaining balance/);
+  assert.match(invoiceView, /window\.print\(\)/);
+});
+
 test("production schema verification is CLI-only and status-only", () => {
   const diagnostic = read("scripts/verify-production-schema.php");
   assert.match(diagnostic, /PHP_SAPI !== 'cli'/);
