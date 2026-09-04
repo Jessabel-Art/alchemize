@@ -81,8 +81,18 @@ jobs:
           test ! -e deploy-output/${PUBLIC_WEB_ROOT}/.env
           test ! -e deploy-output/${PUBLIC_WEB_ROOT}/migrations
 
+      - name: Check Hostinger deployment secrets
+        id: hostinger-config
+        shell: bash
+        run: |
+          if [[ -n "${HOSTINGER_SSH_KEY_B64:-}" && -n "${HOSTINGER_HOST:-}" && -n "${HOSTINGER_USER:-}" && -n "${HOSTINGER_PRIVATE_ROOT:-}" ]]; then
+            echo "has_required_secrets=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_required_secrets=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Deploy and verify private backend on Hostinger
-        if: ${{ secrets.HOSTINGER_SSH_KEY_B64 != '' && secrets.HOSTINGER_HOST != '' && secrets.HOSTINGER_USER != '' && secrets.HOSTINGER_PRIVATE_ROOT != '' }}
+        if: ${{ steps.hostinger-config.outputs.has_required_secrets == 'true' }}
         shell: bash
         env:
           SSH_KEY_B64: ${{ secrets.HOSTINGER_SSH_KEY_B64 }}
