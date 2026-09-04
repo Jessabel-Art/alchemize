@@ -67,8 +67,12 @@
 
 .admin-metrics {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0;
+  margin-bottom: 1rem;
+  border-top: 1px solid rgba(6, 43, 43, 0.12);
+  border-bottom: 1px solid rgba(6, 43, 43, 0.12);
+  background: rgba(255, 255, 255, 0.22);
 }
 
 .dashboard-metrics {
@@ -623,23 +627,28 @@
 
 .admin-metric-card {
   display: grid;
-  gap: 0.3rem;
-  padding: 1.1rem 1rem;
-  border: 1px solid rgba(6, 43, 43, 0.12);
-  background: rgba(255, 255, 255, 0.75);
-  border-radius: 1rem;
-  box-shadow: 0 16px 32px rgba(18, 35, 31, 0.04);
+  gap: 0.28rem;
+  padding: 0.9rem 0.9rem 0.8rem;
+  border: 0;
+  border-right: 1px solid rgba(6, 43, 43, 0.1);
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.admin-metric-card:last-child {
+  border-right: 0;
 }
 
 .admin-metric-card span {
   color: var(--color-text-soft);
-  font-size: 0.72rem;
+  font-size: 0.66rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .admin-metric-card strong {
-  font-size: clamp(1.8rem, 2.2vw, 2.5rem);
+  font-size: clamp(1.5rem, 2vw, 2.2rem);
   font-weight: 600;
   line-height: 1.1;
 }
@@ -1249,7 +1258,7 @@
 .detail-summary-row {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.65rem;
   flex-wrap: wrap;
 }
 
@@ -1257,9 +1266,12 @@
 .scheduler-filter-row,
 .scheduler-custom-range {
   padding: 0.8rem 0.9rem;
-  border: 1px solid rgba(6, 43, 43, 0.08);
-  border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.76);
+  border-top: 1px solid rgba(6, 43, 43, 0.12);
+  border-bottom: 1px solid rgba(6, 43, 43, 0.12);
+  border-left: 0;
+  border-right: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 .scheduler-toolbar {
@@ -1281,6 +1293,13 @@
 .scheduler-filter-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.7rem;
+}
+
+.scheduler-exception-copy {
+  margin: 0;
+  color: var(--color-text-soft);
+  line-height: 1.5;
 }
 
 .scheduler-filter-row input,

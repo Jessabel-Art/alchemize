@@ -5161,86 +5161,15 @@ function ClientRequestsPage() {
           },
         ]}
       />
-      <div
-        className="admin-metrics-row"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
-          gap: "12px",
-          marginBottom: "18px",
-        }}
-      >
-        <div
-          className="admin-metric-card"
-          style={{
-            background: "#fff",
-            border: "1px solid #d9d5c9",
-            padding: "14px",
-            borderRadius: "12px",
-          }}
-        >
-          <small>Open Requests</small>
-          <strong style={{ display: "block", fontSize: "24px" }}>
-            {summary.open}
-          </strong>
-        </div>
-        <div
-          className="admin-metric-card"
-          style={{
-            background: "#fff",
-            border: "1px solid #d9d5c9",
-            padding: "14px",
-            borderRadius: "12px",
-          }}
-        >
-          <small>Waiting on Client</small>
-          <strong style={{ display: "block", fontSize: "24px" }}>
-            {summary.waiting}
-          </strong>
-        </div>
-        <div
-          className="admin-metric-card"
-          style={{
-            background: "#fff",
-            border: "1px solid #d9d5c9",
-            padding: "14px",
-            borderRadius: "12px",
-          }}
-        >
-          <small>Ready for Review</small>
-          <strong style={{ display: "block", fontSize: "24px" }}>
-            {summary.ready}
-          </strong>
-        </div>
-        <div
-          className="admin-metric-card"
-          style={{
-            background: "#fff",
-            border: "1px solid #d9d5c9",
-            padding: "14px",
-            borderRadius: "12px",
-          }}
-        >
-          <small>Overdue</small>
-          <strong style={{ display: "block", fontSize: "24px" }}>
-            {summary.overdue}
-          </strong>
-        </div>
-        <div
-          className="admin-metric-card"
-          style={{
-            background: "#fff",
-            border: "1px solid #d9d5c9",
-            padding: "14px",
-            borderRadius: "12px",
-          }}
-        >
-          <small>Completed</small>
-          <strong style={{ display: "block", fontSize: "24px" }}>
-            {summary.completed}
-          </strong>
-        </div>
-      </div>
+      <AdminMetrics
+        items={[
+          { label: "Open Requests", value: summary.open },
+          { label: "Waiting on Client", value: summary.waiting },
+          { label: "Ready for Review", value: summary.ready },
+          { label: "Overdue", value: summary.overdue },
+          { label: "Completed", value: summary.completed },
+        ]}
+      />
       <AdminToolbar
         searchValue={search}
         onSearchChange={setSearch}
@@ -7641,6 +7570,13 @@ function AppointmentManagementPage() {
         <div className="scheduler-action-group">
           <button
             type="button"
+            className="primary-button"
+            onClick={() => openDraftForm("create")}
+          >
+            + Schedule Appointment
+          </button>
+          <button
+            type="button"
             className="secondary-button"
             onClick={openSchedulingLinkModal}
           >
@@ -7649,23 +7585,9 @@ function AppointmentManagementPage() {
           <button
             type="button"
             className="secondary-button"
-            onClick={() => openAvailabilityModal("weekly")}
-          >
-            Manage Availability
-          </button>
-          <button
-            type="button"
-            className="secondary-button"
             onClick={() => openAvailabilityModal("block")}
           >
-            Block Out Time
-          </button>
-          <button
-            type="button"
-            className="primary-button"
-            onClick={() => openDraftForm("create")}
-          >
-            + Schedule Appointment
+            Availability Exceptions
           </button>
         </div>
       </div>
@@ -8872,11 +8794,7 @@ function AppointmentManagementPage() {
             onClick={(event) => event.stopPropagation()}
           >
             <div className="scheduler-modal-header">
-              <h3>
-                {availabilityMode === "block"
-                  ? "Block Out Time"
-                  : "Manage Weekly Availability"}
-              </h3>
+              <h3>Availability Exceptions</h3>
               <button
                 type="button"
                 className="secondary-button"
@@ -8886,10 +8804,10 @@ function AppointmentManagementPage() {
               </button>
             </div>
             <div className="scheduler-modal-body form-grid">
-              <p className="full-span">
-                {availabilityMode === "block"
-                  ? "Add a date-specific exception to prevent scheduling during this period."
-                  : "Add one or more recurring working-hour ranges for each enabled day."}
+              <p className="full-span scheduler-exception-copy">
+                Use availability exceptions to adjust the standard
+                business-hours baseline only when it differs from the normal
+                schedule.
               </p>
               {availabilityMode === "weekly" ? (
                 <label>
@@ -9015,9 +8933,11 @@ function AppointmentManagementPage() {
                 >
                   {availabilitySaving
                     ? "Saving…"
-                    : availabilityMode === "block"
-                      ? "Block Out Time"
-                      : "Add Time Range"}
+                    : availabilityDraft.kind === "blocked"
+                      ? "Save Full-Day Block"
+                      : availabilityDraft.kind === "time_off"
+                        ? "Save Time Range"
+                        : "Save Special Hours"}
                 </button>
               </div>
               {availabilityRows.length ? (
