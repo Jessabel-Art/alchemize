@@ -22,6 +22,6 @@ test("client service assignment creates the canonical engagement and reloads it"
   );
   assert.match(
     clientRoute,
-    /alchemize_json_response\(\['data'\s*=>\s*\$catalogRepository->assignToClient/, 
+    /alchemize_json_response\(\['data'\s*=>\s*\$catalogRepository->assignToClient/,
   );
 });

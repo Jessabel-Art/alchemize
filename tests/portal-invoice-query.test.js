@@ -8,5 +8,8 @@ const repositorySource = fs.readFileSync(
 );
 
 test("portal invoice list does not query a non-existent stripe_sync_status column", () => {
-  assert.doesNotMatch(repositorySource, /i\.stripe_sync_status|stripe_sync_status/i);
+  assert.doesNotMatch(
+    repositorySource,
+    /i\.stripe_sync_status|stripe_sync_status/i,
+  );
 });
