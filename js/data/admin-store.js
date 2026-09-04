@@ -1358,14 +1358,34 @@ export function createAdminStore(initialData = emptyAdminData) {
     if (!amount || amount <= 0)
       throw new Error("Payment amount must be greater than zero.");
 
+    const lineTotal = (invoice.lineItems || []).reduce(
+      (sum, lineItem) =>
+        sum +
+        parseMoney(
+          lineItem.amount ||
+            Number(lineItem.quantity || 1) * Number(lineItem.unitPrice || 0),
+        ),
+      0,
+    );
+    const invoiceSubtotal = parseMoney(
+      invoice.subtotal ?? invoice.amount ?? lineTotal,
+    );
+    const invoiceTotal = Math.max(
+      invoiceSubtotal +
+        parseMoney(invoice.adjustments || 0) -
+        parseMoney(invoice.creditsApplied || 0),
+      0,
+    );
     const existingPayments = state.payments.filter(
       (entry) => entry.invoiceId === invoice.id,
     );
-    const paidAlready = existingPayments.reduce(
-      (sum, entry) => sum + parseMoney(entry.amount),
-      0,
+    const paidAlready = parseMoney(
+      invoice.paidAmount ??
+        existingPayments.reduce(
+          (sum, entry) => sum + parseMoney(entry.amount),
+          0,
+        ),
     );
-    const invoiceTotal = parseMoney(invoice.amount || invoice.subtotal || 0);
     const totalRemaining = Math.max(invoiceTotal - paidAlready, 0);
 
     if (amount > totalRemaining + 0.01) {
@@ -1385,7 +1405,7 @@ export function createAdminStore(initialData = emptyAdminData) {
     };
 
     state.payments.unshift(entry);
-    invoice.paidAmount = paidAlready + amount;
+    invoice.paidAmount = Math.min(paidAlready + amount, invoiceTotal);
     invoice.payments = invoice.paidAmount;
     invoice.status = deriveInvoiceStatus(
       invoice,

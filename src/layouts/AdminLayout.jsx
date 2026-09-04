@@ -154,6 +154,8 @@ const mapInvoice = (row) => ({
   dueAt: row.due_date,
   status: titleCase(row.status),
   currency: row.currency,
+  subtotal: Number(row.subtotal || 0),
+  amount: Number(row.subtotal || 0),
   lineItems: (row.line_items?.length
     ? row.line_items
     : [

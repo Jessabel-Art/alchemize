@@ -8138,7 +8138,7 @@ function BillingManagementPage() {
   const [clientFilter, setClientFilter] = useState("All");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [invoiceDraft, setInvoiceDraft] = useState({
-    clientId: snapshot.clients[0]?.id || "",
+    clientId: "",
     engagementId: "",
     invoiceDate: new Date().toISOString().slice(0, 10),
     dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 14)
@@ -8157,12 +8157,32 @@ function BillingManagementPage() {
   const selectedClient =
     snapshot.clients.find((client) => client.id === invoiceDraft.clientId) ||
     null;
-  const engagementOptions = useMemo(() => {
-    if (!invoiceDraft.clientId) return [];
-    return snapshot.engagements.filter(
-      (engagement) => engagement.clientId === invoiceDraft.clientId,
+  // prettier-ignore
+  const engagementOptions = useMemo(() => invoiceDraft.clientId ? snapshot.engagements.filter((engagement) => engagement.clientId === invoiceDraft.clientId) : [], [snapshot.engagements, invoiceDraft.clientId]);
+
+  const handleClientSelection = (value) => {
+    const trimmed = (value || "").trim();
+    if (!trimmed) {
+      setInvoiceDraft((current) => ({
+        ...current,
+        clientId: "",
+        engagementId: "",
+      }));
+      return;
+    }
+
+    const match = snapshot.clients.find(
+      (client) =>
+        client.displayName.toLowerCase().includes(trimmed.toLowerCase()) ||
+        client.email?.toLowerCase().includes(trimmed.toLowerCase()),
     );
-  }, [snapshot.engagements, invoiceDraft.clientId]);
+
+    setInvoiceDraft((current) => ({
+      ...current,
+      clientId: match ? match.id : "",
+      engagementId: "",
+    }));
+  };
 
   const filterRows = useMemo(() => {
     return snapshot.invoices.filter((invoice) => {
@@ -8255,6 +8275,15 @@ function BillingManagementPage() {
       };
     });
   };
+
+  const totalDraftAmount = invoiceDraft.lines.reduce(
+    (sum, line) =>
+      sum +
+      Number(
+        line.amount || Number(line.quantity || 1) * Number(line.unitPrice || 0),
+      ),
+    0,
+  );
 
   const updateLine = (lineId, field, value) => {
     setInvoiceDraft((current) => ({
@@ -8419,7 +8448,7 @@ function BillingManagementPage() {
     });
     setIsCreateOpen(false);
     setInvoiceDraft({
-      clientId: snapshot.clients[0]?.id || "",
+      clientId: "",
       engagementId: "",
       invoiceDate: new Date().toISOString().slice(0, 10),
       dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 14)
@@ -8618,25 +8647,24 @@ function BillingManagementPage() {
                         (client) => client.id === invoiceDraft.clientId,
                       )?.displayName || ""
                     }
-                    onChange={(event) => {
-                      const match = snapshot.clients.find(
-                        (client) =>
-                          client.displayName.toLowerCase() ===
-                          event.target.value.toLowerCase(),
-                      );
-                      setInvoiceDraft((current) => ({
-                        ...current,
-                        clientId: match ? match.id : current.clientId,
-                        engagementId: "",
-                      }));
-                    }}
-                    placeholder="Search client"
+                    onChange={(event) =>
+                      handleClientSelection(event.target.value)
+                    }
+                    placeholder="Search client by name or email"
                   />
                   <datalist id="billing-client-list">
                     {snapshot.clients.map((client) => (
                       <option key={client.id} value={client.displayName} />
                     ))}
                   </datalist>
+                  {selectedClient ? (
+                    <div className="invoice-client-preview">
+                      <strong>{selectedClient.displayName}</strong>
+                      {selectedClient.email ? (
+                        <span>{selectedClient.email}</span>
+                      ) : null}
+                    </div>
+                  ) : null}
                 </label>
                 <label>
                   <span>Engagement / SOW</span>
@@ -8650,6 +8678,7 @@ function BillingManagementPage() {
                       }));
                       if (nextValue) applySelectedEngagement(nextValue);
                     }}
+                    disabled={!invoiceDraft.clientId}
                   >
                     <option value="">No engagement</option>
                     {engagementOptions.map((engagement) => (
@@ -8767,135 +8796,131 @@ function BillingManagementPage() {
                 </button>
               </div>
 
-              {invoiceDraft.lines.map((line, index) => (
-                <div key={line.id} className="invoice-line-row">
-                  <select
-                    value={
-                      line.relatedServiceId && line.relatedTierId
-                        ? `${line.relatedServiceId}:${line.relatedTierId}`
-                        : ""
-                    }
-                    onChange={(event) =>
-                      selectCatalogTier(line.id, event.target.value)
-                    }
-                    aria-label={`Catalog service for line ${index + 1}`}
-                  >
-                    <option value="">Custom line</option>
-                    {snapshot.services
-                      .filter((service) => service.selectable)
-                      .flatMap((service) =>
-                        (service.tiers || [])
-                          .filter(
-                            (tier) =>
-                              tier.active &&
-                              ![
-                                "NOT_OFFERED",
-                                "PENDING_AUTHORIZATION",
-                                "FUTURE_EXPANSION",
-                              ].includes(tier.status),
-                          )
-                          .map((tier) => (
-                            <option
-                              key={`${service.id}:${tier.id}`}
-                              value={`${service.id}:${tier.id}`}
-                            >
-                              {service.serviceName} — {tier.tierName} (
-                              {tier.pricingType === "CUSTOM_SOW"
-                                ? "Custom SOW"
-                                : tier.pricingType === "STARTING_AT"
-                                  ? `Starting at ${formatCurrency(tier.minimumPrice || tier.basePrice)}`
-                                  : formatCurrency(tier.basePrice)}
-                              )
-                            </option>
-                          )),
-                      )}
-                  </select>
-                  <input
-                    type="text"
-                    value={line.description}
-                    placeholder="Description"
-                    onChange={(event) =>
-                      updateLine(line.id, "description", event.target.value)
-                    }
-                  />
-                  <input
-                    type="number"
-                    min="1"
-                    step="1"
-                    value={line.quantity}
-                    onChange={(event) =>
-                      updateLine(
-                        line.id,
-                        "quantity",
-                        Number(event.target.value || 1),
-                      )
-                    }
-                  />
-                  <input
-                    type="number"
-                    min="0"
-                    step="1"
-                    value={line.unitPrice}
-                    onChange={(event) =>
-                      updateLine(
-                        line.id,
-                        "unitPrice",
-                        Number(event.target.value || 0),
-                      )
-                    }
-                  />
-                  <input
-                    type="number"
-                    min="0"
-                    step="1"
-                    value={line.amount}
-                    onChange={(event) =>
-                      updateLine(
-                        line.id,
-                        "amount",
-                        Number(event.target.value || 0),
-                      )
-                    }
-                  />
-                  <select
-                    value={line.billingType}
-                    onChange={(event) =>
-                      updateLine(line.id, "billingType", event.target.value)
-                    }
-                  >
-                    <option value="Fixed Fee">Fixed Fee</option>
-                    <option value="Hourly">Hourly</option>
-                    <option value="Project-Based">Project-Based</option>
-                    <option value="Custom">Custom</option>
-                  </select>
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    onClick={() => removeLineItem(line.id)}
-                    disabled={invoiceDraft.lines.length === 1}
-                  >
-                    Remove
-                  </button>
+              <div className="invoice-line-grid">
+                <div className="invoice-line-header">
+                  <span>DESCRIPTION</span>
+                  <span>QTY</span>
+                  <span>RATE</span>
+                  <span>AMOUNT</span>
+                  <span>TYPE</span>
+                  <span>ACTION</span>
                 </div>
-              ))}
+
+                {invoiceDraft.lines.map((line, index) => (
+                  <div key={line.id} className="invoice-line-row">
+                    <select
+                      value={
+                        line.relatedServiceId && line.relatedTierId
+                          ? `${line.relatedServiceId}:${line.relatedTierId}`
+                          : ""
+                      }
+                      onChange={(event) =>
+                        selectCatalogTier(line.id, event.target.value)
+                      }
+                      aria-label={`Catalog service for line ${index + 1}`}
+                      className="invoice-line-service-picker"
+                    >
+                      <option value="">Custom line</option>
+                      {snapshot.services
+                        .filter((service) => service.selectable)
+                        .flatMap((service) =>
+                          (service.tiers || [])
+                            .filter(
+                              (tier) =>
+                                tier.active &&
+                                ![
+                                  "NOT_OFFERED",
+                                  "PENDING_AUTHORIZATION",
+                                  "FUTURE_EXPANSION",
+                                ].includes(tier.status),
+                            )
+                            .map((tier) => (
+                              <option
+                                key={`${service.id}:${tier.id}`}
+                                value={`${service.id}:${tier.id}`}
+                              >
+                                {service.serviceName} — {tier.tierName} (
+                                {tier.pricingType === "CUSTOM_SOW"
+                                  ? "Custom SOW"
+                                  : tier.pricingType === "STARTING_AT"
+                                    ? `Starting at ${formatCurrency(tier.minimumPrice || tier.basePrice)}`
+                                    : formatCurrency(tier.basePrice)}
+                                )
+                              </option>
+                            )),
+                        )}
+                    </select>
+                    <input
+                      type="text"
+                      value={line.description}
+                      placeholder="Description"
+                      onChange={(event) =>
+                        updateLine(line.id, "description", event.target.value)
+                      }
+                    />
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={line.quantity}
+                      onChange={(event) =>
+                        updateLine(
+                          line.id,
+                          "quantity",
+                          Number(event.target.value || 1),
+                        )
+                      }
+                    />
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={line.unitPrice}
+                      onChange={(event) =>
+                        updateLine(
+                          line.id,
+                          "unitPrice",
+                          Number(event.target.value || 0),
+                        )
+                      }
+                    />
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={
+                        line.amount ||
+                        Number(line.quantity || 1) * Number(line.unitPrice || 0)
+                      }
+                      readOnly
+                    />
+                    <select
+                      value={line.billingType}
+                      onChange={(event) =>
+                        updateLine(line.id, "billingType", event.target.value)
+                      }
+                    >
+                      <option value="Fixed Fee">Fixed Fee</option>
+                      <option value="Hourly">Hourly</option>
+                      <option value="Project-Based">Project-Based</option>
+                      <option value="Custom">Custom</option>
+                    </select>
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() => removeLineItem(line.id)}
+                      disabled={invoiceDraft.lines.length === 1}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
 
               <div className="payment-totals-box">
                 <div>
                   <span>Subtotal</span>
-                  <strong>
-                    {formatCurrency(
-                      invoiceDraft.lines.reduce(
-                        (sum, line) =>
-                          sum +
-                          Number(
-                            line.amount ||
-                              Number(line.quantity || 1) *
-                                Number(line.unitPrice || 0),
-                          ),
-                        0,
-                      ),
-                    )}
-                  </strong>
+                  <strong>{formatCurrency(totalDraftAmount)}</strong>
                 </div>
                 <div>
                   <span>Adjustments</span>
@@ -8909,16 +8934,7 @@ function BillingManagementPage() {
                   <span>Invoice total</span>
                   <strong>
                     {formatCurrency(
-                      invoiceDraft.lines.reduce(
-                        (sum, line) =>
-                          sum +
-                          Number(
-                            line.amount ||
-                              Number(line.quantity || 1) *
-                                Number(line.unitPrice || 0),
-                          ),
-                        0,
-                      ) +
+                      totalDraftAmount +
                         Number(invoiceDraft.adjustments || 0) -
                         Number(invoiceDraft.creditsApplied || 0),
                     )}
@@ -9082,7 +9098,7 @@ function InvoiceDetailPage() {
   };
 
   return (
-    <div className="admin-module">
+    <div className="admin-module invoice-print-root">
       <div className="invoice-print-sheet" aria-label="Invoice print view">
         <div className="invoice-print-header">
           <div className="invoice-print-brand">

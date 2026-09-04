@@ -1544,6 +1544,25 @@
   gap: 1rem;
 }
 
+.invoice-client-preview {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.65rem 0.7rem;
+  border: 1px solid rgba(6, 43, 43, 0.08);
+  border-radius: 0.75rem;
+  background: rgba(5, 88, 76, 0.03);
+  color: var(--color-text-dark);
+}
+
+.invoice-client-preview strong {
+  font-size: 0.8rem;
+}
+
+.invoice-client-preview span {
+  color: var(--color-text-soft);
+  font-size: 0.7rem;
+}
+
 .client-detail-editor-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1573,6 +1592,73 @@
 
 .client-detail-editor-grid .full-span {
   grid-column: 1 / -1;
+}
+
+.invoice-print-sheet {
+  display: none;
+}
+
+@media screen {
+  .invoice-print-root .invoice-print-sheet {
+    display: none !important;
+  }
+}
+
+.invoice-print-brand::before {
+  content: "Alchemize Business Services";
+  display: block;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-text-soft);
+}
+
+.invoice-line-grid {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 0.4rem;
+}
+
+.invoice-line-header,
+.invoice-line-row {
+  display: grid;
+  grid-template-columns:
+    minmax(180px, 2.2fr) minmax(120px, 1.5fr)
+    90px 100px 110px 120px 80px;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.invoice-line-header {
+  color: var(--color-text-soft);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0 0.1rem;
+}
+
+.invoice-line-row {
+  padding: 0.75rem;
+  border: 1px solid rgba(6, 43, 43, 0.08);
+  border-radius: 0.9rem;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.invoice-line-row input,
+.invoice-line-row select,
+.invoice-line-service-picker {
+  width: 100%;
+  min-height: 2.5rem;
+  padding: 0.65rem 0.7rem;
+  border: 1px solid rgba(6, 43, 43, 0.1);
+  border-radius: 0.7rem;
+  background: rgba(6, 43, 43, 0.02);
+  color: var(--color-text-dark);
+  font: inherit;
+}
+
+.invoice-line-row input[readonly] {
+  background: rgba(6, 43, 43, 0.03);
 }
 
 .scheduler-modal-backdrop {
@@ -1694,8 +1780,29 @@
   .client-workspace-header,
   .admin-header-actions,
   .client-record-print-shell .client-print-sheet[data-mode="summary"],
-  .client-record-print-shell .client-print-sheet[data-mode="full"] {
+  .client-record-print-shell .client-print-sheet[data-mode="full"],
+  .admin-detail-overlay,
+  .admin-detail-panel,
+  .admin-detail-drawer,
+  .admin-module:not(.invoice-print-root) {
     display: none !important;
+  }
+
+  .invoice-print-root {
+    display: block !important;
+  }
+
+  .invoice-print-root > *:not(.invoice-print-sheet) {
+    display: none !important;
+  }
+
+  .invoice-print-sheet {
+    display: block !important;
+    width: 100%;
+    max-width: none;
+    padding: 0;
+    color: #1f2933;
+    background: white;
   }
 
   .client-record-print-shell {
