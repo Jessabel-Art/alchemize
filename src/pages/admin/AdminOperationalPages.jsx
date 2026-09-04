@@ -4455,6 +4455,7 @@ function ClientRequestsPage() {
   const [priorityFilter, setPriorityFilter] = useState("All");
   const [newRequestOpen, setNewRequestOpen] = useState(false);
   const [requestType, setRequestType] = useState("Document Request");
+  const [documentTypeOptions, setDocumentTypeOptions] = useState([]);
   const [requestForm, setRequestForm] = useState({
     clientId: "",
     engagementId: "",
@@ -4463,10 +4464,82 @@ function ClientRequestsPage() {
     dueDate: "",
     priority: "Normal",
     owner: "Owner / Administrator",
-    documentType: "",
     intakeType: "",
     visibility: "Client Visible",
   });
+  const [documentForm, setDocumentForm] = useState({
+    client_id: "",
+    engagement_id: "",
+    document_name: "",
+    document_type: "",
+    custom_document_type: "",
+    due_date: "",
+    client_instructions: "",
+    status: "awaiting_upload",
+    visibility: "shared",
+    requested_date: new Date().toISOString().slice(0, 10),
+  });
+
+  const syncDocumentTypeOptions = (engagementId) => {
+    const engagement = snapshot.engagements.find(
+      (item) => String(item.id) === String(engagementId),
+    );
+
+    const resolvedOptions = getDocumentTypeOptionsForEngagement(
+      engagement || {},
+      {
+        byId: Object.fromEntries(
+          snapshot.services.map((service) => [String(service.id), service]),
+        ),
+      },
+    );
+
+    setDocumentTypeOptions(resolvedOptions);
+    setDocumentForm((current) => {
+      if (!engagementId) {
+        return {
+          ...current,
+          engagement_id: "",
+          document_type: "",
+          custom_document_type: "",
+          document_name: "",
+        };
+      }
+
+      const currentValueIsValid =
+        current.document_type &&
+        resolvedOptions.some(
+          (option) => option.value === current.document_type,
+        );
+
+      return {
+        ...current,
+        engagement_id: engagementId,
+        document_type: currentValueIsValid ? current.document_type : "",
+        custom_document_type:
+          current.document_type === "custom_document"
+            ? current.custom_document_type
+            : "",
+        document_name: currentValueIsValid ? current.document_name : "",
+      };
+    });
+  };
+
+  const selectDocumentEngagement = (engagementId) => {
+    if (!engagementId) {
+      setDocumentTypeOptions([]);
+      setDocumentForm((current) => ({
+        ...current,
+        engagement_id: "",
+        document_type: "",
+        custom_document_type: "",
+        document_name: "",
+      }));
+      return;
+    }
+
+    syncDocumentTypeOptions(engagementId);
+  };
 
   const rows = useMemo(() => {
     const merged = [
@@ -4598,23 +4671,49 @@ function ClientRequestsPage() {
       return;
     }
     if (requestType === "Document Request") {
+      const selectedType = documentTypeOptions.find(
+        (option) => option.value === documentForm.document_type,
+      );
+
+      if (!documentForm.client_id || !documentForm.engagement_id) {
+        return;
+      }
+      if (!documentForm.document_type) {
+        return;
+      }
+      if (
+        documentForm.document_type === "custom_document" &&
+        !documentForm.custom_document_type.trim()
+      ) {
+        return;
+      }
+
       const created = {
         id: `doc-${Date.now().toString().slice(-6)}`,
-        clientId,
-        engagementId,
+        clientId: Number(documentForm.client_id),
+        engagementId: Number(documentForm.engagement_id),
         name:
-          requestForm.title || requestForm.documentType || "Document request",
-        category: requestForm.documentType || "Document",
+          documentForm.document_type === "custom_document"
+            ? documentForm.custom_document_type.trim()
+            : selectedType?.label ||
+              documentForm.document_name ||
+              selectedType?.value ||
+              "Document request",
+        category:
+          documentForm.document_type === "custom_document"
+            ? "Custom Document"
+            : selectedType?.label || documentForm.document_type || "Document",
         status: "Requested",
         requestedAt:
-          requestForm.dueDate || new Date().toISOString().slice(0, 10),
+          documentForm.due_date || new Date().toISOString().slice(0, 10),
         receivedAt: null,
         reviewedAt: null,
         serviceName:
-          snapshot.engagements.find((eng) => eng.id === engagementId)
-            ?.serviceName || "General admin support",
-        instructions: requestForm.instructions,
-        dueDate: requestForm.dueDate,
+          snapshot.engagements.find(
+            (eng) => eng.id === Number(documentForm.engagement_id),
+          )?.serviceName || "General admin support",
+        instructions: documentForm.client_instructions,
+        dueDate: documentForm.due_date,
         assignedReviewer: requestForm.owner,
         priority: requestForm.priority,
       };
@@ -4630,9 +4729,20 @@ function ClientRequestsPage() {
         dueDate: "",
         priority: "Normal",
         owner: "Owner / Administrator",
-        documentType: "",
         intakeType: "",
         visibility: "Client Visible",
+      });
+      setDocumentForm({
+        client_id: "",
+        engagement_id: "",
+        document_name: "",
+        document_type: "",
+        custom_document_type: "",
+        due_date: "",
+        client_instructions: "",
+        status: "awaiting_upload",
+        visibility: "shared",
+        requested_date: new Date().toISOString().slice(0, 10),
       });
       return;
     }
@@ -4944,30 +5054,165 @@ function ClientRequestsPage() {
               </label>
               {requestType === "Document Request" ? (
                 <>
-                  <label className="full-span">
-                    <span>Document name</span>
-                    <input
-                      value={requestForm.title}
+                  <label>
+                    <span>Client</span>
+                    <select
+                      required
+                      value={documentForm.client_id}
                       onChange={(event) =>
-                        setRequestForm((current) => ({
+                        setDocumentForm((current) => ({
                           ...current,
-                          title: event.target.value,
+                          client_id: event.target.value,
+                          engagement_id: "",
+                          document_type: "",
+                          custom_document_type: "",
+                          document_name: "",
                         }))
                       }
-                      placeholder="e.g. Business tax organizer"
-                    />
+                    >
+                      <option value="">Select client</option>
+                      {snapshot.clients.map((client) => (
+                        <option key={client.id} value={client.id}>
+                          {client.displayName}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    <span>Engagement</span>
+                    <select
+                      required
+                      value={documentForm.engagement_id}
+                      onChange={(event) =>
+                        selectDocumentEngagement(event.target.value)
+                      }
+                    >
+                      <option value="">Select engagement</option>
+                      {snapshot.engagements
+                        .filter(
+                          (item) =>
+                            item.clientId === Number(documentForm.client_id),
+                        )
+                        .map((item) => (
+                          <option key={item.id} value={item.id}>
+                            {item.title || item.serviceName}
+                          </option>
+                        ))}
+                    </select>
                   </label>
                   <label>
                     <span>Document type</span>
+                    <select
+                      required
+                      disabled={!documentForm.engagement_id}
+                      value={documentForm.document_type}
+                      onChange={(event) =>
+                        setDocumentForm((current) => ({
+                          ...current,
+                          document_type: event.target.value,
+                          custom_document_type:
+                            event.target.value === "custom_document"
+                              ? current.custom_document_type
+                              : "",
+                        }))
+                      }
+                    >
+                      <option value="">Select document type</option>
+                      {documentTypeOptions.length === 0 ? (
+                        <option value="custom_document">
+                          Other / Custom Document
+                        </option>
+                      ) : (
+                        documentTypeOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))
+                      )}
+                    </select>
+                    {!documentForm.engagement_id ? (
+                      <small style={{ display: "block", marginTop: "6px" }}>
+                        Select an engagement to populate the available document
+                        types.
+                      </small>
+                    ) : documentTypeOptions.length === 0 ? (
+                      <small style={{ display: "block", marginTop: "6px" }}>
+                        No predefined document types are configured for this
+                        engagement.
+                      </small>
+                    ) : null}
+                  </label>
+                  {documentForm.document_type === "custom_document" ? (
+                    <label className="full-span">
+                      <span>Custom Document Name</span>
+                      <input
+                        required
+                        value={documentForm.custom_document_type}
+                        onChange={(event) =>
+                          setDocumentForm((current) => ({
+                            ...current,
+                            custom_document_type: event.target.value,
+                          }))
+                        }
+                        placeholder="Describe the custom document needed"
+                      />
+                    </label>
+                  ) : null}
+                  <label>
+                    <span>Due date</span>
                     <input
-                      value={requestForm.documentType}
+                      type="date"
+                      value={documentForm.due_date}
+                      onChange={(event) =>
+                        setDocumentForm((current) => ({
+                          ...current,
+                          due_date: event.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                  <label>
+                    <span>Priority</span>
+                    <select
+                      value={requestForm.priority}
                       onChange={(event) =>
                         setRequestForm((current) => ({
                           ...current,
-                          documentType: event.target.value,
+                          priority: event.target.value,
                         }))
                       }
-                      placeholder="Other / Custom Document"
+                    >
+                      <option>Low</option>
+                      <option>Normal</option>
+                      <option>High</option>
+                      <option>Urgent</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>Owner</span>
+                    <select
+                      value={requestForm.owner}
+                      onChange={(event) =>
+                        setRequestForm((current) => ({
+                          ...current,
+                          owner: event.target.value,
+                        }))
+                      }
+                    >
+                      <option>Owner / Administrator</option>
+                    </select>
+                  </label>
+                  <label className="full-span">
+                    <span>Client instructions</span>
+                    <textarea
+                      rows="4"
+                      value={documentForm.client_instructions}
+                      onChange={(event) =>
+                        setDocumentForm((current) => ({
+                          ...current,
+                          client_instructions: event.target.value,
+                        }))
+                      }
                     />
                   </label>
                 </>
