@@ -264,6 +264,8 @@ test('renders a reusable branded transactional email layout with safe HTML and t
     ], 'https://www.getalchemize.com');
 
     expect(str_contains($rendered['html'], 'Alchemize Business Services'));
+    expect(str_contains($rendered['html'], 'alchemize-logo-light.png'));
+    expect(!str_contains($rendered['html'], 'alchemize-logo-dark.png'));
     expect(str_contains($rendered['html'], 'https://www.getalchemize.com/set-password?token=abc123'));
     expect(str_contains($rendered['html'], 'Reset Your Password'));
     expect(str_contains($rendered['html'], 'getalchemize.com'));

@@ -6,14 +6,14 @@ function alchemize_email_logo_url(string $appUrl): string
 {
     $base = rtrim($appUrl, '/');
     if ($base === '') {
-        return 'https://www.getalchemize.com/assets/logos/alchemize-logo-dark.png';
+        return 'https://www.getalchemize.com/assets/logos/alchemize-logo-light.png';
     }
 
     if (preg_match('#^https?://#i', $base) === 1) {
-        return $base . '/assets/logos/alchemize-logo-dark.png';
+        return $base . '/assets/logos/alchemize-logo-light.png';
     }
 
-    return 'https://www.getalchemize.com/assets/logos/alchemize-logo-dark.png';
+    return 'https://www.getalchemize.com/assets/logos/alchemize-logo-light.png';
 }
 
 function alchemize_email_render_safe_text(string $value): string
@@ -51,7 +51,7 @@ function alchemize_render_email_template(array $payload, string $appUrl = 'https
 
     $headerBrand = 'Alchemize Business Services';
     $brandUrl = alchemize_email_logo_url($appUrl);
-    $brandMarkup = '<img src="' . htmlspecialchars($brandUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '" alt="Alchemize Business Services" width="180" height="40" style="display:block;max-width:180px;height:auto;border:0;outline:none;text-decoration:none;" />';
+    $brandMarkup = '<img src="' . htmlspecialchars($brandUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '" alt="Alchemize Business Services" width="220" height="52" style="display:block;max-width:220px;width:100%;height:auto;border:0;outline:none;text-decoration:none;" />';
 
     $htmlBody = $safeBody;
     $textBody = preg_replace('/\s*\n\s*/', "\n", $body);
@@ -84,11 +84,13 @@ function alchemize_render_email_template(array $payload, string $appUrl = 'https
     $content = '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#f5f1e8;margin:0;padding:0;width:100%;">'
         . '<tr><td align="center" style="padding:30px 16px;">'
         . '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:640px;background-color:#f9f7f2;border:1px solid #d9d1bc;border-collapse:separate;">'
-        . '<tr><td style="background-color:#102b2c;padding:24px 24px 18px 24px;">'
+        . '<tr><td style="background-color:#102b2c;padding:18px 24px 20px 24px;">'
         . '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">'
         . '<tr>'
-        . '<td align="left" style="font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:700;line-height:26px;color:#f9f7f2;">'
+        . '<td align="center" style="font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:700;line-height:26px;color:#f9f7f2;">'
+        . '<div style="display:inline-block;max-width:220px;min-width:120px;">'
         . $brandMarkup
+        . '</div>'
         . '</td>'
         . '</tr>'
         . '</table>'
