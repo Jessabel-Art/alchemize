@@ -4665,11 +4665,7 @@ function ClientRequestsPage() {
 
   const createRequest = (event) => {
     event.preventDefault();
-    const clientId = requestForm.clientId;
-    const engagementId = requestForm.engagementId;
-    if (!clientId || !engagementId) {
-      return;
-    }
+
     if (requestType === "Document Request") {
       const selectedType = documentTypeOptions.find(
         (option) => option.value === documentForm.document_type,
@@ -4744,6 +4740,12 @@ function ClientRequestsPage() {
         visibility: "shared",
         requested_date: new Date().toISOString().slice(0, 10),
       });
+      return;
+    }
+
+    const clientId = requestForm.clientId;
+    const engagementId = requestForm.engagementId;
+    if (!clientId || !engagementId) {
       return;
     }
     if (requestType === "Intake Form") {
@@ -5011,47 +5013,6 @@ function ClientRequestsPage() {
                   <option>Task / Action Item</option>
                 </select>
               </label>
-              <label>
-                <span>Client</span>
-                <select
-                  required
-                  value={requestForm.clientId}
-                  onChange={(event) =>
-                    setRequestForm((current) => ({
-                      ...current,
-                      clientId: event.target.value,
-                      engagementId: "",
-                    }))
-                  }
-                >
-                  <option value="">Select client</option>
-                  {snapshot.clients.map((client) => (
-                    <option key={client.id} value={client.id}>
-                      {client.displayName}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                <span>Engagement</span>
-                <select
-                  required
-                  value={requestForm.engagementId}
-                  onChange={(event) =>
-                    setRequestForm((current) => ({
-                      ...current,
-                      engagementId: event.target.value,
-                    }))
-                  }
-                >
-                  <option value="">Select engagement</option>
-                  {engagementOptions.map((eng) => (
-                    <option key={eng.id} value={eng.id}>
-                      {eng.title || eng.serviceName}
-                    </option>
-                  ))}
-                </select>
-              </label>
               {requestType === "Document Request" ? (
                 <>
                   <label>
@@ -5216,94 +5177,235 @@ function ClientRequestsPage() {
                     />
                   </label>
                 </>
-              ) : null}
-              {requestType === "Intake Form" ? (
-                <label className="full-span">
-                  <span>Intake form</span>
-                  <input
-                    value={requestForm.title}
-                    onChange={(event) =>
-                      setRequestForm((current) => ({
-                        ...current,
-                        title: event.target.value,
-                      }))
-                    }
-                    placeholder="Business Consulting intake"
-                  />
-                </label>
-              ) : null}
-              {requestType === "Task / Action Item" ? (
-                <label className="full-span">
-                  <span>Task title</span>
-                  <input
-                    value={requestForm.title}
-                    onChange={(event) =>
-                      setRequestForm((current) => ({
-                        ...current,
-                        title: event.target.value,
-                      }))
-                    }
-                    placeholder="Confirm business address"
-                  />
-                </label>
-              ) : null}
-              <label>
-                <span>Due date</span>
-                <input
-                  type="date"
-                  value={requestForm.dueDate}
-                  onChange={(event) =>
-                    setRequestForm((current) => ({
-                      ...current,
-                      dueDate: event.target.value,
-                    }))
-                  }
-                />
-              </label>
-              <label>
-                <span>Priority</span>
-                <select
-                  value={requestForm.priority}
-                  onChange={(event) =>
-                    setRequestForm((current) => ({
-                      ...current,
-                      priority: event.target.value,
-                    }))
-                  }
-                >
-                  <option>Low</option>
-                  <option>Normal</option>
-                  <option>High</option>
-                  <option>Urgent</option>
-                </select>
-              </label>
-              <label>
-                <span>Owner</span>
-                <select
-                  value={requestForm.owner}
-                  onChange={(event) =>
-                    setRequestForm((current) => ({
-                      ...current,
-                      owner: event.target.value,
-                    }))
-                  }
-                >
-                  <option>Owner / Administrator</option>
-                </select>
-              </label>
-              <label className="full-span">
-                <span>Client instructions</span>
-                <textarea
-                  rows="4"
-                  value={requestForm.instructions}
-                  onChange={(event) =>
-                    setRequestForm((current) => ({
-                      ...current,
-                      instructions: event.target.value,
-                    }))
-                  }
-                />
-              </label>
+              ) : requestType === "Intake Form" ? (
+                <>
+                  <label>
+                    <span>Client</span>
+                    <select
+                      required
+                      value={requestForm.clientId}
+                      onChange={(event) =>
+                        setRequestForm((current) => ({
+                          ...current,
+                          clientId: event.target.value,
+                          engagementId: "",
+                        }))
+                      }
+                    >
+                      <option value="">Select client</option>
+                      {snapshot.clients.map((client) => (
+                        <option key={client.id} value={client.id}>
+                          {client.displayName}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    <span>Engagement</span>
+                    <select
+                      required
+                      value={requestForm.engagementId}
+                      onChange={(event) =>
+                        setRequestForm((current) => ({
+                          ...current,
+                          engagementId: event.target.value,
+                        }))
+                      }
+                    >
+                      <option value="">Select engagement</option>
+                      {engagementOptions.map((eng) => (
+                        <option key={eng.id} value={eng.id}>
+                          {eng.title || eng.serviceName}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="full-span">
+                    <span>Intake form</span>
+                    <input
+                      value={requestForm.title}
+                      onChange={(event) =>
+                        setRequestForm((current) => ({
+                          ...current,
+                          title: event.target.value,
+                        }))
+                      }
+                      placeholder="Business Consulting intake"
+                    />
+                  </label>
+                  <label>
+                    <span>Due date</span>
+                    <input
+                      type="date"
+                      value={requestForm.dueDate}
+                      onChange={(event) =>
+                        setRequestForm((current) => ({
+                          ...current,
+                          dueDate: event.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                  <label>
+                    <span>Priority</span>
+                    <select
+                      value={requestForm.priority}
+                      onChange={(event) =>
+                        setRequestForm((current) => ({
+                          ...current,
+                          priority: event.target.value,
+                        }))
+                      }
+                    >
+                      <option>Low</option>
+                      <option>Normal</option>
+                      <option>High</option>
+                      <option>Urgent</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>Owner</span>
+                    <select
+                      value={requestForm.owner}
+                      onChange={(event) =>
+                        setRequestForm((current) => ({
+                          ...current,
+                          owner: event.target.value,
+                        }))
+                      }
+                    >
+                      <option>Owner / Administrator</option>
+                    </select>
+                  </label>
+                  <label className="full-span">
+                    <span>Client instructions</span>
+                    <textarea
+                      rows="4"
+                      value={requestForm.instructions}
+                      onChange={(event) =>
+                        setRequestForm((current) => ({
+                          ...current,
+                          instructions: event.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                </>
+              ) : (
+                <>
+                  <label>
+                    <span>Client</span>
+                    <select
+                      required
+                      value={requestForm.clientId}
+                      onChange={(event) =>
+                        setRequestForm((current) => ({
+                          ...current,
+                          clientId: event.target.value,
+                          engagementId: "",
+                        }))
+                      }
+                    >
+                      <option value="">Select client</option>
+                      {snapshot.clients.map((client) => (
+                        <option key={client.id} value={client.id}>
+                          {client.displayName}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    <span>Engagement</span>
+                    <select
+                      required
+                      value={requestForm.engagementId}
+                      onChange={(event) =>
+                        setRequestForm((current) => ({
+                          ...current,
+                          engagementId: event.target.value,
+                        }))
+                      }
+                    >
+                      <option value="">Select engagement</option>
+                      {engagementOptions.map((eng) => (
+                        <option key={eng.id} value={eng.id}>
+                          {eng.title || eng.serviceName}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="full-span">
+                    <span>Task title</span>
+                    <input
+                      value={requestForm.title}
+                      onChange={(event) =>
+                        setRequestForm((current) => ({
+                          ...current,
+                          title: event.target.value,
+                        }))
+                      }
+                      placeholder="Confirm business address"
+                    />
+                  </label>
+                  <label>
+                    <span>Due date</span>
+                    <input
+                      type="date"
+                      value={requestForm.dueDate}
+                      onChange={(event) =>
+                        setRequestForm((current) => ({
+                          ...current,
+                          dueDate: event.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                  <label>
+                    <span>Priority</span>
+                    <select
+                      value={requestForm.priority}
+                      onChange={(event) =>
+                        setRequestForm((current) => ({
+                          ...current,
+                          priority: event.target.value,
+                        }))
+                      }
+                    >
+                      <option>Low</option>
+                      <option>Normal</option>
+                      <option>High</option>
+                      <option>Urgent</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>Owner</span>
+                    <select
+                      value={requestForm.owner}
+                      onChange={(event) =>
+                        setRequestForm((current) => ({
+                          ...current,
+                          owner: event.target.value,
+                        }))
+                      }
+                    >
+                      <option>Owner / Administrator</option>
+                    </select>
+                  </label>
+                  <label className="full-span">
+                    <span>Client instructions</span>
+                    <textarea
+                      rows="4"
+                      value={requestForm.instructions}
+                      onChange={(event) =>
+                        setRequestForm((current) => ({
+                          ...current,
+                          instructions: event.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                </>
+              )}
               <button type="submit" className="primary-button full-span">
                 Create request
               </button>
