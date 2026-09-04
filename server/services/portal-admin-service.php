@@ -197,9 +197,21 @@ final class AlchemizePortalAdminService
     private function conflict(): never { throw new AlchemizeRequestException(409, 'STATE_CONFLICT', 'This request has already been resolved.'); }
     private function portalEmailNotificationsEnabled(): bool
     {
-        $statement = $this->repository->database()->prepare('SELECT setting_value FROM application_settings WHERE setting_key = \'portal_message_email_notifications\' LIMIT 1');
-        $statement->execute();
-        $value = $statement->fetchColumn();
-        return $value === false || json_decode((string)$value, true) !== false;
+        try {
+            $statement = $this->repository->database()->prepare('SELECT setting_value FROM application_settings WHERE setting_key = \'portal_message_email_notifications\' LIMIT 1');
+            $statement->execute();
+            $value = $statement->fetchColumn();
+            if ($value === false || $value === null || $value === '') {
+                return true;
+            }
+            $decoded = json_decode((string) $value, true);
+            if (is_bool($decoded)) {
+                return $decoded;
+            }
+            return strtolower(trim((string) $value)) !== 'false';
+        } catch (Throwable $error) {
+            error_log(sprintf('Portal email notifications setting unavailable: %s', $error->getMessage()));
+            return true;
+        }
     }
 }

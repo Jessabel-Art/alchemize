@@ -304,13 +304,26 @@ final class AlchemizePortalAdminRepository
     public function reviewSubmission(array $submission, string $decision, int $actorId, ?string $clientNote, ?string $internalNote): void
     {
         $status = $decision === 'accept' ? 'accepted' : 'replacement_requested';
+        $fields = [
+            'status = :status',
+            'reviewed_at = CURRENT_TIMESTAMP(6)',
+            'reviewed_by_user_id = :actor',
+        ];
+        $params = ['status' => $status, 'actor' => $actorId, 'id' => $submission['id']];
+
+        if ($this->columnExists('document_submissions', 'client_visible_review_note')) {
+            $fields[] = 'client_visible_review_note = :client_note';
+            $params['client_note'] = $clientNote;
+        }
+        if ($this->columnExists('document_submissions', 'internal_review_notes')) {
+            $fields[] = 'internal_review_notes = :internal_note';
+            $params['internal_note'] = $internalNote;
+        }
+
         $statement = $this->database->prepare(
-            'UPDATE document_submissions SET status = :status, client_visible_review_note = :client_note,
-                    internal_review_notes = :internal_note,
-                    reviewed_at = CURRENT_TIMESTAMP(6), reviewed_by_user_id = :actor
-             WHERE id = :id AND status IN (\'received\', \'under_review\')'
+            'UPDATE document_submissions SET ' . implode(', ', $fields) . ' WHERE id = :id AND status IN (\'received\', \'under_review\')'
         );
-        $statement->execute(['status' => $status, 'client_note' => $clientNote, 'internal_note' => $internalNote, 'actor' => $actorId, 'id' => $submission['id']]);
+        $statement->execute($params);
         $this->update('documents_metadata', (int) $submission['document_id'], [
             'status' => $status, 'reviewed_date' => date('Y-m-d'),
         ]);
@@ -372,6 +385,17 @@ final class AlchemizePortalAdminRepository
     {
         $statement = $this->database->prepare($sql); $statement->execute($parameters); $row = $statement->fetch();
         return is_array($row) ? $row : null;
+    }
+
+    private function columnExists(string $table, string $column): bool
+    {
+        try {
+            $statement = $this->database->prepare('SHOW COLUMNS FROM ' . $table . ' LIKE :column');
+            $statement->execute(['column' => $column]);
+            return $statement->fetch() !== false;
+        } catch (Throwable) {
+            return false;
+        }
     }
 
     private function update(string $table, int $id, array $values): void

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { adminStore } from "../../../js/data/admin-store.js";
 import { portalAdmin } from "../../services/admin-api.js";
+import { isActiveClient } from "../../utils/client-status.js";
 import "./admin.css";
 
 const activityTone = {
@@ -311,8 +312,7 @@ function AdminDashboardPage() {
     },
     {
       label: "Open active clients",
-      value: snapshot.clients.filter((client) => client.status === "Active")
-        .length,
+      value: snapshot.clients.filter((client) => isActiveClient(client)).length,
       detail: "Current client relationships",
       to: "/admin/clients",
     },
