@@ -219,7 +219,10 @@ const profiles = {
       en: "A recurring rhythm keeps transactions categorized, accounts reconciled, and reporting current. It also makes year-end coordination easier because the supporting record has been maintained throughout the year.",
       es: "Un ritmo recurrente mantiene las transacciones categorizadas, las cuentas conciliadas y los reportes al día. También facilita el cierre anual porque el registro se mantiene durante todo el año.",
     },
-    scopeTitle: { en: "Ongoing bookkeeping", es: "Teneduría de libros continua" },
+    scopeTitle: {
+      en: "Ongoing bookkeeping",
+      es: "Teneduría de libros continua",
+    },
   },
   "business-payroll": {
     type: "managed",
