@@ -4659,9 +4659,16 @@ function ClientRequestsPage() {
   const engagementOptions = useMemo(() => {
     if (!requestForm.clientId) return [];
     return snapshot.engagements.filter(
-      (item) => item.clientId === requestForm.clientId,
+      (item) => String(item.clientId) === String(requestForm.clientId),
     );
   }, [requestForm.clientId, snapshot.engagements]);
+
+  const clientEngagementOptions = useMemo(() => {
+    if (!documentForm.client_id) return [];
+    return snapshot.engagements.filter(
+      (item) => String(item.clientId) === String(documentForm.client_id),
+    );
+  }, [documentForm.client_id, snapshot.engagements]);
 
   const createRequest = (event) => {
     event.preventDefault();
@@ -5020,16 +5027,18 @@ function ClientRequestsPage() {
                     <select
                       required
                       value={documentForm.client_id}
-                      onChange={(event) =>
+                      onChange={(event) => {
+                        const nextClientId = event.target.value;
+                        setDocumentTypeOptions([]);
                         setDocumentForm((current) => ({
                           ...current,
-                          client_id: event.target.value,
+                          client_id: nextClientId,
                           engagement_id: "",
                           document_type: "",
                           custom_document_type: "",
                           document_name: "",
-                        }))
-                      }
+                        }));
+                      }}
                     >
                       <option value="">Select client</option>
                       {snapshot.clients.map((client) => (
@@ -5047,19 +5056,20 @@ function ClientRequestsPage() {
                       onChange={(event) =>
                         selectDocumentEngagement(event.target.value)
                       }
+                      disabled={!documentForm.client_id || clientEngagementOptions.length === 0}
                     >
                       <option value="">Select engagement</option>
-                      {snapshot.engagements
-                        .filter(
-                          (item) =>
-                            item.clientId === Number(documentForm.client_id),
-                        )
-                        .map((item) => (
-                          <option key={item.id} value={item.id}>
-                            {item.title || item.serviceName}
-                          </option>
-                        ))}
+                      {clientEngagementOptions.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.title || item.serviceName}
+                        </option>
+                      ))}
                     </select>
+                    {!documentForm.client_id ? null : clientEngagementOptions.length === 0 ? (
+                      <small style={{ display: "block", marginTop: "6px" }}>
+                        This client has no active engagements available for document requests.
+                      </small>
+                    ) : null}
                   </label>
                   <label>
                     <span>Document type</span>
