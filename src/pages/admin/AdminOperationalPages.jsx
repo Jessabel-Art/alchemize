@@ -1395,7 +1395,27 @@ function ClientManagementPage() {
         use_custom_price: Boolean(serviceAssignment.useCustomPrice),
         start_date: serviceAssignment.startDate,
         notes: serviceAssignment.notes,
+        engagement_title:
+          selectedCatalogService?.serviceName || "Catalog service engagement",
+        engagement_status: "preparing",
       });
+
+      const rows = await engagementApi.list();
+      adminStore.replaceCollections({
+        engagements: (rows || []).map((row) => ({
+          id: String(row.id),
+          publicId: row.public_id,
+          clientId: String(row.client_id),
+          serviceName: row.title,
+          title: row.title,
+          description: row.description || "",
+          status: toTitleCase(row.status.replaceAll("_", " ")),
+          startedAt: row.start_date,
+          targetDate: row.target_date,
+          assignedTo: "Owner / Administrator",
+        })),
+      });
+
       setClientSavedMessage(
         "Canonical service assigned with a locked pricing snapshot.",
       );
@@ -1408,6 +1428,7 @@ function ClientManagementPage() {
         startDate: new Date().toISOString().slice(0, 10),
         notes: "",
       });
+      refreshClientState();
     } catch (error) {
       setClientSavedMessage(
         error.message || "Unable to assign this catalog service.",

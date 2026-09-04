@@ -136,25 +136,89 @@ final class AlchemizeServiceRepository
             'use_custom_price' => $useCustomPrice,
         ];
 
-        $statement = $this->database->prepare('INSERT INTO client_service_assignments (public_id,client_id,service_id,tier_id,agreed_base_price,agreed_recurring_amount,custom_price_override,selected_addons,billing_frequency,start_date,status,pricing_snapshot,catalog_version,notes) VALUES (:public_id,:client_id,:service_id,:tier_id,:agreed_base_price,:agreed_recurring_amount,:custom_price_override,:selected_addons,:billing_frequency,:start_date,:status,:pricing_snapshot,:catalog_version,:notes)');
-        $publicId = alchemize_uuid_v4();
-        $statement->execute([
-            'public_id' => $publicId,
-            'client_id' => $clientId,
-            'service_id' => $serviceId,
-            'tier_id' => $tierId,
-            'agreed_base_price' => number_format((float) $agreed, 2, '.', ''),
-            'agreed_recurring_amount' => isset($payload['agreed_recurring_amount']) && $payload['agreed_recurring_amount'] !== '' ? number_format((float) $payload['agreed_recurring_amount'], 2, '.', '') : null,
-            'custom_price_override' => $customOverride !== null ? number_format((float) $customOverride, 2, '.', '') : null,
-            'selected_addons' => json_encode((array) ($payload['selected_addons'] ?? []), JSON_THROW_ON_ERROR),
-            'billing_frequency' => $snapshot['billing_frequency'],
-            'start_date' => trim((string) ($payload['start_date'] ?? '')) ?: null,
-            'status' => in_array(($payload['status'] ?? 'active'), ['proposed', 'active', 'paused', 'completed', 'cancelled'], true) ? $payload['status'] : 'active',
-            'pricing_snapshot' => json_encode($snapshot, JSON_THROW_ON_ERROR),
-            'catalog_version' => $snapshot['catalog_version'],
-            'notes' => trim((string) ($payload['notes'] ?? '')) ?: null,
-        ]);
-        return ['id' => (int) $this->database->lastInsertId(), 'public_id' => $publicId, 'pricing_snapshot' => $snapshot];
+        $startDate = trim((string) ($payload['start_date'] ?? '')) ?: null;
+        $status = in_array(($payload['status'] ?? 'active'), ['proposed', 'active', 'paused', 'completed', 'cancelled'], true) ? $payload['status'] : 'active';
+        $notes = trim((string) ($payload['notes'] ?? '')) ?: null;
+        $engagementTitle = trim((string) ($payload['engagement_title'] ?? $service['service_name'] . ($tier !== null ? ' — ' . $tier['tier_name'] : '')));
+        $description = trim((string) ($payload['description'] ?? $notes ?? '')) ?: null;
+
+        $this->database->beginTransaction();
+        try {
+            $assignmentId = null;
+            $assignmentStatement = $this->database->prepare('INSERT INTO client_service_assignments (public_id,client_id,service_id,tier_id,agreed_base_price,agreed_recurring_amount,custom_price_override,selected_addons,billing_frequency,start_date,status,pricing_snapshot,catalog_version,notes) VALUES (:public_id,:client_id,:service_id,:tier_id,:agreed_base_price,:agreed_recurring_amount,:custom_price_override,:selected_addons,:billing_frequency,:start_date,:status,:pricing_snapshot,:catalog_version,:notes)');
+            $publicId = alchemize_uuid_v4();
+            $assignmentStatement->execute([
+                'public_id' => $publicId,
+                'client_id' => $clientId,
+                'service_id' => $serviceId,
+                'tier_id' => $tierId,
+                'agreed_base_price' => number_format((float) $agreed, 2, '.', ''),
+                'agreed_recurring_amount' => isset($payload['agreed_recurring_amount']) && $payload['agreed_recurring_amount'] !== '' ? number_format((float) $payload['agreed_recurring_amount'], 2, '.', '') : null,
+                'custom_price_override' => $customOverride !== null ? number_format((float) $customOverride, 2, '.', '') : null,
+                'selected_addons' => json_encode((array) ($payload['selected_addons'] ?? []), JSON_THROW_ON_ERROR),
+                'billing_frequency' => $snapshot['billing_frequency'],
+                'start_date' => $startDate,
+                'status' => $status,
+                'pricing_snapshot' => json_encode($snapshot, JSON_THROW_ON_ERROR),
+                'catalog_version' => $snapshot['catalog_version'],
+                'notes' => $notes,
+            ]);
+            $assignmentId = (int) $this->database->lastInsertId();
+
+            $engagementPublicId = alchemize_uuid_v4();
+            $engagementStatement = $this->database->prepare(
+                'INSERT INTO engagements (public_id, engagement_number, client_id, title, description, status, start_date, target_date, billing_arrangement, scope_notes, pricing_notes) VALUES (:public_id, :engagement_number, :client_id, :title, :description, :status, :start_date, :target_date, :billing_arrangement, :scope_notes, :pricing_notes)'
+            );
+            $engagementNumber = trim((string) ($payload['engagement_number'] ?? 'ENG-' . $clientId . '-' . time()));
+            $engagementStatus = in_array((string) ($payload['engagement_status'] ?? 'preparing'), ['preparing','waiting_on_client','waiting_on_alchemize','scheduled','in_progress','review','ready_for_client','completed','archived'], true)
+                ? (string) $payload['engagement_status']
+                : 'preparing';
+            $engagementStatement->execute([
+                'public_id' => $engagementPublicId,
+                'engagement_number' => $engagementNumber,
+                'client_id' => $clientId,
+                'title' => $engagementTitle !== '' ? $engagementTitle : ($service['service_name'] . ($tier !== null ? ' — ' . $tier['tier_name'] : '')),
+                'description' => $description,
+                'status' => $engagementStatus,
+                'start_date' => $startDate,
+                'target_date' => trim((string) ($payload['target_date'] ?? '')) ?: null,
+                'billing_arrangement' => $snapshot['billing_frequency'] ?? null,
+                'scope_notes' => $notes,
+                'pricing_notes' => $customOverride !== null ? 'Custom / SOW price: ' . number_format((float) $customOverride, 2, '.', '') : 'Catalog price snapshot: ' . number_format((float) $agreed, 2, '.', ''),
+            ]);
+            $engagementId = (int) $this->database->lastInsertId();
+
+            $itemStatement = $this->database->prepare(
+                'INSERT INTO engagement_service_items (public_id, engagement_id, service_id, service_code_snapshot, service_name_snapshot, description_snapshot, catalog_default_price_snapshot, negotiated_unit_price, quantity, billing_type_snapshot, scope_notes) VALUES (:public_id, :engagement_id, :service_id, :service_code_snapshot, :service_name_snapshot, :description_snapshot, :catalog_default_price_snapshot, :negotiated_unit_price, :quantity, :billing_type_snapshot, :scope_notes)'
+            );
+            $itemStatement->execute([
+                'public_id' => alchemize_uuid_v4(),
+                'engagement_id' => $engagementId,
+                'service_id' => $serviceId,
+                'service_code_snapshot' => $service['service_code'] ?? null,
+                'service_name_snapshot' => $engagementTitle !== '' ? $engagementTitle : ($service['service_name'] . ($tier !== null ? ' — ' . $tier['tier_name'] : '')),
+                'description_snapshot' => $description,
+                'catalog_default_price_snapshot' => number_format((float) $baseCatalogPrice, 2, '.', ''),
+                'negotiated_unit_price' => number_format((float) $agreed, 2, '.', ''),
+                'quantity' => '1.00',
+                'billing_type_snapshot' => $snapshot['billing_frequency'],
+                'scope_notes' => $notes,
+            ]);
+
+            $this->database->commit();
+            return [
+                'id' => $assignmentId,
+                'public_id' => $publicId,
+                'engagement_id' => $engagementId,
+                'engagement_public_id' => $engagementPublicId,
+                'pricing_snapshot' => $snapshot,
+            ];
+        } catch (Throwable $error) {
+            if ($this->database->inTransaction()) {
+                $this->database->rollBack();
+            }
+            throw $error;
+        }
     }
 
     public function findByCode(string $code): ?array
