@@ -61,7 +61,10 @@ function PortalShell({ title, navItems, children }) {
             <NavLink
               key={item.to}
               to={item.to}
-              end={item.to === "/admin/dashboard" || item.to === "/client-portal/dashboard"}
+              end={
+                item.to === "/admin/dashboard" ||
+                item.to === "/client-portal/dashboard"
+              }
               onClick={() => setNavOpen(false)}
               className={({ isActive }) =>
                 isActive ? "portal-nav-item active" : "portal-nav-item"

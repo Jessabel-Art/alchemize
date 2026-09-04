@@ -8521,12 +8521,30 @@ function InvoiceDetailPage() {
         </table>
 
         <div className="invoice-print-totals">
-          <div><span>Subtotal</span><strong>{formatCurrency(printInvoice.subtotal)}</strong></div>
-          <div><span>Adjustments</span><strong>{formatCurrency(printInvoice.adjustments)}</strong></div>
-          <div><span>Credits / deposits</span><strong>{formatCurrency(printInvoice.creditsApplied)}</strong></div>
-          <div><span>Payments</span><strong>{formatCurrency(printInvoice.paidAmount)}</strong></div>
-          <div><span>Invoice total</span><strong>{formatCurrency(printInvoice.total)}</strong></div>
-          <div><span>Remaining balance</span><strong>{formatCurrency(printInvoice.balance)}</strong></div>
+          <div>
+            <span>Subtotal</span>
+            <strong>{formatCurrency(printInvoice.subtotal)}</strong>
+          </div>
+          <div>
+            <span>Adjustments</span>
+            <strong>{formatCurrency(printInvoice.adjustments)}</strong>
+          </div>
+          <div>
+            <span>Credits / deposits</span>
+            <strong>{formatCurrency(printInvoice.creditsApplied)}</strong>
+          </div>
+          <div>
+            <span>Payments</span>
+            <strong>{formatCurrency(printInvoice.paidAmount)}</strong>
+          </div>
+          <div>
+            <span>Invoice total</span>
+            <strong>{formatCurrency(printInvoice.total)}</strong>
+          </div>
+          <div>
+            <span>Remaining balance</span>
+            <strong>{formatCurrency(printInvoice.balance)}</strong>
+          </div>
         </div>
 
         {invoiceSnapshot.notes ? (
