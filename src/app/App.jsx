@@ -265,7 +265,10 @@ function App() {
         >
           <Route index element={<Navigate to="/admin/dashboard" replace />} />
           <Route path="dashboard" element={<AdminDashboardPage />} />
-          <Route path="leads" element={<LeadManagementPage />} />
+          <Route
+            path="leads"
+            element={<Navigate to="/admin/clients" replace />}
+          />
           <Route path="clients" element={<ClientManagementPage />} />
           <Route path="clients/:clientId" element={<ClientManagementPage />} />
           <Route path="services" element={<ServiceManagementPage />} />

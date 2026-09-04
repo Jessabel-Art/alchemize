@@ -1,7 +1,10 @@
 export const normalizeStatus = (value) => {
   const text = String(value ?? "").trim();
   if (!text) return "";
-  return text.toLowerCase().replace(/[^a-z]+/g, " ").trim();
+  return text
+    .toLowerCase()
+    .replace(/[^a-z]+/g, " ")
+    .trim();
 };
 
 export const isActiveClient = (client) => {

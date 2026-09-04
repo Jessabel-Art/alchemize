@@ -201,7 +201,6 @@ const mapPayment = (row) => ({
 
 const navItems = [
   { label: "Dashboard", to: "/admin/dashboard" },
-  { label: "Leads", to: "/admin/leads" },
   { label: "Clients", to: "/admin/clients" },
   { label: "Services", to: "/admin/services" },
   { label: "Client Requests", to: "/admin/client-requests" },

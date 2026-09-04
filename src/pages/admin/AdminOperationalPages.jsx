@@ -1183,15 +1183,28 @@ function ClientManagementPage() {
   const snapshot = adminStore.getSnapshot();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
-  const [typeFilter, setTypeFilter] = useState("All");
+  const [recordTypeFilter, setRecordTypeFilter] = useState("All");
+  const [clientTypeFilter, setClientTypeFilter] = useState("All");
+  const [serviceFilter, setServiceFilter] = useState("All");
   const [attentionFilter, setAttentionFilter] = useState("All");
   const [activeTab, setActiveTab] = useState("overview");
   const [noteDraft, setNoteDraft] = useState("");
   const [recordVersion, setRecordVersion] = useState(0);
   const [isClientEditorOpen, setIsClientEditorOpen] = useState(false);
   const [isAddClientOpen, setIsAddClientOpen] = useState(false);
+  const [createRecordType, setCreateRecordType] = useState("Prospect");
   const [clientDraft, setClientDraft] = useState(null);
   const [newClientForm, setNewClientForm] = useState(createEmptyClientForm());
+  const [draftLead, setDraftLead] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    audience: "Individual",
+    businessName: "",
+    serviceInterest: "Business Advisory",
+    source: "Manual entry",
+    message: "",
+  });
   const [clientFormError, setClientFormError] = useState("");
   const [clientSavedMessage, setClientSavedMessage] = useState("");
   const [printMode, setPrintMode] = useState(null);
@@ -1241,51 +1254,147 @@ function ClientManagementPage() {
     }
   };
 
-  const rows = snapshot.clients;
+  const mergedRows = useMemo(() => {
+    const clientRows = snapshot.clients.map((client) => ({
+      id: client.id,
+      recordType: "Client",
+      name: client.displayName || client.businessName || "Client",
+      clientType: client.clientType || "Individual",
+      primaryContact: client.representative || client.email || "—",
+      service: client.serviceName || client.serviceInterest || "—",
+      status: client.status || "Active",
+      activeServices: Number(client.activeServices || 0),
+      lastContact: client.lastActivity || client.updatedAt || null,
+      nextAction: client.nextAction || "Review",
+      upcomingDate: client.lastActivity || null,
+      billingStatus: client.portalStatus || "Active",
+      owner: client.assignedTo || "Owner / Administrator",
+      rowData: client,
+    }));
+
+    const prospectRows = (snapshot.leads || [])
+      .filter((lead) => normalizeLeadStatus(lead.status) !== "Converted")
+      .map((lead) => {
+        const normalized = normalizeLeadRecord(lead);
+        return {
+          id: normalized.id,
+          recordType: "Prospect",
+          name: normalized.name || "Prospect",
+          clientType: normalized.audience || "Individual",
+          primaryContact: normalized.email || normalized.phone || "—",
+          service: normalized.serviceInterest || "—",
+          status: normalized.status || "New",
+          activeServices: 0,
+          lastContact: normalized.lastContact || normalized.receivedAt || null,
+          nextAction: normalized.nextAction || "Review inquiry",
+          upcomingDate: normalized.nextFollowUpAt || null,
+          billingStatus: "—",
+          owner: normalized.assignedTo || "Owner / Administrator",
+          rowData: normalized,
+        };
+      });
+
+    return [...clientRows, ...prospectRows];
+  }, [snapshot.clients, snapshot.leads]);
+
   const selectedClient = clientId
-    ? rows.find((client) => client.id === clientId) || null
+    ? snapshot.clients.find((client) => client.id === clientId) || null
     : null;
 
+  const serviceOptions = useMemo(
+    () => [
+      "All",
+      ...new Set(
+        mergedRows
+          .map((row) => row.service)
+          .filter((value) => value && value !== "—"),
+      ),
+    ],
+    [mergedRows],
+  );
+
   const filteredRows = useMemo(() => {
-    return rows.filter((client) => {
-      const target =
-        `${client.displayName} ${client.businessName || ""} ${client.email} ${client.representative || ""}`.toLowerCase();
+    return mergedRows.filter((row) => {
+      const target = [
+        row.name,
+        row.primaryContact,
+        row.service,
+        row.owner,
+        row.recordType,
+        row.rowData?.businessName || "",
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
       const matchesSearch = !search || target.includes(search.toLowerCase());
       const matchesStatus =
-        statusFilter === "All" || client.status === statusFilter;
-      const matchesType =
-        typeFilter === "All" || client.clientType === typeFilter;
+        statusFilter === "All" || row.status === statusFilter;
+      const matchesRecordType =
+        recordTypeFilter === "All" || row.recordType === recordTypeFilter;
+      const matchesClientType =
+        clientTypeFilter === "All" || row.clientType === clientTypeFilter;
+      const matchesService =
+        serviceFilter === "All" || row.service === serviceFilter;
       const matchesAttention =
         attentionFilter === "All" ||
-        (attentionFilter === "Needs Attention" && client.nextAction);
-      return matchesSearch && matchesStatus && matchesType && matchesAttention;
+        (attentionFilter === "Needs Attention" &&
+        (row.nextAction || "").toLowerCase().includes("follow")
+          ? true
+          : row.recordType === "Prospect");
+
+      return (
+        matchesSearch &&
+        matchesStatus &&
+        matchesRecordType &&
+        matchesClientType &&
+        matchesService &&
+        matchesAttention
+      );
     });
-  }, [rows, search, statusFilter, typeFilter, attentionFilter]);
+  }, [
+    mergedRows,
+    search,
+    statusFilter,
+    recordTypeFilter,
+    clientTypeFilter,
+    serviceFilter,
+    attentionFilter,
+  ]);
 
   const summary = [
     {
-      label: "Active Clients",
-      value: rows.filter((client) => client.status === "Active").length,
-    },
-    {
-      label: "Needs Attention",
-      value: rows.filter(
-        (client) =>
-          client.status === "Onboarding" ||
-          client.status === "Waiting on Client",
+      label: "Prospects",
+      value: (snapshot.leads || []).filter(
+        (lead) => normalizeLeadStatus(lead.status) !== "Converted",
       ).length,
     },
     {
-      label: "Inactive",
-      value: rows.filter((client) => client.status === "Inactive").length,
+      label: "Needs Follow-Up",
+      value: (snapshot.leads || []).filter(
+        (lead) => normalizeLeadStatus(lead.status) === "Contacted",
+      ).length,
     },
     {
-      label: "Business Clients",
-      value: rows.filter((client) => client.clientType === "Business").length,
+      label: "Consultations Scheduled",
+      value: (snapshot.leads || []).filter(
+        (lead) => normalizeLeadStatus(lead.status) === "Consultation Scheduled",
+      ).length,
     },
     {
-      label: "Individual Clients",
-      value: rows.filter((client) => client.clientType === "Individual").length,
+      label: "Active Clients",
+      value: snapshot.clients.filter((client) => client.status === "Active")
+        .length,
+    },
+    {
+      label: "Inactive Clients",
+      value: snapshot.clients.filter((client) => client.status === "Inactive")
+        .length,
+    },
+    {
+      label: "Converted",
+      value: (snapshot.leads || []).filter(
+        (lead) => normalizeLeadStatus(lead.status) === "Converted",
+      ).length,
     },
   ];
 
@@ -1654,6 +1763,47 @@ function ClientManagementPage() {
       );
     } finally {
       setPortalActionPending(false);
+    }
+  };
+
+  const handleCreateProspect = async () => {
+    const trimmedName = draftLead.name.trim();
+    if (!trimmedName || !draftLead.email.trim()) {
+      setClientFormError("Name and email are required to save a prospect.");
+      return;
+    }
+
+    try {
+      await leadApi.create({
+        full_name: trimmedName,
+        email: draftLead.email.trim(),
+        phone: draftLead.phone.trim() || null,
+        audience: (draftLead.audience || "Individual").toLowerCase(),
+        service_key: null,
+        message:
+          draftLead.message.trim() ||
+          `Manual prospect created from admin entry for ${trimmedName}.`,
+        preferred_contact: draftLead.phone.trim() ? "phone" : "email",
+        language_preference: "en",
+        website: "",
+      });
+      setClientFormError("");
+      setClientSavedMessage("Prospect saved.");
+      setDraftLead({
+        name: "",
+        email: "",
+        phone: "",
+        audience: "Individual",
+        businessName: "",
+        serviceInterest: "Business Advisory",
+        source: "Manual entry",
+        message: "",
+      });
+      setIsAddClientOpen(false);
+      setCreateRecordType("Prospect");
+      setRecordVersion((current) => current + 1);
+    } catch (error) {
+      setClientFormError(error.message || "Unable to save the prospect.");
     }
   };
 
@@ -2861,10 +3011,10 @@ function ClientManagementPage() {
       <AdminPageHeader
         eyebrow="Client management"
         title="Client management"
-        summary="Track client relationships, service work, upcoming dates, and operational follow-up."
+        summary="Manage prospects and clients through the full relationship lifecycle, from initial inquiry through active service and follow-up."
         actions={[
           {
-            label: "+ Add Client",
+            label: "+ Client or Prospect",
             primary: true,
             onClick: () => setIsAddClientOpen(true),
           },
@@ -2888,11 +3038,15 @@ function ClientManagementPage() {
         onSearchChange={setSearch}
         filters={[
           {
-            label: "Status",
+            label: "Relationship Status",
             value: statusFilter,
             onChange: setStatusFilter,
             options: [
               "All",
+              "New",
+              "Contacted",
+              "Consultation Scheduled",
+              "Qualified",
               "Prospect",
               "Onboarding",
               "Active",
@@ -2900,13 +3054,32 @@ function ClientManagementPage() {
               "Paused",
               "Completed",
               "Inactive",
+              "Converted",
             ].map((option) => ({ value: option, label: option })),
           },
           {
-            label: "Type",
-            value: typeFilter,
-            onChange: setTypeFilter,
+            label: "Record Type",
+            value: recordTypeFilter,
+            onChange: setRecordTypeFilter,
+            options: ["All", "Client", "Prospect"].map((option) => ({
+              value: option,
+              label: option,
+            })),
+          },
+          {
+            label: "Client Type",
+            value: clientTypeFilter,
+            onChange: setClientTypeFilter,
             options: ["All", "Business", "Individual"].map((option) => ({
+              value: option,
+              label: option,
+            })),
+          },
+          {
+            label: "Service",
+            value: serviceFilter,
+            onChange: setServiceFilter,
+            options: serviceOptions.map((option) => ({
               value: option,
               label: option,
             })),
@@ -2923,67 +3096,115 @@ function ClientManagementPage() {
         ]}
       />
 
-      <AdminSection title="Client roster">
+      <AdminSection title="Client & prospect records">
         {filteredRows.length ? (
           <div className="admin-table-wrap">
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th>Client</th>
-                  <th>Type</th>
+                  <th>Name</th>
+                  <th>Record Type</th>
+                  <th>Client Type</th>
                   <th>Primary Contact</th>
-                  <th>Active Services</th>
+                  <th>Service / Requested Service</th>
                   <th>Status</th>
+                  <th>Active Services</th>
+                  <th>Last Contact</th>
                   <th>Next Action</th>
-                  <th>Upcoming Date</th>
-                  <th>Billing Status</th>
+                  <th>Owner</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredRows.map((client) => (
-                  <tr key={client.id}>
+                {filteredRows.map((row) => (
+                  <tr key={`${row.recordType}-${row.id}`}>
                     <td>
-                      <Link
-                        className="client-record-link"
-                        to={`/admin/clients/${client.id}`}
-                      >
-                        {client.displayName}
-                      </Link>
+                      {row.recordType === "Client" ? (
+                        <Link
+                          className="client-record-link"
+                          to={`/admin/clients/${row.id}`}
+                        >
+                          {row.name}
+                        </Link>
+                      ) : (
+                        <span>{row.name}</span>
+                      )}
                     </td>
-                    <td>{client.clientType}</td>
-                    <td>{client.representative || client.email || "—"}</td>
-                    <td>{client.activeServices || 0}</td>
                     <td>
                       <AdminStatusBadge
-                        status={client.status}
-                        tone={statusTone[client.status] || "neutral"}
+                        status={row.recordType}
+                        tone={row.recordType === "Client" ? "success" : "info"}
                       />
                     </td>
-                    <td>{client.nextAction || "Review"}</td>
+                    <td>{row.clientType || "—"}</td>
+                    <td>{row.primaryContact || "—"}</td>
+                    <td>{row.service || "—"}</td>
                     <td>
-                      {client.lastActivity
-                        ? formatDate(client.lastActivity)
-                        : "—"}
+                      <AdminStatusBadge
+                        status={row.status}
+                        tone={statusTone[row.status] || "neutral"}
+                      />
                     </td>
-                    <td>{client.portalStatus || "Active"}</td>
+                    <td>
+                      {row.recordType === "Client" ? row.activeServices : "—"}
+                    </td>
+                    <td>
+                      {row.lastContact ? formatDate(row.lastContact) : "—"}
+                    </td>
+                    <td>{row.nextAction || "Review"}</td>
+                    <td>{row.owner}</td>
                     <td>
                       <div className="table-actions">
-                        <Link
-                          className="link-button"
-                          to={`/admin/clients/${client.id}`}
-                        >
-                          View
-                        </Link>
-                        <button
-                          type="button"
-                          className="link-button"
-                          onClick={() =>
-                            navigate(`/admin/clients/${client.id}`)
-                          }
-                        >
-                          Edit
-                        </button>
+                        {row.recordType === "Client" ? (
+                          <>
+                            <Link
+                              className="link-button"
+                              to={`/admin/clients/${row.id}`}
+                            >
+                              View
+                            </Link>
+                            <button
+                              type="button"
+                              className="link-button"
+                              onClick={() =>
+                                navigate(`/admin/clients/${row.id}`)
+                              }
+                            >
+                              Edit
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              className="link-button"
+                              onClick={() => {
+                                const leadRecord = snapshot.leads.find(
+                                  (lead) => String(lead.id) === String(row.id),
+                                );
+                                if (leadRecord) {
+                                  navigate(`/admin/leads`);
+                                }
+                              }}
+                            >
+                              View
+                            </button>
+                            <button
+                              type="button"
+                              className="link-button"
+                              onClick={() => {
+                                const leadRecord = snapshot.leads.find(
+                                  (lead) => String(lead.id) === String(row.id),
+                                );
+                                if (leadRecord) {
+                                  navigate(`/admin/leads`);
+                                }
+                              }}
+                            >
+                              Edit
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -2993,9 +3214,9 @@ function ClientManagementPage() {
           </div>
         ) : (
           <AdminEmptyState
-            title="No clients match the selected filters."
-            description="Try a broader search or add a new client record."
-            actionLabel="Add Client"
+            title="No client or prospect records match the selected filters."
+            description="Try a broader search or add a new client or prospect record."
+            actionLabel="Add Client or Prospect"
             onAction={() => setIsAddClientOpen(true)}
           />
         )}
@@ -3011,7 +3232,7 @@ function ClientManagementPage() {
             onClick={(event) => event.stopPropagation()}
           >
             <div className="admin-detail-header">
-              <h2>Add client</h2>
+              <h2>Add record</h2>
               <button
                 type="button"
                 className="secondary-button"
@@ -3022,251 +3243,379 @@ function ClientManagementPage() {
             </div>
             <div className="admin-detail-body">
               <div className="client-detail-editor-grid">
-                <label>
-                  <span>Client type</span>
+                <label className="full-span">
+                  <span>Record Type</span>
                   <select
-                    value={newClientForm.clientType}
+                    value={createRecordType}
                     onChange={(event) =>
-                      setNewClientForm((current) => ({
-                        ...current,
-                        clientType: event.target.value,
-                      }))
+                      setCreateRecordType(event.target.value)
                     }
                   >
-                    <option value="Individual">Individual</option>
-                    <option value="Business">Business</option>
+                    <option value="Prospect">Prospect</option>
+                    <option value="Client">Client</option>
                   </select>
                 </label>
-                <label>
-                  <span>
-                    {newClientForm.clientType === "Business"
-                      ? "Business name"
-                      : "Client name"}
-                  </span>
-                  <input
-                    type="text"
-                    value={newClientForm.displayName}
-                    onChange={(event) =>
-                      setNewClientForm((current) => ({
-                        ...current,
-                        displayName: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-                {newClientForm.clientType === "Business" ? (
+
+                {createRecordType === "Prospect" ? (
                   <>
                     <label>
-                      <span>Legal business name</span>
+                      <span>Name</span>
                       <input
-                        type="text"
-                        value={newClientForm.legalBusinessName}
+                        value={draftLead.name}
                         onChange={(event) =>
-                          setNewClientForm((current) => ({
+                          setDraftLead((current) => ({
                             ...current,
-                            legalBusinessName: event.target.value,
+                            name: event.target.value,
                           }))
                         }
                       />
                     </label>
                     <label>
-                      <span>DBA / trade name</span>
-                      <input
-                        type="text"
-                        value={newClientForm.dbaName}
-                        onChange={(event) =>
-                          setNewClientForm((current) => ({
-                            ...current,
-                            dbaName: event.target.value,
-                          }))
-                        }
-                      />
-                    </label>
-                    <label>
-                      <span>Business email</span>
+                      <span>Email</span>
                       <input
                         type="email"
-                        value={newClientForm.businessEmail}
+                        value={draftLead.email}
                         onChange={(event) =>
-                          setNewClientForm((current) => ({
+                          setDraftLead((current) => ({
                             ...current,
-                            businessEmail: event.target.value,
+                            email: event.target.value,
                           }))
                         }
                       />
                     </label>
                     <label>
-                      <span>Business phone</span>
+                      <span>Phone</span>
                       <input
-                        type="tel"
-                        value={newClientForm.businessPhone}
+                        value={draftLead.phone}
+                        onChange={(event) =>
+                          setDraftLead((current) => ({
+                            ...current,
+                            phone: event.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                    <label>
+                      <span>Type</span>
+                      <select
+                        value={draftLead.audience}
+                        onChange={(event) =>
+                          setDraftLead((current) => ({
+                            ...current,
+                            audience: event.target.value,
+                          }))
+                        }
+                      >
+                        <option value="Individual">Individual</option>
+                        <option value="Business">Business</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>Business name</span>
+                      <input
+                        value={draftLead.businessName}
+                        onChange={(event) =>
+                          setDraftLead((current) => ({
+                            ...current,
+                            businessName: event.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                    <label>
+                      <span>Requested service</span>
+                      <select
+                        value={draftLead.serviceInterest}
+                        onChange={(event) =>
+                          setDraftLead((current) => ({
+                            ...current,
+                            serviceInterest: event.target.value,
+                          }))
+                        }
+                      >
+                        {Object.keys(serviceStageCatalog).map((service) => (
+                          <option key={service} value={service}>
+                            {service}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="full-span">
+                      <span>Inquiry</span>
+                      <textarea
+                        rows="4"
+                        value={draftLead.message}
+                        onChange={(event) =>
+                          setDraftLead((current) => ({
+                            ...current,
+                            message: event.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                    <div className="full-span admin-header-actions">
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        onClick={() => setIsAddClientOpen(false)}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        className="primary-button"
+                        onClick={handleCreateProspect}
+                      >
+                        Save prospect
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <label>
+                      <span>Client type</span>
+                      <select
+                        value={newClientForm.clientType}
                         onChange={(event) =>
                           setNewClientForm((current) => ({
                             ...current,
-                            businessPhone: event.target.value,
+                            clientType: event.target.value,
+                          }))
+                        }
+                      >
+                        <option value="Individual">Individual</option>
+                        <option value="Business">Business</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>
+                        {newClientForm.clientType === "Business"
+                          ? "Business name"
+                          : "Client name"}
+                      </span>
+                      <input
+                        type="text"
+                        value={newClientForm.displayName}
+                        onChange={(event) =>
+                          setNewClientForm((current) => ({
+                            ...current,
+                            displayName: event.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                    {newClientForm.clientType === "Business" ? (
+                      <>
+                        <label>
+                          <span>Legal business name</span>
+                          <input
+                            type="text"
+                            value={newClientForm.legalBusinessName}
+                            onChange={(event) =>
+                              setNewClientForm((current) => ({
+                                ...current,
+                                legalBusinessName: event.target.value,
+                              }))
+                            }
+                          />
+                        </label>
+                        <label>
+                          <span>DBA / trade name</span>
+                          <input
+                            type="text"
+                            value={newClientForm.dbaName}
+                            onChange={(event) =>
+                              setNewClientForm((current) => ({
+                                ...current,
+                                dbaName: event.target.value,
+                              }))
+                            }
+                          />
+                        </label>
+                        <label>
+                          <span>Business email</span>
+                          <input
+                            type="email"
+                            value={newClientForm.businessEmail}
+                            onChange={(event) =>
+                              setNewClientForm((current) => ({
+                                ...current,
+                                businessEmail: event.target.value,
+                              }))
+                            }
+                          />
+                        </label>
+                        <label>
+                          <span>Business phone</span>
+                          <input
+                            type="tel"
+                            value={newClientForm.businessPhone}
+                            onChange={(event) =>
+                              setNewClientForm((current) => ({
+                                ...current,
+                                businessPhone: event.target.value,
+                              }))
+                            }
+                          />
+                        </label>
+                        <label className="full-span">
+                          <span>Business address</span>
+                          <input
+                            type="text"
+                            value={newClientForm.businessAddress}
+                            onChange={(event) =>
+                              setNewClientForm((current) => ({
+                                ...current,
+                                businessAddress: event.target.value,
+                              }))
+                            }
+                          />
+                        </label>
+                      </>
+                    ) : null}
+                    <label>
+                      <span>Email</span>
+                      <input
+                        type="email"
+                        value={newClientForm.email}
+                        onChange={(event) =>
+                          setNewClientForm((current) => ({
+                            ...current,
+                            email: event.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                    <label>
+                      <span>Phone</span>
+                      <input
+                        type="tel"
+                        value={newClientForm.phone}
+                        onChange={(event) =>
+                          setNewClientForm((current) => ({
+                            ...current,
+                            phone: event.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                    <label>
+                      <span>Preferred contact method</span>
+                      <select
+                        value={newClientForm.preferredContactMethod}
+                        onChange={(event) =>
+                          setNewClientForm((current) => ({
+                            ...current,
+                            preferredContactMethod: event.target.value,
+                          }))
+                        }
+                      >
+                        <option value="Email">Email</option>
+                        <option value="Phone">Phone</option>
+                        <option value="Text">Text</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>Status</span>
+                      <select
+                        value={newClientForm.status}
+                        onChange={(event) =>
+                          setNewClientForm((current) => ({
+                            ...current,
+                            status: event.target.value,
+                          }))
+                        }
+                      >
+                        {[
+                          "Prospect",
+                          "Onboarding",
+                          "Active",
+                          "Waiting on Client",
+                          "Paused",
+                          "Completed",
+                          "Inactive",
+                        ].map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      <span>Portal status</span>
+                      <select
+                        value={newClientForm.portalStatus}
+                        onChange={(event) =>
+                          setNewClientForm((current) => ({
+                            ...current,
+                            portalStatus: event.target.value,
+                          }))
+                        }
+                      >
+                        <option value="Active">Active</option>
+                        <option value="Invited">Invited</option>
+                        <option value="Paused">Paused</option>
+                        <option value="Inactive">Inactive</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>Primary representative</span>
+                      <input
+                        type="text"
+                        value={newClientForm.representative}
+                        onChange={(event) =>
+                          setNewClientForm((current) => ({
+                            ...current,
+                            representative: event.target.value,
                           }))
                         }
                       />
                     </label>
                     <label className="full-span">
-                      <span>Business address</span>
+                      <span>Authorized representatives</span>
                       <input
                         type="text"
-                        value={newClientForm.businessAddress}
+                        value={newClientForm.authorizedUsers}
                         onChange={(event) =>
                           setNewClientForm((current) => ({
                             ...current,
-                            businessAddress: event.target.value,
+                            authorizedUsers: event.target.value,
+                          }))
+                        }
+                        placeholder="Comma-separated names"
+                      />
+                    </label>
+                    <label className="full-span">
+                      <span>Notes</span>
+                      <textarea
+                        rows="3"
+                        value={newClientForm.notes}
+                        onChange={(event) =>
+                          setNewClientForm((current) => ({
+                            ...current,
+                            notes: event.target.value,
                           }))
                         }
                       />
                     </label>
+                    <div className="full-span admin-header-actions">
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        onClick={() => setIsAddClientOpen(false)}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        className="primary-button"
+                        onClick={handleCreateClient}
+                      >
+                        Create client
+                      </button>
+                    </div>
                   </>
-                ) : null}
-                <label>
-                  <span>Email</span>
-                  <input
-                    type="email"
-                    value={newClientForm.email}
-                    onChange={(event) =>
-                      setNewClientForm((current) => ({
-                        ...current,
-                        email: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-                <label>
-                  <span>Phone</span>
-                  <input
-                    type="tel"
-                    value={newClientForm.phone}
-                    onChange={(event) =>
-                      setNewClientForm((current) => ({
-                        ...current,
-                        phone: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-                <label>
-                  <span>Preferred contact method</span>
-                  <select
-                    value={newClientForm.preferredContactMethod}
-                    onChange={(event) =>
-                      setNewClientForm((current) => ({
-                        ...current,
-                        preferredContactMethod: event.target.value,
-                      }))
-                    }
-                  >
-                    <option value="Email">Email</option>
-                    <option value="Phone">Phone</option>
-                    <option value="Text">Text</option>
-                  </select>
-                </label>
-                <label>
-                  <span>Status</span>
-                  <select
-                    value={newClientForm.status}
-                    onChange={(event) =>
-                      setNewClientForm((current) => ({
-                        ...current,
-                        status: event.target.value,
-                      }))
-                    }
-                  >
-                    {[
-                      "Prospect",
-                      "Onboarding",
-                      "Active",
-                      "Waiting on Client",
-                      "Paused",
-                      "Completed",
-                      "Inactive",
-                    ].map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  <span>Portal status</span>
-                  <select
-                    value={newClientForm.portalStatus}
-                    onChange={(event) =>
-                      setNewClientForm((current) => ({
-                        ...current,
-                        portalStatus: event.target.value,
-                      }))
-                    }
-                  >
-                    <option value="Active">Active</option>
-                    <option value="Invited">Invited</option>
-                    <option value="Paused">Paused</option>
-                    <option value="Inactive">Inactive</option>
-                  </select>
-                </label>
-                <label>
-                  <span>Primary representative</span>
-                  <input
-                    type="text"
-                    value={newClientForm.representative}
-                    onChange={(event) =>
-                      setNewClientForm((current) => ({
-                        ...current,
-                        representative: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-                <label className="full-span">
-                  <span>Authorized representatives</span>
-                  <input
-                    type="text"
-                    value={newClientForm.authorizedUsers}
-                    onChange={(event) =>
-                      setNewClientForm((current) => ({
-                        ...current,
-                        authorizedUsers: event.target.value,
-                      }))
-                    }
-                    placeholder="Comma-separated names"
-                  />
-                </label>
-                <label className="full-span">
-                  <span>Notes</span>
-                  <textarea
-                    rows="3"
-                    value={newClientForm.notes}
-                    onChange={(event) =>
-                      setNewClientForm((current) => ({
-                        ...current,
-                        notes: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-              </div>
-              {clientFormError ? (
-                <div className="admin-toast error">{clientFormError}</div>
-              ) : null}
-              <div className="admin-header-actions">
-                <button
-                  type="button"
-                  className="secondary-button"
-                  onClick={() => setIsAddClientOpen(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="primary-button"
-                  onClick={handleCreateClient}
-                >
-                  Create client
-                </button>
+                )}
               </div>
             </div>
           </aside>
@@ -5056,7 +5405,10 @@ function ClientRequestsPage() {
                       onChange={(event) =>
                         selectDocumentEngagement(event.target.value)
                       }
-                      disabled={!documentForm.client_id || clientEngagementOptions.length === 0}
+                      disabled={
+                        !documentForm.client_id ||
+                        clientEngagementOptions.length === 0
+                      }
                     >
                       <option value="">Select engagement</option>
                       {clientEngagementOptions.map((item) => (
@@ -5065,9 +5417,11 @@ function ClientRequestsPage() {
                         </option>
                       ))}
                     </select>
-                    {!documentForm.client_id ? null : clientEngagementOptions.length === 0 ? (
+                    {!documentForm.client_id ? null : clientEngagementOptions.length ===
+                      0 ? (
                       <small style={{ display: "block", marginTop: "6px" }}>
-                        This client has no active engagements available for document requests.
+                        This client has no active engagements available for
+                        document requests.
                       </small>
                     ) : null}
                   </label>
