@@ -218,6 +218,8 @@ test.describe("Authenticated admin state workflows", () => {
     await expect(
       page.getByRole("heading", { name: "Client Requests" }),
     ).toBeVisible();
-    await expect(page.getByRole("button", { name: /New Request/i })).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /New Request/i }),
+    ).toBeVisible();
   });
 });
