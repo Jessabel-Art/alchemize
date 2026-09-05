@@ -1320,11 +1320,10 @@
 
 .appointments-module {
   display: grid;
-  gap: 1.2rem;
+  gap: 1.1rem;
 }
 
 .scheduler-toolbar,
-.scheduler-filter-row,
 .scheduler-custom-range,
 .scheduler-actions-grid,
 .scheduler-action-row,
@@ -1337,23 +1336,21 @@
 }
 
 .scheduler-toolbar,
-.scheduler-filter-row,
 .scheduler-custom-range {
-  padding: 0.8rem 0.9rem;
-  border-top: 1px solid rgba(6, 43, 43, 0.12);
-  border-bottom: 1px solid rgba(6, 43, 43, 0.12);
-  border-left: 0;
-  border-right: 0;
-  border-radius: 0;
-  background: transparent;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid rgba(6, 43, 43, 0.1);
+  border-radius: 0.9rem;
+  background: rgba(255, 255, 255, 0.5);
 }
 
 .scheduler-toolbar {
   justify-content: space-between;
+  margin-top: 0.2rem;
 }
 
 .scheduler-nav-group,
-.scheduler-view-switcher {
+.scheduler-view-switcher,
+.scheduler-action-group {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
@@ -1364,10 +1361,26 @@
   color: var(--emerald-deep);
 }
 
-.scheduler-filter-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 0.7rem;
+.appointment-toolbar {
+  align-items: flex-end;
+}
+
+.appointment-toolbar-actions {
+  flex: 1 1 300px;
+  justify-content: flex-end;
+}
+
+.scheduler-action-group {
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.scheduler-toolbar .secondary-button,
+.scheduler-toolbar .primary-button,
+.scheduler-action-group .secondary-button,
+.scheduler-action-group .primary-button,
+.compact-action-button {
+  min-height: 2.5rem;
 }
 
 .scheduler-exception-copy {

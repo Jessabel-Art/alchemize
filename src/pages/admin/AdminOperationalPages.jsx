@@ -3711,6 +3711,7 @@ function ServiceManagementPage() {
   const [audienceFilter, setAudienceFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
   const [billingFilter, setBillingFilter] = useState("All");
+  const [serviceFiltersOpen, setServiceFiltersOpen] = useState(false);
   const [isNewServiceOpen, setIsNewServiceOpen] = useState(false);
   const [serviceForm, setServiceForm] = useState(createEmptyServiceForm());
   const [serviceError, setServiceError] = useState("");
@@ -3772,6 +3773,12 @@ function ServiceManagementPage() {
       setServiceError(error.message || "Unable to assign this engagement.");
     }
   };
+
+  const activeServiceFilterCount = [
+    audienceFilter !== "All",
+    statusFilter !== "All",
+    billingFilter !== "All",
+  ].filter(Boolean).length;
 
   const catalog = (snapshot.services || []).map((service) => ({
     ...service,
@@ -3968,8 +3975,8 @@ function ServiceManagementPage() {
 
   const renderCatalog = () => (
     <>
-      <div className="admin-toolbar">
-        <label className="admin-search">
+      <div className="compact-admin-toolbar service-toolbar">
+        <label className="admin-search compact-search">
           <span>Search</span>
           <input
             type="search"
@@ -3978,62 +3985,96 @@ function ServiceManagementPage() {
             placeholder="Search service catalog"
           />
         </label>
-        <div className="admin-filter-row">
-          <label className="admin-filter">
-            <span>Audience</span>
-            <select
-              value={audienceFilter}
-              onChange={(event) => setAudienceFilter(event.target.value)}
-            >
-              {["All", "Individual", "Business", "Both"].map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="admin-filter">
-            <span>Status</span>
-            <select
-              value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value)}
-            >
-              {["All", "Active", "Inactive", "Planned", "Archived"].map(
-                (option) => (
+
+        <div className="compact-admin-toolbar-actions">
+          <button
+            type="button"
+            className="secondary-button compact-action-button"
+            onClick={() => setServiceFiltersOpen((current) => !current)}
+          >
+            Filters
+            {activeServiceFilterCount > 0
+              ? ` (${activeServiceFilterCount})`
+              : ""}{" "}
+            ▾
+          </button>
+        </div>
+      </div>
+
+      {serviceFiltersOpen ? (
+        <div className="compact-filter-popover">
+          <div className="compact-filter-grid">
+            <label className="compact-filter-field">
+              <span>Audience</span>
+              <select
+                value={audienceFilter}
+                onChange={(event) => setAudienceFilter(event.target.value)}
+              >
+                {["All", "Individual", "Business", "Both"].map((option) => (
                   <option key={option} value={option}>
                     {option}
                   </option>
-                ),
-              )}
-            </select>
-          </label>
-          <label className="admin-filter">
-            <span>Billing</span>
-            <select
-              value={billingFilter}
-              onChange={(event) => setBillingFilter(event.target.value)}
+                ))}
+              </select>
+            </label>
+            <label className="compact-filter-field">
+              <span>Status</span>
+              <select
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value)}
+              >
+                {["All", "Active", "Inactive", "Planned", "Archived"].map(
+                  (option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ),
+                )}
+              </select>
+            </label>
+            <label className="compact-filter-field">
+              <span>Billing</span>
+              <select
+                value={billingFilter}
+                onChange={(event) => setBillingFilter(event.target.value)}
+              >
+                {[
+                  "All",
+                  "Fixed Fee",
+                  "Hourly",
+                  "Per Appointment",
+                  "Per Filing / Per Return",
+                  "Project-Based",
+                  "Retainer",
+                  "Recurring Monthly",
+                  "Recurring Quarterly",
+                  "Recurring Annual",
+                  "Custom / Scope of Work",
+                ].map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="compact-filter-actions">
+            <button
+              type="button"
+              className="secondary-button compact-action-button"
+              onClick={() => {
+                setAudienceFilter("All");
+                setStatusFilter("All");
+                setBillingFilter("All");
+                setServiceFiltersOpen(false);
+              }}
             >
-              {[
-                "All",
-                "Fixed Fee",
-                "Hourly",
-                "Per Appointment",
-                "Per Filing / Per Return",
-                "Project-Based",
-                "Retainer",
-                "Recurring Monthly",
-                "Recurring Quarterly",
-                "Recurring Annual",
-                "Custom / Scope of Work",
-              ].map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </label>
+              Clear Filters
+            </button>
+          </div>
         </div>
-      </div>
+      ) : null}
       <div className="admin-table-wrap">
         <table className="admin-table">
           <thead>
@@ -7862,7 +7903,9 @@ function AppointmentManagementPage() {
             </button>
           ))}
         </div>
+      </div>
 
+      <div className="compact-admin-toolbar appointment-toolbar">
         <div className="scheduler-action-group">
           <button
             type="button"
@@ -7886,99 +7929,152 @@ function AppointmentManagementPage() {
             Availability Exceptions
           </button>
         </div>
+
+        <div className="compact-admin-toolbar-actions appointment-toolbar-actions">
+          <label className="admin-search compact-search">
+            <span>Search</span>
+            <input
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search appointments"
+            />
+          </label>
+          <button
+            type="button"
+            className="secondary-button compact-action-button"
+            onClick={() => setAppointmentFiltersOpen((current) => !current)}
+          >
+            Filters
+            {activeAppointmentFilterCount > 0
+              ? ` (${activeAppointmentFilterCount})`
+              : ""}{" "}
+            ▾
+          </button>
+        </div>
       </div>
 
-      <div className="scheduler-filter-row">
-        <select
-          value={timeframe}
-          onChange={(event) => setTimeframe(event.target.value)}
-        >
-          <option value="today">Today</option>
-          <option value="tomorrow">Tomorrow</option>
-          <option value="week">This Week</option>
-          <option value="next7">Next 7 Days</option>
-          <option value="month">This Month</option>
-          <option value="next30">Next 30 Days</option>
-          <option value="past">Past Appointments</option>
-          <option value="custom">Custom Range</option>
-        </select>
-        <input
-          type="search"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search appointments"
-        />
-        <select
-          value={statusFilter}
-          onChange={(event) => setStatusFilter(event.target.value)}
-        >
-          {["All", ...appointmentStatuses].map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
-        <select
-          value={clientFilter}
-          onChange={(event) => setClientFilter(event.target.value)}
-        >
-          {clientOptions.map((option) => (
-            <option key={option} value={option}>
-              {option === "All" ? "All clients" : option}
-            </option>
-          ))}
-        </select>
-        <select
-          value={serviceFilter}
-          onChange={(event) => setServiceFilter(event.target.value)}
-        >
-          {serviceOptions.map((option) => (
-            <option key={option} value={option}>
-              {option === "All" ? "All services" : option}
-            </option>
-          ))}
-        </select>
-        <select
-          value={typeFilter}
-          onChange={(event) => setTypeFilter(event.target.value)}
-        >
-          {typeOptions.map((option) => (
-            <option key={option} value={option}>
-              {option === "All" ? "All types" : option}
-            </option>
-          ))}
-        </select>
-        <button
-          type="button"
-          className="secondary-button"
-          onClick={() => {
-            setSearch("");
-            setStatusFilter("All");
-            setClientFilter("All");
-            setServiceFilter("All");
-            setTypeFilter("All");
-            setOwnerFilter("All");
-            setLocationFilter("All");
-            setPrepFilter("All");
-            setFollowUpFilter("All");
-            setTimeframe("next30");
-            setCustomStart("");
-            setCustomEnd("");
-          }}
-        >
-          Clear Filters
-        </button>
-        <button
-          type="button"
-          className="secondary-button"
-          onClick={() => {
-            setViewMode("week");
-            setCurrentDate(new Date());
-          }}
-        >
-          Reset View
-        </button>
-      </div>
+      {appointmentFiltersOpen ? (
+        <div className="compact-filter-popover">
+          <div className="compact-filter-grid">
+            <label className="compact-filter-field">
+              <span>Range</span>
+              <select
+                value={timeframe}
+                onChange={(event) => setTimeframe(event.target.value)}
+              >
+                <option value="today">Today</option>
+                <option value="tomorrow">Tomorrow</option>
+                <option value="week">This Week</option>
+                <option value="next7">Next 7 Days</option>
+                <option value="month">This Month</option>
+                <option value="next30">Next 30 Days</option>
+                <option value="past">Past Appointments</option>
+                <option value="custom">Custom Range</option>
+              </select>
+            </label>
+            <label className="compact-filter-field">
+              <span>Status</span>
+              <select
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value)}
+              >
+                {["All", ...appointmentStatuses].map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="compact-filter-field">
+              <span>Client</span>
+              <select
+                value={clientFilter}
+                onChange={(event) => setClientFilter(event.target.value)}
+              >
+                {clientOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option === "All" ? "All clients" : option}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="compact-filter-field">
+              <span>Service</span>
+              <select
+                value={serviceFilter}
+                onChange={(event) => setServiceFilter(event.target.value)}
+              >
+                {serviceOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option === "All" ? "All services" : option}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="compact-filter-field">
+              <span>Type</span>
+              <select
+                value={typeFilter}
+                onChange={(event) => setTypeFilter(event.target.value)}
+              >
+                {typeOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option === "All" ? "All types" : option}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="compact-filter-field">
+              <span>Owner</span>
+              <select
+                value={ownerFilter}
+                onChange={(event) => setOwnerFilter(event.target.value)}
+              >
+                {ownerOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option === "All" ? "All owners" : option}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="compact-filter-actions">
+            <button
+              type="button"
+              className="secondary-button compact-action-button"
+              onClick={() => {
+                setSearch("");
+                setStatusFilter("All");
+                setClientFilter("All");
+                setServiceFilter("All");
+                setTypeFilter("All");
+                setOwnerFilter("All");
+                setLocationFilter("All");
+                setPrepFilter("All");
+                setFollowUpFilter("All");
+                setTimeframe("next30");
+                setCustomStart("");
+                setCustomEnd("");
+                setAppointmentFiltersOpen(false);
+              }}
+            >
+              Clear Filters
+            </button>
+            <button
+              type="button"
+              className="secondary-button compact-action-button"
+              onClick={() => {
+                setViewMode("week");
+                setCurrentDate(new Date());
+              }}
+            >
+              Reset View
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {timeframe === "custom" ? (
         <div className="scheduler-custom-range">
