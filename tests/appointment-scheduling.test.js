@@ -11,13 +11,23 @@ test("admin appointment controls use direct scheduling, scheduling link, and ava
   const endpoint = read("api/v1/appointments/index.php");
 
   assert.match(page, /Send Scheduling Link/i);
-  assert.match(page, /Manage Availability/i);
+  assert.match(page, /Availability Exceptions/i);
   assert.doesNotMatch(
     page,
     /\+ Schedule Appointment[\s\S]*\+ Schedule Appointment/,
   );
   assert.match(api, /createSchedulingLink|listAvailability|createAvailability/);
   assert.match(endpoint, /scheduling-link|availability/);
+});
+
+test("appointment availability exceptions provide CRUD management in the admin modal", () => {
+  const page = read("src/pages/admin/AdminOperationalPages.jsx");
+  const api = read("src/services/admin-api.js");
+
+  assert.match(page, /Add availability exception/i);
+  assert.match(page, /Existing exceptions/i);
+  assert.match(page, /Edit|Delete|Cancel Exception/i);
+  assert.match(api, /updateAvailability\s*:\s*\(|deleteAvailability\s*:\s*\(/);
 });
 
 test("appointment metadata and availability persist through the backend schema", () => {

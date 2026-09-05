@@ -7123,6 +7123,78 @@ function AppointmentManagementPage() {
     setAvailabilityDraft((current) => ({ ...current, [field]: value }));
   };
 
+  const formatAvailabilityTypeLabel = (kind) => {
+    if (kind === "blocked") return "Blocked";
+    if (kind === "time_off") return "Blocked Time";
+    if (kind === "date_override") return "Extended Hours";
+    return "Availability";
+  };
+
+  const formatAvailabilityDateValue = (row) => {
+    const rawDate = row?.date_override || row?.date || "";
+    if (!rawDate) {
+      if (row?.weekday) {
+        const weekdayList = [
+          "",
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday",
+          "Sunday",
+        ];
+        return weekdayList[Number(row.weekday)] || "Weekday";
+      }
+      return "—";
+    }
+    const parsed = new Date(`${rawDate}T12:00:00`);
+    if (Number.isNaN(parsed.getTime())) return rawDate;
+    return parsed.toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  const formatAvailabilityTimeValue = (row) => {
+    const start = row?.start_time ? formatDisplayTime(row.start_time) : "";
+    const end = row?.end_time ? formatDisplayTime(row.end_time) : "";
+    if (row?.kind === "blocked" && !start && !end) return "All day";
+    if (start && end) return `${start}–${end}`;
+    if (start) return start;
+    if (end) return end;
+    return "—";
+  };
+
+  const resetAvailabilityDraft = (kind = "blocked") => {
+    setAvailabilityDraft({
+      id: null,
+      weekday: "1",
+      startTime: "09:00",
+      endTime: "17:00",
+      available: true,
+      kind,
+      notes: "",
+      dateOverride: toDateString(new Date()),
+      endDate: "",
+      timezone: "America/New_York",
+    });
+  };
+
+  const loadAvailabilityRows = async () => {
+    try {
+      const rows = await appointmentApi.listAvailability();
+      setAvailabilityRows(Array.isArray(rows) ? rows : []);
+      return Array.isArray(rows) ? rows : [];
+    } catch (error) {
+      setAvailabilityError(
+        error.message || "Unable to load the current availability.",
+      );
+      return [];
+    }
+  };
+
   const saveSchedulingLink = async () => {
     setLinkError("");
     const recipientEmail = (linkDraft.recipientEmail || "").trim();
@@ -7191,68 +7263,138 @@ function AppointmentManagementPage() {
 
   const saveAvailability = async () => {
     setAvailabilityError("");
-    if (availabilityMode === "block" && !availabilityDraft.dateOverride) {
-      setAvailabilityError("Choose the date to block out.");
+
+    const nextKind = availabilityDraft.kind || "blocked";
+    const needsDate = ["blocked", "time_off", "date_override"].includes(
+      nextKind,
+    );
+    const requiresTimes = !["blocked"].includes(nextKind);
+
+    if (needsDate && !availabilityDraft.dateOverride) {
+      setAvailabilityError("Choose the date for this exception.");
       return;
     }
     if (
-      !["full_day", "time_off"].includes(availabilityDraft.kind) &&
+      requiresTimes &&
       (!availabilityDraft.startTime || !availabilityDraft.endTime)
     ) {
-      setAvailabilityError("Availability start and end times are required.");
+      setAvailabilityError(
+        "Start and end times are required for this exception type.",
+      );
       return;
     }
 
     setAvailabilitySaving(true);
     try {
       const payload = {
-        weekday:
-          availabilityDraft.kind !== "weekday"
-            ? null
-            : Number(availabilityDraft.weekday || 1),
-        date_override:
-          availabilityDraft.kind !== "weekday"
-            ? availabilityDraft.dateOverride || ""
-            : "",
-        start_time: availabilityDraft.startTime,
-        end_time: availabilityDraft.endTime,
+        weekday: !["blocked", "time_off", "date_override"].includes(nextKind)
+          ? Number(availabilityDraft.weekday || 1)
+          : null,
+        date_override: ["blocked", "time_off", "date_override"].includes(
+          nextKind,
+        )
+          ? availabilityDraft.dateOverride || ""
+          : "",
+        start_time: requiresTimes ? availabilityDraft.startTime : "",
+        end_time: requiresTimes ? availabilityDraft.endTime : "",
         is_available: availabilityDraft.available,
-        kind: availabilityDraft.kind || "weekday",
+        kind: nextKind,
         notes: availabilityDraft.notes || "",
-        end_date: availabilityDraft.endDate || "",
+        end_date:
+          nextKind === "time_off" ? availabilityDraft.endDate || "" : "",
         timezone: availabilityDraft.timezone,
       };
 
-      const created = await appointmentApi.createAvailability(payload);
-      const row = {
-        id: created?.id || `availability-${Date.now()}`,
-        weekday: payload.weekday,
-        date_override: payload.date_override || null,
-        start_time: payload.start_time,
-        end_time: payload.end_time,
-        is_available: payload.is_available,
-        kind: payload.kind,
-        notes: payload.notes,
-      };
-      setAvailabilityRows((current) => [row, ...current]);
-      setAvailabilityDraft({
-        weekday: "1",
-        startTime: "09:00",
-        endTime: "17:00",
-        available: true,
-        kind: availabilityMode === "block" ? "blocked" : "weekday",
-        notes: "",
-        dateOverride:
-          availabilityMode === "block" ? toDateString(new Date()) : "",
-        endDate: "",
-        timezone: "America/New_York",
-      });
+      if (availabilityDraft.id) {
+        await appointmentApi.updateAvailability(availabilityDraft.id, payload);
+        setAvailabilityRows((current) =>
+          current.map((row) =>
+            String(row.id) === String(availabilityDraft.id)
+              ? {
+                  ...row,
+                  ...payload,
+                  id: availabilityDraft.id,
+                  date_override: payload.date_override || null,
+                  end_date: payload.end_date || null,
+                }
+              : row,
+          ),
+        );
+      } else {
+        const created = await appointmentApi.createAvailability(payload);
+        const row = {
+          id: created?.id || `availability-${Date.now()}`,
+          weekday: payload.weekday,
+          date_override: payload.date_override || null,
+          start_time: payload.start_time,
+          end_time: payload.end_time,
+          is_available: payload.is_available,
+          kind: payload.kind,
+          notes: payload.notes,
+          end_date: payload.end_date || null,
+          timezone: payload.timezone,
+        };
+        setAvailabilityRows((current) => [row, ...current]);
+      }
+
+      resetAvailabilityDraft(
+        availabilityMode === "block" ? "blocked" : "date_override",
+      );
     } catch (error) {
       setAvailabilityError(
-        error.message || "The availability block could not be saved.",
+        error.message || "The availability exception could not be saved.",
       );
     } finally {
       setAvailabilitySaving(false);
+    }
+  };
+
+  const handleEditAvailability = (row) => {
+    const kind =
+      row?.kind === "blocked" ||
+      row?.kind === "time_off" ||
+      row?.kind === "date_override"
+        ? row.kind
+        : "blocked";
+    setAvailabilityError("");
+    setAvailabilityDraft({
+      id: row?.id ?? null,
+      weekday: row?.weekday ? String(row.weekday) : "1",
+      startTime: row?.start_time || "09:00",
+      endTime: row?.end_time || "17:00",
+      available: row?.is_available !== false,
+      kind,
+      notes: row?.notes || "",
+      dateOverride: row?.date_override || toDateString(new Date()),
+      endDate: row?.end_date || "",
+      timezone: row?.timezone || "America/New_York",
+    });
+  };
+
+  const handleDeleteAvailability = async (row) => {
+    const rowId = row?.id;
+    if (!rowId) return;
+
+    const label = formatAvailabilityTypeLabel(row?.kind || "blocked");
+    const confirmation = `Delete this ${label.toLowerCase()} exception for ${formatAvailabilityDateValue(row)}?`;
+    if (!window.confirm(confirmation)) {
+      return;
+    }
+
+    try {
+      await appointmentApi.deleteAvailability(rowId);
+      setAvailabilityRows((current) =>
+        current.filter((item) => String(item.id) !== String(rowId)),
+      );
+      if (String(availabilityDraft.id) === String(rowId)) {
+        resetAvailabilityDraft(
+          availabilityMode === "block" ? "blocked" : "date_override",
+        );
+      }
+    } catch (error) {
+      setAvailabilityError(
+        error.message || "The availability exception could not be deleted.",
+      );
     }
   };
 
