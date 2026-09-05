@@ -672,17 +672,17 @@
   display: flex;
   align-items: end;
   justify-content: space-between;
-  gap: 0.8rem;
-  padding: 0.9rem 1rem;
-  border: 1px solid rgba(6, 43, 43, 0.1);
-  border-radius: 0.95rem;
-  background: rgba(255, 255, 255, 0.6);
+  gap: 0.65rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid rgba(6, 43, 43, 0.08);
+  border-radius: 0.8rem;
+  background: rgba(255, 255, 255, 0.38);
 }
 
 .compact-admin-toolbar-actions {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.65rem;
 }
 
 .compact-search {
@@ -718,18 +718,18 @@
 
 .compact-filter-popover {
   display: grid;
-  gap: 0.9rem;
-  padding: 0.9rem 1rem 1rem;
-  border: 1px solid rgba(6, 43, 43, 0.1);
+  gap: 0.75rem;
+  padding: 0.75rem 0.8rem 0.8rem;
+  border: 1px solid rgba(6, 43, 43, 0.08);
   border-top: 0;
-  border-radius: 0 0 1rem 1rem;
-  background: rgba(255, 255, 255, 0.5);
+  border-radius: 0 0 0.85rem 0.85rem;
+  background: rgba(255, 255, 255, 0.38);
 }
 
 .compact-filter-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 0.8rem;
+  gap: 0.7rem;
 }
 
 .compact-filter-actions {
@@ -793,11 +793,11 @@
 
 .admin-section {
   display: grid;
-  gap: 1rem;
-  padding: 1.25rem;
+  gap: 0.9rem;
+  padding: 1rem 1.1rem;
   border: 1px solid rgba(6, 43, 43, 0.08);
-  border-radius: 1.1rem;
-  background: rgba(255, 255, 255, 0.64);
+  border-radius: 0.9rem;
+  background: rgba(255, 255, 255, 0.45);
 }
 
 .admin-section-header {
@@ -1895,7 +1895,7 @@
   border-radius: 1rem;
   background: white;
   border: 1px solid rgba(6, 43, 43, 0.08);
-  padding: 1rem;
+  padding: 1rem 1rem 0.9rem;
 }
 
 .scheduler-modal-header {
@@ -1903,7 +1903,7 @@
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
 
 .scheduler-modal-header h3 {
@@ -1912,7 +1912,7 @@
 
 .scheduler-modal-body {
   display: grid;
-  gap: 1rem;
+  gap: 0.8rem;
 }
 
 .form-grid {
