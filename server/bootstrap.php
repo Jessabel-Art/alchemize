@@ -57,6 +57,8 @@ require_once __DIR__ . '/services/catalog-pricing-service.php';
 require_once __DIR__ . '/services/portal-service.php';
 require_once __DIR__ . '/services/stripe-webhook-service.php';
 require_once __DIR__ . '/services/stripe-payment-service.php';
+require_once __DIR__ . '/services/paypal-payment-service.php';
+require_once __DIR__ . '/services/paypal-webhook-service.php';
 require_once __DIR__ . '/services/google-client-factory.php';
 require_once __DIR__ . '/services/google-drive-service.php';
 require_once __DIR__ . '/services/google-calendar-service.php';

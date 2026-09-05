@@ -3,7 +3,18 @@ import { defineConfig } from "eslint/config";
 export default defineConfig([
   {
     files: ["**/*.js", "**/*.mjs"],
-    ignores: ["dist/**", "node_modules/**", "coverage/**", "public/**"],
+    ignores: [
+      "dist/**",
+      "node_modules/**",
+      "coverage/**",
+      "public/**",
+      "tmp/**",
+      "output/**",
+      "generated/**",
+      "deploy-output/**",
+      "artifacts/**",
+      "vendor/**",
+    ],
     languageOptions: {
       ecmaVersion: "latest",
       sourceType: "module",
@@ -11,6 +22,8 @@ export default defineConfig([
         console: "readonly",
         document: "readonly",
         window: "readonly",
+        innerWidth: "readonly",
+        getComputedStyle: "readonly",
         URL: "readonly",
         fetch: "readonly",
         process: "readonly",

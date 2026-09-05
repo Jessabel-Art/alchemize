@@ -64,7 +64,9 @@ try {
         'appointments' => $service->appointments($access),
         'messages' => $actions->threads($access),
         'intakes' => $intakes->list($access),
-        'billing' => $service->billing($access),
+        'billing' => $service->billing($access) + [
+            'paypal_client_id' => (string) ($config['paypal']['client_id'] ?? ''),
+        ],
         'profile' => $service->profile($access),
         'activity' => $service->activity($access),
         default => throw new AlchemizeRequestException(404, 'NOT_FOUND', 'The requested client portal route was not found.'),
@@ -150,6 +152,64 @@ try {
             $stripeConfig,
         );
         alchemize_json_response(['data' => $payments->checkout((int) $access['client_id'], $parts[1])], 201);
+        }
+        if ($method === 'POST' && $resource === 'billing' && count($parts) === 4 && $parts[2] === 'paypal' && $parts[3] === 'order') {
+        if (!in_array((string) ($access['access_role'] ?? ''), ['primary_contact', 'authorized_user', 'billing_contact'], true)) {
+            throw new AlchemizeRequestException(
+                403,
+                'PORTAL_ACTION_NOT_PERMITTED',
+                'This portal account cannot initiate invoice payments.'
+            );
+        }
+
+        $paypalConfig = $config['paypal'] ?? [];
+
+        $payments = new AlchemizePaypalPaymentService(
+            new AlchemizeExternalIntegrationRepository($database),
+            $paypalConfig,
+        );
+
+        alchemize_json_response([
+            'data' => $payments->createOrder(
+                (int) $access['client_id'],
+                $parts[1]
+            )
+        ], 201);
+    }
+
+    if ($method === 'POST' && $resource === 'billing' && count($parts) === 4 && $parts[2] === 'paypal' && $parts[3] === 'capture') {
+        if (!in_array((string) ($access['access_role'] ?? ''), ['primary_contact', 'authorized_user', 'billing_contact'], true)) {
+            throw new AlchemizeRequestException(
+                403,
+                'PORTAL_ACTION_NOT_PERMITTED',
+                'This portal account cannot initiate invoice payments.'
+            );
+        }
+
+        $orderId = trim((string) ($payload['order_id'] ?? ''));
+
+        if ($orderId === '') {
+            throw new AlchemizeRequestException(
+                422,
+                'VALIDATION_ERROR',
+                'PayPal order ID is required.'
+            );
+        }
+
+        $paypalConfig = $config['paypal'] ?? [];
+
+        $payments = new AlchemizePaypalPaymentService(
+            new AlchemizeExternalIntegrationRepository($database),
+            $paypalConfig,
+        );
+
+        alchemize_json_response([
+            'data' => $payments->captureOrder(
+                (int) $access['client_id'],
+                $parts[1],
+                $orderId
+            )
+        ], 200);
     }
     if ($method === 'PUT' && $resource === 'profile' && count($parts) === 1) {
         alchemize_json_response(['data' => $actions->profile($access, $sessionUser, $payload)], 200);

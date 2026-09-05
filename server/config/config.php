@@ -105,6 +105,7 @@ function alchemize_config(): array
 
     $localDatabase = is_array($local['database'] ?? null) ? $local['database'] : [];
     $localStripe = is_array($local['stripe'] ?? null) ? $local['stripe'] : [];
+    $localPaypal = is_array($local['paypal'] ?? null) ? $local['paypal'] : [];
     $config = [
         'app_env' => (string) $env(['ALCHEMIZE_APP_ENV', 'APP_ENV'], $local['app_env'] ?? 'production'),
         'app_url' => (string) $env(['ALCHEMIZE_APP_URL', 'APP_URL'], $local['app_url'] ?? 'http://localhost:5173'),
@@ -116,6 +117,12 @@ function alchemize_config(): array
             'publishable_key' => (string) $env(['ALCHEMIZE_STRIPE_PUBLISHABLE_KEY', 'STRIPE_PUBLISHABLE_KEY'], $localStripe['publishable_key'] ?? ''),
             'secret_key' => (string) $env(['ALCHEMIZE_STRIPE_SECRET_KEY', 'STRIPE_SECRET_KEY'], $localStripe['secret_key'] ?? ''),
             'webhook_secret' => (string) $env(['ALCHEMIZE_STRIPE_WEBHOOK_SECRET', 'STRIPE_WEBHOOK_SECRET'], $localStripe['webhook_secret'] ?? ''),
+        ],
+        'paypal' => [
+            'client_id' => (string) $env(['ALCHEMIZE_PAYPAL_CLIENT_ID', 'PAYPAL_CLIENT_ID'], $localPaypal['client_id'] ?? ''),
+            'client_secret' => (string) $env(['ALCHEMIZE_PAYPAL_CLIENT_SECRET', 'PAYPAL_CLIENT_SECRET'], $localPaypal['client_secret'] ?? ''),
+            'webhook_id' => (string) $env(['ALCHEMIZE_PAYPAL_WEBHOOK_ID', 'PAYPAL_WEBHOOK_ID'], $localPaypal['webhook_id'] ?? ''),
+            'mode' => (string) $env(['ALCHEMIZE_PAYPAL_MODE', 'PAYPAL_MODE'], $localPaypal['mode'] ?? 'sandbox'),
         ],
         'google' => [
             'project_id' => (string) $env('GOOGLE_PROJECT_ID', ''),

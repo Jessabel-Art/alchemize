@@ -11,6 +11,12 @@ export const IGNORED_DIRECTORIES = new Set([
   "tests",
   "coverage",
   ".vite",
+  "tmp",
+  "output",
+  "generated",
+  "deploy-output",
+  "artifacts",
+  "vendor",
 ]);
 
 export function normalizeRoutePath(filePath, rootDir) {

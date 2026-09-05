@@ -6,13 +6,21 @@ const pageExtensions = [".html"];
 
 const htmlFiles = [];
 
+const ignoredDirs = new Set([
+  "node_modules",
+  "dist",
+  ".git",
+  "tmp",
+  "output",
+  "generated",
+  "deploy-output",
+  "artifacts",
+  "vendor",
+]);
+
 function collectHtmlFiles(dir) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (
-      entry.name === "node_modules" ||
-      entry.name === "dist" ||
-      entry.name === ".git"
-    ) {
+    if (ignoredDirs.has(entry.name)) {
       continue;
     }
 
