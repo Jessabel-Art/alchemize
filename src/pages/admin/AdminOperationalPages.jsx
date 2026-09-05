@@ -6780,6 +6780,7 @@ function AppointmentManagementPage() {
   const [linkError, setLinkError] = useState("");
   const [linkSaving, setLinkSaving] = useState(false);
   const [availabilityRows, setAvailabilityRows] = useState([]);
+  const [availabilityFormMode, setAvailabilityFormMode] = useState("create");
   const [availabilityDraft, setAvailabilityDraft] = useState({
     weekday: "1",
     startTime: "09:00",
@@ -7199,6 +7200,7 @@ function AppointmentManagementPage() {
 
   const openAvailabilityModal = async (mode = "weekly") => {
     setAvailabilityMode(mode);
+    setAvailabilityFormMode("create");
     setIsAvailabilityOpen(true);
     setIsFormOpen(false);
     setIsSchedulingLinkOpen(false);
@@ -7318,6 +7320,7 @@ function AppointmentManagementPage() {
   };
 
   const resetAvailabilityDraft = (kind = "blocked") => {
+    setAvailabilityFormMode("create");
     setAvailabilityDraft({
       id: null,
       weekday: "1",
@@ -7507,6 +7510,7 @@ function AppointmentManagementPage() {
         ? row.kind
         : "blocked";
     setAvailabilityError("");
+    setAvailabilityFormMode("edit");
     setAvailabilityDraft({
       id: row?.id ?? null,
       weekday: row?.weekday ? String(row.weekday) : "1",
@@ -9095,63 +9099,45 @@ function AppointmentManagementPage() {
                 Close
               </button>
             </div>
+
             <div className="scheduler-modal-body form-grid">
-              <p className="full-span scheduler-exception-copy">
-                Use availability exceptions to adjust the standard
-                business-hours baseline only when it differs from the normal
-                schedule.
-              </p>
-              {availabilityMode === "weekly" ? (
-                <label>
-                  <span>Weekday</span>
-                  <select
-                    value={availabilityDraft.weekday}
-                    onChange={(event) =>
-                      setAvailabilityField("weekday", event.target.value)
-                    }
-                  >
-                    {[
-                      ["1", "Monday"],
-                      ["2", "Tuesday"],
-                      ["3", "Wednesday"],
-                      ["4", "Thursday"],
-                      ["5", "Friday"],
-                      ["6", "Saturday"],
-                      ["7", "Sunday"],
-                    ].map(([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              ) : (
-                <label>
-                  <span>Start date</span>
-                  <input
-                    type="date"
-                    value={availabilityDraft.dateOverride}
-                    onChange={(event) =>
-                      setAvailabilityField("dateOverride", event.target.value)
-                    }
-                  />
-                </label>
-              )}
-              {availabilityDraft.kind === "time_off" ? (
-                <label>
-                  <span>End date</span>
-                  <input
-                    type="date"
-                    value={availabilityDraft.endDate}
-                    onChange={(event) =>
-                      setAvailabilityField("endDate", event.target.value)
-                    }
-                  />
-                </label>
-              ) : null}
+              <div className="full-span">
+                <h4>
+                  {availabilityFormMode === "edit"
+                    ? "Edit availability exception"
+                    : "Add availability exception"}
+                </h4>
+              </div>
+
+              <label>
+                <span>Exception Type</span>
+                <select
+                  value={availabilityDraft.kind}
+                  onChange={(event) =>
+                    setAvailabilityField("kind", event.target.value)
+                  }
+                >
+                  <option value="blocked">Blocked day</option>
+                  <option value="time_off">Time off</option>
+                  <option value="date_override">Extended hours</option>
+                  <option value="weekday">Weekly schedule</option>
+                </select>
+              </label>
+
+              <label>
+                <span>Date</span>
+                <input
+                  type="date"
+                  value={availabilityDraft.dateOverride || ""}
+                  onChange={(event) =>
+                    setAvailabilityField("dateOverride", event.target.value)
+                  }
+                />
+              </label>
+
               {!["full_day", "time_off"].includes(availabilityDraft.kind) ? (
                 <label>
-                  <span>Start time</span>
+                  <span>Start Time</span>
                   <input
                     type="time"
                     value={availabilityDraft.startTime}
@@ -9160,10 +9146,13 @@ function AppointmentManagementPage() {
                     }
                   />
                 </label>
-              ) : null}
+              ) : (
+                <div />
+              )}
+
               {!["full_day", "time_off"].includes(availabilityDraft.kind) ? (
                 <label>
-                  <span>End time</span>
+                  <span>End Time</span>
                   <input
                     type="time"
                     value={availabilityDraft.endTime}
@@ -9172,7 +9161,20 @@ function AppointmentManagementPage() {
                     }
                   />
                 </label>
-              ) : null}
+              ) : (
+                <div />
+              )}
+
+              <label>
+                <span>Timezone</span>
+                <input
+                  value={availabilityDraft.timezone}
+                  onChange={(event) =>
+                    setAvailabilityField("timezone", event.target.value)
+                  }
+                />
+              </label>
+
               {["weekday", "date_override"].includes(availabilityDraft.kind) ? (
                 <label className="checkbox-field">
                   <input
@@ -9185,15 +9187,7 @@ function AppointmentManagementPage() {
                   <span>Available</span>
                 </label>
               ) : null}
-              <label>
-                <span>Timezone</span>
-                <input
-                  value={availabilityDraft.timezone}
-                  onChange={(event) =>
-                    setAvailabilityField("timezone", event.target.value)
-                  }
-                />
-              </label>
+
               <label className="full-span">
                 <span>Notes</span>
                 <textarea
@@ -9204,6 +9198,7 @@ function AppointmentManagementPage() {
                   }
                 />
               </label>
+
               <div className="scheduler-action-row full-span">
                 {availabilityError ? (
                   <p className="admin-feedback error" role="alert">
@@ -9213,9 +9208,12 @@ function AppointmentManagementPage() {
                 <button
                   type="button"
                   className="secondary-button"
-                  onClick={() => setIsAvailabilityOpen(false)}
+                  onClick={() => {
+                    resetAvailabilityDraft(availabilityDraft.kind || "blocked");
+                    setIsAvailabilityOpen(false);
+                  }}
                 >
-                  Close
+                  Cancel
                 </button>
                 <button
                   type="button"
@@ -9225,53 +9223,67 @@ function AppointmentManagementPage() {
                 >
                   {availabilitySaving
                     ? "Saving…"
-                    : availabilityDraft.kind === "blocked"
-                      ? "Save Full-Day Block"
-                      : availabilityDraft.kind === "time_off"
-                        ? "Save Time Range"
-                        : "Save Special Hours"}
+                    : availabilityFormMode === "edit"
+                      ? "Save changes"
+                      : "Save exception"}
                 </button>
               </div>
+
               {availabilityRows.length ? (
                 <div className="full-span">
-                  <h4>
-                    {availabilityMode === "block"
-                      ? "Current block-outs"
-                      : "Weekly schedule"}
-                  </h4>
-                  <ul className="admin-list compact-list">
-                    {availabilityRows
-                      .filter((row) =>
-                        availabilityMode === "block"
-                          ? row.kind === "blocked"
-                          : row.kind === "weekday",
-                      )
-                      .map((row) => (
-                        <li
-                          key={
-                            row.id ||
-                            `${row.kind}-${row.start_time}-${row.end_time}`
-                          }
-                        >
-                          {row.kind === "blocked"
-                            ? `Blocked ${row.date_override || "—"}`
-                            : [
-                                "",
-                                "Monday",
-                                "Tuesday",
-                                "Wednesday",
-                                "Thursday",
-                                "Friday",
-                                "Saturday",
-                                "Sunday",
-                              ][row.weekday] || "Day"}
-                          • {row.start_time || "—"}–{row.end_time || "—"}
-                          {row.notes ? ` • ${row.notes}` : ""}
-                        </li>
-                      ))}
-                  </ul>
+                  <h4>Existing exceptions</h4>
+                  <div className="admin-table-wrap">
+                    <table className="admin-table">
+                      <thead>
+                        <tr>
+                          <th>Date</th>
+                          <th>Type</th>
+                          <th>Time</th>
+                          <th>Notes</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {availabilityRows.map((row) => (
+                          <tr
+                            key={
+                              row.id ||
+                              `${row.kind}-${row.start_time}-${row.end_time}`
+                            }
+                          >
+                            <td>{formatAvailabilityDateValue(row)}</td>
+                            <td>{formatAvailabilityTypeLabel(row.kind)}</td>
+                            <td>{formatAvailabilityTimeValue(row)}</td>
+                            <td>{row.notes || "—"}</td>
+                            <td>
+                              <div className="table-actions">
+                                <button
+                                  type="button"
+                                  className="link-button"
+                                  onClick={() => handleEditAvailability(row)}
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  className="link-button"
+                                  onClick={() => handleDeleteAvailability(row)}
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              ) : null}
+              ) : (
+                <div className="full-span">
+                  <p>No availability exceptions are currently saved.</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
