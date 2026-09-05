@@ -55,16 +55,32 @@ final class AlchemizeNotificationRepository
     {
         $allowed = ['sent', 'failed', 'unavailable'];
         if (!in_array($status, $allowed, true)) $status = 'failed';
-        $statement = $this->database->prepare(
-            'UPDATE notifications SET delivery_status = :status, delivery_attempted_at = CURRENT_TIMESTAMP(6),
-             delivered_at = IF(:status_sent = \'sent\', CURRENT_TIMESTAMP(6), delivered_at), delivery_error = :error
-             WHERE public_id = :public_id'
-        );
-        $statement->execute([
-            'status' => $status, 'status_sent' => $status,
-            'error' => $status === 'sent' ? null : ($error ?? ($status === 'unavailable' ? 'not_configured' : 'provider_error')),
+
+        $deliveryError = $status === 'sent' ? null : ($error ?? ($status === 'unavailable' ? 'not_configured' : 'provider_error'));
+
+        if (!$this->columnExists('notifications', 'delivery_status')) {
+            return;
+        }
+
+        $fields = ['delivery_status = :status', 'delivery_attempted_at = CURRENT_TIMESTAMP(6)'];
+        $params = [
+            'status' => $status,
+            'error' => $deliveryError,
             'public_id' => $publicId,
-        ]);
+        ];
+
+        if ($this->columnExists('notifications', 'delivered_at')) {
+            $fields[] = 'delivered_at = IF(:status_sent = \'sent\', CURRENT_TIMESTAMP(6), delivered_at)';
+            $params['status_sent'] = $status;
+        }
+        if ($this->columnExists('notifications', 'delivery_error')) {
+            $fields[] = 'delivery_error = :error';
+        }
+
+        $statement = $this->database->prepare(
+            'UPDATE notifications SET ' . implode(', ', $fields) . ' WHERE public_id = :public_id'
+        );
+        $statement->execute($params);
     }
 
     public function listForUser(int $userId): array
@@ -87,5 +103,16 @@ final class AlchemizeNotificationRepository
         );
         $statement->execute(['id' => $publicId, 'user_id' => $userId]);
         return $statement->rowCount() === 1;
+    }
+
+    private function columnExists(string $table, string $column): bool
+    {
+        try {
+            $statement = $this->database->prepare('SHOW COLUMNS FROM ' . $table . ' LIKE :column');
+            $statement->execute(['column' => $column]);
+            return $statement->fetch() !== false;
+        } catch (Throwable) {
+            return false;
+        }
     }
 }

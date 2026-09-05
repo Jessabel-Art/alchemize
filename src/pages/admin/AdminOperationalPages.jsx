@@ -6790,6 +6790,18 @@ function AppointmentManagementPage() {
   const [selectedAppointmentId, setSelectedAppointmentId] = useState(
     snapshot.appointments[0]?.id || null,
   );
+  const activeAppointmentFilterCount = [
+    timeframe !== "next30",
+    statusFilter !== "All",
+    clientFilter !== "All",
+    serviceFilter !== "All",
+    typeFilter !== "All",
+    ownerFilter !== "All",
+    locationFilter !== "All",
+    prepFilter !== "All",
+    followUpFilter !== "All",
+    search.trim() !== "",
+  ].filter(Boolean).length;
   const [clientFiltersOpen, setClientFiltersOpen] = useState(false);
   const [requestFiltersOpen, setRequestFiltersOpen] = useState(false);
   const [formMode, setFormMode] = useState("create");

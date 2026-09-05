@@ -74,6 +74,12 @@ test("creates deduplicated internal notifications behind an email provider bound
   assert.doesNotMatch(notificationService, /smtp|sendgrid|mailgun|amazon ses/i);
 });
 
+test("keeps notification delivery writes compatible with older schema versions", () => {
+  assert.match(notificationRepository, /columnExists\(/);
+  assert.match(notificationRepository, /delivery_status/);
+  assert.match(notificationRepository, /LIKE :column/);
+});
+
 test("configures Resend through the existing provider boundary without raw SMTP", () => {
   assert.match(resendProvider, /implements AlchemizeEmailProvider/);
   assert.match(
