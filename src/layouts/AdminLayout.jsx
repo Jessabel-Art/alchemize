@@ -1,3 +1,4 @@
+import "../pages/admin/admin-workspace.css";
 import { useEffect, useState } from "react";
 import { Outlet } from "react-router-dom";
 import PortalShell from "../components/ui/PortalShell.jsx";

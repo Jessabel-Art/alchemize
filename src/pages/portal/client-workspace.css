@@ -1,0 +1,615 @@
+/* Client-only workspace system. Shared admin/public styles remain unchanged. */
+.portal-shell:not(.admin-portal-shell) {
+  --client-line: rgba(6, 43, 43, 0.14);
+  --client-surface: rgba(255, 255, 255, 0.68);
+  grid-template-columns: 232px minmax(0, 1fr);
+}
+.portal-shell:not(.admin-portal-shell) .portal-sidebar {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow-y: auto;
+  padding: 20px 12px;
+}
+.portal-shell:not(.admin-portal-shell) .portal-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 9px 12px;
+}
+.portal-shell:not(.admin-portal-shell) .portal-nav-badge {
+  min-width: 22px;
+  min-height: 22px;
+  font-size: 11px;
+}
+.portal-shell:not(.admin-portal-shell) .portal-main {
+  width: 100%;
+  max-width: 1700px;
+  margin-inline: auto;
+  padding: 20px 28px 36px;
+}
+.portal-shell:not(.admin-portal-shell) .portal-topbar {
+  padding-bottom: 12px;
+  font-size: 11px;
+}
+.portal-shell:not(.admin-portal-shell) .portal-page {
+  padding-top: 20px;
+  font-size: 14px;
+}
+.portal-shell:not(.admin-portal-shell) .portal-page-header {
+  gap: 20px;
+  margin-bottom: 20px;
+  padding-bottom: 18px;
+  grid-template-columns: 1.2fr 1fr;
+}
+.portal-shell:not(.admin-portal-shell) .portal-page-header h1 {
+  font-size: clamp(30px, 2.8vw, 44px);
+  line-height: 1.08;
+  margin-top: 6px;
+}
+.portal-shell:not(.admin-portal-shell) .portal-page-header p {
+  font-size: 13px;
+  max-width: 440px;
+  justify-self: end;
+  line-height: 1.5;
+}
+.portal-shell:not(.admin-portal-shell) .section-kicker {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+}
+.portal-shell:not(.admin-portal-shell) :is(h2, h3) {
+  overflow-wrap: anywhere;
+}
+.portal-shell:not(.admin-portal-shell) .portal-page h2 {
+  font-size: 25px;
+  margin: 0;
+  line-height: 1.2;
+}
+.portal-shell:not(.admin-portal-shell) .portal-page h3 {
+  font-size: 21px;
+  line-height: 1.25;
+}
+.portal-shell:not(.admin-portal-shell) .portal-page :is(p, small, strong, a) {
+  overflow-wrap: anywhere;
+}
+.portal-shell:not(.admin-portal-shell) .portal-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+.portal-shell:not(.admin-portal-shell) .portal-section-heading a {
+  font-size: 12px;
+  font-weight: 600;
+}
+.portal-shell:not(.admin-portal-shell) .portal-summary-grid {
+  margin: 0 0 22px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  background: var(--client-surface);
+}
+.portal-shell:not(.admin-portal-shell) .portal-summary-item {
+  padding: 14px 13px;
+  border: 0;
+  border-right: 1px solid var(--client-line);
+}
+.portal-shell:not(.admin-portal-shell) .portal-summary-item span {
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  min-height: 28px;
+}
+.portal-shell:not(.admin-portal-shell) .portal-summary-item strong {
+  font-size: clamp(26px, 2.4vw, 36px);
+  line-height: 1.1;
+  margin: 5px 0;
+}
+.portal-shell:not(.admin-portal-shell) .portal-summary-item small {
+  font-size: 11px;
+  line-height: 1.35;
+}
+.portal-dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 24px;
+  align-items: start;
+}
+.portal-dashboard-main {
+  grid-column: span 8;
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+.portal-dashboard-rail {
+  grid-column: span 4;
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.portal-shell:not(.admin-portal-shell)
+  :is(.portal-onboarding, .portal-attention, .portal-activity) {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.portal-shell:not(.admin-portal-shell) .portal-onboarding {
+  padding: 16px;
+  background: var(--client-surface);
+  border: 1px solid var(--client-line);
+  border-radius: 6px;
+}
+.portal-shell:not(.admin-portal-shell) .portal-onboarding h2 {
+  font-size: 22px;
+}
+.portal-setup-progress {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 12px;
+  font-size: 12px;
+}
+.portal-setup-progress progress {
+  flex: 1;
+  width: 100%;
+  height: 7px;
+  accent-color: var(--emerald-forest);
+  border: 0;
+  border-radius: 20px;
+  overflow: hidden;
+}
+.portal-setup-progress progress::-webkit-progress-bar {
+  background: #e0e5df;
+}
+.portal-setup-progress progress::-webkit-progress-value {
+  background: var(--emerald-forest);
+}
+.portal-shell:not(.admin-portal-shell) .portal-checklist {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 18px;
+  margin-top: 10px;
+}
+.portal-shell:not(.admin-portal-shell) .portal-checklist li {
+  padding: 9px 0;
+  gap: 8px;
+  font-size: 12px;
+  flex-direction: row;
+  align-items: center;
+}
+.portal-shell:not(.admin-portal-shell) .portal-checklist small {
+  font-size: 10px;
+  white-space: nowrap;
+  margin-left: auto;
+}
+.portal-shell:not(.admin-portal-shell) .portal-attention {
+  border-top: 2px solid var(--gold);
+  padding-top: 14px;
+}
+.portal-shell:not(.admin-portal-shell) .portal-attention-list {
+  margin-top: 12px;
+}
+.portal-shell:not(.admin-portal-shell) .portal-attention-list li {
+  padding: 12px 0;
+  gap: 12px;
+}
+.portal-shell:not(.admin-portal-shell) .portal-attention-list li > a {
+  font-weight: 600;
+  font-size: 12px;
+}
+.portal-action-type {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 9px;
+  color: var(--color-text-soft);
+}
+.portal-shell:not(.admin-portal-shell) .portal-record-panel {
+  padding: 16px;
+  min-height: 0;
+  border-radius: 6px;
+  background: var(--client-surface);
+}
+.portal-shell:not(.admin-portal-shell) .portal-record-panel h2 {
+  font-size: 23px;
+  margin-top: 10px;
+}
+.portal-shell:not(.admin-portal-shell) .portal-record-panel p {
+  font-size: 13px;
+  line-height: 1.5;
+  margin-top: 7px;
+}
+.portal-shell:not(.admin-portal-shell) .portal-record-panel > a {
+  margin-top: 0;
+  padding-top: 12px;
+  font-size: 12px;
+}
+.portal-shell:not(.admin-portal-shell)
+  .portal-dashboard-main
+  > .portal-record-panel {
+  border: 0;
+  border-top: 1px solid var(--client-line);
+  border-radius: 0;
+  padding: 14px 0 0;
+  background: transparent;
+}
+.portal-balance {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 36px;
+  margin-top: 8px;
+}
+.portal-quick-actions {
+  display: grid;
+  gap: 0;
+  padding: 0 4px;
+}
+.portal-quick-actions a {
+  padding: 11px 0;
+  border-bottom: 1px solid var(--client-line);
+  font-size: 13px;
+}
+.portal-quick-actions h2 {
+  padding-bottom: 7px;
+}
+.portal-workspace-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(290px, 1fr);
+  align-items: start;
+  gap: 24px;
+}
+.portal-workspace-primary,
+.portal-workspace-utility {
+  min-width: 0;
+}
+.portal-shell:not(.admin-portal-shell) .portal-group-stack {
+  gap: 22px;
+}
+.portal-shell:not(.admin-portal-shell)
+  .client-records-page
+  > :is(
+    .portal-group-stack,
+    .portal-record-list,
+    .portal-billing-summary,
+    .portal-profile-layout,
+    .portal-empty-state
+  ) {
+  margin-top: 20px;
+}
+.portal-shell:not(.admin-portal-shell) .portal-record-list {
+  margin-top: 12px;
+}
+.portal-shell:not(.admin-portal-shell) .portal-record-list > li {
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) minmax(125px, 0.45fr);
+  padding: 14px 0;
+}
+.portal-shell:not(.admin-portal-shell) .portal-record-list :is(p, small) {
+  margin-top: 4px;
+  line-height: 1.45;
+}
+.portal-shell:not(.admin-portal-shell) .portal-record-list p {
+  font-size: 13px;
+}
+.portal-shell:not(.admin-portal-shell) .portal-record-list small {
+  font-size: 11px;
+}
+.portal-shell:not(.admin-portal-shell) .portal-record-meta > span {
+  display: inline-block;
+  padding: 4px 7px;
+  background: rgba(11, 67, 50, 0.07);
+  border-radius: 3px;
+  font-size: 9px;
+  letter-spacing: 0.045em;
+}
+.portal-shell:not(.admin-portal-shell) .portal-record-meta > a {
+  display: block;
+  font-size: 12px;
+  margin-top: 8px;
+}
+.portal-shell:not(.admin-portal-shell)
+  .portal-activity
+  .portal-record-list
+  > li {
+  grid-template-columns: 1fr;
+  padding: 10px 0 10px 14px;
+  border-left: 2px solid var(--client-line);
+}
+.portal-shell:not(.admin-portal-shell) .portal-activity strong {
+  font-weight: 500;
+  font-size: 13px;
+}
+.portal-shell:not(.admin-portal-shell) .portal-completed-group {
+  border-top: 1px solid var(--client-line);
+  padding-top: 14px;
+}
+.portal-shell:not(.admin-portal-shell) .portal-completed-group h2 {
+  font-size: 21px;
+}
+.portal-shell:not(.admin-portal-shell) .portal-empty-state {
+  padding: 15px 0;
+  font-size: 13px;
+}
+.portal-shell:not(.admin-portal-shell) .portal-composer {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 18px;
+  gap: 10px;
+  border-top-width: 2px;
+  border-radius: 0 0 6px 6px;
+}
+.portal-shell:not(.admin-portal-shell) .portal-composer h2 {
+  font-size: 24px;
+}
+.portal-shell:not(.admin-portal-shell) .portal-composer p {
+  font-size: 12px;
+  line-height: 1.5;
+}
+.portal-shell:not(.admin-portal-shell) .portal-page label {
+  font-size: 12px;
+  letter-spacing: 0;
+}
+.portal-shell:not(.admin-portal-shell) .portal-composer label {
+  margin-top: 3px;
+  gap: 6px;
+}
+.portal-shell:not(.admin-portal-shell)
+  .portal-page
+  :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  border: 1px solid var(--client-line);
+  border-radius: 3px;
+  padding: 10px;
+  background: var(--white);
+  color: var(--emerald-deep);
+  font: 400 13px/1.4 var(--font-body);
+}
+.portal-shell:not(.admin-portal-shell) .portal-page :is(input, select) {
+  min-height: 40px;
+}
+.portal-shell:not(.admin-portal-shell)
+  .portal-page
+  :is(input[type="checkbox"], input[type="radio"]) {
+  min-height: auto;
+}
+.portal-shell:not(.admin-portal-shell) .portal-page textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+.portal-shell:not(.admin-portal-shell) .portal-action-button {
+  min-height: 40px;
+  padding: 9px 12px;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+.portal-shell:not(.admin-portal-shell)
+  .portal-composer
+  > .portal-action-button {
+  background: var(--emerald-deep);
+  color: var(--white);
+}
+.portal-shell:not(.admin-portal-shell)
+  .portal-page
+  :is(a, button, input, select, textarea):focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+.portal-shell:not(.admin-portal-shell) .portal-feedback {
+  margin: 0 0 18px;
+  padding: 10px 14px;
+  font-size: 13px;
+}
+.portal-shell:not(.admin-portal-shell) .portal-filter-bar {
+  gap: 14px;
+  margin-top: 8px;
+}
+.portal-shell:not(.admin-portal-shell) .portal-filter-bar button {
+  min-height: 44px;
+  font-size: 12px;
+}
+.portal-shell:not(.admin-portal-shell) .portal-thread {
+  margin: 12px 0;
+  padding: 16px;
+}
+.portal-shell:not(.admin-portal-shell) .portal-profile-layout {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 24px;
+}
+.portal-shell:not(.admin-portal-shell) .portal-profile-layout > section {
+  min-width: 0;
+}
+.portal-shell:not(.admin-portal-shell) .portal-profile-layout .portal-composer {
+  margin-top: 16px;
+}
+.portal-shell:not(.admin-portal-shell) .portal-profile-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+.portal-shell:not(.admin-portal-shell)
+  .portal-profile-form
+  :is(fieldset, button) {
+  grid-column: 1/-1;
+}
+.portal-shell:not(.admin-portal-shell) .portal-profile-form label {
+  margin-top: 0;
+}
+.portal-shell:not(.admin-portal-shell) .portal-billing-summary {
+  max-width: 600px;
+  padding: 16px 20px;
+}
+.portal-shell:not(.admin-portal-shell) .client-records-page > h2 {
+  margin-top: 22px;
+}
+.portal-shell:not(.admin-portal-shell) .intake-service-card {
+  padding: 18px;
+  border-radius: 6px;
+  gap: 14px;
+}
+.portal-shell:not(.admin-portal-shell) .intake-service-card h2 {
+  font-size: 23px;
+  margin: 8px 0;
+}
+.portal-shell:not(.admin-portal-shell) .intake-field {
+  margin-block: 14px;
+}
+@media (max-width: 1200px) {
+  .portal-shell:not(.admin-portal-shell) .portal-summary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .portal-shell:not(.admin-portal-shell)
+    .portal-summary-item:nth-child(-n + 3) {
+    border-bottom: 1px solid var(--client-line);
+  }
+  .portal-shell:not(.admin-portal-shell) .portal-summary-item span {
+    min-height: 0;
+  }
+  .portal-shell:not(.admin-portal-shell) .portal-checklist {
+    grid-template-columns: 1fr;
+  }
+  .portal-workspace-grid {
+    grid-template-columns: minmax(0, 1.4fr) minmax(280px, 1fr);
+    gap: 18px;
+  }
+}
+@media (max-width: 1023px) {
+  .portal-shell:not(.admin-portal-shell) {
+    grid-template-columns: 1fr;
+  }
+  .portal-shell:not(.admin-portal-shell) .portal-sidebar {
+    position: fixed;
+    padding-top: 74px;
+  }
+  .portal-shell:not(.admin-portal-shell) .portal-topbar {
+    min-height: 50px;
+    padding-left: 78px;
+  }
+}
+@media (max-width: 800px) {
+  .portal-dashboard-main,
+  .portal-dashboard-rail {
+    grid-column: 1/-1;
+  }
+  .portal-dashboard-rail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .portal-workspace-grid {
+    grid-template-columns: 1fr;
+  }
+  .portal-shell:not(.admin-portal-shell) .portal-profile-layout {
+    grid-template-columns: 1fr;
+  }
+  .portal-shell:not(.admin-portal-shell) .portal-checklist {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 540px) {
+  .portal-shell:not(.admin-portal-shell) .portal-main {
+    padding: 16px;
+  }
+  .portal-shell:not(.admin-portal-shell) .portal-page-header {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .portal-shell:not(.admin-portal-shell) .portal-page-header p {
+    justify-self: start;
+  }
+  .portal-shell:not(.admin-portal-shell) .portal-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .portal-shell:not(.admin-portal-shell) .portal-summary-item {
+    border-bottom: 1px solid var(--client-line);
+  }
+  .portal-shell:not(.admin-portal-shell) .portal-summary-item small {
+    display: none;
+  }
+  .portal-shell:not(.admin-portal-shell) .portal-checklist {
+    grid-template-columns: 1fr;
+  }
+  .portal-shell:not(.admin-portal-shell) .portal-record-list > li {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .portal-shell:not(.admin-portal-shell) .portal-record-meta {
+    text-align: left;
+  }
+  .portal-shell:not(.admin-portal-shell) .portal-action-button {
+    min-height: 44px;
+    width: auto;
+  }
+  .portal-shell:not(.admin-portal-shell) .portal-attention-list li {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .portal-shell:not(.admin-portal-shell)
+    .portal-attention-list
+    .portal-priority {
+    grid-column: 1/-1;
+    justify-self: start;
+  }
+  .portal-shell:not(.admin-portal-shell) .portal-attention-list a {
+    grid-column: 2;
+    margin-left: 0;
+  }
+  .portal-shell:not(.admin-portal-shell)
+    .portal-onboarding
+    .portal-section-heading {
+    align-items: start;
+    flex-wrap: wrap;
+  }
+  .portal-dashboard-rail {
+    grid-template-columns: 1fr;
+  }
+  .portal-shell:not(.admin-portal-shell) .portal-profile-form {
+    grid-template-columns: 1fr;
+  }
+  .portal-shell:not(.admin-portal-shell)
+    .portal-page
+    :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+    font-size: 16px;
+  }
+}
+.portal-shell:not(.admin-portal-shell) .portal-intake-progress {
+  width: 100%;
+  height: 6px;
+  margin-top: 12px;
+  accent-color: var(--emerald-forest);
+}
+.portal-shell:not(.admin-portal-shell) .intake-card-complete {
+  background: transparent;
+  border-style: dashed;
+}
+.portal-shell:not(.admin-portal-shell) .portal-metric-attention {
+  box-shadow: inset 0 2px var(--gold);
+  background: rgba(215, 176, 95, 0.06);
+}
+.portal-financial-overview {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+.portal-shell:not(.admin-portal-shell)
+  .portal-financial-overview
+  .portal-billing-summary {
+  max-width: none;
+}
+.portal-next-invoice {
+  padding: 16px 20px;
+  border-top: 1px solid var(--client-line);
+}
+.portal-shell:not(.admin-portal-shell) .portal-next-invoice h2 {
+  margin: 8px 0;
+}
+.portal-next-invoice p {
+  font-size: 13px;
+}
+.portal-next-invoice > span:last-child {
+  font-size: 11px;
+  color: var(--color-text-soft);
+}
+@media (max-width: 540px) {
+  .portal-financial-overview {
+    grid-template-columns: 1fr;
+  }
+}

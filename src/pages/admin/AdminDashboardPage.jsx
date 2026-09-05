@@ -360,8 +360,49 @@ function AdminDashboardPage() {
         ))}
       </section>
 
-      <section className="dashboard-operations-grid">
+      <section className="dashboard-command-grid">
         <div className="dashboard-main-column">
+          <article id="attention" className="dashboard-panel">
+            <div className="panel-heading">
+              <h2>Today / Needs your attention</h2>
+              <Link to="/admin/leads" className="dashboard-view-link">
+                View all
+              </Link>
+            </div>
+            {attentionItems.length ? (
+              <ul className="attention-list compact-list">
+                {attentionItems.map((item) => (
+                  <li key={item.key} className="attention-item compact-row">
+                    <div className="attention-item-copy">
+                      <div className="attention-item-topline">
+                        <span className="attention-kind">{item.type}</span>
+                        <span
+                          className={`status-pill ${item.status === "Past Due" || item.reason?.includes("Past Due") ? "warning" : "info"}`}
+                        >
+                          {item.status || "Active"}
+                        </span>
+                      </div>
+                      <strong>{item.title}</strong>
+                      <small>{item.summary}</small>
+                      <div className="attention-meta-row">
+                        <span>{item.reason}</span>
+                        <span>
+                          {item.due ? formatDate(item.due) : "No date"}
+                        </span>
+                      </div>
+                    </div>
+                    <Link to={item.to} className="dashboard-action-link">
+                      View
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="dashboard-empty-state">
+                Nothing currently requires immediate action.
+              </div>
+            )}
+          </article>
           <article className="dashboard-panel portal-client-attention">
             <div className="panel-heading">
               <h2>Client Portal activity</h2>
@@ -481,51 +522,108 @@ function AdminDashboardPage() {
               </div>
             ) : null}
           </article>
-
-          <article id="attention" className="dashboard-panel">
+          <article className="dashboard-panel">
             <div className="panel-heading">
-              <h2>Today / Needs your attention</h2>
+              <h2>Prospect follow-up</h2>
               <Link to="/admin/leads" className="dashboard-view-link">
                 View all
               </Link>
             </div>
-            {attentionItems.length ? (
-              <ul className="attention-list compact-list">
-                {attentionItems.map((item) => (
-                  <li key={item.key} className="attention-item compact-row">
-                    <div className="attention-item-copy">
-                      <div className="attention-item-topline">
-                        <span className="attention-kind">{item.type}</span>
-                        <span
-                          className={`status-pill ${item.status === "Past Due" || item.reason?.includes("Past Due") ? "warning" : "info"}`}
-                        >
-                          {item.status || "Active"}
-                        </span>
-                      </div>
-                      <strong>{item.title}</strong>
-                      <small>{item.summary}</small>
-                      <div className="attention-meta-row">
-                        <span>{item.reason}</span>
-                        <span>
-                          {item.due ? formatDate(item.due) : "No date"}
-                        </span>
-                      </div>
+            {leadQueue.length ? (
+              <ul className="mini-list compact-list">
+                {leadQueue.map((lead) => (
+                  <li key={lead.id}>
+                    <div>
+                      <strong>{lead.name}</strong>
+                      <small>
+                        {lead.audience} · {lead.serviceInterest}
+                      </small>
                     </div>
-                    <Link to={item.to} className="dashboard-action-link">
-                      View
-                    </Link>
+                    <div className="mini-meta">
+                      <span>{formatDate(lead.receivedAt)}</span>
+                      <span>{lead.status}</span>
+                    </div>
                   </li>
                 ))}
               </ul>
             ) : (
               <div className="dashboard-empty-state">
-                Nothing currently requires immediate action.
+                No prospects currently awaiting follow-up.
+              </div>
+            )}
+          </article>
+          <article className="dashboard-panel">
+            <div className="panel-heading">
+              <h2>Documents requiring action</h2>
+              <Link to="/admin/documents" className="dashboard-view-link">
+                View all
+              </Link>
+            </div>
+            {documentActions.length ? (
+              <ul className="mini-list compact-list">
+                {documentActions.map((document) => (
+                  <li key={document.id}>
+                    <div>
+                      <strong>{document.name}</strong>
+                      <small>
+                        {getClientName(snapshot, document.clientId)} ·{" "}
+                        {document.serviceName}
+                      </small>
+                    </div>
+                    <div className="mini-meta">
+                      <span>{document.status}</span>
+                      <span>
+                        {document.requestedAt
+                          ? formatDate(document.requestedAt)
+                          : "No date"}
+                      </span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="dashboard-empty-state">
+                No documents currently require action.
+              </div>
+            )}
+          </article>
+          <article className="dashboard-panel">
+            <div className="panel-heading">
+              <h2>Recent activity</h2>
+              <Link to="/admin/reports" className="dashboard-view-link">
+                View activity
+              </Link>
+            </div>
+            {recentActivity.length ? (
+              <ul className="activity-list compact-list">
+                {recentActivity.map((entry) => (
+                  <li key={entry.id}>
+                    <span
+                      className={`status-pill ${activityTone[entry.type] || "info"}`}
+                    >
+                      {entry.type || "Update"}
+                    </span>
+                    <div>
+                      <strong>{entry.summary || entry.eventType}</strong>
+                      <small>
+                        {entry.actorName || "System"} ·{" "}
+                        {formatDate(entry.timestamp)}
+                      </small>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="dashboard-empty-state">
+                No recent operational activity.
               </div>
             )}
           </article>
         </div>
-
-        <div className="dashboard-side-column">
+        <aside
+          className="dashboard-side-column"
+          aria-label="Operations overview"
+        >
           <article className="dashboard-panel">
             <div className="panel-heading">
               <h2>Upcoming schedule</h2>
@@ -575,223 +673,115 @@ function AdminDashboardPage() {
               </div>
             )}
           </article>
-        </div>
-      </section>
-
-      <section className="dashboard-secondary-grid">
-        <article className="dashboard-panel">
-          <div className="panel-heading">
-            <h2>Prospect follow-up</h2>
-            <Link to="/admin/leads" className="dashboard-view-link">
-              View all
-            </Link>
-          </div>
-          {leadQueue.length ? (
-            <ul className="mini-list compact-list">
-              {leadQueue.map((lead) => (
-                <li key={lead.id}>
-                  <div>
-                    <strong>{lead.name}</strong>
-                    <small>
-                      {lead.audience} · {lead.serviceInterest}
-                    </small>
-                  </div>
-                  <div className="mini-meta">
-                    <span>{formatDate(lead.receivedAt)}</span>
-                    <span>{lead.status}</span>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="dashboard-empty-state">
-              No prospects currently awaiting follow-up.
+          <article className="dashboard-panel">
+            <div className="panel-heading">
+              <h2>Active service work</h2>
+              <Link to="/admin/services" className="dashboard-view-link">
+                View all
+              </Link>
             </div>
-          )}
-        </article>
-
-        <article className="dashboard-panel">
-          <div className="panel-heading">
-            <h2>Active service work</h2>
-            <Link to="/admin/services" className="dashboard-view-link">
-              View all
-            </Link>
-          </div>
-          {activeServiceWork.length ? (
-            <ul className="mini-list compact-list">
-              {activeServiceWork.map((engagement) => (
-                <li key={engagement.id}>
-                  <div>
-                    <strong>{engagement.serviceName}</strong>
-                    <small>
-                      {getClientName(snapshot, engagement.clientId)}
-                    </small>
-                  </div>
-                  <div className="mini-meta">
-                    <span>{engagement.status}</span>
-                    <span>
-                      {engagement.targetDate
-                        ? formatDate(engagement.targetDate)
-                        : "No target"}
-                    </span>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="dashboard-empty-state">No active service work.</div>
-          )}
-        </article>
-      </section>
-
-      <section className="dashboard-secondary-grid">
-        <article className="dashboard-panel">
-          <div className="panel-heading">
-            <h2>Documents requiring action</h2>
-            <Link to="/admin/documents" className="dashboard-view-link">
-              View all
-            </Link>
-          </div>
-          {documentActions.length ? (
-            <ul className="mini-list compact-list">
-              {documentActions.map((document) => (
-                <li key={document.id}>
-                  <div>
-                    <strong>{document.name}</strong>
-                    <small>
-                      {getClientName(snapshot, document.clientId)} ·{" "}
-                      {document.serviceName}
-                    </small>
-                  </div>
-                  <div className="mini-meta">
-                    <span>{document.status}</span>
-                    <span>
-                      {document.requestedAt
-                        ? formatDate(document.requestedAt)
-                        : "No date"}
-                    </span>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="dashboard-empty-state">
-              No documents currently require action.
+            {activeServiceWork.length ? (
+              <ul className="mini-list compact-list">
+                {activeServiceWork.map((engagement) => (
+                  <li key={engagement.id}>
+                    <div>
+                      <strong>{engagement.serviceName}</strong>
+                      <small>
+                        {getClientName(snapshot, engagement.clientId)}
+                      </small>
+                    </div>
+                    <div className="mini-meta">
+                      <span>{engagement.status}</span>
+                      <span>
+                        {engagement.targetDate
+                          ? formatDate(engagement.targetDate)
+                          : "No target"}
+                      </span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="dashboard-empty-state">
+                No active service work.
+              </div>
+            )}
+          </article>
+          <article className="dashboard-panel">
+            <div className="panel-heading">
+              <h2>Billing watch</h2>
+              <Link to="/admin/billing" className="dashboard-view-link">
+                View billing
+              </Link>
             </div>
-          )}
-        </article>
-
-        <article className="dashboard-panel">
-          <div className="panel-heading">
-            <h2>Billing watch</h2>
-            <Link to="/admin/billing" className="dashboard-view-link">
-              View billing
-            </Link>
-          </div>
-          <div className="billing-summary-row">
-            <div>
-              <span className="dashboard-kicker">Open balance</span>
-              <strong>{formatCurrency(totalOutstanding)}</strong>
+            <div className="billing-summary-row">
+              <div>
+                <span className="dashboard-kicker">Open balance</span>
+                <strong>{formatCurrency(totalOutstanding)}</strong>
+              </div>
+              <div>
+                <span className="dashboard-kicker">Past due</span>
+                <strong>
+                  {formatCurrency(
+                    billingWatch
+                      .filter((invoice) => invoice.status === "Past Due")
+                      .reduce(
+                        (total, invoice) =>
+                          total + getInvoiceRemainingBalance(invoice),
+                        0,
+                      ),
+                  )}
+                </strong>
+              </div>
             </div>
-            <div>
-              <span className="dashboard-kicker">Past due</span>
-              <strong>
-                {formatCurrency(
-                  billingWatch
-                    .filter((invoice) => invoice.status === "Past Due")
-                    .reduce(
-                      (total, invoice) =>
-                        total + getInvoiceRemainingBalance(invoice),
-                      0,
-                    ),
-                )}
-              </strong>
+            {billingWatch.length ? (
+              <ul className="mini-list compact-list">
+                {billingWatch.map((invoice) => (
+                  <li key={invoice.id}>
+                    <div>
+                      <strong>{invoice.id}</strong>
+                      <small>{getClientName(snapshot, invoice.clientId)}</small>
+                    </div>
+                    <div className="mini-meta">
+                      <span>
+                        {formatCurrency(getInvoiceRemainingBalance(invoice))}
+                      </span>
+                      <span>{invoice.status}</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="dashboard-empty-state">No past-due invoices.</div>
+            )}
+          </article>
+          <aside className="dashboard-panel">
+            <div className="panel-heading">
+              <h2>Quick actions</h2>
             </div>
-          </div>
-          {billingWatch.length ? (
-            <ul className="mini-list compact-list">
-              {billingWatch.map((invoice) => (
-                <li key={invoice.id}>
-                  <div>
-                    <strong>{invoice.id}</strong>
-                    <small>{getClientName(snapshot, invoice.clientId)}</small>
-                  </div>
-                  <div className="mini-meta">
-                    <span>
-                      {formatCurrency(getInvoiceRemainingBalance(invoice))}
-                    </span>
-                    <span>{invoice.status}</span>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="dashboard-empty-state">No past-due invoices.</div>
-          )}
-        </article>
-      </section>
-
-      <section className="dashboard-bottom-grid">
-        <article className="dashboard-panel">
-          <div className="panel-heading">
-            <h2>Recent activity</h2>
-            <Link to="/admin/reports" className="dashboard-view-link">
-              View activity
-            </Link>
-          </div>
-          {recentActivity.length ? (
-            <ul className="activity-list compact-list">
-              {recentActivity.map((entry) => (
-                <li key={entry.id}>
-                  <span
-                    className={`status-pill ${activityTone[entry.type] || "info"}`}
-                  >
-                    {entry.type || "Update"}
-                  </span>
-                  <div>
-                    <strong>{entry.summary || entry.eventType}</strong>
-                    <small>
-                      {entry.actorName || "System"} ·{" "}
-                      {formatDate(entry.timestamp)}
-                    </small>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="dashboard-empty-state">
-              No recent operational activity.
+            <div className="quick-actions-grid">
+              <Link to="/admin/clients" className="quick-action-link">
+                Client management
+              </Link>
+              <Link to="/admin/appointments" className="quick-action-link">
+                Appointments
+              </Link>
+              <Link
+                to="/admin/clients?view=requests"
+                className="quick-action-link"
+              >
+                Client requests
+              </Link>
+              <Link to="/admin/billing" className="quick-action-link">
+                Billing
+              </Link>
+              <Link to="/admin/services" className="quick-action-link">
+                Service work
+              </Link>
             </div>
-          )}
-        </article>
-
-        <aside className="dashboard-panel">
-          <div className="panel-heading">
-            <h2>Quick actions</h2>
-          </div>
-          <div className="quick-actions-grid">
-            <Link to="/admin/clients" className="quick-action-link">
-              Client management
-            </Link>
-            <Link to="/admin/appointments" className="quick-action-link">
-              Appointments
-            </Link>
-            <Link
-              to="/admin/clients?view=requests"
-              className="quick-action-link"
-            >
-              Client requests
-            </Link>
-            <Link to="/admin/billing" className="quick-action-link">
-              Billing
-            </Link>
-            <Link to="/admin/services" className="quick-action-link">
-              Service work
-            </Link>
-          </div>
+          </aside>
         </aside>
       </section>
-
       {replacementItem ? (
         <div
           className="replacement-modal-backdrop"

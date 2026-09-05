@@ -1,3 +1,4 @@
+import { Children, cloneElement, isValidElement } from "react";
 export function AdminPageHeader({ eyebrow, title, summary, actions = [] }) {
   return (
     <header className="portal-page-header admin-page-header">
@@ -113,7 +114,23 @@ export function AdminToolbar({
 }
 
 export function AdminStatusBadge({ status, tone }) {
-  const className = `status-pill ${tone || "neutral"}`;
+  const normalized = String(status || "")
+    .toLowerCase()
+    .replaceAll("_", " ");
+  const semanticTone = /past due|overdue|rejected|failed/.test(normalized)
+    ? "danger"
+    : /waiting on client|awaiting upload|preparing|prospect|requested/.test(
+          normalized,
+        )
+      ? "warning"
+      : /active|paid|completed|received|ready for review|confirmed/.test(
+            normalized,
+          )
+        ? "success"
+        : /scheduled|issued|open|review/.test(normalized)
+          ? "info"
+          : "neutral";
+  const className = `status-pill ${tone || semanticTone}`;
   return <span className={className}>{status}</span>;
 }
 
@@ -196,5 +213,63 @@ export function AdminSection({ title, children, actions = [] }) {
       </div>
       {children}
     </section>
+  );
+}
+
+// Native table semantics and controls, with labels for the narrow-screen record layout.
+export function AdminTable({ children, className = "admin-table", ...props }) {
+  const textOf = (node) =>
+    Children.toArray(node)
+      .map((child) =>
+        isValidElement(child)
+          ? textOf(child.props.children)
+          : String(child ?? ""),
+      )
+      .join("");
+  const labels = [];
+  const collect = (nodes) =>
+    Children.forEach(nodes, (node) => {
+      if (!isValidElement(node)) return;
+      if (node.type === "th") labels.push(textOf(node.props.children));
+      else collect(node.props.children);
+    });
+  collect(children);
+  const decorate = (nodes) =>
+    Children.map(nodes, (node) => {
+      if (!isValidElement(node)) return node;
+      if (node.type === "tr") {
+        let index = 0;
+        return cloneElement(
+          node,
+          {},
+          Children.map(node.props.children, (cell) => {
+            if (!isValidElement(cell) || !["td", "th"].includes(cell.type))
+              return cell;
+            const label = labels[index++] || "";
+            return cloneElement(cell, {
+              "data-label": label,
+              "data-numeric":
+                /^(price|subtotal|paid|outstanding|amount|balance|total|open tasks|active services)/i.test(
+                  label,
+                ) || undefined,
+              ...(cell.type === "th" ? { scope: "col" } : {}),
+            });
+          }),
+        );
+      }
+      return cloneElement(node, {}, decorate(node.props.children));
+    });
+  return (
+    <table {...props} className={className + " admin-responsive-table"}>
+      {decorate(children)}
+    </table>
+  );
+}
+export function AdminLongText({ children }) {
+  return (
+    <details className="admin-long-text">
+      <summary>View scope / limits</summary>
+      <div>{children}</div>
+    </details>
   );
 }

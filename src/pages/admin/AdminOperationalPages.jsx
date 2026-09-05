@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   AdminDetailDrawer,
+  AdminTable,
+  AdminLongText,
   AdminEmptyState,
   AdminMetrics,
   AdminPageHeader,
@@ -896,7 +898,7 @@ function LeadManagementPage() {
       <AdminSection title="Lead records">
         {filteredRows.length ? (
           <div className="admin-table-wrap">
-            <table className="admin-table">
+            <AdminTable className="admin-table">
               <thead>
                 <tr>
                   <th>Lead</th>
@@ -971,7 +973,7 @@ function LeadManagementPage() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </AdminTable>
           </div>
         ) : (
           <AdminEmptyState
@@ -2732,7 +2734,7 @@ function ClientManagementPage() {
               </form>
               {clientEngagements.length ? (
                 <div className="admin-table-wrap">
-                  <table className="admin-table">
+                  <AdminTable className="admin-table">
                     <thead>
                       <tr>
                         <th>Service</th>
@@ -2758,7 +2760,7 @@ function ClientManagementPage() {
                         </tr>
                       ))}
                     </tbody>
-                  </table>
+                  </AdminTable>
                 </div>
               ) : (
                 <p>No service engagements are associated with this client.</p>
@@ -2808,7 +2810,7 @@ function ClientManagementPage() {
               <h3>Client task queue</h3>
               {clientTasks.length ? (
                 <div className="admin-table-wrap">
-                  <table className="admin-table">
+                  <AdminTable className="admin-table">
                     <thead>
                       <tr>
                         <th>Task</th>
@@ -2832,7 +2834,7 @@ function ClientManagementPage() {
                         </tr>
                       ))}
                     </tbody>
-                  </table>
+                  </AdminTable>
                 </div>
               ) : (
                 <p>No active tasks for this client.</p>
@@ -2845,7 +2847,7 @@ function ClientManagementPage() {
               <h3>Document requests</h3>
               {clientDocuments.length ? (
                 <div className="admin-table-wrap">
-                  <table className="admin-table">
+                  <AdminTable className="admin-table">
                     <thead>
                       <tr>
                         <th>Name</th>
@@ -2869,7 +2871,7 @@ function ClientManagementPage() {
                         </tr>
                       ))}
                     </tbody>
-                  </table>
+                  </AdminTable>
                 </div>
               ) : (
                 <p>No documents are associated with this client.</p>
@@ -2882,7 +2884,7 @@ function ClientManagementPage() {
               <h3>Appointment history</h3>
               {clientAppointments.length ? (
                 <div className="admin-table-wrap">
-                  <table className="admin-table">
+                  <AdminTable className="admin-table">
                     <thead>
                       <tr>
                         <th>Title</th>
@@ -2908,7 +2910,7 @@ function ClientManagementPage() {
                         </tr>
                       ))}
                     </tbody>
-                  </table>
+                  </AdminTable>
                 </div>
               ) : (
                 <p>No appointments have been scheduled for this client yet.</p>
@@ -2921,7 +2923,7 @@ function ClientManagementPage() {
               <h3>Billing activity</h3>
               {clientInvoices.length ? (
                 <div className="admin-table-wrap">
-                  <table className="admin-table">
+                  <AdminTable className="admin-table">
                     <thead>
                       <tr>
                         <th>Invoice</th>
@@ -2945,7 +2947,7 @@ function ClientManagementPage() {
                         </tr>
                       ))}
                     </tbody>
-                  </table>
+                  </AdminTable>
                 </div>
               ) : (
                 <p>No billing records are attached to this client.</p>
@@ -3178,7 +3180,7 @@ function ClientManagementPage() {
       <AdminSection title="Client & prospect records">
         {filteredRows.length ? (
           <div className="admin-table-wrap">
-            <table className="admin-table">
+            <AdminTable className="admin-table">
               <thead>
                 <tr>
                   <th>Name</th>
@@ -3289,7 +3291,7 @@ function ClientManagementPage() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </AdminTable>
           </div>
         ) : (
           <AdminEmptyState
@@ -4076,7 +4078,7 @@ function ServiceManagementPage() {
         </div>
       ) : null}
       <div className="admin-table-wrap">
-        <table className="admin-table">
+        <AdminTable className="admin-table">
           <thead>
             <tr>
               <th>Category</th>
@@ -4132,10 +4134,12 @@ function ServiceManagementPage() {
                     />
                   </td>
                   <td>
-                    {tier?.description || item.shortDescription}
-                    {tier?.limits
-                      ? ` · Limits: ${typeof tier.limits === "string" ? tier.limits : JSON.stringify(tier.limits)}`
-                      : ""}
+                    <AdminLongText>
+                      {tier?.description || item.shortDescription}
+                      {tier?.limits
+                        ? ` · Limits: ${typeof tier.limits === "string" ? tier.limits : JSON.stringify(tier.limits)}`
+                        : ""}
+                    </AdminLongText>
                   </td>
                   <td>{Array.isArray(item.addOns) ? item.addOns.length : 0}</td>
                   <td>
@@ -4163,7 +4167,7 @@ function ServiceManagementPage() {
               )),
             )}
           </tbody>
-        </table>
+        </AdminTable>
       </div>
       {serviceSavedMessage ? (
         <div className="admin-toast success">{serviceSavedMessage}</div>
@@ -4176,7 +4180,7 @@ function ServiceManagementPage() {
 
   const renderEngagements = () => (
     <div className="admin-table-wrap">
-      <table className="admin-table">
+      <AdminTable className="admin-table">
         <thead>
           <tr>
             <th>Client</th>
@@ -4229,7 +4233,7 @@ function ServiceManagementPage() {
             );
           })}
         </tbody>
-      </table>
+      </AdminTable>
     </div>
   );
 
@@ -5414,7 +5418,7 @@ function ClientRequestsPage() {
       ) : null}
       <AdminSection title="Unified work queue">
         <div className="admin-table-wrap">
-          <table className="admin-table">
+          <AdminTable className="admin-table">
             <thead>
               <tr>
                 <th>Request</th>
@@ -5452,7 +5456,7 @@ function ClientRequestsPage() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </AdminTable>
         </div>
       </AdminSection>
 
@@ -6065,7 +6069,7 @@ function TaskManagementPage() {
       <AdminSection title="Work queue">
         {filteredRows.length ? (
           <div className="admin-table-wrap">
-            <table className="admin-table">
+            <AdminTable className="admin-table">
               <thead>
                 <tr>
                   <th>Task</th>
@@ -6122,7 +6126,7 @@ function TaskManagementPage() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </AdminTable>
           </div>
         ) : (
           <AdminEmptyState
@@ -6540,7 +6544,7 @@ function DocumentManagementPage() {
       <AdminSection title="Document records">
         {filteredRows.length ? (
           <div className="admin-table-wrap">
-            <table className="admin-table">
+            <AdminTable className="admin-table">
               <thead>
                 <tr>
                   <th>Document Name</th>
@@ -6595,7 +6599,7 @@ function DocumentManagementPage() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </AdminTable>
           </div>
         ) : (
           <AdminEmptyState
@@ -8452,7 +8456,7 @@ function AppointmentManagementPage() {
       <AdminSection title="Appointment list">
         {filteredAppointments.length ? (
           <div className="admin-table-wrap">
-            <table className="admin-table">
+            <AdminTable className="admin-table">
               <thead>
                 <tr>
                   <th>Date</th>
@@ -8541,7 +8545,7 @@ function AppointmentManagementPage() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </AdminTable>
           </div>
         ) : (
           <AdminEmptyState
@@ -9341,7 +9345,7 @@ function AppointmentManagementPage() {
                 <div className="full-span">
                   <h4>Existing exceptions</h4>
                   <div className="admin-table-wrap">
-                    <table className="admin-table">
+                    <AdminTable className="admin-table">
                       <thead>
                         <tr>
                           <th>Date</th>
@@ -9384,7 +9388,7 @@ function AppointmentManagementPage() {
                           </tr>
                         ))}
                       </tbody>
-                    </table>
+                    </AdminTable>
                   </div>
                 </div>
               ) : (
@@ -9859,7 +9863,7 @@ function BillingManagementPage() {
       <AdminSection title="Invoice tracker">
         {filterRows.length ? (
           <div className="admin-table-wrap">
-            <table className="admin-table">
+            <AdminTable className="admin-table">
               <thead>
                 <tr>
                   <th>Invoice #</th>
@@ -9928,7 +9932,7 @@ function BillingManagementPage() {
                   );
                 })}
               </tbody>
-            </table>
+            </AdminTable>
           </div>
         ) : (
           <AdminEmptyState
@@ -10605,7 +10609,7 @@ function InvoiceDetailPage() {
       <div className="detail-block full-width">
         <h3>Line items</h3>
         <div className="admin-table-wrap">
-          <table className="admin-table">
+          <AdminTable className="admin-table">
             <thead>
               <tr>
                 <th>Service code</th>
@@ -10626,7 +10630,7 @@ function InvoiceDetailPage() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </AdminTable>
         </div>
       </div>
 
@@ -10730,7 +10734,7 @@ function InvoiceDetailPage() {
           <h3>Payment history</h3>
           {paymentRecords.length ? (
             <div className="admin-table-wrap">
-              <table className="admin-table">
+              <AdminTable className="admin-table">
                 <thead>
                   <tr>
                     <th>Date</th>
@@ -10749,7 +10753,7 @@ function InvoiceDetailPage() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </AdminTable>
             </div>
           ) : (
             <p>No payments have been recorded for this invoice yet.</p>
@@ -10876,7 +10880,7 @@ function ContentManagementPage() {
   const contentTables = {
     pages: (
       <div className="admin-table-wrap">
-        <table className="admin-table">
+        <AdminTable className="admin-table">
           <thead>
             <tr>
               <th>Page</th>
@@ -10917,12 +10921,12 @@ function ContentManagementPage() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </AdminTable>
       </div>
     ),
     resources: (
       <div className="admin-table-wrap">
-        <table className="admin-table">
+        <AdminTable className="admin-table">
           <thead>
             <tr>
               <th>Title</th>
@@ -10960,7 +10964,7 @@ function ContentManagementPage() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </AdminTable>
       </div>
     ),
     featured: (
@@ -10985,7 +10989,7 @@ function ContentManagementPage() {
     ),
     seo: (
       <div className="admin-table-wrap">
-        <table className="admin-table">
+        <AdminTable className="admin-table">
           <thead>
             <tr>
               <th>Page / Resource</th>
@@ -11023,12 +11027,12 @@ function ContentManagementPage() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </AdminTable>
       </div>
     ),
     notices: (
       <div className="admin-table-wrap">
-        <table className="admin-table">
+        <AdminTable className="admin-table">
           <thead>
             <tr>
               <th>Title</th>
@@ -11064,7 +11068,7 @@ function ContentManagementPage() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </AdminTable>
       </div>
     ),
   };
@@ -12709,7 +12713,7 @@ function ReportsPage() {
 
         {reportRows.length ? (
           <div className="report-table-wrap">
-            <table className="report-table">
+            <AdminTable className="report-table">
               <thead>
                 <tr>
                   {activeColumns.map((column) => (
@@ -12732,7 +12736,7 @@ function ReportsPage() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </AdminTable>
           </div>
         ) : (
           <div className="dashboard-empty-state report-empty-state">
@@ -12871,7 +12875,7 @@ function SettingsPage() {
   const settingsContent = {
     team: (
       <div className="admin-table-wrap">
-        <table className="admin-table">
+        <AdminTable className="admin-table">
           <thead>
             <tr>
               <th>Name</th>
@@ -12908,7 +12912,7 @@ function SettingsPage() {
               </tr>
             ) : null}
           </tbody>
-        </table>
+        </AdminTable>
       </div>
     ),
     workflow: (

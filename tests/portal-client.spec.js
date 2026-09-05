@@ -190,3 +190,117 @@ test("profile updates preserve internal field names and use a PUT mutation", asy
   expect(request.headers()["x-csrf-token"]).toBe("test-token");
   expect(request.postDataJSON().primary_phone).toBe("(910) 555-0110");
 });
+
+for (const width of [1440, 834, 390]) {
+  test(`client workspace composition and overflow at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 1000 });
+    for (const resource of [
+      "dashboard",
+      "services",
+      "documents",
+      "appointments",
+      "messages",
+      "billing",
+      "profile",
+      "tasks",
+    ]) {
+      await page.goto(`/client-portal/${resource}/`);
+      await expect(page.locator(".portal-page h1")).toBeVisible();
+      await expect(page.getByText(/^Loading /)).toHaveCount(0);
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+      if (
+        ["services", "documents", "appointments", "messages"].includes(resource)
+      ) {
+        const main = await page
+          .locator(".portal-workspace-primary")
+          .boundingBox();
+        const utility = await page
+          .locator(".portal-workspace-utility")
+          .boundingBox();
+        if (width > 800) expect(utility.x).toBeGreaterThan(main.x + main.width);
+        else expect(utility.y).toBeGreaterThanOrEqual(main.y + main.height);
+      }
+      if (resource === "dashboard" && width === 1440) {
+        expect(
+          (await page.locator(".portal-dashboard-grid").boundingBox()).y,
+        ).toBeLessThan(400);
+      }
+      await page.screenshot({
+        path: `artifacts/client-ui-${resource}-${width}.png`,
+        fullPage: true,
+      });
+    }
+  });
+}
+
+test("populated setup and action queue stay compact", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.route("**/alchemize-api.php?route=portal%2Fdashboard", (route) =>
+    route.fulfill({
+      json: {
+        data: {
+          ...portalPayloads.dashboard,
+          onboarding: {
+            dismissed: false,
+            steps: [
+              {
+                key: "profile",
+                label: "Confirm profile information",
+                complete: true,
+                to: "/client-portal/profile",
+              },
+              {
+                key: "service",
+                label: "Review active service",
+                complete: false,
+                to: "/client-portal/services",
+              },
+              {
+                key: "task",
+                label: "Complete your first task",
+                complete: false,
+                to: "/client-portal/tasks",
+              },
+              {
+                key: "documents",
+                label: "Provide requested documents",
+                complete: true,
+                to: "/client-portal/documents",
+              },
+            ],
+          },
+          attention: [
+            {
+              kind: "task",
+              title: "Review formation details",
+              detail: "Due Sep 10, 2026",
+              priority: 2,
+              to: "/client-portal/tasks",
+            },
+          ],
+          recent_activity: Array.from({ length: 8 }, (_, i) => ({
+            id: i,
+            summary: "Service information updated",
+            created_at: "2026-09-05T12:00:00",
+          })),
+        },
+      },
+    }),
+  );
+  await page.goto("/client-portal/dashboard/");
+  await expect(page.getByRole("progressbar")).toHaveAttribute("value", "2");
+  expect(
+    (await page.locator(".portal-onboarding").boundingBox()).height,
+  ).toBeLessThan(250);
+  await expect(page.locator(".portal-activity li")).toHaveCount(5);
+  await page.screenshot({
+    path: "artifacts/client-ui-dashboard-populated.png",
+    fullPage: true,
+  });
+});

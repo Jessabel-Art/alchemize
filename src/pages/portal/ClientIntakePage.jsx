@@ -492,13 +492,21 @@ function IntakeCard({ item, onOpen }) {
     Math.ceil((100 - Number(item.completion_percentage || 0)) / 10),
   );
   return (
-    <article className="intake-service-card">
+    <article
+      className={`intake-service-card ${status.key === "complete" ? "intake-card-complete" : ""}`}
+    >
       <div>
         <span className={`intake-client-status ${status.key}`}>
           {status.label}
         </span>
         <h2>{item.engagement_title}</h2>
         <p>{status.detail}</p>
+        <progress
+          className="portal-intake-progress"
+          aria-label={`${item.engagement_title} completion`}
+          value={Number(item.completion_percentage) || 0}
+          max={100}
+        />
         <div className="intake-service-meta">
           <span>
             {item.completion_percentage}% of your information complete

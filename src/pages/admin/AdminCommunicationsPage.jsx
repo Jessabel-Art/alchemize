@@ -135,7 +135,7 @@ export default function AdminCommunicationsPage() {
   };
 
   return (
-    <div className="admin-module">
+    <div className="admin-module admin-communications">
       <AdminPageHeader
         eyebrow="Client communications"
         title="Communication center"
@@ -150,7 +150,7 @@ export default function AdminCommunicationsPage() {
       />
       {composeOpen ? (
         <form
-          className="admin-section setting-group"
+          className="admin-section setting-group admin-compose-panel"
           onSubmit={startConversation}
         >
           <h2>New client conversation</h2>
@@ -194,7 +194,9 @@ export default function AdminCommunicationsPage() {
             />
           </label>
           <div className="portal-action-group">
-            <button disabled={busy}>Send message</button>
+            <button className="primary-button" disabled={busy}>
+              Send message
+            </button>
             <button type="button" onClick={() => setComposeOpen(false)}>
               Cancel
             </button>
@@ -224,12 +226,15 @@ export default function AdminCommunicationsPage() {
           </button>
         ))}
       </div>
-      <div className="admin-workspace-grid">
+      <div
+        className={`admin-workspace-grid ${opened ? "has-conversation" : ""}`}
+      >
         <section className="admin-list-panel" aria-label="Client conversations">
           {visible.length ? (
             visible.map((thread) => (
               <button
-                className="admin-list-row"
+                className={`admin-list-row ${opened?.thread.id === thread.id ? "selected" : ""}`}
+                aria-pressed={opened?.thread.id === thread.id}
                 type="button"
                 key={thread.id}
                 onClick={() => open(thread.id)}
@@ -256,7 +261,7 @@ export default function AdminCommunicationsPage() {
             </p>
           )}
         </section>
-        <section className="admin-detail-panel" aria-live="polite">
+        <section className="admin-conversation-panel" aria-live="polite">
           {opened ? (
             <>
               <header>

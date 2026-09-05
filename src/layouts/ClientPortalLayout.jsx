@@ -4,6 +4,7 @@ import PortalShell from "../components/ui/PortalShell.jsx";
 import { auth } from "../services/admin-api.js";
 import { portalApi } from "../services/portal-api.js";
 import "../pages/portal/portal.css";
+import "../pages/portal/client-workspace.css";
 
 const baseNavItems = [
   { label: "Dashboard", to: "/client-portal/dashboard" },
