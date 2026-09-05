@@ -1192,6 +1192,7 @@ function ClientManagementPage() {
   const [clientTypeFilter, setClientTypeFilter] = useState("All");
   const [serviceFilter, setServiceFilter] = useState("All");
   const [attentionFilter, setAttentionFilter] = useState("All");
+  const [clientFiltersOpen, setClientFiltersOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const [noteDraft, setNoteDraft] = useState("");
   const [recordVersion, setRecordVersion] = useState(0);
@@ -1401,6 +1402,14 @@ function ClientManagementPage() {
       ).length,
     },
   ];
+
+  const activeClientFilterCount = [
+    statusFilter,
+    recordTypeFilter,
+    clientTypeFilter,
+    serviceFilter,
+    attentionFilter,
+  ].filter((option) => option && option !== "All").length;
 
   const clientNotes = selectedClient
     ? adminStore
@@ -3037,68 +3046,134 @@ function ClientManagementPage() {
           hint: "Current",
         }))}
       />
-      <AdminToolbar
-        searchValue={search}
-        onSearchChange={setSearch}
-        filters={[
-          {
-            label: "Relationship Status",
-            value: statusFilter,
-            onChange: setStatusFilter,
-            options: [
-              "All",
-              "New",
-              "Contacted",
-              "Consultation Scheduled",
-              "Qualified",
-              "Prospect",
-              "Onboarding",
-              "Active",
-              "Waiting on Client",
-              "Paused",
-              "Completed",
-              "Inactive",
-              "Converted",
-            ].map((option) => ({ value: option, label: option })),
-          },
-          {
-            label: "Record Type",
-            value: recordTypeFilter,
-            onChange: setRecordTypeFilter,
-            options: ["All", "Client", "Prospect"].map((option) => ({
-              value: option,
-              label: option,
-            })),
-          },
-          {
-            label: "Client Type",
-            value: clientTypeFilter,
-            onChange: setClientTypeFilter,
-            options: ["All", "Business", "Individual"].map((option) => ({
-              value: option,
-              label: option,
-            })),
-          },
-          {
-            label: "Service",
-            value: serviceFilter,
-            onChange: setServiceFilter,
-            options: serviceOptions.map((option) => ({
-              value: option,
-              label: option,
-            })),
-          },
-          {
-            label: "Attention",
-            value: attentionFilter,
-            onChange: setAttentionFilter,
-            options: ["All", "Needs Attention"].map((option) => ({
-              value: option,
-              label: option,
-            })),
-          },
-        ]}
-      />
+      <div className="compact-admin-toolbar client-toolbar">
+        <label className="admin-search compact-search">
+          <span>Search</span>
+          <input
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search clients and prospects"
+          />
+        </label>
+
+        <div className="compact-admin-toolbar-actions">
+          <button
+            type="button"
+            className="secondary-button compact-action-button"
+            onClick={() => setClientFiltersOpen((current) => !current)}
+          >
+            Filters
+            {activeClientFilterCount > 0
+              ? ` (${activeClientFilterCount})`
+              : ""}{" "}
+            ▾
+          </button>
+        </div>
+      </div>
+
+      {clientFiltersOpen ? (
+        <div className="compact-filter-popover">
+          <div className="compact-filter-grid">
+            <label className="compact-filter-field">
+              <span>Relationship Status</span>
+              <select
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value)}
+              >
+                {[
+                  "All",
+                  "New",
+                  "Contacted",
+                  "Consultation Scheduled",
+                  "Qualified",
+                  "Prospect",
+                  "Onboarding",
+                  "Active",
+                  "Waiting on Client",
+                  "Paused",
+                  "Completed",
+                  "Inactive",
+                  "Converted",
+                ].map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="compact-filter-field">
+              <span>Record Type</span>
+              <select
+                value={recordTypeFilter}
+                onChange={(event) => setRecordTypeFilter(event.target.value)}
+              >
+                {["All", "Client", "Prospect"].map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="compact-filter-field">
+              <span>Client Type</span>
+              <select
+                value={clientTypeFilter}
+                onChange={(event) => setClientTypeFilter(event.target.value)}
+              >
+                {["All", "Business", "Individual"].map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="compact-filter-field">
+              <span>Service</span>
+              <select
+                value={serviceFilter}
+                onChange={(event) => setServiceFilter(event.target.value)}
+              >
+                {serviceOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="compact-filter-field">
+              <span>Attention</span>
+              <select
+                value={attentionFilter}
+                onChange={(event) => setAttentionFilter(event.target.value)}
+              >
+                {["All", "Needs Attention"].map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="compact-filter-actions">
+            <button
+              type="button"
+              className="secondary-button compact-action-button"
+              onClick={() => {
+                setStatusFilter("All");
+                setRecordTypeFilter("All");
+                setClientTypeFilter("All");
+                setServiceFilter("All");
+                setAttentionFilter("All");
+                setClientFiltersOpen(false);
+              }}
+            >
+              Clear Filters
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       <AdminSection title="Client & prospect records">
         {filteredRows.length ? (
@@ -4806,6 +4881,7 @@ function ClientRequestsPage() {
   const [clientFilter, setClientFilter] = useState("All");
   const [ownerFilter, setOwnerFilter] = useState("All");
   const [priorityFilter, setPriorityFilter] = useState("All");
+  const [requestFiltersOpen, setRequestFiltersOpen] = useState(false);
   const [newRequestOpen, setNewRequestOpen] = useState(false);
   const [requestType, setRequestType] = useState("Document Request");
   const [documentTypeOptions, setDocumentTypeOptions] = useState([]);
@@ -5001,6 +5077,14 @@ function ClientRequestsPage() {
     [rows],
   );
 
+  const requestFilterCount = [
+    requestTypeFilter,
+    clientFilter,
+    statusFilter,
+    ownerFilter,
+    priorityFilter,
+  ].filter((option) => option && option !== "All").length;
+
   const clientOptions = [
     "All",
     ...Array.from(new Set(rows.map((row) => row.clientName).filter(Boolean))),
@@ -5170,60 +5254,123 @@ function ClientRequestsPage() {
           { label: "Completed", value: summary.completed },
         ]}
       />
-      <AdminToolbar
-        searchValue={search}
-        onSearchChange={setSearch}
-        filters={[
-          {
-            label: "Request Type",
-            value: requestTypeFilter,
-            onChange: setRequestTypeFilter,
-            options: ["All", "Document", "Task"].map((option) => ({
-              value: option,
-              label: option,
-            })),
-          },
-          {
-            label: "Client",
-            value: clientFilter,
-            onChange: setClientFilter,
-            options: clientOptions.map((option) => ({
-              value: option,
-              label: option,
-            })),
-          },
-          {
-            label: "Status",
-            value: statusFilter,
-            onChange: setStatusFilter,
-            options: [
-              "All",
-              "Requested",
-              "Waiting on Client",
-              "Ready for Review",
-              "Completed",
-              "Under Review",
-            ].map((option) => ({ value: option, label: option })),
-          },
-          {
-            label: "Priority",
-            value: priorityFilter,
-            onChange: setPriorityFilter,
-            options: ["All", "Low", "Normal", "High", "Urgent"].map(
-              (option) => ({ value: option, label: option }),
-            ),
-          },
-          {
-            label: "Owner",
-            value: ownerFilter,
-            onChange: setOwnerFilter,
-            options: ownerOptions.map((option) => ({
-              value: option,
-              label: option,
-            })),
-          },
-        ]}
-      />
+      <div className="compact-admin-toolbar client-request-toolbar">
+        <label className="admin-search compact-search">
+          <span>Search</span>
+          <input
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search requests"
+          />
+        </label>
+
+        <div className="compact-admin-toolbar-actions">
+          <button
+            type="button"
+            className="secondary-button compact-action-button"
+            onClick={() => setRequestFiltersOpen((current) => !current)}
+          >
+            Filters{requestFilterCount > 0 ? ` (${requestFilterCount})` : ""} ▾
+          </button>
+        </div>
+      </div>
+
+      {requestFiltersOpen ? (
+        <div className="compact-filter-popover">
+          <div className="compact-filter-grid">
+            <label className="compact-filter-field">
+              <span>Request Type</span>
+              <select
+                value={requestTypeFilter}
+                onChange={(event) => setRequestTypeFilter(event.target.value)}
+              >
+                {["All", "Document", "Task"].map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="compact-filter-field">
+              <span>Client</span>
+              <select
+                value={clientFilter}
+                onChange={(event) => setClientFilter(event.target.value)}
+              >
+                {clientOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="compact-filter-field">
+              <span>Status</span>
+              <select
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value)}
+              >
+                {[
+                  "All",
+                  "Requested",
+                  "Waiting on Client",
+                  "Ready for Review",
+                  "Completed",
+                  "Under Review",
+                ].map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="compact-filter-field">
+              <span>Priority</span>
+              <select
+                value={priorityFilter}
+                onChange={(event) => setPriorityFilter(event.target.value)}
+              >
+                {["All", "Low", "Normal", "High", "Urgent"].map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="compact-filter-field">
+              <span>Owner</span>
+              <select
+                value={ownerFilter}
+                onChange={(event) => setOwnerFilter(event.target.value)}
+              >
+                {ownerOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="compact-filter-actions">
+            <button
+              type="button"
+              className="secondary-button compact-action-button"
+              onClick={() => {
+                setRequestTypeFilter("All");
+                setClientFilter("All");
+                setStatusFilter("All");
+                setPriorityFilter("All");
+                setOwnerFilter("All");
+                setRequestFiltersOpen(false);
+              }}
+            >
+              Clear Filters
+            </button>
+          </div>
+        </div>
+      ) : null}
       <AdminSection title="Unified work queue">
         <div className="admin-table-wrap">
           <table className="admin-table">
@@ -6602,11 +6749,14 @@ function AppointmentManagementPage() {
   const [selectedAppointmentId, setSelectedAppointmentId] = useState(
     snapshot.appointments[0]?.id || null,
   );
+  const [clientFiltersOpen, setClientFiltersOpen] = useState(false);
+  const [requestFiltersOpen, setRequestFiltersOpen] = useState(false);
   const [formMode, setFormMode] = useState("create");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isSchedulingLinkOpen, setIsSchedulingLinkOpen] = useState(false);
   const [isAvailabilityOpen, setIsAvailabilityOpen] = useState(false);
   const [availabilityMode, setAvailabilityMode] = useState("weekly");
+  const [appointmentFiltersOpen, setAppointmentFiltersOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState("Client requested");
   const [appointmentError, setAppointmentError] = useState("");
   const [appointmentSuccess, setAppointmentSuccess] = useState("");
