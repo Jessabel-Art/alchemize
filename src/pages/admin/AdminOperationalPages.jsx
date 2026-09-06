@@ -4180,7 +4180,7 @@ function ServiceManagementPage() {
 
   const renderEngagements = () => (
     <div className="admin-table-wrap">
-      <AdminTable className="admin-table">
+      <AdminTable className="admin-table admin-engagement-table">
         <thead>
           <tr>
             <th>Client</th>
@@ -5439,7 +5439,26 @@ function ClientRequestsPage() {
                   <td>{row.type}</td>
                   <td>{row.clientName}</td>
                   <td>{row.engagementName || row.serviceName}</td>
-                  <td>{formatDate(row.dueDate)}</td>
+                  <td
+                    className={
+                      row.dueDate &&
+                      new Date(row.dueDate) < new Date() &&
+                      !["Completed", "Received", "Approved"].includes(
+                        row.status,
+                      )
+                        ? "admin-overdue"
+                        : ""
+                    }
+                  >
+                    {formatDate(row.dueDate)}
+                    {row.dueDate &&
+                    new Date(row.dueDate) < new Date() &&
+                    !["Completed", "Received", "Approved"].includes(
+                      row.status,
+                    ) ? (
+                      <small>Overdue</small>
+                    ) : null}
+                  </td>
                   <td>
                     <AdminStatusBadge
                       status={row.status}

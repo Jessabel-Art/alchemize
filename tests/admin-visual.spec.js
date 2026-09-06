@@ -215,6 +215,13 @@ for (const width of [1440, 834, 390]) {
         await expect(details).toHaveAttribute("open", "");
         await details.locator("summary").click();
       }
+      if (name === "billing" && width === 1440) {
+        const controls = await page.locator(".admin-toolbar select").all();
+        const boxes = await Promise.all(
+          controls.map((control) => control.boundingBox()),
+        );
+        expect(Math.abs(boxes[0].y - boxes[1].y)).toBeLessThan(2);
+      }
       await page.screenshot({
         path: `artifacts/admin-ui-${name}-${width}.png`,
         fullPage: true,
@@ -280,35 +287,31 @@ test("Empty conversations stay compact and settings mutation is preserved", asyn
   await expect(page.getByText("Settings saved.")).toBeVisible();
 });
 
-test("layout inspection", async ({ page }) => {
+test("Admin mobile navigation, service tabs and request filters remain usable", async ({
+  page,
+}) => {
   await mockAdmin(page);
-  await page.setViewportSize({ width: 390, height: 1000 });
-  await page.goto("/admin/appointments/");
-  await expect(page.locator(".scheduler-toolbar")).toBeVisible();
-  console.log(
-    await page.locator(".scheduler-toolbar").evaluate((el) => ({
-      css: getComputedStyle(el).cssText,
-      display: getComputedStyle(el).display,
-      direction: getComputedStyle(el).flexDirection,
-      width: getComputedStyle(el).width,
-      children: [...el.children].map((e) => ({
-        class: e.className,
-        width: getComputedStyle(e).width,
-        flex: getComputedStyle(e).flex,
-        min: getComputedStyle(e).minWidth,
-      })),
-    })),
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/admin/dashboard/");
+  const toggle = page.getByRole("button", { name: "Toggle admin navigation" });
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  await page
+    .getByRole("navigation", { name: "Portal navigation" })
+    .getByRole("link", { name: "Services", exact: true })
+    .click();
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  await page.getByRole("tab", { name: "Active Engagements" }).click();
+  await expect(
+    page.getByRole("columnheader", { name: "Target Date", exact: true }),
+  ).toHaveCount(1);
+  await expect(page.locator('td[data-label="Client"]').first()).toHaveText(
+    "North Harbor Studio",
   );
-  console.log(
-    await page.evaluate(() =>
-      [...document.querySelectorAll("main *")]
-        .filter((e) => e.getBoundingClientRect().right > innerWidth)
-        .slice(0, 18)
-        .map((e) => ({
-          tag: e.tagName,
-          class: e.className,
-          width: e.getBoundingClientRect().width,
-        })),
-    ),
-  );
+  await page.goto("/admin/client-requests/");
+  await page.getByRole("button", { name: /^Filters/ }).click();
+  await expect(
+    page.getByRole("combobox", { name: "Request Type" }),
+  ).toBeVisible();
+  await expect(page.locator(".admin-overdue")).toContainText("Overdue");
 });

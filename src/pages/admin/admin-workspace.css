@@ -958,3 +958,179 @@
     padding: 14px;
   }
 }
+@media screen {
+  .portal-shell.admin-portal-shell {
+    grid-template-columns: 232px minmax(0, 1fr);
+  }
+  .admin-portal-shell .status-pill {
+    overflow-wrap: normal;
+    word-break: normal;
+  }
+  .admin-portal-shell .admin-responsive-table [data-label="Status"] {
+    min-width: 80px;
+  }
+  .admin-portal-shell .admin-responsive-table [data-label="Record Type"] {
+    min-width: 82px;
+  }
+  .admin-portal-shell .attention-meta-row {
+    font-size: 11px;
+    color: var(--color-text-soft);
+  }
+  .admin-portal-shell .attention-item-copy {
+    gap: 3px;
+  }
+  .admin-portal-shell .report-control-card {
+    gap: 10px;
+  }
+  .admin-portal-shell .report-filter-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin-top: 0;
+  }
+  .admin-portal-shell .report-quick-section {
+    align-content: start;
+  }
+  .admin-portal-shell .saved-report-item {
+    min-height: 28px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+  .admin-portal-shell .saved-report-ui > button {
+    justify-self: start;
+  }
+  .admin-portal-shell .admin-overdue {
+    color: #8b382c;
+  }
+  .admin-portal-shell .admin-overdue small {
+    display: block;
+    font-size: 10px;
+    font-weight: 600;
+  }
+}
+@media screen and (max-width: 1023px) {
+  .portal-shell.admin-portal-shell {
+    grid-template-columns: 1fr;
+  }
+}
+@media screen and (max-width: 600px) {
+  .admin-portal-shell .scheduler-toolbar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 0;
+    align-items: center;
+  }
+  .admin-portal-shell .scheduler-date-label {
+    flex: 1 0 100%;
+  }
+  .admin-portal-shell .scheduler-view-switcher {
+    max-width: 100%;
+  }
+  .admin-portal-shell .report-filter-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media screen {
+  .admin-portal-shell .scheduler-main {
+    max-height: 70svh;
+    overflow: auto;
+  }
+  .admin-portal-shell .scheduler-detail-header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+  }
+  .admin-portal-shell .scheduler-detail-panel .detail-list {
+    gap: 0;
+  }
+  .admin-portal-shell .scheduler-detail-panel .detail-list > div {
+    grid-template-columns: minmax(80px, 0.8fr) minmax(0, 1fr);
+    gap: 10px;
+    padding: 8px 0;
+    border: 0;
+    border-bottom: 1px solid var(--admin-line);
+    background: transparent;
+    border-radius: 0;
+  }
+  .admin-portal-shell .scheduler-detail-panel .detail-list dt {
+    font-size: 10px;
+    letter-spacing: 0.02em;
+  }
+  .admin-portal-shell .scheduler-detail-panel .detail-list dd {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+  .admin-portal-shell .scheduler-detail-panel .detail-summary-row {
+    display: flex;
+    flex-direction: row;
+    align-items: start;
+    font-size: 13px;
+    gap: 8px;
+  }
+  .admin-portal-shell .admin-settings-form {
+    align-items: start;
+  }
+  .admin-portal-shell .admin-settings-form label {
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .admin-portal-shell .admin-compose-panel label {
+    text-transform: none;
+    letter-spacing: 0;
+  }
+}
+@media screen and (max-width: 600px) {
+  .admin-portal-shell .scheduler-main {
+    max-height: 60svh;
+  }
+  .admin-portal-shell .admin-responsive-table td[data-numeric] {
+    text-align: left;
+  }
+  .admin-portal-shell .admin-responsive-table td > .status-pill {
+    justify-self: start;
+    align-self: start;
+  }
+  .admin-portal-shell .admin-responsive-table td > .table-actions {
+    align-self: start;
+  }
+}
+@media screen {
+  .admin-portal-shell .admin-toolbar > .admin-filter-row {
+    flex: 1 1 350px;
+    align-items: end;
+  }
+  .admin-portal-shell .admin-toolbar .admin-filter {
+    flex: 1 1 150px;
+    max-width: 220px;
+  }
+  .admin-portal-shell
+    .admin-compose-panel
+    .portal-action-group
+    > .primary-button {
+    background: var(--emerald-deep);
+    color: var(--white);
+  }
+  .admin-portal-shell .admin-conversation-panel .portal-action-group {
+    align-items: end;
+  }
+  .admin-portal-shell .admin-conversation-panel .portal-action-group label {
+    display: grid;
+    gap: 5px;
+    font-size: 11px;
+  }
+  .admin-portal-shell .admin-conversation-panel .portal-thread li.client {
+    justify-self: start;
+    border-right: 0;
+  }
+  .admin-portal-shell .admin-engagement-table tbody tr {
+    border-left: 2px solid var(--gold);
+  }
+}
+@media screen and (max-width: 600px) {
+  .admin-portal-shell .admin-toolbar > .admin-filter-row {
+    flex-basis: 100%;
+  }
+  .admin-portal-shell .admin-toolbar .admin-filter {
+    max-width: none;
+  }
+}
