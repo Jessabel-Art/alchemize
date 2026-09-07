@@ -143,15 +143,17 @@ function PortalRecordsPage({ resource }) {
     setState({ status: "loading", data: null, error: "" });
     try {
       if (resource === "tasks-and-documents") {
-        const [tasks, documents] = await Promise.all([
+        const [tasks, documents, intakes] = await Promise.all([
           portalApi.tasks(),
           portalApi.documents(),
+          portalApi.intakes(),
         ]);
         setState({
           status: "ready",
           data: {
             tasks: tasks.items || [],
             documents: documents.items || [],
+            intakes: intakes.items || [],
           },
           error: "",
         });
@@ -251,6 +253,75 @@ function groupRecords(resource, items) {
   return [];
 }
 
+function objectDescription(item) {
+  if (item.description) return item.description;
+  if (item.engagement_title) return item.engagement_title;
+  if (item.document_name) return item.document_name;
+  if (item.title) return item.title;
+  return "Client-visible item";
+}
+
+function buildUnifiedGroups(tasks, documents, intakes) {
+  const records = [
+    ...tasks.map((item) => ({
+      ...item,
+      kind: "task",
+      title: item.title || "Task",
+      description: objectDescription(item),
+      status: item.status || "not_started",
+      due_date: item.due_date || null,
+    })),
+    ...documents.map((item) => ({
+      ...item,
+      kind: "document",
+      title: item.document_name || "Document request",
+      description: objectDescription(item),
+      status: item.status || "requested",
+      due_date: item.due_date || item.requested_date || null,
+    })),
+    ...intakes.map((item) => ({
+      ...item,
+      kind: "intake",
+      title: item.engagement_title || "Client intake",
+      description:
+        item.status === "completed"
+          ? "This intake has been completed."
+          : `${Number(item.completion_percentage || 0)}% complete`,
+      status: item.status || "assigned",
+      due_date: item.due_date || null,
+    })),
+  ];
+
+  const rules = {
+    task: {
+      "Action needed": ["not_started", "waiting_on_client"],
+      "Under review": ["in_progress", "waiting_on_alchemize"],
+      Completed: ["completed"],
+    },
+    document: {
+      "Action needed": ["requested", "awaiting_upload", "replacement_requested"],
+      "Under review": ["received", "under_review"],
+      Completed: ["accepted", "archived"],
+    },
+    intake: {
+      "Action needed": ["assigned", "in_progress", "changes_requested", "waiting_on_client"],
+      "Under review": ["submitted", "under_review", "approved"],
+      Completed: ["completed"],
+    },
+  };
+
+  return [
+    { label: "Action needed", items: [] },
+    { label: "Under review", items: [] },
+    { label: "Completed", items: [] },
+  ].map((group) => ({
+    ...group,
+    items: records.filter((item) =>
+      (rules[item.kind]?.[group.label] || []).includes(item.status),
+    ),
+  })).filter((group) => group.items.length);
+}
+
 function ResourceContent(props) {
   const { resource, data, groups, empty, busy, run } = props;
   if (resource === "services")
@@ -264,6 +335,7 @@ function ResourceContent(props) {
       <TasksAndDocuments
         tasks={data?.tasks || []}
         documents={data?.documents || []}
+        intakes={data?.intakes || []}
         empty={empty}
         busy={busy}
         run={run}
@@ -407,26 +479,105 @@ function Services({ items, empty, busy, run }) {
   );
 }
 
-function TasksAndDocuments({ tasks, documents, empty, busy, run }) {
-  const taskGroups = groupRecords("tasks", tasks);
-  const documentGroups = groupRecords("documents", documents);
+function TasksAndDocuments({ tasks, documents, intakes, empty, busy, run }) {
+  const groups = buildUnifiedGroups(tasks, documents, intakes);
   return (
     <div className="portal-workspace-grid">
       <div className="portal-workspace-primary">
         <div className="portal-group-stack">
-          {taskGroups.length ? (
-            <Tasks groups={taskGroups} empty={empty} busy={busy} run={run} />
+          {groups.length ? (
+            groups.map((group) => (
+              <section key={group.label}>
+                <h2>{group.label}</h2>
+                <ul className="portal-record-list">
+                  {group.items.map((item) => (
+                    <li key={`${item.kind}-${item.id}`}>
+                      <div>
+                        <strong>{item.title}</strong>
+                        <p>{item.description || item.engagement_title || "Client-visible item"}</p>
+                        {item.kind === "task" && item.status !== "completed" ? (
+                          <label className="portal-inline-field">
+                            <span>Optional response</span>
+                            <textarea
+                              value={item.response || ""}
+                              onChange={() => {}}
+                              maxLength={2000}
+                            />
+                          </label>
+                        ) : null}
+                        {item.kind === "document" && ["requested", "awaiting_upload", "replacement_requested"].includes(item.status) ? (
+                          <DocumentUpload item={item} busy={busy} run={run} />
+                        ) : null}
+                        {item.kind === "intake" ? (
+                          <p className="portal-pending-note">
+                            {item.status === "completed"
+                              ? "This intake has been completed."
+                              : `${Number(item.completion_percentage || 0)}% complete`}
+                          </p>
+                        ) : null}
+                      </div>
+                      <div className="portal-record-meta">
+                        <span>{labelFor(item.status)}</span>
+                        {item.due_date ? (
+                          <small>Due {formatDate(item.due_date)}</small>
+                        ) : null}
+                        {item.kind === "task" && item.status !== "completed" ? (
+                          <div className="portal-action-group">
+                            <ActionButton
+                              busy={busy === `${item.id}-acknowledge`}
+                              onClick={() =>
+                                run(
+                                  `${item.id}-acknowledge`,
+                                  () => portalApi.acknowledgeTask(item.id),
+                                  "Task acknowledged.",
+                                )
+                              }
+                            >
+                              Acknowledge
+                            </ActionButton>
+                            <ActionButton
+                              busy={busy === `${item.id}-complete`}
+                              onClick={() =>
+                                run(
+                                  `${item.id}-complete`,
+                                  () => portalApi.completeTask(item.id),
+                                  "Task marked complete.",
+                                )
+                              }
+                            >
+                              Mark complete
+                            </ActionButton>
+                          </div>
+                        ) : null}
+                        {item.kind === "document" && item.current_version ? (
+                          <div className="portal-action-group">
+                            <a
+                              className="portal-action-button"
+                              href={portalApi.documentDownloadUrl(item.id)}
+                            >
+                              Download current file
+                            </a>
+                          </div>
+                        ) : null}
+                        {item.kind === "intake" ? (
+                          <div className="portal-action-group">
+                            <a
+                              className="portal-action-button"
+                              href={`/client-portal/intake?assignment=${encodeURIComponent(item.id)}`}
+                            >
+                              {item.status === "completed" ? "View submission" : "Continue intake"}
+                            </a>
+                          </div>
+                        ) : null}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ))
           ) : (
             <EmptyState>{empty}</EmptyState>
           )}
-          {documentGroups.length ? (
-            <Documents
-              groups={documentGroups}
-              empty={empty}
-              busy={busy}
-              run={run}
-            />
-          ) : null}
         </div>
       </div>
       <aside className="portal-workspace-utility">
@@ -625,9 +776,6 @@ function Documents({ groups, empty, busy, run }) {
           </section>
         ))}
       </div>
-      <aside className="portal-workspace-utility">
-        <GeneralDocumentUpload busy={busy} run={run} />
-      </aside>
     </div>
   );
 }

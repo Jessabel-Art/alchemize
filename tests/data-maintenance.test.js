@@ -14,6 +14,11 @@ test("settings data maintenance exposes a reviewable, guarded maintenance workfl
   assert.match(page, /Review completed engagements/i);
   assert.match(page, /Review expired scheduling links/i);
   assert.match(page, /Review expired invitations/i);
+  assert.match(page, /expired_invitations|expired_tokens/i);
+  assert.match(
+    page,
+    /reviewMaintenanceCategory|settings\.maintenance\("preview"/i,
+  );
   assert.match(page, /Maintenance history/i);
   assert.match(settingsApi, /maintenance/i);
   assert.match(settingsApi, /preview|scan|execute/i);

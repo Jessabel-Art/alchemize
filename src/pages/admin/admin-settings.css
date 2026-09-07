@@ -72,6 +72,80 @@
 .admin-portal-shell .business-fields textarea {
   resize: vertical;
 }
+.admin-portal-shell .business-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.admin-portal-shell .business-section-header legend {
+  padding-right: 12px;
+}
+.admin-portal-shell .business-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.admin-portal-shell .business-summary {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+.admin-portal-shell .business-summary-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 180px) minmax(0, 1fr);
+  gap: 8px 16px;
+  padding: 8px 0;
+  border-top: 1px solid var(--admin-border, #e4e4e4);
+}
+.admin-portal-shell .business-summary-row dt {
+  color: var(--admin-muted, #6b7280);
+  font-size: 12px;
+  text-transform: none;
+}
+.admin-portal-shell .business-summary-row dd {
+  margin: 0;
+  font-weight: 600;
+}
+.admin-portal-shell .team-access-list {
+  display: grid;
+  gap: 12px;
+}
+.admin-portal-shell .team-access-row {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--admin-border, #d9d9d9);
+  border-radius: 10px;
+  background: var(--admin-surface, #fff);
+}
+.admin-portal-shell .team-access-row.is-selected {
+  border-color: var(--gold);
+}
+.admin-portal-shell .team-member-meta {
+  display: grid;
+  gap: 2px;
+}
+.admin-portal-shell .team-member-meta small {
+  color: var(--admin-muted, #6b7280);
+}
+.admin-portal-shell .team-access-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+.admin-portal-shell .team-access-editor {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  padding-top: 4px;
+}
+.admin-portal-shell .team-access-editor label {
+  display: grid;
+  gap: 5px;
+  font-size: 13px;
+}
 .admin-portal-shell .settings-content :is(p, small) {
   font-size: 12px;
   line-height: 1.6;

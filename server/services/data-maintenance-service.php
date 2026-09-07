@@ -36,6 +36,8 @@ final class AlchemizeDataMaintenanceService
             "SELECT COUNT(*) FROM clients WHERE status = 'prospective' AND updated_at < DATE_SUB(CURRENT_TIMESTAMP(6), INTERVAL {$prospectThreshold} DAY)"
         )->fetchColumn();
 
+        $expiredInvitations = (int) $expiredTokens;
+
         $orphaned = $this->database->query(
             "SELECT COUNT(*)
              FROM client_access_grants cag
@@ -47,6 +49,8 @@ final class AlchemizeDataMaintenanceService
             'threshold_months' => $thresholdMonths,
             'summary' => [
                 'expired_tokens' => (int) $expiredTokens,
+                'expired_invitations' => $expiredInvitations,
+                'expired_links' => (int) $expiredLinks,
                 'expired_scheduling_links' => (int) $expiredLinks,
                 'completed_engagements' => (int) $completedEngagements,
                 'inactive_prospects' => (int) $inactiveProspects,
@@ -54,6 +58,8 @@ final class AlchemizeDataMaintenanceService
             ],
             'categories' => [
                 'test_and_demo_data' => ['title' => 'Test & Demo Data', 'count' => 0, 'status' => 'review'],
+                'expired_invitations' => ['title' => 'Expired Invitations', 'count' => $expiredInvitations, 'status' => 'review'],
+                'expired_links' => ['title' => 'Expired Scheduling Links', 'count' => (int) $expiredLinks, 'status' => 'review'],
                 'inactive_records' => ['title' => 'Stale & Inactive Records', 'count' => (int) $inactiveProspects, 'status' => 'review'],
                 'expired_operational_data' => ['title' => 'Expired Operational Data', 'count' => (int) $expiredTokens + (int) $expiredLinks, 'status' => 'review'],
                 'completed_records' => ['title' => 'Completed Records', 'count' => (int) $completedEngagements, 'status' => 'archive'],
@@ -69,6 +75,7 @@ final class AlchemizeDataMaintenanceService
 
         switch ($category) {
             case 'expired_tokens':
+            case 'expired_invitations':
                 return [
                     'category' => $category,
                     'preview_type' => 'purge',
@@ -77,6 +84,7 @@ final class AlchemizeDataMaintenanceService
                     'blocked' => 0,
                 ];
             case 'expired_links':
+            case 'expired_scheduling_links':
                 return [
                     'category' => $category,
                     'preview_type' => 'purge',
@@ -122,7 +130,7 @@ final class AlchemizeDataMaintenanceService
             throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Select a maintenance action to run.');
         }
 
-        if ($action === 'purge' && $category === 'expired_tokens') {
+        if ($action === 'purge' && ($category === 'expired_tokens' || $category === 'expired_invitations')) {
             if ($confirm !== 'DELETE EXPIRED TOKENS') {
                 throw new AlchemizeRequestException(422, 'CONFIRMATION_REQUIRED', 'Type DELETE EXPIRED TOKENS to confirm token cleanup.');
             }

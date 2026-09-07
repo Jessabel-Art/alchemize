@@ -68,5 +68,7 @@ try {
     alchemize_error_response($error->httpStatus, $error->errorCode, $error->getMessage());
 } catch (Throwable $error) {
     error_log(sprintf('Settings API failure [%s]: %s', get_class($error), $error->getMessage()));
-    alchemize_error_response(500, 'INTERNAL_ERROR', 'Settings are temporarily unavailable.');
+    $isDevelopment = (string) ($config['app_env'] ?? 'production') !== 'production';
+    $message = $isDevelopment ? $error->getMessage() : 'Settings are temporarily unavailable.';
+    alchemize_error_response(500, 'INTERNAL_ERROR', $message);
 }

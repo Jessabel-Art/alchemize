@@ -117,6 +117,9 @@ export default function AdminSettingsPage() {
   const [ownerError, setOwnerError] = useState("");
   const [sessionUser, setSessionUser] = useState(null);
   const [teamMembers, setTeamMembers] = useState([]);
+  const [selectedTeamMemberId, setSelectedTeamMemberId] = useState(null);
+  const [businessEditGroup, setBusinessEditGroup] = useState(null);
+  const [businessBaseline, setBusinessBaseline] = useState(null);
   const [accountProfile, setAccountProfile] = useState(null);
   const [accountState, setAccountState] = useState({
     loading: true,
@@ -153,6 +156,12 @@ export default function AdminSettingsPage() {
     loading: true,
     error: "",
     data: null,
+  });
+  const [maintenanceState, setMaintenanceState] = useState({
+    loading: true,
+    error: "",
+    data: null,
+    preview: null,
   });
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
@@ -242,6 +251,46 @@ export default function AdminSettingsPage() {
             data: null,
           });
       });
+    return () => {
+      active = false;
+    };
+  }, [section]);
+  useEffect(() => {
+    if (section[0] !== "data-maintenance") {
+      return undefined;
+    }
+    let active = true;
+    const loadOverview = async () => {
+      setMaintenanceState({
+        loading: true,
+        error: "",
+        data: null,
+        preview: null,
+      });
+      try {
+        const next = await settings.maintenance("overview", {
+          threshold_months: 6,
+        });
+        if (active) {
+          setMaintenanceState({
+            loading: false,
+            error: "",
+            data: next,
+            preview: null,
+          });
+        }
+      } catch (error) {
+        if (active) {
+          setMaintenanceState({
+            loading: false,
+            error: error.message || "Maintenance overview could not be loaded.",
+            data: null,
+            preview: null,
+          });
+        }
+      }
+    };
+    loadOverview();
     return () => {
       active = false;
     };
@@ -346,6 +395,17 @@ export default function AdminSettingsPage() {
         message: "",
       });
     }
+  };
+  const beginBusinessEdit = (title) => {
+    setBusinessBaseline(JSON.parse(JSON.stringify(values || {})));
+    setBusinessEditGroup(title);
+  };
+  const cancelBusinessEdit = () => {
+    if (businessBaseline) {
+      setValues(businessBaseline);
+    }
+    setBusinessEditGroup(null);
+    setBusinessBaseline(null);
   };
   const saveAccountProfile = async (event) => {
     event.preventDefault();
@@ -456,6 +516,33 @@ export default function AdminSettingsPage() {
       });
     }
   };
+  const reviewMaintenanceCategory = async (category) => {
+    setMaintenanceState((current) => ({
+      ...current,
+      loading: true,
+      error: "",
+      preview: null,
+    }));
+    try {
+      const preview = await settings.maintenance("preview", {
+        category,
+        limit: 10,
+      });
+      setMaintenanceState((current) => ({
+        ...current,
+        loading: false,
+        error: "",
+        preview,
+      }));
+    } catch (error) {
+      setMaintenanceState((current) => ({
+        ...current,
+        loading: false,
+        error: error.message || "Maintenance review could not be loaded.",
+        preview: null,
+      }));
+    }
+  };
   const field = ([key, label, type, attributes = {}]) => {
     let options = Array.isArray(type) ? type : null;
     if (type === "timezone")
@@ -523,6 +610,41 @@ export default function AdminSettingsPage() {
       </label>
     );
   };
+  const formatSettingValue = (key, value) => {
+    if (value === null || value === undefined || value === "") {
+      return "Not configured";
+    }
+    if (key === "portal_message_email_notifications") {
+      return value ? "Enabled" : "Disabled";
+    }
+    if (key === "staff_notification_delivery_mode") {
+      return (
+        {
+          both: "Email + dashboard",
+          email: "Email only",
+          dashboard: "Dashboard only",
+          disabled: "Disabled",
+        }[value] || value
+      );
+    }
+    if (key === "default_client_language") {
+      return value === "en" ? "English" : value === "es" ? "Spanish" : value;
+    }
+    if (key === "default_meeting_method") {
+      return (
+        {
+          phone_call: "Phone call",
+          video_call: "Video call",
+          in_person: "In person",
+        }[value] || value
+      );
+    }
+    if (key === "timezone") {
+      return String(value).replaceAll("_", " ");
+    }
+    if (typeof value === "boolean") return value ? "Yes" : "No";
+    return String(value);
+  };
   return (
     <div className="admin-module admin-settings-workspace">
       <AdminPageHeader
@@ -565,75 +687,102 @@ export default function AdminSettingsPage() {
                 <p role="status">Loading team access…</p>
               ) : (
                 <form className="team-access-form" onSubmit={saveTeamAccess}>
+                  <p className="settings-note">
+                    Manage administrative access, roles, and account status.
+                  </p>
                   <div className="team-access-list">
                     {teamMembers.map((member) => {
+                      const memberId = member.user_id ?? member.id;
                       const canEditRole =
                         sessionUser?.role_slug === "owner-admin" ||
                         (sessionUser?.role_slug === "administrator" &&
                           member.role_slug !== "owner-admin");
                       const isCurrentUser =
                         sessionUser &&
-                        Number(sessionUser.user_id) ===
-                          Number(member.user_id ?? member.id);
+                        Number(sessionUser.user_id) === Number(memberId);
                       const isOwnerProtected =
                         member.role_slug === "owner-admin" &&
                         sessionUser?.role_slug !== "owner-admin";
+                      const isSelected = selectedTeamMemberId === memberId;
+
                       return (
                         <div
-                          key={member.user_id ?? member.id}
-                          className="team-access-row"
+                          key={memberId}
+                          className={`team-access-row ${isSelected ? "is-selected" : ""}`}
                         >
                           <div className="team-member-meta">
                             <strong>{member.display_name}</strong>
                             <span>{member.email}</span>
+                            <small>
+                              {member.role_name || member.role_slug || "Staff"}
+                            </small>
                           </div>
-                          <label>
-                            <span>Role for {member.display_name}</span>
-                            <select
-                              value={member.role_slug || "staff"}
-                              onChange={(event) =>
-                                handleTeamMemberChange(
-                                  member.user_id ?? member.id,
-                                  "role_slug",
-                                  event.target.value,
+                          <div className="team-access-actions">
+                            <button
+                              type="button"
+                              className="secondary-button"
+                              onClick={() =>
+                                setSelectedTeamMemberId((current) =>
+                                  current === memberId ? null : memberId,
                                 )
                               }
-                              disabled={
-                                teamState.saving ||
-                                !canEditRole ||
-                                isCurrentUser ||
-                                isOwnerProtected
-                              }
                             >
-                              <option value="owner-admin">
-                                Owner / Administrator
-                              </option>
-                              <option value="administrator">
-                                Administrator
-                              </option>
-                              <option value="staff">Staff</option>
-                              <option value="read-only">Read Only</option>
-                            </select>
-                          </label>
-                          <label>
-                            <span>Status for {member.display_name}</span>
-                            <select
-                              value={member.status || "active"}
-                              onChange={(event) =>
-                                handleTeamMemberChange(
-                                  member.user_id ?? member.id,
-                                  "status",
-                                  event.target.value,
-                                )
-                              }
-                              disabled={teamState.saving || isCurrentUser}
-                            >
-                              <option value="active">Active</option>
-                              <option value="inactive">Inactive</option>
-                              <option value="suspended">Suspended</option>
-                              <option value="archived">Archived</option>
-                            </select>
-                          </label>
+                              {isSelected ? "Close" : "Manage"}
+                            </button>
+                          </div>
+                          {isSelected && (
+                            <div className="team-access-editor">
+                              <label htmlFor={`team-role-${memberId}`}>
+                                <span>Role for {member.display_name}</span>
+                                <select
+                                  id={`team-role-${memberId}`}
+                                  value={member.role_slug || "staff"}
+                                  onChange={(event) =>
+                                    handleTeamMemberChange(
+                                      memberId,
+                                      "role_slug",
+                                      event.target.value,
+                                    )
+                                  }
+                                  disabled={
+                                    teamState.saving ||
+                                    !canEditRole ||
+                                    isCurrentUser ||
+                                    isOwnerProtected
+                                  }
+                                >
+                                  <option value="owner-admin">
+                                    Owner / Administrator
+                                  </option>
+                                  <option value="administrator">
+                                    Administrator
+                                  </option>
+                                  <option value="staff">Staff</option>
+                                  <option value="read-only">Read Only</option>
+                                </select>
+                              </label>
+                              <label htmlFor={`team-status-${memberId}`}>
+                                <span>Status for {member.display_name}</span>
+                                <select
+                                  id={`team-status-${memberId}`}
+                                  value={member.status || "active"}
+                                  onChange={(event) =>
+                                    handleTeamMemberChange(
+                                      memberId,
+                                      "status",
+                                      event.target.value,
+                                    )
+                                  }
+                                  disabled={teamState.saving || isCurrentUser}
+                                >
+                                  <option value="active">Active</option>
+                                  <option value="inactive">Inactive</option>
+                                  <option value="suspended">Suspended</option>
+                                  <option value="archived">Archived</option>
+                                </select>
+                              </label>
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -749,55 +898,57 @@ export default function AdminSettingsPage() {
               </p>
               <div className="maintenance-grid">
                 <div className="business-settings-form">
-                  <fieldset>
-                    <legend>Review inactive prospects</legend>
-                    <button
-                      type="button"
-                      className="secondary-button"
-                      onClick={() => settings.maintenance("overview")}
-                    >
-                      Review stale prospects
-                    </button>
-                  </fieldset>
-                  <fieldset>
-                    <legend>Review completed engagements</legend>
-                    <button
-                      type="button"
-                      className="secondary-button"
-                      onClick={() => settings.maintenance("overview")}
-                    >
-                      Review completed engagements
-                    </button>
-                  </fieldset>
-                  <fieldset>
-                    <legend>Review expired scheduling links</legend>
-                    <button
-                      type="button"
-                      className="secondary-button"
-                      onClick={() => settings.maintenance("overview")}
-                    >
-                      Review expired scheduling links
-                    </button>
-                  </fieldset>
-                  <fieldset>
-                    <legend>Review expired invitations</legend>
-                    <button
-                      type="button"
-                      className="secondary-button"
-                      onClick={() => settings.maintenance("overview")}
-                    >
-                      Review expired invitations
-                    </button>
-                  </fieldset>
+                  {[
+                    ["inactive_prospects", "Review inactive prospects"],
+                    ["completed_engagements", "Review completed engagements"],
+                    ["expired_links", "Review expired scheduling links"],
+                    ["expired_invitations", "Review expired invitations"],
+                  ].map(([category, label]) => (
+                    <fieldset key={category}>
+                      <legend>{label}</legend>
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        onClick={() => reviewMaintenanceCategory(category)}
+                        disabled={maintenanceState.loading}
+                      >
+                        {maintenanceState.preview?.category === category
+                          ? `${maintenanceState.preview.count} candidate(s)`
+                          : label}
+                      </button>
+                      {maintenanceState.preview?.category === category && (
+                        <p role="status">
+                          {maintenanceState.preview.count} record(s) ready for
+                          review.
+                        </p>
+                      )}
+                    </fieldset>
+                  ))}
                   <fieldset>
                     <legend>Maintenance history</legend>
                     <p>
                       Recent cleanup and archive activity is recorded through
                       the existing audit log.
                     </p>
+                    {maintenanceState.data?.summary && (
+                      <ul>
+                        {Object.entries(maintenanceState.data.summary).map(
+                          ([key, value]) => (
+                            <li key={key}>
+                              {key.replace(/_/g, " ")}: {value}
+                            </li>
+                          ),
+                        )}
+                      </ul>
+                    )}
                   </fieldset>
                 </div>
               </div>
+              {maintenanceState.error && (
+                <p role="alert" className="admin-feedback">
+                  {maintenanceState.error}
+                </p>
+              )}
             </>
           ) : section[0] === "integrations" ? (
             <>
@@ -1107,24 +1258,58 @@ export default function AdminSettingsPage() {
                     behavior except for the existing appointment duration and
                     portal message email settings.
                   </p>
-                  {groups.map(([title, fields]) => (
-                    <fieldset key={title} disabled={state.saving}>
-                      <legend>{title}</legend>
-                      <div className="business-fields">{fields.map(field)}</div>
-                      {title === "Scheduling Defaults" && (
-                        <p>
-                          Business hours use the existing appointment
-                          availability schedule.{" "}
-                          <Link to="/admin/appointments">
-                            Manage business hours in Appointments
-                          </Link>
-                          .
-                        </p>
-                      )}
-                      {title === "Ownership & Workflow Defaults" &&
-                        ownerError && <p role="status">{ownerError}</p>}
-                    </fieldset>
-                  ))}
+                  {groups.map(([title, fields]) => {
+                    const isEditing = businessEditGroup === title;
+                    return (
+                      <fieldset key={title} disabled={state.saving}>
+                        <div className="business-section-header">
+                          <legend>{title}</legend>
+                          <div className="business-actions">
+                            <button
+                              type="button"
+                              className="secondary-button"
+                              onClick={() =>
+                                isEditing
+                                  ? cancelBusinessEdit()
+                                  : beginBusinessEdit(title)
+                              }
+                            >
+                              {isEditing
+                                ? "Cancel"
+                                : `Edit ${title.toLowerCase()}`}
+                            </button>
+                          </div>
+                        </div>
+                        {!isEditing && (
+                          <dl className="business-summary">
+                            {fields.map(([key, label]) => (
+                              <div key={key} className="business-summary-row">
+                                <dt>{label}</dt>
+                                <dd>{formatSettingValue(key, values[key])}</dd>
+                              </div>
+                            ))}
+                          </dl>
+                        )}
+                        {isEditing && (
+                          <div className="business-fields">
+                            {fields.map(field)}
+                          </div>
+                        )}
+                        {!isEditing && title === "Scheduling Defaults" && (
+                          <p>
+                            Business hours use the existing appointment
+                            availability schedule.{" "}
+                            <Link to="/admin/appointments">
+                              Manage business hours in Appointments
+                            </Link>
+                            .
+                          </p>
+                        )}
+                        {title === "Ownership & Workflow Defaults" &&
+                          ownerError && <p role="status">{ownerError}</p>}
+                      </fieldset>
+                    );
+                  })}
                   <fieldset disabled={state.saving}>
                     <legend>Portal Defaults</legend>
                     <label className="settings-checkbox">
