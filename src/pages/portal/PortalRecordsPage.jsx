@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { portalApi } from "../../services/portal-api.js";
 import { auth } from "../../services/admin-api.js";
 import "./portal.css";
+import TasksDocumentsWorkspace from "./TasksDocumentsWorkspace.jsx";
 
 const pageContent = {
   services: [
@@ -19,7 +20,7 @@ const pageContent = {
   "tasks-and-documents": [
     "Tasks & Documents",
     "Tasks & Documents",
-    "Review active tasks and document requests together so your next steps stay clear.",
+    "Complete your assigned tasks and provide requested documents. Your progress helps us move your service forward.",
     "No tasks or document requests require your attention.",
   ],
   documents: [
@@ -143,17 +144,19 @@ function PortalRecordsPage({ resource }) {
     setState({ status: "loading", data: null, error: "" });
     try {
       if (resource === "tasks-and-documents") {
-        const [tasks, documents, intakes] = await Promise.all([
+        const [tasks, documents, intakes, services] = await Promise.all([
           portalApi.tasks(),
           portalApi.documents(),
           portalApi.intakes(),
+          portalApi.services().catch(() => ({ items: [] })),
         ]);
         setState({
           status: "ready",
           data: {
             tasks: tasks.items || [],
             documents: documents.items || [],
-            intakes: intakes.items || [],
+            intakes: intakes?.items || [],
+            services: services.items || [],
           },
           error: "",
         });
@@ -253,86 +256,6 @@ function groupRecords(resource, items) {
   return [];
 }
 
-function objectDescription(item) {
-  if (item.description) return item.description;
-  if (item.engagement_title) return item.engagement_title;
-  if (item.document_name) return item.document_name;
-  if (item.title) return item.title;
-  return "Client-visible item";
-}
-
-function buildUnifiedGroups(tasks, documents, intakes) {
-  const records = [
-    ...tasks.map((item) => ({
-      ...item,
-      kind: "task",
-      title: item.title || "Task",
-      description: objectDescription(item),
-      status: item.status || "not_started",
-      due_date: item.due_date || null,
-    })),
-    ...documents.map((item) => ({
-      ...item,
-      kind: "document",
-      title: item.document_name || "Document request",
-      description: objectDescription(item),
-      status: item.status || "requested",
-      due_date: item.due_date || item.requested_date || null,
-    })),
-    ...intakes.map((item) => ({
-      ...item,
-      kind: "intake",
-      title: item.engagement_title || "Client intake",
-      description:
-        item.status === "completed"
-          ? "This intake has been completed."
-          : `${Number(item.completion_percentage || 0)}% complete`,
-      status: item.status || "assigned",
-      due_date: item.due_date || null,
-    })),
-  ];
-
-  const rules = {
-    task: {
-      "Action needed": ["not_started", "waiting_on_client"],
-      "Under review": ["in_progress", "waiting_on_alchemize"],
-      Completed: ["completed"],
-    },
-    document: {
-      "Action needed": [
-        "requested",
-        "awaiting_upload",
-        "replacement_requested",
-      ],
-      "Under review": ["received", "under_review"],
-      Completed: ["accepted", "archived"],
-    },
-    intake: {
-      "Action needed": [
-        "assigned",
-        "in_progress",
-        "changes_requested",
-        "waiting_on_client",
-      ],
-      "Under review": ["submitted", "under_review", "approved"],
-      Completed: ["completed"],
-    },
-  };
-
-  return [
-    { label: "Action needed", items: [] },
-    { label: "Under review", items: [] },
-    { label: "Completed", items: [] },
-  ]
-    .map((group) => ({
-      ...group,
-      items: records.filter((item) =>
-        (rules[item.kind]?.[group.label] || []).includes(item.status),
-      ),
-    }))
-    .filter((group) => group.items.length);
-}
-
 function ResourceContent(props) {
   const { resource, data, groups, empty, busy, run } = props;
   if (resource === "services")
@@ -347,6 +270,7 @@ function ResourceContent(props) {
         tasks={data?.tasks || []}
         documents={data?.documents || []}
         intakes={data?.intakes || []}
+        services={data?.services || []}
         empty={empty}
         busy={busy}
         run={run}
@@ -376,19 +300,53 @@ function ResourceContent(props) {
 
 function Services({ items, empty, busy, run }) {
   const [request, setRequest] = useState({ service_key: "", message: "" });
-  return (
-    <div className="portal-workspace-grid">
-      <section className="portal-workspace-primary">
-        <h2>Active engagements</h2>
+  const [requestOpen, setRequestOpen] = useState(false);
+  const activeServices = items.filter(
+    (item) => !["completed", "archived"].includes(item.status),
+  );
+  const pastServices = items.filter((item) =>
+    ["completed", "archived"].includes(item.status),
+  );
 
-        {!items.length ? (
+  return (
+    <div className="portal-services-layout">
+      <section className="portal-workspace-primary portal-services-main">
+        <div className="portal-services-header">
+          <div>
+            <span className="section-kicker">Active services</span>
+            <h2>Active services</h2>
+          </div>
+          <button
+            type="button"
+            className="portal-action-button"
+            aria-expanded={requestOpen}
+            aria-controls="portal-service-request-form"
+            onClick={() => setRequestOpen((open) => !open)}
+          >
+            Request a service
+          </button>
+        </div>
+
+        {!activeServices.length ? (
           <EmptyState>{empty}</EmptyState>
         ) : (
-          <ul className="portal-record-list">
-            {items.map((item) => (
-              <li key={item.id}>
-                <div>
-                  <strong>{item.title}</strong>
+          <ul className="portal-services-list">
+            {activeServices.map((item) => (
+              <li key={item.id} className="portal-service-card">
+                <div className="portal-service-card-main">
+                  <div className="portal-service-card-header">
+                    <span className="portal-status-pill">
+                      {labelFor(item.status)}
+                    </span>
+                    <small>
+                      {item.start_date
+                        ? `Started ${formatDate(item.start_date)}`
+                        : "Service started"}
+                    </small>
+                  </div>
+                  <h3>
+                    <strong>{item.title}</strong>
+                  </h3>
                   {item.description && item.description !== item.title ? (
                     <p>{item.description}</p>
                   ) : null}
@@ -397,7 +355,7 @@ function Services({ items, empty, busy, run }) {
                       name.toLowerCase() !== item.title?.toLowerCase() &&
                       name !== item.description,
                   ).length ? (
-                    <small>
+                    <small className="portal-service-tags">
                       {item.service_names
                         .filter(
                           (name) =>
@@ -408,208 +366,165 @@ function Services({ items, empty, busy, run }) {
                     </small>
                   ) : null}
                 </div>
-                <div className="portal-record-meta">
-                  <span>{labelFor(item.status)}</span>
-                  <small>Started {formatDate(item.start_date)}</small>
+                <div className="portal-service-card-meta">
+                  {item.target_date ? (
+                    <small>Target date: {formatDate(item.target_date)}</small>
+                  ) : null}
                   {item.assigned_contact ? (
                     <small>Contact: {item.assigned_contact}</small>
                   ) : null}
-                  <ActionButton
-                    busy={busy === item.id}
-                    onClick={() =>
-                      run(
-                        item.id,
-                        () => portalApi.acknowledge("engagement", item.id),
-                        "Service update acknowledged.",
-                      )
-                    }
-                  >
-                    Acknowledge update
-                  </ActionButton>
+                  <div className="portal-action-group">
+                    <a
+                      className="portal-action-button"
+                      href="/client-portal/tasks-and-documents"
+                    >
+                      Review service
+                    </a>
+                    <ActionButton
+                      busy={busy === item.id}
+                      onClick={() =>
+                        run(
+                          item.id,
+                          () => portalApi.acknowledge("engagement", item.id),
+                          "Service update acknowledged.",
+                        )
+                      }
+                    >
+                      Acknowledge update
+                    </ActionButton>
+                  </div>
                 </div>
               </li>
             ))}
           </ul>
         )}
-      </section>
-      <aside className="portal-workspace-utility">
-        {" "}
-        <form
-          className="portal-composer"
-          onSubmit={(event) => {
-            event.preventDefault();
-            run(
-              "service-request",
-              () => portalApi.requestService(request),
-              "Service request sent for Admin review.",
-            );
-          }}
-        >
-          <h2>Request a service</h2>
-          <label>
-            <span>Service area</span>
-            <select
-              required
-              value={request.service_key}
-              onChange={(event) =>
-                setRequest({ ...request, service_key: event.target.value })
-              }
-            >
-              <option value="">Select a service</option>
-              <option value="individual-tax">Individual tax</option>
-              <option value="individual-insurance">Individual insurance</option>
-              <option value="individual-notary">Individual notary</option>
-              <option value="business-formation">Business formation</option>
-              <option value="business-operations">Business operations</option>
-              <option value="business-tax">Business tax</option>
-              <option value="business-advisory">Business advisory</option>
-              <option value="business-insurance">Business insurance</option>
-              <option value="business-notary">Business notary</option>
-            </select>
-          </label>
-          <label>
-            <span>What do you need?</span>
-            <textarea
-              required
-              maxLength="5000"
-              value={request.message}
-              onChange={(event) =>
-                setRequest({ ...request, message: event.target.value })
-              }
-            />
-          </label>
-          <button
-            className="portal-action-button"
-            disabled={busy === "service-request"}
+
+        {pastServices.length ? (
+          <div className="portal-services-archive">
+            <div className="portal-services-header secondary">
+              <div>
+                <span className="section-kicker">Past services</span>
+                <h3>Past services</h3>
+              </div>
+            </div>
+            <ul className="portal-service-history">
+              {pastServices.map((item) => (
+                <li key={item.id}>
+                  <div>
+                    <strong>{item.title}</strong>
+                    <small>
+                      {item.status === "completed"
+                        ? "Completed service"
+                        : "Archived service"}
+                    </small>
+                  </div>
+                  <span>
+                    {item.start_date
+                      ? formatDate(item.start_date)
+                      : "Service date"}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
+        {requestOpen ? (
+          <form
+            id="portal-service-request-form"
+            role="form"
+            aria-label="Request a service"
+            className="portal-service-request-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              run(
+                "service-request",
+                () => portalApi.requestService(request),
+                "Service request sent for Admin review.",
+              );
+              setRequestOpen(false);
+            }}
           >
-            {busy === "service-request" ? "Sending…" : "Request service"}
-          </button>
-        </form>
+            <h3>Request a service</h3>
+            <label>
+              <span>Service area</span>
+              <select
+                required
+                value={request.service_key}
+                onChange={(event) =>
+                  setRequest({ ...request, service_key: event.target.value })
+                }
+              >
+                <option value="">Select a service</option>
+                <option value="individual-tax">Individual tax</option>
+                <option value="individual-insurance">
+                  Individual insurance
+                </option>
+                <option value="individual-notary">Individual notary</option>
+                <option value="business-formation">Business formation</option>
+                <option value="business-operations">Business operations</option>
+                <option value="business-tax">Business tax</option>
+                <option value="business-advisory">Business advisory</option>
+                <option value="business-insurance">Business insurance</option>
+                <option value="business-notary">Business notary</option>
+              </select>
+            </label>
+            <label>
+              <span>What do you need?</span>
+              <textarea
+                required
+                maxLength="5000"
+                value={request.message}
+                onChange={(event) =>
+                  setRequest({ ...request, message: event.target.value })
+                }
+              />
+            </label>
+            <button
+              type="submit"
+              className="portal-action-button"
+              disabled={busy === "service-request"}
+            >
+              {busy === "service-request" ? "Sending…" : "Submit request"}
+            </button>
+          </form>
+        ) : null}
+      </section>
+
+      <aside className="portal-workspace-utility portal-services-side">
+        <div className="portal-service-support">
+          <span className="section-kicker">Support</span>
+          <h3>Need help with your service?</h3>
+          <p>
+            Review your tasks, send a document, or message the Alchemize team
+            when you need a quick update.
+          </p>
+          <div className="portal-service-panel-links">
+            <a href="/client-portal/tasks-and-documents">Tasks & documents</a>
+            <a href="/client-portal/messages">Message Alchemize</a>
+          </div>
+        </div>
+        <div className="portal-service-support muted">
+          <span className="section-kicker">Checklist</span>
+          <h3>Service progress</h3>
+          <ul>
+            <li>Confirm any action items in your workflow.</li>
+            <li>Send information or documents as requested.</li>
+            <li>Keep your service updates current to avoid delays.</li>
+          </ul>
+        </div>
       </aside>
     </div>
   );
 }
 
-function TasksAndDocuments({ tasks, documents, intakes, empty, busy, run }) {
-  const groups = buildUnifiedGroups(tasks, documents, intakes);
+function TasksAndDocuments(props) {
   return (
-    <div className="portal-workspace-grid">
-      <div className="portal-workspace-primary">
-        <div className="portal-group-stack">
-          {groups.length ? (
-            groups.map((group) => (
-              <section key={group.label}>
-                <h2>{group.label}</h2>
-                {group.label === "Action needed" &&
-                group.items.some((item) => item.kind === "task") ? (
-                  <h3>Waiting on you</h3>
-                ) : null}
-                <ul className="portal-record-list">
-                  {group.items.map((item) => (
-                    <li key={`${item.kind}-${item.id}`}>
-                      <div>
-                        <strong>{item.title}</strong>
-                        <p>
-                          {item.description ||
-                            item.engagement_title ||
-                            "Client-visible item"}
-                        </p>
-                        {item.kind === "task" && item.status !== "completed" ? (
-                          <label className="portal-inline-field">
-                            <span>Optional response</span>
-                            <textarea
-                              value={item.response || ""}
-                              onChange={() => {}}
-                              maxLength={2000}
-                            />
-                          </label>
-                        ) : null}
-                        {item.kind === "document" &&
-                        [
-                          "requested",
-                          "awaiting_upload",
-                          "replacement_requested",
-                        ].includes(item.status) ? (
-                          <DocumentUpload item={item} busy={busy} run={run} />
-                        ) : null}
-                        {item.kind === "intake" ? (
-                          <p className="portal-pending-note">
-                            {item.status === "completed"
-                              ? "This intake has been completed."
-                              : `${Number(item.completion_percentage || 0)}% complete`}
-                          </p>
-                        ) : null}
-                      </div>
-                      <div className="portal-record-meta">
-                        <span>{labelFor(item.status)}</span>
-                        {item.due_date ? (
-                          <small>Due {formatDate(item.due_date)}</small>
-                        ) : null}
-                        {item.kind === "task" && item.status !== "completed" ? (
-                          <div className="portal-action-group">
-                            <ActionButton
-                              busy={busy === `${item.id}-acknowledge`}
-                              onClick={() =>
-                                run(
-                                  `${item.id}-acknowledge`,
-                                  () => portalApi.acknowledgeTask(item.id),
-                                  "Task acknowledged.",
-                                )
-                              }
-                            >
-                              Acknowledge
-                            </ActionButton>
-                            <ActionButton
-                              busy={busy === `${item.id}-complete`}
-                              onClick={() =>
-                                run(
-                                  `${item.id}-complete`,
-                                  () => portalApi.completeTask(item.id),
-                                  "Task marked complete.",
-                                )
-                              }
-                            >
-                              Mark complete
-                            </ActionButton>
-                          </div>
-                        ) : null}
-                        {item.kind === "document" && item.current_version ? (
-                          <div className="portal-action-group">
-                            <a
-                              className="portal-action-button"
-                              href={portalApi.documentDownloadUrl(item.id)}
-                            >
-                              Download current file
-                            </a>
-                          </div>
-                        ) : null}
-                        {item.kind === "intake" ? (
-                          <div className="portal-action-group">
-                            <a
-                              className="portal-action-button"
-                              href={`/client-portal/intake?assignment=${encodeURIComponent(item.id)}`}
-                            >
-                              {item.status === "completed"
-                                ? "View submission"
-                                : "Continue intake"}
-                            </a>
-                          </div>
-                        ) : null}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            ))
-          ) : (
-            <EmptyState>{empty}</EmptyState>
-          )}
-        </div>
-      </div>
-      <aside className="portal-workspace-utility">
-        <GeneralDocumentUpload busy={busy} run={run} />
-      </aside>
-    </div>
+    <TasksDocumentsWorkspace
+      {...props}
+      DocumentUpload={DocumentUpload}
+      GeneralDocumentUpload={GeneralDocumentUpload}
+    />
   );
 }
 

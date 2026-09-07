@@ -1,3 +1,12 @@
+import {
+  House,
+  Briefcase,
+  ClipboardList,
+  Calendar,
+  MessageSquare,
+  Receipt,
+  User,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import PortalShell from "../components/ui/PortalShell.jsx";
@@ -7,13 +16,17 @@ import "../pages/portal/portal.css";
 import "../pages/portal/client-workspace.css";
 
 const baseNavItems = [
-  { label: "Dashboard", to: "/client-portal/dashboard" },
-  { label: "Services", to: "/client-portal/services" },
-  { label: "Tasks & Documents", to: "/client-portal/tasks-and-documents" },
-  { label: "Appointments", to: "/client-portal/appointments" },
-  { label: "Messages", to: "/client-portal/messages" },
-  { label: "Billing", to: "/client-portal/billing" },
-  { label: "Profile", to: "/client-portal/profile" },
+  { icon: House, label: "Dashboard", to: "/client-portal/dashboard" },
+  { icon: Briefcase, label: "Services", to: "/client-portal/services" },
+  {
+    icon: ClipboardList,
+    label: "Tasks & Documents",
+    to: "/client-portal/tasks-and-documents",
+  },
+  { icon: Calendar, label: "Appointments", to: "/client-portal/appointments" },
+  { icon: MessageSquare, label: "Messages", to: "/client-portal/messages" },
+  { icon: Receipt, label: "Billing", to: "/client-portal/billing" },
+  { icon: User, label: "Profile", to: "/client-portal/profile" },
 ];
 
 function ClientPortalLayout() {

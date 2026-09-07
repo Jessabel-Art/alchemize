@@ -19,6 +19,7 @@ final class IntakeTestStatement extends PDOStatement {
     public function execute(?array $params=null):bool {
         $this->rows=[];$q=$this->sql;
         if(str_starts_with($q,'SELECT ia.')) $this->rows=[$this->db->assignment];
+        elseif(str_contains($q,'FROM intake_profile_references')) $this->rows=[];
         elseif(str_contains($q,'FROM intake_responses')) $this->rows=array_values($this->db->responses);
         elseif(str_contains($q,'FROM intake_requirements ir')) $this->rows=$this->db->requirements;
         elseif(str_starts_with($q,'INSERT INTO intake_responses')) $this->db->responses[$params['field_key']]=['section_key'=>$params['section_key'],'field_key'=>$params['field_key'],'response_value'=>$params['response_value'],'applicability'=>$params['applicability'],'updated_at'=>'now'];
@@ -59,3 +60,17 @@ expectIntake(isset($db->responses['integration_notes']),'Mapping correction eras
 $db->assignment['family_key']='web_digital';$db->assignment['status']='submitted';
 expectIntake($repo->findForClient('intake',7)['family_key']==='web_digital','Historical submission rewritten');
 echo "Intake repository/service: mapping, drafts, conditional documents, rejection and submission passed.\n";
+
+foreach(['submitted','under_review','waiting_on_alchemize','approved','completed','archived'] as $lockedStatus) {
+    $db->assignment['status']=$lockedStatus;$before=$db->responses;$events=$db->events;
+    foreach(['save','submit'] as $operation) {
+        $rejected=false;
+        try { if($operation==='save')$service->save($access,$user,'intake',['responses'=>['integration_notes'=>['value'=>'Changed']]]);else $service->submit($access,$user,'intake'); }
+        catch(AlchemizeRequestException $e){$rejected=true;}
+        expectIntake($rejected,'Locked intake allowed '.$operation.' for '.$lockedStatus);
+    }
+    expectIntake($before===$db->responses && $events===$db->events,'Locked intake history changed');
+}
+$db->assignment['status']='changes_requested';
+$service->save($access,$user,'intake',['responses'=>['current_situation'=>['value'=>'Reopened answer']]]);
+expectIntake(isset($db->responses['current_situation']),'Reopened intake could not save');

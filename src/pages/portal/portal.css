@@ -11,6 +11,210 @@
   color: var(--emerald-deep);
 }
 
+.portal-services-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(240px, 0.7fr);
+  gap: 1.5rem;
+  margin-top: 1.75rem;
+}
+
+.portal-services-main,
+.portal-services-side {
+  min-width: 0;
+}
+
+@media (max-width: 800px) {
+  .portal-services-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .portal-service-card {
+    grid-template-columns: 1fr;
+  }
+
+  .portal-service-card-meta {
+    align-items: flex-start;
+    text-align: left;
+  }
+}
+
+.portal-services-header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.1rem;
+}
+
+.portal-services-header.secondary {
+  margin-bottom: 0.8rem;
+}
+
+.portal-services-header h2,
+.portal-services-header h3,
+.portal-service-support h3 {
+  margin-top: 0.35rem;
+}
+
+.portal-services-list,
+.portal-service-history {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.portal-services-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.portal-service-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(190px, 0.72fr);
+  gap: 1rem;
+  padding: 1.25rem;
+  border: 1px solid rgba(6, 43, 43, 0.12);
+  border-left: 3px solid var(--gold);
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 10px 24px rgba(11, 67, 50, 0.04);
+}
+
+.portal-service-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.portal-status-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(11, 67, 50, 0.08);
+  color: var(--emerald-deep);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.portal-service-card h3,
+.portal-service-support h3,
+.portal-services-header h3 {
+  font-size: clamp(1.3rem, 2vw, 1.7rem);
+}
+
+.portal-service-card p {
+  margin-top: 0.65rem;
+  color: var(--color-text-soft);
+  line-height: 1.6;
+}
+
+.portal-service-tags {
+  display: block;
+  margin-top: 0.7rem;
+  color: var(--emerald-forest);
+  font-weight: 600;
+}
+
+.portal-service-card-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.7rem;
+  text-align: right;
+}
+
+.portal-service-card-meta small {
+  color: var(--color-text-soft);
+}
+
+.portal-services-archive {
+  margin-top: 2rem;
+}
+
+.portal-service-history {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(6, 43, 43, 0.12);
+}
+
+.portal-service-history li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid rgba(6, 43, 43, 0.1);
+}
+
+.portal-service-history strong {
+  display: block;
+}
+
+.portal-service-history small {
+  display: block;
+  color: var(--color-text-soft);
+}
+
+.portal-service-request-form {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 1.5rem;
+  padding: 1.2rem 1.1rem 1.1rem;
+  border: 1px solid rgba(6, 43, 43, 0.12);
+  background: var(--white);
+}
+
+.portal-service-request-form h3 {
+  margin: 0;
+  font-size: clamp(1.4rem, 2vw, 1.8rem);
+}
+
+.portal-service-support {
+  display: grid;
+  gap: 0.7rem;
+  padding: 1.2rem 1rem;
+  border: 1px solid rgba(6, 43, 43, 0.12);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.portal-service-support.muted {
+  margin-top: 1rem;
+  background: rgba(11, 67, 50, 0.03);
+}
+
+.portal-service-support p,
+.portal-service-support li {
+  color: var(--color-text-soft);
+  line-height: 1.6;
+}
+
+.portal-service-support ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.portal-service-panel-links {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.portal-service-panel-links a {
+  color: var(--emerald-forest);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.portal-service-panel-links a:hover,
+.portal-service-panel-links a:focus-visible {
+  text-decoration: underline;
+}
+
 .portal-summary-grid {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));

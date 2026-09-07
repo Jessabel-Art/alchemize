@@ -17,7 +17,12 @@ function ClientPortalPage() {
   const resource = location.pathname.split("/").filter(Boolean).at(-1);
 
   if (resource === "tasks" || resource === "documents") {
-    return <Navigate to="/client-portal/tasks-and-documents" replace />;
+    return (
+      <Navigate
+        to={"/client-portal/tasks-and-documents" + location.search}
+        replace
+      />
+    );
   }
 
   if (!resources.has(resource)) {

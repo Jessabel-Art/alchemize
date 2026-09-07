@@ -70,6 +70,7 @@ function PortalShell({ title, navItems, children }) {
                 isActive ? "portal-nav-item active" : "portal-nav-item"
               }
             >
+              {item.icon ? <item.icon size={18} aria-hidden="true" /> : null}
               <span>{item.label}</span>
               {item.count > 0 ? (
                 <span

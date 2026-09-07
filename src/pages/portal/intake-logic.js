@@ -73,3 +73,13 @@ export function intakeState(definition, responses, requirements = []) {
       : 100,
   };
 }
+
+export const intakeLocked = (status) =>
+  [
+    "submitted",
+    "under_review",
+    "waiting_on_alchemize",
+    "approved",
+    "completed",
+    "archived",
+  ].includes(status);

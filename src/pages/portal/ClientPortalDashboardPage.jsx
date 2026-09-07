@@ -1,3 +1,16 @@
+import {
+  ArrowRight,
+  Bell,
+  Briefcase,
+  CalendarClock,
+  CheckCircle2,
+  Circle,
+  FileText,
+  MessageSquareText,
+  ReceiptText,
+  Upload,
+  UserRound,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { portalApi } from "../../services/portal-api.js";
@@ -26,13 +39,40 @@ const formatDate = (value, includeTime = false) => {
   );
 };
 
+const greetingFor = (name) => {
+  const hour = new Date().getHours();
+  if (hour < 12) return `Good morning, ${name}`;
+  if (hour < 18) return `Good afternoon, ${name}`;
+  return `Good evening, ${name}`;
+};
+
+const actionIconMap = {
+  task: FileText,
+  document: Upload,
+  intake: Briefcase,
+  payment: ReceiptText,
+  message: MessageSquareText,
+  appointment: CalendarClock,
+  service: Briefcase,
+};
+
+const actionLabelMap = {
+  task: "Review update",
+  document: "Upload document",
+  intake: "Continue intake",
+  payment: "Review invoice",
+  message: "Open message",
+  appointment: "View appointment",
+  service: "Review service",
+};
+
 function ClientPortalDashboardPage() {
   const [state, setState] = useState({
     status: "loading",
     data: null,
     error: "",
   });
-  const [services, setServices] = useState(null);
+  const [services, setServices] = useState([]);
   const [onboardingDismissed, setOnboardingDismissed] = useState(false);
 
   useEffect(() => {
@@ -81,83 +121,33 @@ function ClientPortalDashboardPage() {
     next_appointment: nextAppointment,
     next_invoice: nextInvoice,
     recent_activity: activity = [],
-    recent_communication: recentCommunication,
     attention = [],
     onboarding,
   } = state.data;
-  const navigation = [
-    {
-      label: "Active services",
-      value: summary.active_services,
-      detail: "Current service relationships",
-      to: "/client-portal/services",
-    },
-    {
-      label: "Tasks requiring action",
-      value: summary.tasks_requiring_action,
-      detail: "Client-visible tasks awaiting you",
-      to: "/client-portal/tasks-and-documents",
-    },
-    {
-      label: "Documents needed",
-      value: summary.documents_needed,
-      detail: "Outstanding client-visible requests",
-      to: "/client-portal/tasks-and-documents",
-    },
-    {
-      label: "Upcoming appointments",
-      value: summary.upcoming_appointments,
-      detail: "Scheduled client appointments",
-      to: "/client-portal/appointments",
-    },
-    {
-      label: "Messages",
-      value: summary.unread_messages,
-      detail: "Unread client messages",
-      to: "/client-portal/messages",
-    },
-    {
-      label: "Open balance",
-      value: formatCurrency(summary.open_balance),
-      detail: summary.has_past_due
-        ? "Past-due balance needs attention"
-        : "Issued invoices remaining",
-      to: "/client-portal/billing",
-    },
-  ];
+
+  const name =
+    client?.preferred_name || client?.display_name?.split(" ")[0] || "there";
+  const activeServices = services.filter(
+    (item) => !["completed", "archived"].includes(item.status),
+  );
+  const onboardingIncomplete =
+    onboarding &&
+    !onboarding.dismissed &&
+    onboarding.steps?.some((step) => !step.complete);
 
   return (
     <div className="portal-page client-workspace">
       <header className="portal-page-header">
         <div>
           <span className="section-kicker">Client portal</span>
-          <h1>Your service workspace</h1>
+          <h1>{greetingFor(name)}</h1>
         </div>
-        <p>
-          <strong>{client.preferred_name || client.display_name}</strong>
-          <br />
-          Your services, next steps, and account at a glance.
-        </p>
+        <p>Here&apos;s what&apos;s happening with your Alchemize account.</p>
       </header>
-
-      <section className="portal-summary-grid" aria-label="Account summary">
-        {navigation.map((item) => (
-          <Link
-            className={`portal-summary-item ${((item.to.endsWith("tasks") || item.to.endsWith("documents") || item.to.endsWith("messages")) && Number(item.value) > 0) || (item.to.endsWith("billing") && summary.has_past_due) ? "portal-metric-attention" : ""}`}
-            to={item.to}
-            key={item.label}
-          >
-            <span>{item.label}</span>
-            <strong>{item.value}</strong>
-            <small>{item.detail}</small>
-          </Link>
-        ))}
-      </section>
 
       <div className="portal-dashboard-grid">
         <div className="portal-dashboard-main">
-          {" "}
-          {onboarding && !onboarding.dismissed && !onboardingDismissed ? (
+          {onboardingIncomplete && !onboardingDismissed ? (
             <section
               className="portal-onboarding"
               aria-labelledby="getting-started-title"
@@ -169,7 +159,7 @@ function ClientPortalDashboardPage() {
                 </div>
                 <button
                   type="button"
-                  className="portal-action-button"
+                  className="portal-action-button portal-quiet-button"
                   onClick={async () => {
                     await portalApi.dismissOnboarding();
                     setOnboardingDismissed(true);
@@ -194,7 +184,13 @@ function ClientPortalDashboardPage() {
               <ul className="portal-checklist">
                 {onboarding.steps.map((step) => (
                   <li key={step.key}>
-                    <span aria-hidden="true">{step.complete ? "✓" : "•"}</span>
+                    <span aria-hidden="true">
+                      {step.complete ? (
+                        <CheckCircle2 size={16} />
+                      ) : (
+                        <Circle size={16} />
+                      )}
+                    </span>
                     <Link to={step.to}>{step.label}</Link>
                     <small>{step.complete ? "Complete" : "To do"}</small>
                   </li>
@@ -202,206 +198,344 @@ function ClientPortalDashboardPage() {
               </ul>
             </section>
           ) : null}
+
           <section
-            className="portal-attention"
-            aria-labelledby="attention-title"
+            className="portal-action-hero"
+            aria-labelledby="action-required-heading"
           >
             <div className="portal-section-heading">
-              <div>
-                <span className="section-kicker">Attention needed</span>
-                <h2 id="attention-title">Your next actions</h2>
+              <div className="portal-action-hero-copy">
+                <span className="portal-hero-icon" aria-hidden="true">
+                  <Bell size={18} />
+                </span>
+                <div>
+                  <span className="section-kicker">Action required</span>
+                  <h2 id="action-required-heading">Action required</h2>
+                </div>
               </div>
+              <Link
+                to="/client-portal/tasks-and-documents"
+                className="portal-inline-link"
+              >
+                View all tasks &amp; documents
+                <ArrowRight size={14} />
+              </Link>
             </div>
+
             {attention.length ? (
-              <ul className="portal-attention-list">
-                {attention.map((item, index) => (
-                  <li key={`${item.kind}-${item.title}-${index}`}>
-                    <span
-                      className={`portal-priority priority-${item.priority}`}
+              <div className="portal-action-list">
+                {attention.slice(0, 3).map((item, index) => {
+                  const Icon = actionIconMap[item.kind] || Briefcase;
+                  const actionLabel =
+                    item.kind === "document" &&
+                    item.title.toLowerCase().includes("document")
+                      ? "Upload document"
+                      : actionLabelMap[item.kind] || "Review update";
+                  return (
+                    <div
+                      className="portal-action-row"
+                      key={`${item.kind}-${item.title}-${index}`}
                     >
-                      {item.priority === 1
-                        ? "Past due"
-                        : item.priority <= 2
-                          ? "Action needed"
-                          : "Upcoming"}
-                    </span>
-                    <div>
-                      <small className="portal-action-type">
-                        {item.kind?.replaceAll("_", " ")}
-                      </small>
-                      <strong>{item.title}</strong>
-                      <small>{item.detail}</small>
+                      <div className="portal-action-icon" aria-hidden="true">
+                        <Icon size={18} />
+                      </div>
+                      <div className="portal-action-main">
+                        <div className="portal-action-title-row">
+                          <strong>{item.title}</strong>
+                          <span className="portal-status-badge">
+                            {item.priority === 1
+                              ? "Past due"
+                              : item.priority <= 2
+                                ? "Action needed"
+                                : "Upcoming"}
+                          </span>
+                        </div>
+                        <div className="portal-action-meta">
+                          <span>
+                            {item.detail || item.kind?.replaceAll("_", " ")}
+                          </span>
+                          {item.to ? (
+                            <Link to={item.to}>{actionLabel}</Link>
+                          ) : null}
+                        </div>
+                      </div>
                     </div>
-                    <Link to={item.to}>Review</Link>
-                  </li>
-                ))}
-              </ul>
+                  );
+                })}
+              </div>
             ) : (
-              <div className="portal-empty-state">
-                Nothing needs your immediate attention.
+              <div className="portal-empty-positive-state">
+                <strong>You&apos;re all caught up.</strong>
+                <p>Nothing needs your attention right now.</p>
               </div>
             )}
           </section>
-          {!attention.some((item) => item.kind === "task") ? (
-            <article className="portal-record-panel">
-              <span className="section-kicker">Next action</span>
-              {nextTask ? (
-                <>
-                  <h2>{nextTask.title}</h2>
-                  <p>
-                    {nextTask.description ||
-                      "A client-facing task is ready for your attention."}
-                  </p>
-                  <small>Due {formatDate(nextTask.due_date)}</small>
-                </>
-              ) : (
-                <div className="portal-empty-state">
-                  No tasks require your attention.
-                </div>
-              )}
-              <Link to="/client-portal/tasks-and-documents">
-                View tasks & documents
-              </Link>
-            </article>
-          ) : null}
-          <section className="portal-service-summary">
-            <div className="portal-section-heading">
-              <h2>Active services</h2>
-              <Link to="/client-portal/services">View services</Link>
-            </div>
-            {services === null ? (
-              <p className="portal-empty-state">
-                View your service engagements in Services.
-              </p>
-            ) : services.filter(
-                (item) => !["completed", "archived"].includes(item.status),
-              ).length ? (
-              <ul className="portal-record-list">
-                {services
-                  .filter(
-                    (item) => !["completed", "archived"].includes(item.status),
-                  )
-                  .map((item) => (
-                    <li key={item.id}>
-                      <div>
-                        <strong>{item.title}</strong>
-                        <small>Started {formatDate(item.start_date)}</small>
-                      </div>
-                      <div className="portal-record-meta">
-                        <span>{item.status?.replaceAll("_", " ")}</span>
-                        <Link to="/client-portal/services">Review service</Link>
-                      </div>
-                    </li>
-                  ))}
-              </ul>
-            ) : (
-              <p className="portal-empty-state">
-                No active services are currently listed.
-              </p>
-            )}
-          </section>{" "}
-          <article className="portal-record-panel">
-            <span className="section-kicker">Recent communication</span>
-            {recentCommunication ? (
-              <>
-                <h2>{recentCommunication.subject}</h2>
-                <p>{recentCommunication.latest_message}</p>
-                <small>
-                  {formatDate(recentCommunication.last_message_at, true)}
-                </small>
-              </>
-            ) : (
-              <div className="portal-empty-state">No conversations yet.</div>
-            )}
-            <Link to="/client-portal/messages">View messages</Link>
-          </article>{" "}
+
           <section
-            className="portal-activity"
-            aria-labelledby="client-activity-title"
+            className="portal-service-summary"
+            aria-labelledby="your-services-heading"
           >
             <div className="portal-section-heading">
               <div>
-                <span className="section-kicker">Recent updates</span>
-                <h2 id="client-activity-title">Client-visible activity</h2>
+                <span className="section-kicker">Your services</span>
+                <h2 id="your-services-heading">Your services</h2>
               </div>
+              <Link to="/client-portal/services" className="portal-inline-link">
+                View all services
+                <ArrowRight size={14} />
+              </Link>
             </div>
+            <p className="portal-subhead">
+              Here are the services you&apos;re working with us on.
+            </p>
+
+            {activeServices.length ? (
+              <div className="portal-service-card-grid">
+                {activeServices.map((item) => {
+                  const statusLabel =
+                    item.status === "in_progress"
+                      ? "Preparing"
+                      : item.status?.replaceAll("_", " ") || "Active";
+                  const defaultNextStep =
+                    item.status === "in_progress"
+                      ? "We are reviewing your submitted information and will follow up soon."
+                      : "We will let you know if anything is needed.";
+                  const nextStep = item.assigned_contact
+                    ? `Assigned to ${item.assigned_contact}`
+                    : defaultNextStep;
+                  return (
+                    <article className="portal-service-card" key={item.id}>
+                      <div className="portal-service-card-top">
+                        <div className="portal-service-icon" aria-hidden="true">
+                          <Briefcase size={18} />
+                        </div>
+                        <span className="portal-status-badge soft">
+                          {statusLabel}
+                        </span>
+                      </div>
+                      <h3>{item.title}</h3>
+                      <p>{item.description || "Service in progress."}</p>
+                      <dl className="portal-service-meta">
+                        <div>
+                          <dt>Started</dt>
+                          <dd>{formatDate(item.start_date)}</dd>
+                        </div>
+                        <div>
+                          <dt>Current phase</dt>
+                          <dd>
+                            {item.service_names?.[0] ||
+                              item.status?.replaceAll("_", " ") ||
+                              "In progress"}
+                          </dd>
+                        </div>
+                      </dl>
+                      <div className="portal-service-note">
+                        <strong>Next step from Alchemize</strong>
+                        <p>{nextStep}</p>
+                      </div>
+                      <div className="portal-service-actions">
+                        <Link
+                          to="/client-portal/tasks-and-documents"
+                          className="portal-secondary-link"
+                        >
+                          View in Tasks &amp; Documents
+                        </Link>
+                        <Link
+                          to="/client-portal/services"
+                          className="portal-primary-link"
+                        >
+                          View service
+                        </Link>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="portal-empty-state">
+                No active services are currently listed.
+              </div>
+            )}
+          </section>
+
+          <section
+            className="portal-activity"
+            aria-labelledby="recent-activity-heading"
+          >
+            <div className="portal-section-heading">
+              <div>
+                <span className="section-kicker">Recent activity</span>
+                <h2 id="recent-activity-heading">Recent activity</h2>
+              </div>
+              <Link to="/client-portal/messages" className="portal-inline-link">
+                View all activity
+                <ArrowRight size={14} />
+              </Link>
+            </div>
+            <p className="portal-subhead">
+              Your latest updates and communications.
+            </p>
             {activity.length ? (
-              <ul className="portal-record-list">
+              <ul className="portal-activity-list">
                 {activity.slice(0, 5).map((item) => (
                   <li key={item.id}>
-                    <div>
+                    <div className="portal-activity-icon" aria-hidden="true">
+                      {item.summary.toLowerCase().includes("message") ? (
+                        <MessageSquareText size={16} />
+                      ) : item.summary.toLowerCase().includes("upload") ? (
+                        <Upload size={16} />
+                      ) : item.summary.toLowerCase().includes("submitted") ||
+                        item.summary.toLowerCase().includes("intake") ? (
+                        <FileText size={16} />
+                      ) : (
+                        <Briefcase size={16} />
+                      )}
+                    </div>
+                    <div className="portal-activity-copy">
                       <strong>{item.summary}</strong>
                       <small>{formatDate(item.created_at, true)}</small>
                     </div>
+                    <ArrowRight size={14} aria-hidden="true" />
                   </li>
                 ))}
               </ul>
             ) : (
               <div className="portal-empty-state">
-                No client-visible activity is currently listed.
+                No recent activity is currently listed.
               </div>
             )}
           </section>
         </div>
+
         <aside
           className="portal-dashboard-rail"
           aria-label="Workspace essentials"
         >
-          {" "}
-          <article className="portal-record-panel">
-            <span className="section-kicker">Next appointment</span>
+          <article className="portal-record-panel portal-side-panel">
+            <div className="portal-side-header">
+              <span className="section-kicker">Next appointment</span>
+              <div className="portal-side-icon" aria-hidden="true">
+                <CalendarClock size={18} />
+              </div>
+            </div>
             {nextAppointment ? (
               <>
-                <h2>{nextAppointment.appointment_type}</h2>
+                <h2>{nextAppointment.appointment_type || "Consultation"}</h2>
                 <p>{formatDate(nextAppointment.scheduled_at, true)}</p>
-                <small>{nextAppointment.status}</small>
+                <small>
+                  {nextAppointment.meeting_method ||
+                    nextAppointment.location_type ||
+                    "Meeting scheduled"}
+                </small>
               </>
             ) : (
               <div className="portal-empty-state">
-                No upcoming appointments.
+                <strong>No upcoming appointments.</strong>
+                <p>
+                  We&apos;ll let you know when your next meeting is scheduled.
+                </p>
               </div>
             )}
-            <Link to="/client-portal/appointments">View appointments</Link>
-          </article>{" "}
-          <article className="portal-record-panel">
-            <span className="section-kicker">Billing summary</span>
-            <strong className="portal-balance">
-              {formatCurrency(summary.open_balance)}
-            </strong>
-            {nextInvoice ? (
+            <Link to="/client-portal/appointments" className="portal-side-link">
+              View appointments
+            </Link>
+          </article>
+
+          <article className="portal-record-panel portal-side-panel">
+            <div className="portal-side-header">
+              <span className="section-kicker">Account summary</span>
+              <div className="portal-side-icon" aria-hidden="true">
+                <ReceiptText size={18} />
+              </div>
+            </div>
+            {summary.open_balance && Number(summary.open_balance) > 0 ? (
               <>
-                <h2>{nextInvoice.invoice_number}</h2>
+                <h2 className="portal-balance">
+                  {formatCurrency(summary.open_balance)}
+                </h2>
                 <p>
-                  {formatCurrency(
-                    nextInvoice.outstanding_balance,
-                    nextInvoice.currency,
-                  )}
+                  {nextInvoice
+                    ? `Invoice ${nextInvoice.invoice_number}`
+                    : "Open balance"}
                 </p>
-                <small>Due {formatDate(nextInvoice.due_date)}</small>
+                <small>
+                  {nextInvoice
+                    ? `Due ${formatDate(nextInvoice.due_date)}`
+                    : "Current balance"}
+                </small>
               </>
             ) : (
-              <div className="portal-empty-state">No open invoices.</div>
+              <>
+                <h2 className="portal-balance account-good">
+                  Account in good standing
+                </h2>
+                <p>No payment currently due.</p>
+              </>
             )}
-            <Link to="/client-portal/billing">View billing</Link>
-          </article>
-          <section className="portal-record-panel">
-            <span className="section-kicker">Documents needed</span>
-            <h2>{summary.documents_needed}</h2>
-            <p>
-              {summary.documents_needed
-                ? "Requested files awaiting your upload."
-                : "No outstanding document requests."}
-            </p>
-            <Link to="/client-portal/tasks-and-documents">
-              View tasks & documents
+            <Link to="/client-portal/billing" className="portal-side-link">
+              View billing
             </Link>
-          </section>
+          </article>
+
           <nav className="portal-quick-actions" aria-label="Quick actions">
-            <h2>Quick actions</h2>
-            <Link to="/client-portal/services">Request a service</Link>
-            <Link to="/client-portal/documents">Upload a document</Link>
-            <Link to="/client-portal/messages">Send a message</Link>
-            <Link to="/client-portal/profile">Manage profile</Link>
+            <div className="portal-quick-header">
+              <span className="section-kicker">Quick actions</span>
+              <h2>Quick actions</h2>
+            </div>
+            <div className="portal-quick-grid">
+              <Link
+                className="portal-quick-action-tile"
+                to="/client-portal/services"
+              >
+                <span className="portal-tile-icon" aria-hidden="true">
+                  <Briefcase size={18} />
+                </span>
+                <span className="portal-tile-copy">
+                  <strong>Request a service</strong>
+                  <small>Explore services or tell us what you need.</small>
+                </span>
+                <ArrowRight size={16} />
+              </Link>
+              <Link
+                className="portal-quick-action-tile"
+                to="/client-portal/tasks-and-documents"
+              >
+                <span className="portal-tile-icon" aria-hidden="true">
+                  <Upload size={18} />
+                </span>
+                <span className="portal-tile-copy">
+                  <strong>Upload a document</strong>
+                  <small>Send us a file securely.</small>
+                </span>
+                <ArrowRight size={16} />
+              </Link>
+              <Link
+                className="portal-quick-action-tile"
+                to="/client-portal/messages"
+              >
+                <span className="portal-tile-icon" aria-hidden="true">
+                  <MessageSquareText size={18} />
+                </span>
+                <span className="portal-tile-copy">
+                  <strong>Send a message</strong>
+                  <small>Get in touch with our team.</small>
+                </span>
+                <ArrowRight size={16} />
+              </Link>
+              <Link
+                className="portal-quick-action-tile"
+                to="/client-portal/appointments"
+              >
+                <span className="portal-tile-icon" aria-hidden="true">
+                  <CalendarClock size={18} />
+                </span>
+                <span className="portal-tile-copy">
+                  <strong>Appointments</strong>
+                  <small>View or schedule a meeting.</small>
+                </span>
+                <ArrowRight size={16} />
+              </Link>
+            </div>
           </nav>
         </aside>
       </div>

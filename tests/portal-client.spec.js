@@ -50,6 +50,7 @@ const portalPayloads = {
       },
     ],
   },
+  intakes: { items: [] },
   documents: { items: [], file_access: "metadata_only" },
   appointments: { items: [] },
   messages: {
@@ -122,7 +123,7 @@ test("the dashboard renders authenticated client summaries and intentional empty
   await expect(page.getByText("No open invoices.")).toBeVisible();
 });
 
-test("tasks and documents use the unified portal destination and dashboard checklist characters are clean", async ({
+test("dashboard redesign renders action required and quick actions without duplicates", async ({
   page,
 }) => {
   await page.route("**/alchemize-api.php?route=portal%2Fdashboard", (route) =>
@@ -130,6 +131,22 @@ test("tasks and documents use the unified portal destination and dashboard check
       json: {
         data: {
           ...portalPayloads.dashboard,
+          attention: [
+            {
+              kind: "document",
+              title: "Identification document",
+              detail: "Requested Sep 3, 2026",
+              priority: 2,
+              to: "/client-portal/tasks-and-documents",
+            },
+            {
+              kind: "task",
+              title: "Review service update",
+              detail: "Action needed",
+              priority: 2,
+              to: "/client-portal/tasks-and-documents",
+            },
+          ],
           onboarding: {
             dismissed: false,
             steps: [
@@ -147,6 +164,18 @@ test("tasks and documents use the unified portal destination and dashboard check
               },
             ],
           },
+          recent_activity: [
+            {
+              id: "a1",
+              summary: "Logo files uploaded.",
+              created_at: "2026-09-04T18:00:00",
+            },
+            {
+              id: "a2",
+              summary: "Business Consulting intake submitted for review.",
+              created_at: "2026-09-02T12:00:00",
+            },
+          ],
         },
       },
     }),
@@ -154,15 +183,75 @@ test("tasks and documents use the unified portal destination and dashboard check
 
   await page.goto("/client-portal/dashboard/");
   await expect(
-    page.getByRole("heading", { name: "Your service workspace" }),
+    page.getByRole("heading", { name: "Action required" }),
   ).toBeVisible();
-  await expect(page.getByText("✓")).toHaveCount(1);
+  await expect(page.getByText("Identification document")).toBeVisible();
+  await expect(page.getByText("Review service update")).toBeVisible();
+  await expect(page.getByText("Documents needed")).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { name: "Quick actions" }),
+  ).toBeVisible();
+  await expect(page.locator(".portal-quick-action-tile")).toHaveCount(4);
+  await expect(page.locator(".portal-onboarding")).toBeVisible();
   await expect(page.getByText("âœ“")).toHaveCount(0);
 
   await page.goto("/client-portal/tasks/");
   await expect(page).toHaveURL(/\/client-portal\/tasks-and-documents\/?$/);
   await expect(
     page.getByRole("heading", { name: "Tasks & Documents" }),
+  ).toBeVisible();
+});
+
+test("service landing page shows active and past services with collapsed request flow", async ({
+  page,
+}) => {
+  await page.route("**/alchemize-api.php?route=portal%2Fservices", (route) =>
+    route.fulfill({
+      json: {
+        data: {
+          items: [
+            {
+              id: "eng-a",
+              title: "Business formation",
+              description: "Formation and setup support.",
+              status: "in_progress",
+              start_date: "2026-08-01",
+              target_date: "2026-09-30",
+              service_names: ["Business Formation"],
+            },
+            {
+              id: "eng-b",
+              title: "Annual tax review",
+              description: "Prior year filing guidance.",
+              status: "completed",
+              start_date: "2025-12-02",
+              service_names: ["Business Tax"],
+            },
+          ],
+        },
+      },
+    }),
+  );
+
+  await page.goto("/client-portal/services/");
+  await expect(page.getByRole("heading", { name: "Services" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Active services" }),
+  ).toBeVisible();
+  await expect(page.getByText("Business formation")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Past services" }),
+  ).toBeVisible();
+  await expect(page.getByText("Annual tax review")).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Request a service" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("form", { name: /request a service/i }),
+  ).not.toBeVisible();
+  await page.getByRole("button", { name: "Request a service" }).click();
+  await expect(
+    page.getByRole("form", { name: /request a service/i }),
   ).toBeVisible();
 });
 
@@ -175,7 +264,7 @@ test("service and task pages render only API records", async ({ page }) => {
 
   await page.goto("/client-portal/tasks/");
   await expect(
-    page.getByRole("heading", { name: "Waiting on you" }),
+    page.getByRole("heading", { name: "Tasks & Intake" }),
   ).toBeVisible();
   await expect(page.getByText("Review formation details")).toBeVisible();
 });
@@ -210,6 +299,7 @@ test("task actions use authenticated CSRF-protected portal mutations", async ({
   page,
 }) => {
   await page.goto("/client-portal/tasks/");
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
   const requestPromise = page.waitForRequest((request) =>
     request.url().includes("route=portal%2Ftasks%2Ftask-a%2Fcomplete"),
   );
@@ -258,9 +348,7 @@ for (const width of [1440, 834, 390]) {
           () => document.documentElement.scrollWidth <= innerWidth,
         ),
       ).toBe(true);
-      if (
-        ["services", "documents", "appointments", "messages"].includes(resource)
-      ) {
+      if (["services", "appointments", "messages"].includes(resource)) {
         const main = await page
           .locator(".portal-workspace-primary")
           .boundingBox();

@@ -2,7 +2,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { LocalizedLink as Link } from "../../i18n/LocalizedLink.jsx";
 import { portalApi } from "../../services/portal-api.js";
 import "./portal.css";
-import { hasAnswer, isVisible, intakeState } from "./intake-logic.js";
+import { CheckCircle, Circle } from "lucide-react";
+import {
+  hasAnswer,
+  isVisible,
+  intakeState,
+  intakeLocked,
+} from "./intake-logic.js";
 
 const humanize = (value) =>
   String(value || "")
@@ -40,7 +46,7 @@ const clientStatus = (assignment) => {
       action: false,
     };
   }
-  if (["approved", "completed"].includes(status)) {
+  if (["approved", "completed", "archived"].includes(status)) {
     return {
       key: "complete",
       label: "Complete",
@@ -377,6 +383,7 @@ function Field({
   onChange,
   profile,
   onProfileChanged,
+  snapshots,
   locked,
   invalid,
 }) {
@@ -387,6 +394,49 @@ function Field({
         : profile.business?.[field.profile_key] || "",
     applicability: field.required ? "required" : "optional",
   };
+  if (locked)
+    return (
+      <div className="intake-field">
+        <strong>{field.label}</strong>
+        <p>
+          {response?.applicability === "not_applicable"
+            ? "Not applicable"
+            : response?.value == null || response.value === ""
+              ? "No answer submitted"
+              : Array.isArray(response.value)
+                ? ["person_refs", "address_refs"].includes(field.type)
+                  ? (snapshots?.[field.key] || [])
+                      .map((record) =>
+                        field.type === "person_refs"
+                          ? record.name
+                          : [
+                              record.line1,
+                              record.line2,
+                              record.city,
+                              record.state,
+                              record.postal_code,
+                            ]
+                              .filter(Boolean)
+                              .join(", "),
+                      )
+                      .join("; ") ||
+                    "Submitted profile reference (historical details unavailable)"
+                  : response.value
+                      .map(
+                        (value) =>
+                          field.options?.find(
+                            (option) => option.value === value,
+                          )?.label || String(value),
+                      )
+                      .join(", ")
+                : typeof response.value === "object"
+                  ? JSON.stringify(response.value)
+                  : field.options?.find(
+                      (option) => option.value === response.value,
+                    )?.label || String(response.value)}
+        </p>
+      </div>
+    );
   const setValue = (value) => onChange({ ...entry, value });
   const common = {
     id: field.key,
@@ -558,9 +608,7 @@ function IntakeCard({ item, onOpen }) {
         ) : null}
       </div>
       <button className="portal-action-button" onClick={() => onOpen(item.id)}>
-        {["submitted", "under_review", "approved", "completed"].includes(
-          item.status,
-        )
+        {intakeLocked(item.status)
           ? "View submission"
           : Number(item.completion_percentage) >= 100
             ? "Review and submit"
@@ -591,7 +639,11 @@ export default function ClientIntakePage() {
       .flatMap((module) => module.fields)
       .forEach((field) => {
         const savedValue = data.profile.business?.[field.profile_key];
-        if (!draft[field.key] && savedValue)
+        if (
+          !intakeLocked(data.assignment.status) &&
+          !draft[field.key] &&
+          savedValue
+        )
           draft[field.key] = {
             value: savedValue,
             applicability: field.required ? "required" : "optional",
@@ -691,11 +743,7 @@ export default function ClientIntakePage() {
     }
     return true;
   };
-  const locked = current
-    ? ["submitted", "under_review", "approved", "completed"].includes(
-        current.assignment.status,
-      )
-    : false;
+  const locked = current ? intakeLocked(current.assignment.status) : false;
 
   useEffect(() => {
     if (!current) return;
@@ -715,6 +763,7 @@ export default function ClientIntakePage() {
       ),
     );
   const save = async ({ announce = true } = {}) => {
+    if (locked) return false;
     setBusy(true);
     setFeedback("");
     try {
@@ -738,7 +787,7 @@ export default function ClientIntakePage() {
   };
 
   const submit = async () => {
-    if (!validate(true)) return;
+    if (locked || !validate(true)) return;
     setBusy(true);
     setFeedback("");
     const assignment = current.assignment;
@@ -774,7 +823,7 @@ export default function ClientIntakePage() {
       <div className="portal-page">
         <section className="intake-confirmation" role="status">
           <span className="intake-confirmation-mark" aria-hidden="true">
-            ✓
+            <CheckCircle aria-hidden="true" />
           </span>
           <span className="section-kicker">Submitted successfully</span>
           <h1>Your intake has been submitted.</h1>
@@ -910,9 +959,12 @@ export default function ClientIntakePage() {
         <div className="intake-review-notice">
           <strong>{status.label}</strong>
           <p>
-            Your information is saved and cannot be edited while Alchemize is
-            reviewing it.
+            Your submitted information is read-only. Editing is available only
+            if Alchemize reopens this intake.
           </p>
+          {current.assignment.submitted_at ? (
+            <p>Submitted {formatDate(current.assignment.submitted_at)}</p>
+          ) : null}
           {current.assignment.client_visible_review_note ? (
             <p>{current.assignment.client_visible_review_note}</p>
           ) : null}
@@ -930,9 +982,11 @@ export default function ClientIntakePage() {
               onClick={() => setSection(index)}
             >
               <span aria-hidden="true">
-                {!missingItems.some((item) => item.sectionIndex === index)
-                  ? "✓"
-                  : "○"}
+                {!missingItems.some((item) => item.sectionIndex === index) ? (
+                  <CheckCircle size={18} />
+                ) : (
+                  <Circle size={18} />
+                )}
               </span>{" "}
               {module.title}
               <span className="sr-only">
@@ -958,6 +1012,7 @@ export default function ClientIntakePage() {
                 setResponses({ ...responses, [field.key]: value })
               }
               profile={current.profile}
+              snapshots={current.reference_snapshots}
               onProfileChanged={refreshCurrent}
               locked={locked}
               invalid={

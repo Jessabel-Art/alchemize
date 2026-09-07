@@ -319,18 +319,8 @@ function App() {
           <Route path="services" element={<ClientPortalPage />} />
           <Route path="intake" element={<ClientIntakePage />} />
           <Route path="tasks-and-documents" element={<ClientPortalPage />} />
-          <Route
-            path="tasks"
-            element={
-              <Navigate to="/client-portal/tasks-and-documents" replace />
-            }
-          />
-          <Route
-            path="documents"
-            element={
-              <Navigate to="/client-portal/tasks-and-documents" replace />
-            }
-          />
+          <Route path="tasks" element={<ClientPortalPage />} />
+          <Route path="documents" element={<ClientPortalPage />} />
           <Route path="appointments" element={<ClientPortalPage />} />
           <Route path="messages" element={<ClientPortalPage />} />
           <Route path="billing" element={<ClientPortalPage />} />

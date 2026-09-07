@@ -25,13 +25,13 @@ final class AlchemizeIntakeService
         $definition['modules']=array_values(array_filter($definition['modules'],fn($m)=>in_array($m['key'],$assignment['module_keys'],true)));
         $assignment['completion_percentage']=$this->completion($assignment,(int)$access['client_id']);
         $requirements=$this->repository->requirements((int)$assignment['id']);foreach($requirements as &$requirement)$requirement['eligible_documents']=$this->repository->eligibleDocuments((int)$access['client_id'],(string)$requirement['requirement_key']);unset($requirement);
-        return ['assignment'=>$assignment,'definition'=>$definition,'responses'=>$this->repository->responses((int)$assignment['id'],(int)$access['client_id']),'requirements'=>$requirements,'profile'=>$this->repository->profile((int)$access['client_id'])];
+        return ['assignment'=>$assignment,'definition'=>$definition,'responses'=>$this->repository->responses((int)$assignment['id'],(int)$access['client_id']),'requirements'=>$requirements,'reference_snapshots'=>$this->repository->referenceSnapshots((int)$assignment['id'],(int)$access['client_id']),'profile'=>$this->repository->profile((int)$access['client_id'])];
     }
 
     public function save(array $access,array $user,string $id,array $payload): array
     {
         $assignment=$this->repository->findForClient($id,(int)$access['client_id'],true); if($assignment===null)$this->notFound();
-        if(in_array($assignment['status'],['submitted','under_review','approved','archived'],true))throw new AlchemizeRequestException(409,'INTAKE_LOCKED','This intake is currently locked for review.');
+        if(in_array($assignment['status'],['submitted','under_review','waiting_on_alchemize','approved','completed','archived'],true))throw new AlchemizeRequestException(409,'INTAKE_LOCKED','This intake is currently locked for review.');
         $allowed=$this->fieldMap($assignment); $responses=is_array($payload['responses']??null)?$payload['responses']:[]; $profile=$this->repository->profile((int)$access['client_id']); $existing=$this->repository->responses((int)$assignment['id'],(int)$access['client_id']);
         foreach($responses as $key=>$item){ if(!isset($allowed[$key]) && isset($assignment['original_family_key']) && isset($existing[$key]))continue; if(!isset($allowed[$key]))throw new AlchemizeRequestException(422,'VALIDATION_ERROR','The intake contains an unsupported field.'); $value=is_array($item)&&array_key_exists('value',$item)?$item['value']:$item; $defaultApp=$allowed[$key]['required']?'required':'optional'; $submittedApp=is_array($item)?(string)($item['applicability']??$defaultApp):$defaultApp; $existingApp=(string)($existing[$key]['applicability']??''); $app=in_array($existingApp,['not_applicable','already_on_file'],true)&&$submittedApp===$existingApp?$existingApp:$defaultApp; if($app==='already_on_file'&&!$this->profileHasValue($profile,$key))throw new AlchemizeRequestException(422,'ALREADY_ON_FILE_UNAVAILABLE','This information is not currently available in the Client Profile.'); if(in_array($allowed[$key]['type'],['address_refs','person_refs'],true)){$value=$this->validateReferences($assignment,(int)$access['client_id'],$key,$allowed[$key]['type'],(array)$value);} $encoded=json_encode($value,JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR); if(strlen($encoded)>20000)throw new AlchemizeRequestException(422,'VALIDATION_ERROR','An intake response is too long.'); $this->repository->saveResponse(['public_id'=>alchemize_uuid_v4(),'intake_assignment_id'=>$assignment['id'],'client_id'=>$access['client_id'],'section_key'=>$allowed[$key]['section'],'field_key'=>$key,'response_value'=>$encoded,'applicability'=>$app,'answered_by_user_id'=>$user['user_id']]); }
         if($assignment['family_key']==='client_profile'){$canonical=[];foreach($responses as $key=>$item){$canonical[$key]=is_array($item)&&array_key_exists('value',$item)?$item['value']:$item;}$this->repository->updateCanonicalProfile((int)$access['client_id'],$canonical);}
@@ -47,7 +47,7 @@ final class AlchemizeIntakeService
 
     public function submit(array $access,array $user,string $id): array
     {
-        $assignment=$this->repository->findForClient($id,(int)$access['client_id'],true); if($assignment===null)$this->notFound(); $completion=$this->completion($assignment,(int)$access['client_id']);
+        $assignment=$this->repository->findForClient($id,(int)$access['client_id'],true); if($assignment===null)$this->notFound(); if(in_array($assignment['status'],['submitted','under_review','waiting_on_alchemize','approved','completed','archived'],true))throw new AlchemizeRequestException(409,'INTAKE_LOCKED','This intake is locked for review.'); $completion=$this->completion($assignment,(int)$access['client_id']);
         if($completion<100)throw new AlchemizeRequestException(422,'INTAKE_INCOMPLETE','Complete all required intake questions before submitting.');
         $this->repository->updateAssignment((int)$assignment['id'],['family_key'=>$assignment['family_key'],'module_keys'=>json_encode($assignment['module_keys'],JSON_THROW_ON_ERROR),'status'=>'submitted','completion_percentage'=>100,'submitted_at'=>date('Y-m-d H:i:s.u')]);
         $this->activities->create(['public_id'=>alchemize_uuid_v4(),'event_type'=>'client.intake.submitted','actor_type'=>'client','actor_user_id'=>$user['user_id'],'entity_type'=>'intake','entity_id'=>$id,'client_id'=>$access['client_id'],'engagement_id'=>$assignment['engagement_id'],'summary'=>'Client submitted an engagement intake for review.','visibility'=>'both']); return ['id'=>$id,'status'=>'submitted'];
@@ -77,7 +77,7 @@ final class AlchemizeIntakeService
     private function assertRequirementApplicable(array $access,string $assignmentId,array $requirement):void
     {
         $assignment=$this->repository->findForClient($assignmentId,(int)$access['client_id']);
-        if(!$assignment || in_array($assignment['status'],['submitted','under_review','approved','completed','archived'],true)) throw new AlchemizeRequestException(409,'INTAKE_LOCKED','This intake is locked for review.');
+        if(!$assignment || in_array($assignment['status'],['submitted','under_review','waiting_on_alchemize','approved','completed','archived'],true)) throw new AlchemizeRequestException(409,'INTAKE_LOCKED','This intake is locked for review.');
         $values=array_map(fn($r)=>$r['value'],$this->repository->responses((int)$assignment['id'],(int)$access['client_id']));
         foreach(alchemize_intake_definitions()[$assignment['family_key']]['modules'] as $module) {
             if(!in_array($module['key'],$assignment['module_keys'],true)||!alchemize_intake_visible($module,$values)) continue;
