@@ -134,15 +134,32 @@ function ClientPortalDashboardPage() {
     onboarding &&
     !onboarding.dismissed &&
     onboarding.steps?.some((step) => !step.complete);
+  const attentionItems =
+    attention.length > 0
+      ? attention
+      : nextTask
+        ? [
+            {
+              kind: "task",
+              title: nextTask.title,
+              detail: nextTask.description || "Client action required",
+              priority: 2,
+              to: "/client-portal/tasks-and-documents",
+            },
+          ]
+        : [];
 
   return (
     <div className="portal-page client-workspace">
       <header className="portal-page-header">
         <div>
           <span className="section-kicker">Client portal</span>
-          <h1>{greetingFor(name)}</h1>
+          <h1>Your service workspace</h1>
         </div>
-        <p>Here&apos;s what&apos;s happening with your Alchemize account.</p>
+        <p>
+          {greetingFor(name)}. Here&apos;s what&apos;s happening with your
+          Alchemize account.
+        </p>
       </header>
 
       <div className="portal-dashboard-grid">
@@ -222,9 +239,9 @@ function ClientPortalDashboardPage() {
               </Link>
             </div>
 
-            {attention.length ? (
+            {attentionItems.length ? (
               <div className="portal-action-list">
-                {attention.slice(0, 3).map((item, index) => {
+                {attentionItems.slice(0, 3).map((item, index) => {
                   const Icon = actionIconMap[item.kind] || Briefcase;
                   const actionLabel =
                     item.kind === "document" &&
@@ -429,12 +446,9 @@ function ClientPortalDashboardPage() {
                 </small>
               </>
             ) : (
-              <div className="portal-empty-state">
-                <strong>No upcoming appointments.</strong>
-                <p>
-                  We&apos;ll let you know when your next meeting is scheduled.
-                </p>
-              </div>
+              <>
+                <p>No upcoming appointments.</p>
+              </>
             )}
             <Link to="/client-portal/appointments" className="portal-side-link">
               View appointments
@@ -448,28 +462,24 @@ function ClientPortalDashboardPage() {
                 <ReceiptText size={18} />
               </div>
             </div>
-            {summary.open_balance && Number(summary.open_balance) > 0 ? (
+            {nextInvoice ? (
               <>
                 <h2 className="portal-balance">
-                  {formatCurrency(summary.open_balance)}
+                  {formatCurrency(
+                    summary.open_balance ||
+                      nextInvoice.outstanding_balance ||
+                      0,
+                  )}
                 </h2>
-                <p>
-                  {nextInvoice
-                    ? `Invoice ${nextInvoice.invoice_number}`
-                    : "Open balance"}
-                </p>
-                <small>
-                  {nextInvoice
-                    ? `Due ${formatDate(nextInvoice.due_date)}`
-                    : "Current balance"}
-                </small>
+                <p>{`Invoice ${nextInvoice.invoice_number}`}</p>
+                <small>{`Due ${formatDate(nextInvoice.due_date)}`}</small>
               </>
             ) : (
               <>
                 <h2 className="portal-balance account-good">
                   Account in good standing
                 </h2>
-                <p>No payment currently due.</p>
+                <p>No open invoices.</p>
               </>
             )}
             <Link to="/client-portal/billing" className="portal-side-link">
