@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { LocalizedLink as Link } from "../../i18n/LocalizedLink.jsx";
 import { portalApi } from "../../services/portal-api.js";
 import "./portal.css";
+import { hasAnswer, isVisible, intakeState } from "./intake-logic.js";
 
 const humanize = (value) =>
   String(value || "")
@@ -19,13 +20,6 @@ const formatDate = (value) => {
         year: "numeric",
       }).format(date);
 };
-
-const hasAnswer = (entry) =>
-  entry?.applicability === "already_on_file" ||
-  entry?.applicability === "not_applicable" ||
-  (entry?.value !== "" &&
-    entry?.value != null &&
-    (!Array.isArray(entry.value) || entry.value.length > 0));
 
 const clientStatus = (assignment) => {
   const status = assignment.status;
@@ -384,9 +378,13 @@ function Field({
   profile,
   onProfileChanged,
   locked,
+  invalid,
 }) {
   const entry = response || {
-    value: field.type === "multiselect" ? [] : "",
+    value:
+      field.type === "multiselect"
+        ? []
+        : profile.business?.[field.profile_key] || "",
     applicability: field.required ? "required" : "optional",
   };
   const setValue = (value) => onChange({ ...entry, value });
@@ -398,16 +396,42 @@ function Field({
     disabled:
       locked ||
       ["already_on_file", "not_applicable"].includes(entry.applicability),
-    "aria-describedby": field.helper ? `${field.key}-help` : undefined,
+    "aria-invalid": invalid || undefined,
+    "aria-describedby":
+      [
+        field.helper ? `${field.key}-help` : "",
+        invalid ? `${field.key}-error` : "",
+      ]
+        .filter(Boolean)
+        .join(" ") || undefined,
   };
   const reference = ["address_refs", "person_refs"].includes(field.type);
   const saved = entry.applicability === "already_on_file";
 
   return (
-    <div className="intake-field" id={`field-${field.key}`}>
-      <label htmlFor={reference ? undefined : field.key}>
-        <strong>{field.label}</strong>
-        <small>{field.required ? "Required" : "Optional"}</small>
+    <div
+      className={`intake-field ${invalid ? "intake-field-invalid" : ""}`}
+      id={`field-${field.key}`}
+      tabIndex={-1}
+      role="group"
+      aria-labelledby={`${field.key}-label`}
+      aria-describedby={invalid ? `${field.key}-error` : undefined}
+    >
+      <label
+        htmlFor={
+          reference || field.type === "multiselect" ? undefined : field.key
+        }
+      >
+        <strong id={`${field.key}-label`}>
+          {field.label}
+          {field.required ? (
+            <span>
+              {" "}
+              <span aria-hidden="true">*</span>
+              <span className="sr-only">Required</span>
+            </span>
+          ) : null}
+        </strong>
       </label>
       {field.helper ? (
         <p className="intake-field-help" id={`${field.key}-help`}>
@@ -421,16 +445,22 @@ function Field({
         </p>
       ) : null}
       {["textarea", "people", "addresses"].includes(field.type) ? (
-        <textarea {...common} rows={4} />
+        <textarea {...common} rows={field.rows || (field.required ? 4 : 2)} />
       ) : null}
       {reference ? (
-        <ProfileReferences
-          type={field.type}
-          entry={entry}
-          profile={profile}
-          onChange={onChange}
-          onRefresh={onProfileChanged}
-        />
+        <fieldset disabled={common.disabled} className="intake-reference-group">
+          <legend className="sr-only">
+            {field.label}
+            {field.required ? " — Required" : ""}
+          </legend>
+          <ProfileReferences
+            type={field.type}
+            entry={entry}
+            profile={profile}
+            onChange={onChange}
+            onRefresh={onProfileChanged}
+          />
+        </fieldset>
       ) : null}
       {field.type === "select" ? (
         <select {...common}>
@@ -443,12 +473,19 @@ function Field({
         </select>
       ) : null}
       {field.type === "multiselect" ? (
-        <div className="intake-options">
+        <div
+          className="intake-options"
+          role="group"
+          aria-labelledby={`${field.key}-label`}
+          aria-required={field.required}
+          aria-invalid={invalid || undefined}
+          aria-describedby={invalid ? `${field.key}-error` : undefined}
+        >
           {field.options?.map((option) => (
             <label key={option.value}>
               <input
                 type="checkbox"
-                disabled={locked}
+                disabled={common.disabled}
                 checked={(entry.value || []).includes(option.value)}
                 onChange={(event) =>
                   setValue(
@@ -476,10 +513,10 @@ function Field({
       ].includes(field.type) ? (
         <input {...common} type={field.type || "text"} />
       ) : null}
-      {!field.required && !hasAnswer(entry) ? (
-        <small className="intake-optional-note">
-          You may leave this blank if it does not apply.
-        </small>
+      {invalid ? (
+        <p className="intake-field-error" id={`${field.key}-error`}>
+          Required field.
+        </p>
       ) : null}
     </div>
   );
@@ -542,13 +579,27 @@ export default function ClientIntakePage() {
   const [busy, setBusy] = useState(false);
   const [confirmation, setConfirmation] = useState(null);
   const summaryRef = useRef(null);
+  const [attempted, setAttempted] = useState([]);
+  const [focusTarget, setFocusTarget] = useState(null);
 
   const loadList = () => portalApi.intakes().then(setList);
   const open = async (id) => {
     const data = await portalApi.intake(id);
     setCurrent(data);
-    setResponses(data.responses || {});
+    const draft = { ...data.responses };
+    data.definition.modules
+      .flatMap((module) => module.fields)
+      .forEach((field) => {
+        const savedValue = data.profile.business?.[field.profile_key];
+        if (!draft[field.key] && savedValue)
+          draft[field.key] = {
+            value: savedValue,
+            applicability: field.required ? "required" : "optional",
+          };
+      });
+    setResponses(draft);
     setSection(0);
+    setAttempted([]);
     setConfirmation(null);
     setFeedback("");
   };
@@ -569,11 +620,12 @@ export default function ClientIntakePage() {
     const id = current.assignment.public_id || current.assignment.id;
     const data = await portalApi.intake(id);
     setCurrent(data);
-    setResponses(data.responses || {});
+    setResponses((draft) => ({ ...data.responses, ...draft }));
   };
 
   const uploadRequirement = async (requirement, moduleKey) => {
     const assignmentId = current.assignment.public_id || current.assignment.id;
+    if (!(await save({ announce: false }))) return;
     const result = await portalApi.prepareRequirementUpload(
       assignmentId,
       requirement.id,
@@ -588,27 +640,57 @@ export default function ClientIntakePage() {
   const useExisting = async (requirement, documentId) => {
     if (!documentId) return;
     const assignmentId = current.assignment.public_id || current.assignment.id;
+    if (!(await save({ announce: false }))) return;
     await portalApi.useExistingForRequirement(
       assignmentId,
       requirement.id,
       documentId,
     );
-    await open(assignmentId);
+    await refreshCurrent();
   };
 
-  const values = useMemo(
-    () =>
-      Object.fromEntries(
-        Object.entries(responses).map(([key, item]) => [key, item.value]),
-      ),
-    [responses],
+  const state = useMemo(
+    () => intakeState(current?.definition, responses, current?.requirements),
+    [current, responses],
   );
-  const modules = current?.definition.modules || [];
-  const active = modules[section];
-  const visible = (field) =>
-    !field.show_when ||
-    values[field.show_when.field] === field.show_when.equals;
+  const { modules, values, missing: missingItems, progress } = state;
+  const active = modules[Math.min(section, Math.max(0, modules.length - 1))];
+  const visible = (item) => isVisible(item, values);
   const visibleFields = (active?.fields || []).filter(visible);
+  const goToItem = (item) => {
+    setSection(item.sectionIndex);
+    setFocusTarget(item.key);
+  };
+  useEffect(() => {
+    if (!focusTarget) return;
+    const target = document.getElementById(focusTarget);
+    if (target) {
+      (
+        target.querySelector(
+          "input:not(:disabled), select:not(:disabled), textarea:not(:disabled), button:not(:disabled)",
+        ) || target
+      ).focus();
+      target.scrollIntoView({ block: "center", behavior: "smooth" });
+    }
+    setFocusTarget(null);
+  }, [focusTarget, section]);
+  const validate = (all = false) => {
+    const missing = missingItems.filter(
+      (item) => all || item.sectionIndex === section,
+    );
+    setAttempted((previous) => [
+      ...new Set([
+        ...previous,
+        ...(all ? modules.map((m) => m.key) : [active.key]),
+      ]),
+    ]);
+    if (missing.length) {
+      setFeedback("Please complete the items that still need your attention.");
+      goToItem(missing[0]);
+      return false;
+    }
+    return true;
+  };
   const locked = current
     ? ["submitted", "under_review", "approved", "completed"].includes(
         current.assignment.status,
@@ -624,47 +706,21 @@ export default function ClientIntakePage() {
     if (index >= 0) setSection(index);
   }, [current, modules]);
 
-  const missingItems = useMemo(() => {
-    if (!current) return [];
-    const missing = [];
-    modules.forEach((module, moduleIndex) => {
-      module.fields.filter(visible).forEach((field) => {
-        if (field.required && !hasAnswer(responses[field.key])) {
-          missing.push({
-            key: `field-${field.key}`,
-            label: field.label,
-            section: module.title,
-            sectionIndex: moduleIndex,
-          });
-        }
-      });
-      (module.requirements || []).forEach((definition) => {
-        const requirement = current.requirements.find(
-          (item) => item.requirement_key === definition.key,
-        );
-        if (
-          requirement?.necessity === "required" &&
-          documentStatus(requirement.status).action
-        ) {
-          missing.push({
-            key: `requirement-${requirement.id}`,
-            label: requirement.requirement_name,
-            section: module.title,
-            sectionIndex: moduleIndex,
-          });
-        }
-      });
-    });
-    return missing;
-  }, [current, modules, responses, values]);
-
+  const draftResponses = () =>
+    Object.fromEntries(
+      Object.entries(responses).filter(([key]) =>
+        current.definition.modules.some((module) =>
+          module.fields.some((field) => field.key === key),
+        ),
+      ),
+    );
   const save = async ({ announce = true } = {}) => {
     setBusy(true);
     setFeedback("");
     try {
       const result = await portalApi.saveIntake(
         current.assignment.public_id || current.assignment.id,
-        responses,
+        draftResponses(),
       );
       if (announce) {
         setFeedback(
@@ -682,18 +738,14 @@ export default function ClientIntakePage() {
   };
 
   const submit = async () => {
-    if (missingItems.length) {
-      setFeedback("Please complete the items that still need your attention.");
-      summaryRef.current?.focus();
-      return;
-    }
+    if (!validate(true)) return;
     setBusy(true);
     setFeedback("");
     const assignment = current.assignment;
     try {
       await portalApi.saveIntake(
         assignment.public_id || assignment.id,
-        responses,
+        draftResponses(),
       );
       await portalApi.submitIntake(assignment.public_id || assignment.id);
       setConfirmation({
@@ -784,7 +836,10 @@ export default function ClientIntakePage() {
     );
   }
 
-  const status = clientStatus(current.assignment);
+  const status = clientStatus({
+    ...current.assignment,
+    completion_percentage: progress,
+  });
   return (
     <div className="portal-page intake-workspace">
       <header className="portal-page-header intake-page-header">
@@ -795,22 +850,36 @@ export default function ClientIntakePage() {
             {status.label}
           </span>
         </div>
-        <div className="intake-progress-copy">
-          <strong>{current.assignment.completion_percentage}%</strong>
+        <div className="intake-progress-copy" role="status" aria-live="polite">
+          <strong>{progress}%</strong>
           <span>of your required actions complete</span>
           {current.assignment.due_date ? (
             <small>Due {formatDate(current.assignment.due_date)}</small>
           ) : null}
         </div>
       </header>
+      <aside className="intake-guidance">
+        <h2>About this intake</h2>
+        <p>
+          This form helps us understand your needs and prepare for your service.
+          Provide what you know now; unless a question is marked required, you
+          may leave it blank and provide the information later. You can save
+          your progress and return before submitting.
+        </p>
+        <p>
+          <span aria-hidden="true">*</span> Required
+        </p>
+      </aside>
       <p className="intake-status-explanation">{status.detail}</p>
       <div
         className="intake-progress"
-        aria-label={`${current.assignment.completion_percentage}% of client actions complete`}
+        role="progressbar"
+        aria-valuenow={progress}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={`${progress}% of client actions complete`}
       >
-        <span
-          style={{ width: `${current.assignment.completion_percentage}%` }}
-        />
+        <span style={{ width: `${progress}%` }} />
       </div>
 
       {!locked && missingItems.length ? (
@@ -828,10 +897,7 @@ export default function ClientIntakePage() {
           <ul>
             {missingItems.map((item) => (
               <li key={item.key}>
-                <button
-                  type="button"
-                  onClick={() => setSection(item.sectionIndex)}
-                >
+                <button type="button" onClick={() => goToItem(item)}>
                   {item.label} <span>— {item.section}</span>
                 </button>
               </li>
@@ -863,8 +929,17 @@ export default function ClientIntakePage() {
               aria-current={section === index ? "step" : undefined}
               onClick={() => setSection(index)}
             >
-              <span aria-hidden="true">{index < section ? "✓" : "○"}</span>{" "}
+              <span aria-hidden="true">
+                {!missingItems.some((item) => item.sectionIndex === index)
+                  ? "✓"
+                  : "○"}
+              </span>{" "}
               {module.title}
+              <span className="sr-only">
+                {missingItems.some((item) => item.sectionIndex === index)
+                  ? " — Incomplete"
+                  : " — Complete"}
+              </span>
             </button>
           ))}
         </nav>
@@ -885,16 +960,21 @@ export default function ClientIntakePage() {
               profile={current.profile}
               onProfileChanged={refreshCurrent}
               locked={locked}
+              invalid={
+                attempted.includes(active.key) &&
+                field.required &&
+                !hasAnswer(responses[field.key])
+              }
             />
           ))}
-          {active?.requirements?.length ? (
+          {active?.requirements?.filter(visible).length ? (
             <div className="intake-requirements">
               <h3>Requested documents and assets</h3>
               <p>
                 Uploads use your secure Documents area. Files already accepted
                 for your account may be reused when eligible.
               </p>
-              {active.requirements.map((definition) => {
+              {active.requirements.filter(visible).map((definition) => {
                 const requirement = current.requirements.find(
                   (item) => item.requirement_key === definition.key,
                 );
@@ -902,6 +982,7 @@ export default function ClientIntakePage() {
                 const requirementStatus = documentStatus(requirement.status);
                 return (
                   <article
+                    tabIndex={-1}
                     className="intake-requirement-card"
                     id={`requirement-${requirement.id}`}
                     key={requirement.id}
@@ -979,6 +1060,7 @@ export default function ClientIntakePage() {
                   className="portal-action-button"
                   disabled={busy}
                   onClick={async () => {
+                    if (!validate()) return;
                     const saved = await save({ announce: false });
                     if (saved) setSection(section + 1);
                   }}

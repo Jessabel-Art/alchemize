@@ -121,6 +121,23 @@ try {
         alchemize_json_response(['data' => ['accepted' => true, 'message' => 'If the account is eligible, password reset instructions will be sent.']], 202);
     }
 
+    if ($method === 'GET' && $parts === ['account']) {
+        $user = alchemize_require_authenticated_user();
+        $accountData = $auth->getAccountSummary((int) $user['user_id']);
+        alchemize_json_response(['data' => $accountData], 200);
+    }
+
+    if ($method === 'PUT' && $parts === ['account']) {
+        $user = alchemize_require_authenticated_user(); alchemize_require_csrf();
+        $payload = alchemize_read_json_request('PUT');
+        $updated = $auth->updateProfile(
+            (int) $user['user_id'],
+            (string) ($payload['display_name'] ?? ''),
+            (string) ($payload['email'] ?? ''),
+        );
+        alchemize_json_response(['data' => $updated], 200);
+    }
+
     if ($method === 'POST' && $parts === ['change-password']) {
         $user = alchemize_require_authenticated_user(); alchemize_require_csrf();
         $payload = alchemize_read_json_request();

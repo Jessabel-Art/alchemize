@@ -80,6 +80,40 @@ export const auth = {
     return data;
   },
 
+  async account() {
+    const data = await apiRequest(buildApiUrl("auth/account")).catch(() => null);
+    const fallback =
+      data && !Array.isArray(data) ? data : { user: null, recent_activity: [], security: {} };
+
+    if (!fallback.user) {
+      const session = await auth.session().catch(() => null);
+      fallback.user = session?.user || null;
+    }
+
+    if (fallback.security && fallback.security.mfa_available === false) {
+      fallback.security.session_note =
+        fallback.security.session_note ||
+        "Current browser session is managed by secure cookies and can be ended by signing out.";
+    }
+
+    if (fallback.user && !fallback.security) {
+      fallback.security = {
+        mfa_available: false,
+        session_note:
+          "Current browser session is managed by secure cookies and can be ended by signing out.",
+      };
+    }
+
+    return fallback;
+  },
+
+  async updateAccount(payload) {
+    return apiRequest(buildApiUrl("auth/account"), {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    });
+  },
+
   async logout() {
     const data = await apiRequest(buildApiUrl("auth/logout"), {
       method: "POST",
@@ -143,6 +177,11 @@ export const clients = {
   enablePortal: (id) =>
     apiRequest(buildApiUrl(`clients/${id}/enable-portal`), { method: "POST" }),
   team: () => apiRequest(buildApiUrl("clients/team")),
+  updateTeamMember: (payload) =>
+    apiRequest(buildApiUrl("clients/team"), {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    }),
   assignService: (id, payload) =>
     apiRequest(buildApiUrl(`clients/${id}/services`), {
       method: "POST",
@@ -176,6 +215,17 @@ export const settings = {
     apiRequest(buildApiUrl("settings"), {
       method: "PUT",
       body: JSON.stringify(payload),
+    }),
+  maintenance: (action = "overview", payload = {}) =>
+    apiRequest(buildApiUrl(`settings/maintenance/${action}`), {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  integrations: () => apiRequest(buildApiUrl("settings/integrations")),
+  checkIntegration: (slug, payload = {}) =>
+    apiRequest(buildApiUrl("settings/integrations/check"), {
+      method: "POST",
+      body: JSON.stringify({ slug, ...payload }),
     }),
 };
 

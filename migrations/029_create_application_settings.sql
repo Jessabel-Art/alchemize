@@ -15,4 +15,5 @@ INSERT INTO application_settings (setting_key, setting_value) VALUES
 ('business_email', JSON_QUOTE('')),
 ('timezone', JSON_QUOTE('America/New_York')),
 ('appointment_default_duration', '60'),
-('portal_message_email_notifications', 'true');
+('portal_message_email_notifications', 'true'),
+('staff_notification_delivery_mode', JSON_QUOTE('both'));

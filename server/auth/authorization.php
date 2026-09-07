@@ -18,6 +18,11 @@ function alchemize_require_admin(): array
     return alchemize_require_role(['owner-admin', 'administrator']);
 }
 
+function alchemize_require_team_access_manager(): array
+{
+    return alchemize_require_role(['owner-admin', 'administrator']);
+}
+
 function alchemize_require_staff_or_admin(): array
 {
     return alchemize_require_role(['owner-admin', 'administrator', 'staff']);

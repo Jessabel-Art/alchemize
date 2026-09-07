@@ -68,15 +68,49 @@ final class AlchemizeUserRepository
 
     public function updatePasswordHash(int $userId, string $passwordHash): void
     {
-        $statement = $this->database->prepare('UPDATE users SET password_hash = :hash WHERE id = :id AND status = \'active\'');
+        $statement = $this->database->prepare('UPDATE users SET password_hash = :hash, password_changed_at = COALESCE(password_changed_at, CURRENT_TIMESTAMP(6)) WHERE id = :id AND status = \'active\'');
         $statement->execute(['hash' => $passwordHash, 'id' => $userId]);
         if ($statement->rowCount() !== 1) throw new AlchemizeRequestException(409, 'ACCOUNT_NOT_ACTIVE', 'This account is not active.');
+    }
+
+    public function updateProfile(int $userId, string $displayName, string $email): void
+    {
+        $statement = $this->database->prepare(
+            'UPDATE users SET display_name = :display_name, email = :email WHERE id = :id AND status = \'active\'',
+        );
+        $statement->execute([
+            'display_name' => trim($displayName),
+            'email' => strtolower(trim($email)),
+            'id' => $userId,
+        ]);
+        if ($statement->rowCount() !== 1) {
+            throw new AlchemizeRequestException(409, 'ACCOUNT_NOT_ACTIVE', 'This account is not active.');
+        }
+    }
+
+    public function touchPasswordChangedAt(int $userId): void
+    {
+        $statement = $this->database->prepare(
+            'UPDATE users SET password_changed_at = CURRENT_TIMESTAMP(6) WHERE id = :id AND status = \'active\'',
+        );
+        $statement->execute(['id' => $userId]);
+    }
+
+    public function listRecentSecurityActivity(int $userId, int $limit = 10): array
+    {
+        $statement = $this->database->prepare(
+            'SELECT event_type, action_summary, created_at FROM audit_events WHERE actor_user_id = :user_id ORDER BY created_at DESC LIMIT :limit',
+        );
+        $statement->bindValue('user_id', $userId, PDO::PARAM_INT);
+        $statement->bindValue('limit', max(1, $limit), PDO::PARAM_INT);
+        $statement->execute();
+        return $statement->fetchAll() ?: [];
     }
 
     public function listInternalUsers(): array
     {
         $statement = $this->database->query(
-            "SELECT u.public_id AS id, u.display_name, u.email, u.status, u.last_login_at,
+            "SELECT u.id AS user_id, u.public_id AS id, u.display_name, u.email, u.status, u.last_login_at,
                     r.name AS role_name, r.slug AS role_slug
              FROM users u INNER JOIN roles r ON r.id = u.role_id
              WHERE r.slug IN ('owner-admin','administrator','staff','read-only')

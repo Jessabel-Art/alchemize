@@ -12,7 +12,7 @@ function alchemize_intake_definitions(): array
     ];
     $options = static fn (array $values): array => array_map(static fn (string $value): array => ['value' => $value, 'label' => ucwords(str_replace('_', ' ', $value))], $values);
 
-    return [
+    $definitions = [
         'client_profile' => ['label' => 'Client Profile', 'modules' => [
             $module('contact', 'Personal and contact information', [
                 $field('legal_name', 'Legal name', 'text', true), $field('preferred_name', 'Preferred name'),
@@ -112,4 +112,72 @@ function alchemize_intake_definitions(): array
         'document_admin' => ['label'=>'Document & Administrative Services','modules'=>[$module('project','Administrative project',[$field('assistance_type','Type of assistance','text',true),$field('project_description','Project description','textarea',true),$field('desired_outcome','Desired outcome','textarea',true),$field('document_count','Approximate document count','number'),$field('requested_format','Requested format'),$field('deadline','Deadline','date'),$field('background','Relevant background','textarea'),$field('special_instructions','Special instructions','textarea')],[['key'=>'project_files','name'=>'Existing project files','type'=>'document','necessity'=>'optional']])]],
         'ongoing_support' => ['label'=>'Ongoing Business Support','modules'=>[$module('support_plan','Recurring support onboarding',[$field('support_areas','Agreed areas of support','textarea',true),$field('recurring_responsibilities','Recurring responsibilities','textarea',true),$field('reporting_requirements','Reporting requirements','textarea'),$field('communication_preferences','Communication preferences','textarea'),$field('frequency','Support frequency','text',true),$field('primary_contacts','Primary contacts','person_refs'),$field('systems','Systems Alchemize will interact with','textarea'),$field('access_requirements','Document / delegated access requirements','textarea'),$field('escalation_contacts','Escalation contacts','person_refs'),$field('recurring_deadlines','Recurring deadlines','textarea'),$field('existing_workflows','Existing workflows','textarea')])]],
     ];
+    $conditions = [
+        'domain_notes'=>['any'=>[['field'=>'owns_domain','equals'=>'yes'],['field'=>'existing_host','equals'=>'yes']]],
+        'email_migration'=>['field'=>'professional_email_exists','equals'=>'yes'],
+        'email_addresses_needed'=>['field'=>'professional_email_exists','equals'=>'no'],
+        'hosting_migration'=>['field'=>'existing_host','equals'=>'yes'],
+        'integration_notes'=>['field'=>'integrations','not_empty'=>true],
+    ];
+    $documentConditions = [
+        'logo'=>['field'=>'logo_available','equals'=>'yes'],
+        'brand_guidelines'=>['field'=>'brand_guidelines','equals'=>'yes'],
+        'existing_copy'=>['field'=>'existing_copy','in'=>['yes','partial']],
+        'domain_access'=>['all'=>[['field'=>'owns_domain','equals'=>'yes'],['field'=>'dns_access_needed','equals'=>'yes']]],
+    ];
+    foreach ($definitions['web_digital']['modules'] as &$section) {
+        foreach ($section['fields'] as &$question) {
+            if (isset($conditions[$question['key']])) $question['show_when']=$conditions[$question['key']];
+            if ($question['key']==='integration_notes') $question['required']=true;
+        }
+        unset($question);
+        foreach ($section['requirements'] as &$requirement) {
+            if (isset($documentConditions[$requirement['key']])) $requirement['show_when']=$documentConditions[$requirement['key']];
+        }
+        unset($requirement);
+        if ($section['key']==='content') {
+            $section['fields'][]=$field('existing_copy_details','Where is the existing copy, and what needs updating?','textarea',false,['show_when'=>['field'=>'existing_copy','in'=>['yes','partial']]]);
+            $section['fields'][]=$field('copywriting_details','Which content would you like help writing?','textarea',false,['show_when'=>['field'=>'copywriting_help','equals'=>'yes']]);
+        }
+    }
+    unset($section);
+    $definitions['business_consulting']['modules'][]=$module('business_context','Business context',[
+        $field('existing_business','Is this for an existing business?','select',true,['options'=>$options(['yes','no'])]),
+        $field('legal_business_name','Business name','text',false,['profile_key'=>'legal_business_name','show_when'=>['field'=>'existing_business','equals'=>'yes']]),
+        $field('industry','Industry / type of business'),
+        $field('business_stage','Business stage','select',false,['options'=>$options(['idea','startup','operating','growth'])]),
+        $field('consulting_contacts','Primary decision makers / contacts','person_refs'),
+    ]);
+    $definitions['business_consulting']['modules'][]=$module('supporting_information','Supporting information',[
+        $field('supporting_materials','Existing documents or materials relevant to this request','textarea'),
+        $field('additional_context','Anything else Alchemize should know before reviewing your request?','textarea'),
+    ]);
+    $definitions['business_consulting']['modules'][0]['fields'][0]['options']=$options(['general_consulting','operational_setup','processes_workflows','sop_development','administrative_systems','planning_strategy','financial_organization','other']);
+    return $definitions;
+
+}
+
+// Exact catalog codes, never engagement titles or broad category guesses.
+function alchemize_intake_service_families(array $codes): array
+{
+    $map = ['business-consulting'=>'business_consulting','business-startup'=>'business_consulting','business-operations'=>'business_consulting','business-planning'=>'business_consulting','website-design'=>'web_digital','website-maintenance'=>'web_digital','seo'=>'web_digital','google-business-profile'=>'web_digital','digital-automation'=>'business_consulting','administrative-support'=>'ongoing_support','notary'=>'notary','translation'=>'document_admin','apostille'=>'document_admin'];
+    return array_values(array_unique(array_filter(array_map(static fn($code)=>$map[str_replace('_','-',strtolower($code))]??null,$codes))));
+}
+function alchemize_intake_visible(array $item, array $values): bool
+{
+    $c=$item['show_when']??null;
+    if (!$c) return true;
+    if (isset($c['all'])) { foreach($c['all'] as $child) if(!alchemize_intake_visible(['show_when'=>$child],$values)) return false; return true; }
+    if (isset($c['any'])) { foreach($c['any'] as $child) if(alchemize_intake_visible(['show_when'=>$child],$values)) return true; return false; }
+    $value=$values[$c['field']]??null;
+    if (isset($c['in'])) return in_array($value,$c['in'],true);
+    if (isset($c['not_empty'])) return $value!==null && $value!==[] && (!is_string($value)||trim($value)!=='');
+    return $value===($c['equals']??null);
+}
+function alchemize_intake_answered(?array $response): bool
+{
+    if (!$response) return false;
+    if (in_array($response['applicability']??'', ['already_on_file','not_applicable'],true)) return true;
+    $value=$response['value']??null;
+    return $value!==null && $value!==[] && (!is_string($value)||trim($value)!=='');
 }

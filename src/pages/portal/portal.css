@@ -940,3 +940,114 @@
     width: 100%;
   }
 }
+
+/* Intake refinements reuse the portal palette and control hierarchy. */
+.intake-guidance {
+  padding: 1rem 1.25rem;
+  border-left: 3px solid var(--gold);
+  background: rgba(22, 79, 69, 0.05);
+  margin-block: 1rem;
+}
+.intake-guidance h2 {
+  font-size: 1rem;
+  margin: 0 0 0.4rem;
+}
+.intake-guidance p {
+  margin: 0.35rem 0;
+}
+.intake-workspace textarea {
+  min-height: 0;
+  resize: vertical;
+}
+.intake-workspace a,
+.intake-missing-summary button,
+.intake-layout > nav button {
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+.intake-workspace a:hover,
+.intake-workspace a:focus-visible,
+.intake-missing-summary button:hover,
+.intake-missing-summary button:focus-visible {
+  color: #164f45;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.intake-workspace :focus-visible {
+  outline: 2px solid #164f45;
+  outline-offset: 3px;
+}
+.intake-layout > nav button:hover {
+  background: rgba(22, 79, 69, 0.08);
+}
+.intake-layout > nav button.active {
+  font-weight: 700;
+}
+.intake-field-invalid input,
+.intake-field-invalid select,
+.intake-field-invalid textarea {
+  border-color: #9b3027;
+}
+.intake-field-error {
+  color: #9b3027;
+  margin: 0;
+  font-size: 0.9rem;
+}
+.intake-workspace .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+@media (max-width: 760px) {
+  .intake-layout > nav {
+    display: flex;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+    max-width: 100%;
+  }
+  .intake-layout > nav button {
+    flex: 0 0 11rem;
+  }
+}
+
+.intake-layout > *,
+.intake-workspace {
+  min-width: 0;
+}
+.intake-reference-group {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+
+.intake-workspace .sr-only {
+  left: 0;
+  top: 0;
+}
+.intake-layout > nav button,
+.intake-field {
+  position: relative;
+}
+
+.portal-shell:has(.intake-workspace) .portal-nav-item:focus-visible {
+  color: var(--gold);
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+.portal-shell:has(.intake-workspace) .portal-topbar-return {
+  transition: color 0.15s ease;
+}
+.portal-shell:has(.intake-workspace) .portal-topbar-return:hover,
+.portal-shell:has(.intake-workspace) .portal-topbar-return:focus-visible {
+  color: #164f45;
+  text-decoration: underline;
+}

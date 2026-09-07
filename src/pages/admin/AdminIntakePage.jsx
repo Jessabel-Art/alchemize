@@ -3,7 +3,12 @@ import {
   AdminPageHeader,
   AdminStatusBadge,
 } from "../../components/admin/admin-components.jsx";
-import { clients, engagements, intakeAdmin } from "../../services/admin-api.js";
+import {
+  clients,
+  engagements,
+  intakeAdmin,
+  portalAdmin,
+} from "../../services/admin-api.js";
 
 export default function AdminIntakePage() {
   const [data, setData] = useState({ items: [], definitions: [] });
@@ -14,7 +19,7 @@ export default function AdminIntakePage() {
   const [form, setForm] = useState({
     client_id: "",
     engagement_id: "",
-    family_key: "web_digital",
+    family_key: "",
     module_keys: [],
     due_date: "",
   });
@@ -58,7 +63,7 @@ export default function AdminIntakePage() {
         ...form,
         module_keys: form.module_keys.length
           ? form.module_keys
-          : definition.modules.map((m) => m.key),
+          : definition?.modules.map((m) => m.key) || [],
       });
       setFeedback("Intake assigned.");
       await load();
@@ -153,6 +158,7 @@ export default function AdminIntakePage() {
               setForm({ ...form, family_key: e.target.value, module_keys: [] })
             }
           >
+            <option value="">Resolve from assigned service</option>
             {data.definitions.map((def) => (
               <option key={def.key} value={def.key}>
                 {def.label}
@@ -248,6 +254,11 @@ export default function AdminIntakePage() {
           {Object.entries(selected.responses).map(([key, response]) => (
             <div key={key}>
               <strong>{key.replaceAll("_", " ")}</strong>
+              {response.currently_applicable === false ? (
+                <small>
+                  Saved draft history — not applicable to this submission
+                </small>
+              ) : null}
               <p>
                 {Array.isArray(response.value)
                   ? response.value.join(", ")

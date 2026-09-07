@@ -23,6 +23,7 @@ CREATE TABLE users (
     status ENUM('active','inactive','suspended','archived') NOT NULL DEFAULT 'active',
     role_id BIGINT UNSIGNED NULL,
     last_login_at TIMESTAMP(6) NULL DEFAULT NULL,
+    password_changed_at TIMESTAMP(6) NULL DEFAULT NULL,
     created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
     PRIMARY KEY (id),

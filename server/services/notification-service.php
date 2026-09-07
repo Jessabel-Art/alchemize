@@ -23,8 +23,21 @@ final class AlchemizeNotificationService
 
     public function notifyStaff(string $eventType, ?int $clientId, string $entityType, string $entityId, string $title, string $body, string $dedupeKey): void
     {
-        foreach ($this->repository->staffRecipients() as $recipient) {
-            $this->create((int) $recipient['id'], (string) $recipient['email'], $clientId, $eventType, $entityType, $entityId, $title, $body, 'en', $dedupeKey);
+        $mode = $this->repository->staffNotificationDeliveryMode();
+        $shouldEmail = in_array($mode, ['email', 'both'], true);
+        $shouldDashboard = in_array($mode, ['dashboard', 'both'], true);
+
+        if ($shouldDashboard) {
+            foreach ($this->repository->staffRecipients() as $recipient) {
+                $this->create((int) $recipient['id'], (string) $recipient['email'], $clientId, $eventType, $entityType, $entityId, $title, $body, 'en', $dedupeKey);
+            }
+        }
+
+        if ($shouldEmail) {
+            $emailAddress = trim($this->repository->businessNotificationEmail());
+            if ($emailAddress !== '') {
+                $this->notifyExternalDetailed($emailAddress, $title, $body, '', 'Review in Admin');
+            }
         }
     }
 

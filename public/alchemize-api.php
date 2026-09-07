@@ -46,6 +46,7 @@ $allowedRoutes = [
     'clients',
     'services',
     'settings',
+    'integrations',
     'engagements',
     'tasks',
     'appointments',
@@ -73,7 +74,7 @@ if ($segments === [] || !in_array($segments[0], $allowedRoutes, true)) {
 
 $resource = $segments[0];
 $remaining = array_slice($segments, 1);
-$allowedAuthRoutes = ['session', 'login', 'logout', 'set-password', 'forgot-password', 'change-password'];
+$allowedAuthRoutes = ['session', 'login', 'logout', 'set-password', 'forgot-password', 'change-password', 'account'];
 if ($resource === 'auth' && !in_array($remaining[0] ?? '', $allowedAuthRoutes, true)) {
     alchemize_error_response(404, 'NOT_FOUND', 'The requested authentication route was not found.');
 }

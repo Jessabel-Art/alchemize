@@ -12,7 +12,8 @@ final class AlchemizeIntakeRepository
         $statement = $this->database->prepare(
             'SELECT ia.public_id AS id, ia.family_key, ia.module_keys, ia.status, ia.completion_percentage,
                     ia.due_date, ia.submitted_at, ia.client_visible_review_note, ia.blocking_reason,
-                    e.public_id AS engagement_id, e.title AS engagement_title, e.status AS engagement_status,
+                    e.public_id AS engagement_id, e.title AS engagement_title,
+                    (SELECT GROUP_CONCAT(DISTINCT COALESCE(s.service_code,esi.service_code_snapshot)) FROM engagement_service_items esi LEFT JOIN services s ON s.id=esi.service_id WHERE esi.engagement_id=e.id) AS intake_service_codes, e.status AS engagement_status,
                     u.display_name AS assigned_team_member
              FROM intake_assignments ia INNER JOIN engagements e ON e.id = ia.engagement_id
              LEFT JOIN users u ON u.id = ia.assigned_to_user_id
@@ -25,7 +26,8 @@ final class AlchemizeIntakeRepository
     public function findForClient(string $publicId, int $clientId, bool $lock = false): ?array
     {
         $statement = $this->database->prepare(
-            'SELECT ia.*, e.public_id AS engagement_public_id, e.title AS engagement_title
+            'SELECT ia.*, e.public_id AS engagement_public_id, e.title AS engagement_title,
+                    (SELECT GROUP_CONCAT(DISTINCT COALESCE(s.service_code,esi.service_code_snapshot)) FROM engagement_service_items esi LEFT JOIN services s ON s.id=esi.service_id WHERE esi.engagement_id=e.id) AS intake_service_codes
              FROM intake_assignments ia INNER JOIN engagements e ON e.id = ia.engagement_id
              WHERE ia.public_id = :id AND ia.client_id = :client_id AND ia.archived_at IS NULL LIMIT 1' . ($lock ? ' FOR UPDATE' : '')
         );
@@ -38,7 +40,8 @@ final class AlchemizeIntakeRepository
     {
         $statement = $this->database->prepare(
             'SELECT ia.*, c.public_id AS client_public_id, c.display_name AS client_name,
-                    e.public_id AS engagement_public_id, e.title AS engagement_title
+                    e.public_id AS engagement_public_id, e.title AS engagement_title,
+                    (SELECT GROUP_CONCAT(DISTINCT COALESCE(s.service_code,esi.service_code_snapshot)) FROM engagement_service_items esi LEFT JOIN services s ON s.id=esi.service_id WHERE esi.engagement_id=e.id) AS intake_service_codes
              FROM intake_assignments ia INNER JOIN clients c ON c.id = ia.client_id
              INNER JOIN engagements e ON e.id = ia.engagement_id WHERE ia.public_id = :id LIMIT 1'
         );
@@ -52,6 +55,7 @@ final class AlchemizeIntakeRepository
             'SELECT ia.public_id AS id, ia.family_key, ia.module_keys, ia.status, ia.completion_percentage,
                     ia.due_date, ia.submitted_at, ia.blocking_reason, c.public_id AS client_id,
                     c.display_name AS client_name, e.public_id AS engagement_id, e.title AS engagement_title,
+                    (SELECT GROUP_CONCAT(DISTINCT COALESCE(s.service_code,esi.service_code_snapshot)) FROM engagement_service_items esi LEFT JOIN services s ON s.id=esi.service_id WHERE esi.engagement_id=e.id) AS intake_service_codes,
                     u.display_name AS assigned_team_member,
                     (SELECT COUNT(*) FROM intake_requirements ir WHERE ir.intake_assignment_id = ia.id AND ir.status = \'missing\') AS missing_requirements
              FROM intake_assignments ia INNER JOIN clients c ON c.id = ia.client_id
@@ -137,7 +141,7 @@ final class AlchemizeIntakeRepository
 
     public function engagementForAssignment(string $engagementPublicId, string $clientPublicId): ?array
     {
-        $statement = $this->database->prepare('SELECT e.id, e.client_id FROM engagements e INNER JOIN clients c ON c.id=e.client_id WHERE e.public_id=:engagement AND c.public_id=:client LIMIT 1');
+        $statement = $this->database->prepare('SELECT e.id, e.client_id, (SELECT GROUP_CONCAT(DISTINCT COALESCE(s.service_code,esi.service_code_snapshot)) FROM engagement_service_items esi LEFT JOIN services s ON s.id=esi.service_id WHERE esi.engagement_id=e.id) AS intake_service_codes FROM engagements e INNER JOIN clients c ON c.id=e.client_id WHERE e.public_id=:engagement AND c.public_id=:client LIMIT 1');
         $statement->execute(['engagement'=>$engagementPublicId,'client'=>$clientPublicId]); $row=$statement->fetch(); return is_array($row)?$row:null;
     }
 
@@ -179,7 +183,7 @@ final class AlchemizeIntakeRepository
         if($business!==[]){$existing=$this->one('SELECT id FROM business_profiles WHERE client_id=:id',['id'=>$clientId]);if($existing)$this->updateTable('business_profiles',(int)$existing['id'],$business);else{$business['public_id']=alchemize_uuid_v4();$business['client_id']=$clientId;$business['legal_name']=$business['legal_name']??'Business profile';$columns=array_keys($business);$this->database->prepare('INSERT INTO business_profiles('.implode(',',$columns).') VALUES(:'.implode(',:',$columns).')')->execute($business);}}
     }
 
-    private function decodeAssignment(array $row): array { if(isset($row['module_keys']))$row['module_keys']=json_decode((string)$row['module_keys'],true)?:[]; return $row; }
+    private function decodeAssignment(array $row): array { if(isset($row['module_keys']))$row['module_keys']=json_decode((string)$row['module_keys'],true)?:[]; $families=alchemize_intake_service_families(explode(',',(string)($row['intake_service_codes']??''))); if(count($families)===1 && ($row['family_key']??'')!=='client_profile' && !in_array($row['family_key']??'', $families,true) && in_array($row['status']??'', ['assigned','in_progress','changes_requested','waiting_on_client'],true)) { $row['original_family_key']=$row['family_key']; $row['family_key']=$families[0]; $row['module_keys']=array_column(alchemize_intake_definitions()[$families[0]]['modules'],'key'); } return $row; }
     private function updateTable(string $table,int $id,array $values):void{$parts=array_map(static fn($key)=>"$key=:$key",array_keys($values));$values['id']=$id;$this->database->prepare("UPDATE $table SET ".implode(',',$parts).' WHERE id=:id')->execute($values);}
     private function one(string $sql,array $params):?array{$s=$this->database->prepare($sql);$s->execute($params);$r=$s->fetch();return is_array($r)?$r:null;}
     private function all(string $sql,array $params):array{$s=$this->database->prepare($sql);$s->execute($params);return $s->fetchAll();}

@@ -22,7 +22,9 @@ $config = require $bootstrap;
 
 try {
     $user = alchemize_require_admin();
-    $repository = new AlchemizeSettingsRepository(alchemize_database($config['database']));
+    $database = alchemize_database($config['database']);
+    $repository = new AlchemizeSettingsRepository($database);
+    $service = new AlchemizeDataMaintenanceService($database, $user['user_id'] ?? 0);
     $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
     $parts = array_values(array_filter(explode('/', trim($_SERVER['PATH_INFO'] ?? '', '/'))));
     if ($parts === [] && $method === 'GET') {
@@ -31,18 +33,35 @@ try {
     if ($parts === [] && $method === 'PUT') {
         alchemize_require_csrf();
         $payload = alchemize_read_json_request('PUT');
-        $allowed = ['business_name','business_email','timezone','appointment_default_duration','portal_message_email_notifications'];
-        $values = array_intersect_key($payload, array_flip($allowed));
-        if (isset($values['business_email']) && $values['business_email'] !== '' && !filter_var($values['business_email'], FILTER_VALIDATE_EMAIL)) {
-            throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Enter a valid business email address.');
-        }
-        if (isset($values['appointment_default_duration'])) {
-            $values['appointment_default_duration'] = max(15, min(480, (int) $values['appointment_default_duration']));
-        }
-        if (isset($values['timezone']) && !in_array($values['timezone'], timezone_identifiers_list(), true)) {
-            throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Select a valid timezone.');
-        }
-        alchemize_json_response(['data' => $repository->update($values, (int) $user['user_id'])], 200);
+        alchemize_json_response(['data' => $repository->update($payload, (int) $user['user_id'])], 200);
+    }
+    if ($parts === ['maintenance'] && $method === 'GET') {
+        alchemize_json_response(['data' => $service->overview()], 200);
+    }
+    if ($parts === ['maintenance', 'overview'] && $method === 'POST') {
+        alchemize_require_csrf();
+        $payload = alchemize_read_json_request('POST');
+        alchemize_json_response(['data' => $service->overview((int) ($payload['threshold_months'] ?? 6))], 200);
+    }
+    if ($parts === ['maintenance', 'preview'] && $method === 'POST') {
+        alchemize_require_csrf();
+        $payload = alchemize_read_json_request('POST');
+        alchemize_json_response(['data' => $service->preview($payload)], 200);
+    }
+    if ($parts === ['maintenance', 'execute'] && $method === 'POST') {
+        alchemize_require_csrf();
+        $payload = alchemize_read_json_request('POST');
+        alchemize_json_response(['data' => $service->execute($payload)], 200);
+    }
+    if ($parts === ['integrations'] && $method === 'GET') {
+        $statusService = new AlchemizeSystemIntegrationsService($database, $config);
+        alchemize_json_response(['data' => $statusService->summary()], 200);
+    }
+    if ($parts === ['integrations', 'check'] && $method === 'POST') {
+        alchemize_require_csrf();
+        $payload = alchemize_read_json_request('POST');
+        $statusService = new AlchemizeSystemIntegrationsService($database, $config);
+        alchemize_json_response(['data' => $statusService->healthCheck((string) ($payload['slug'] ?? ''))], 200);
     }
     throw new AlchemizeRequestException(404, 'NOT_FOUND', 'The requested settings route was not found.');
 } catch (AlchemizeRequestException $error) {

@@ -11,17 +11,27 @@ final class AlchemizeIntakeAdminService
     public function get(string $id): array
     {
         $assignment = $this->repository->findAdmin($id); if ($assignment === null) $this->notFound();
-        return ['assignment' => $assignment, 'responses' => $this->repository->responses((int) $assignment['id'], (int) $assignment['client_id']), 'requirements' => $this->repository->requirements((int) $assignment['id']), 'definition' => alchemize_intake_definitions()[$assignment['family_key']] ?? null];
+        $responses=$this->repository->responses((int)$assignment['id'],(int)$assignment['client_id']);
+        $values=array_map(fn($r)=>$r['value'],$responses); $applicable=[];
+        foreach(alchemize_intake_definitions()[$assignment['family_key']]['modules']??[] as $module) {
+            if(!in_array($module['key'],$assignment['module_keys'],true)||!alchemize_intake_visible($module,$values))continue;
+            foreach($module['fields'] as $field) if(alchemize_intake_visible($field,$values))$applicable[]=$field['key'];
+        }
+        foreach($responses as $key=>&$response)$response['currently_applicable']=in_array($key,$applicable,true); unset($response);
+        return ['assignment' => $assignment, 'responses' => $responses, 'requirements' => $this->repository->requirements((int) $assignment['id']), 'definition' => alchemize_intake_definitions()[$assignment['family_key']] ?? null];
     }
 
     public function assign(array $user, array $payload): array
     {
         $definitions = alchemize_intake_definitions(); $family = (string) ($payload['family_key'] ?? '');
-        if (!isset($definitions[$family])) throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Select a valid intake family.');
+
         $engagement = $this->repository->engagementForAssignment((string) ($payload['engagement_id'] ?? ''), (string) ($payload['client_id'] ?? ''));
         if ($engagement === null) $this->notFound();
+        $families=alchemize_intake_service_families(explode(',',(string)($engagement['intake_service_codes']??'')));
+        if ($family==='' && count($families)===1) $family=$families[0];
+        if (!isset($definitions[$family]) || ($family!=='client_profile' && (($families!==[] && !in_array($family,$families,true)) || ($families===[] && $family==='web_digital')))) throw new AlchemizeRequestException(422,'INTAKE_SERVICE_MISMATCH','Select an intake matching the engagement’s assigned services. Link a catalog service first if needed.');
         $available = array_column($definitions[$family]['modules'], 'key');
-        $modules = array_values(array_unique(array_filter((array) ($payload['module_keys'] ?? $available), static fn ($module) => in_array($module, $available, true))));
+        $modules = array_values(array_unique(array_filter((array) (!empty($payload['module_keys']) ? $payload['module_keys'] : $available), static fn ($module) => in_array($module, $available, true))));
         if ($modules === []) throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Select at least one intake module.');
         $database = $this->repository->database(); $database->beginTransaction();
         try {

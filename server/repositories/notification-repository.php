@@ -51,6 +51,24 @@ final class AlchemizeNotificationRepository
         return $statement->rowCount() === 1;
     }
 
+    public function staffNotificationDeliveryMode(): string
+    {
+        $row = $this->database->query("SELECT setting_value FROM application_settings WHERE setting_key = 'staff_notification_delivery_mode' LIMIT 1")->fetch();
+        if ($row === false || $row === null) return 'both';
+        $value = json_decode((string) $row['setting_value'], true);
+        $mode = is_string($value) ? strtolower(trim($value)) : (is_string($row['setting_value']) ? strtolower(trim((string) $row['setting_value'])) : 'both');
+        return in_array($mode, ['email', 'dashboard', 'both', 'disabled'], true) ? $mode : 'both';
+    }
+
+    public function businessNotificationEmail(): string
+    {
+        $row = $this->database->query("SELECT setting_value FROM application_settings WHERE setting_key = 'business_email' LIMIT 1")->fetch();
+        if ($row === false || $row === null) return '';
+        $value = json_decode((string) $row['setting_value'], true);
+        $email = is_string($value) ? trim($value) : trim((string) $row['setting_value']);
+        return $email;
+    }
+
     public function recordDelivery(string $publicId, string $status, ?string $error = null): void
     {
         $allowed = ['sent', 'failed', 'unavailable'];

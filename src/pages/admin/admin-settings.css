@@ -1,0 +1,195 @@
+.admin-portal-shell .settings-layout {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+.admin-portal-shell .settings-navigation {
+  display: grid;
+  gap: 3px;
+  position: sticky;
+  top: 20px;
+}
+.admin-portal-shell .settings-navigation button {
+  text-align: left;
+  padding: 10px 12px;
+  border: 0;
+  border-left: 2px solid transparent;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.admin-portal-shell .settings-navigation button[aria-current] {
+  border-color: var(--gold);
+  background: var(--admin-surface);
+  font-weight: 700;
+}
+.admin-portal-shell .settings-content {
+  min-width: 0;
+}
+.admin-portal-shell .settings-content h2 {
+  margin: 0 0 12px;
+}
+.admin-portal-shell .business-settings-form {
+  display: grid;
+  gap: 20px;
+}
+.admin-portal-shell .business-settings-form fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 14px 0 0;
+  border: 0;
+  border-top: 1px solid var(--admin-border, #ddd);
+}
+.admin-portal-shell .business-settings-form legend {
+  font-family: var(--font-display);
+  font-size: 18px;
+  padding-right: 12px;
+}
+.admin-portal-shell .business-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 18px;
+}
+.admin-portal-shell .business-fields label {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  font-size: 13px;
+}
+.admin-portal-shell .business-fields :is(input, select, textarea) {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid var(--admin-border, #ccc);
+  border-radius: 4px;
+  background: var(--admin-surface, white);
+  color: inherit;
+  font: inherit;
+}
+.admin-portal-shell .business-fields textarea {
+  resize: vertical;
+}
+.admin-portal-shell .settings-content :is(p, small) {
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.admin-portal-shell .settings-note {
+  margin: 0;
+}
+.admin-portal-shell .settings-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+.admin-portal-shell .settings-save {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.admin-portal-shell .maintenance-grid {
+  display: grid;
+  gap: 18px;
+}
+.admin-portal-shell .secondary-button {
+  appearance: none;
+  border: 1px solid var(--admin-border, #d6d6d6);
+  border-radius: 6px;
+  background: var(--admin-surface, #fff);
+  color: inherit;
+  font: inherit;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+.admin-portal-shell .integrations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+.admin-portal-shell .integration-card {
+  border: 1px solid var(--admin-border, #d9d9d9);
+  border-radius: 12px;
+  padding: 16px;
+  background: var(--admin-surface, #fff);
+}
+.admin-portal-shell .integration-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.admin-portal-shell .integration-card h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+.admin-portal-shell .integration-card dl {
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+.admin-portal-shell .integration-card dt {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--admin-muted, #666);
+}
+.admin-portal-shell .integration-card dd {
+  margin: 4px 0 0;
+  font-size: 0.95rem;
+}
+.admin-portal-shell .status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  line-height: 1.2;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.admin-portal-shell .status-connected,
+.admin-portal-shell .status-configured {
+  background: rgba(36, 161, 72, 0.12);
+  border-color: rgba(36, 161, 72, 0.25);
+  color: #1e7d47;
+}
+.admin-portal-shell .status-degraded,
+.admin-portal-shell .status-error {
+  background: rgba(190, 77, 0, 0.12);
+  border-color: rgba(190, 77, 0, 0.25);
+  color: #8c4200;
+}
+.admin-portal-shell .status-not-configured,
+.admin-portal-shell .status-unknown {
+  background: rgba(123, 128, 140, 0.12);
+  border-color: rgba(123, 128, 140, 0.25);
+  color: #4a5363;
+}
+@media (max-width: 760px) {
+  .admin-portal-shell .settings-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+  .admin-portal-shell .settings-navigation {
+    position: static;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+  }
+  .admin-portal-shell .settings-navigation button {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+}
+@media (max-width: 480px) {
+  .admin-portal-shell .business-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

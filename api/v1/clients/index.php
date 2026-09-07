@@ -96,6 +96,51 @@ try {
         alchemize_json_response(['data' => $userRepository->listInternalUsers()], 200);
     }
 
+    if ($method === 'PUT' && $parts === ['team']) {
+        $actor = alchemize_require_team_access_manager();
+        alchemize_require_csrf();
+        $payload = alchemize_read_json_request('PUT');
+
+        $userId = (int) ($payload['user_id'] ?? 0);
+        if ($userId < 1) throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Choose a team member to update.');
+
+        $target = $userRepository->findById($userId);
+        if ($target === null) throw new AlchemizeRequestException(404, 'NOT_FOUND', 'Team member was not found.');
+        if ((int) ($actor['user_id'] ?? 0) === $userId) {
+            throw new AlchemizeRequestException(403, 'FORBIDDEN', 'You cannot change your own team access from this screen.');
+        }
+
+        $roleSlug = isset($payload['role_slug']) ? trim((string) $payload['role_slug']) : (string) ($target['role_slug'] ?? '');
+        if ($roleSlug === '') throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Select a valid team role.');
+        if (!in_array($roleSlug, ['owner-admin', 'administrator', 'staff', 'read-only'], true)) {
+            throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Select a valid team role.');
+        }
+
+        $status = isset($payload['status']) ? trim((string) $payload['status']) : (string) ($target['status'] ?? 'active');
+        if (!in_array($status, ['active', 'inactive', 'suspended', 'archived'], true)) {
+            throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Select a valid team status.');
+        }
+
+        if ((string) ($target['role_slug'] ?? '') === 'owner-admin' && (string) ($actor['role_slug'] ?? '') !== 'owner-admin') {
+            throw new AlchemizeRequestException(403, 'FORBIDDEN', 'Only the owner can manage the owner administrator account.');
+        }
+        if ($roleSlug === 'owner-admin' && (string) ($actor['role_slug'] ?? '') !== 'owner-admin') {
+            throw new AlchemizeRequestException(403, 'FORBIDDEN', 'Only the owner can assign ownership access.');
+        }
+
+        $role = $database->prepare('SELECT id FROM roles WHERE slug = :slug AND is_active = 1 LIMIT 1');
+        $role->execute(['slug' => $roleSlug]);
+        $roleId = $role->fetchColumn();
+        if ($roleId === false) throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'The selected role is not available.');
+
+        $update = $database->prepare(
+            'UPDATE users SET role_id = :role_id, status = :status, updated_at = CURRENT_TIMESTAMP(6) WHERE id = :id'
+        );
+        $update->execute(['role_id' => (int) $roleId, 'status' => $status, 'id' => $userId]);
+
+        alchemize_json_response(['data' => ['updated' => true, 'team' => $userRepository->listInternalUsers()]], 200);
+    }
+
     if ($method === 'GET' && count($parts) === 2 && ctype_digit((string) $parts[0]) && $parts[1] === 'portal-account') {
         alchemize_require_read_only_or_higher();
         $status = $accountRepository->statusForClient((int) $parts[0]);
