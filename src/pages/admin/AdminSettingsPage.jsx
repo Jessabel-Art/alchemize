@@ -321,7 +321,7 @@ export default function AdminSettingsPage() {
   }, [section]);
   const change = (key, value) =>
     setValues((current) => ({ ...current, [key]: value }));
-  const save = async (event, successMessage = "Business settings saved.") => {
+  const save = async (event, successMessage = "Settings saved.") => {
     event.preventDefault();
     setState((current) => ({
       ...current,
@@ -1147,7 +1147,7 @@ export default function AdminSettingsPage() {
                   </fieldset>
                   <div className="settings-save">
                     <button className="primary-button" disabled={state.saving}>
-                      {state.saving ? "Saving…" : "Save Business settings"}
+                      {state.saving ? "Saving…" : "Save Settings"}
                     </button>
                     {state.message && <p role="status">{state.message}</p>}
                   </div>
