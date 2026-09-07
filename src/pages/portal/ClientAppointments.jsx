@@ -69,79 +69,85 @@ export default function ClientAppointments({ initialItems }) {
     .filter(historical)
     .sort((a, b) => new Date(startOf(b)) - new Date(startOf(a)));
   return (
-    <div className="appointments-workspace">
-      {success ? (
-        <p role="status" className="portal-feedback success">
-          <CheckCircle size={18} aria-hidden="true" />
-          {success}
-        </p>
-      ) : null}
-      <section aria-labelledby="upcoming-title">
-        <h2 id="upcoming-title">Upcoming appointments</h2>
-        {upcoming.length ? (
-          <div className="appointment-rows">
-            {upcoming.map((item) => (
-              <AppointmentRow key={item.id} item={item} refresh={refresh} />
-            ))}
-          </div>
-        ) : (
-          <div className="appointment-empty">
-            <Calendar aria-hidden="true" />
-            <div>
-              <h3>No appointments scheduled.</h3>
-              <p>
-                Choose an available time below whenever you'd like to meet with
-                us.
-              </p>
-              <a href="#book-appointment" className="portal-action-button">
-                Book an appointment
-              </a>
-            </div>
-          </div>
-        )}
-      </section>
-      <section
-        id="book-appointment"
-        className="appointment-booking"
-        aria-labelledby="booking-title"
-      >
-        <span className="section-kicker">Time with Alchemize</span>
-        <h2 id="booking-title">Book an appointment</h2>
-        {error ? (
-          <p role="alert">{error}</p>
-        ) : !config ? (
-          <p role="status">Loading booking options...</p>
-        ) : config.can_book === false ? (
-          <p>
-            Your account can view appointments. Contact your primary account
-            holder or <a href="/client-portal/messages">send a message</a> to
-            arrange a meeting.
-          </p>
-        ) : config.types?.length ? (
-          <BookingForm
-            config={config}
-            onBooked={async () => {
-              setSuccess("Your appointment is confirmed.");
-              await refresh();
-            }}
-          />
-        ) : (
-          <p>
-            Booking options are temporarily unavailable. Please{" "}
-            <a href="/client-portal/messages">message Alchemize</a>.
-          </p>
-        )}
-      </section>
-      {past.length ? (
-        <section aria-labelledby="past-title">
-          <h2 id="past-title">Past appointments</h2>
-          <div className="appointment-rows appointment-history">
-            {past.map((item) => (
-              <AppointmentRow key={item.id} item={item} refresh={refresh} />
-            ))}
-          </div>
+    <div className="portal-workspace-grid appointments-workspace-grid">
+      <div className="portal-workspace-primary">
+        <div className="appointments-workspace">
+          {success ? (
+            <p role="status" className="portal-feedback success">
+              <CheckCircle size={18} aria-hidden="true" />
+              {success}
+            </p>
+          ) : null}
+          <section aria-labelledby="upcoming-title">
+            <h2 id="upcoming-title">Upcoming appointments</h2>
+            {upcoming.length ? (
+              <div className="appointment-rows">
+                {upcoming.map((item) => (
+                  <AppointmentRow key={item.id} item={item} refresh={refresh} />
+                ))}
+              </div>
+            ) : (
+              <div className="appointment-empty">
+                <Calendar aria-hidden="true" />
+                <div>
+                  <h3>No appointments scheduled.</h3>
+                  <p>
+                    Choose an available time below whenever you'd like to meet
+                    with us.
+                  </p>
+                  <a href="#book-appointment" className="portal-action-button">
+                    Book an appointment
+                  </a>
+                </div>
+              </div>
+            )}
+          </section>
+          {past.length ? (
+            <section aria-labelledby="past-title">
+              <h2 id="past-title">Past appointments</h2>
+              <div className="appointment-rows appointment-history">
+                {past.map((item) => (
+                  <AppointmentRow key={item.id} item={item} refresh={refresh} />
+                ))}
+              </div>
+            </section>
+          ) : null}
+        </div>
+      </div>
+      <aside className="portal-workspace-utility">
+        <section
+          id="book-appointment"
+          className="appointment-booking"
+          aria-labelledby="booking-title"
+        >
+          <span className="section-kicker">Time with Alchemize</span>
+          <h2 id="booking-title">Book an appointment</h2>
+          {error ? (
+            <p role="alert">{error}</p>
+          ) : !config ? (
+            <p role="status">Loading booking options...</p>
+          ) : config.can_book === false ? (
+            <p>
+              Your account can view appointments. Contact your primary account
+              holder or <a href="/client-portal/messages">send a message</a> to
+              arrange a meeting.
+            </p>
+          ) : config.types?.length ? (
+            <BookingForm
+              config={config}
+              onBooked={async () => {
+                setSuccess("Your appointment is confirmed.");
+                await refresh();
+              }}
+            />
+          ) : (
+            <p>
+              Booking options are temporarily unavailable. Please{" "}
+              <a href="/client-portal/messages">message Alchemize</a>.
+            </p>
+          )}
         </section>
-      ) : null}
+      </aside>
     </div>
   );
 }

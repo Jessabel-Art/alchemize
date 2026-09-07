@@ -1,9 +1,18 @@
+.appointments-workspace-grid {
+  align-items: start;
+}
+
 .appointments-workspace {
   display: grid;
   gap: 28px;
 }
 .appointments-workspace h2 {
   margin-bottom: 16px !important;
+}
+
+.portal-workspace-utility .appointment-booking {
+  position: sticky;
+  top: 20px;
 }
 .appointment-empty {
   display: flex;
