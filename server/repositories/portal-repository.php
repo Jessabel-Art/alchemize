@@ -100,15 +100,18 @@ final class AlchemizePortalRepository
                     t.status, t.completed_at, e.public_id AS engagement_id,
                     e.title AS engagement_title, s.service_name
              FROM tasks t
-             INNER JOIN engagements e ON e.id = t.engagement_id AND e.client_id = :client_id
+             INNER JOIN engagements e ON e.id = t.engagement_id AND e.client_id = :task_client_id
              LEFT JOIN services s ON s.id = t.service_id
-             WHERE t.client_id = :client_id
-               AND e.public_id = :engagement_id
+             WHERE t.client_id = :task_client_id
+               AND e.public_id = :engagement_public_id
                AND t.visibility IN (\'client\', \'both\')
                AND t.archived_at IS NULL
              ORDER BY t.status = \'completed\', t.due_date IS NULL, t.due_date ASC, t.created_at DESC'
         );
-        $statement->execute(['client_id' => $clientId, 'engagement_id' => $engagementPublicId]);
+        $statement->execute([
+            'task_client_id' => $clientId,
+            'engagement_public_id' => $engagementPublicId,
+        ]);
         return $statement->fetchAll();
     }
 
@@ -205,15 +208,18 @@ final class AlchemizePortalRepository
                      ORDER BY ds.submitted_at DESC LIMIT 1) AS submitted_filename,
                     s.service_name
              FROM documents_metadata d
-             INNER JOIN engagements e ON e.id = d.engagement_id AND e.client_id = :client_id
+             INNER JOIN engagements e ON e.id = d.engagement_id AND e.client_id = :document_client_id
              LEFT JOIN services s ON s.id = d.service_id
-             WHERE d.client_id = :client_id
-               AND e.public_id = :engagement_id
+             WHERE d.client_id = :document_client_id
+               AND e.public_id = :engagement_public_id
                AND d.visibility IN (\'client\', \'shared\')
                AND d.archived_at IS NULL
              ORDER BY d.requested_date DESC, d.created_at DESC'
         );
-        $statement->execute(['client_id' => $clientId, 'engagement_id' => $engagementPublicId]);
+        $statement->execute([
+            'document_client_id' => $clientId,
+            'engagement_public_id' => $engagementPublicId,
+        ]);
         return $statement->fetchAll();
     }
 
@@ -225,14 +231,17 @@ final class AlchemizePortalRepository
                     a.preparation_required, a.follow_up_required,
                     e.public_id AS engagement_id, e.title AS engagement_title, s.service_name
              FROM appointments a
-             INNER JOIN engagements e ON e.id = a.engagement_id AND e.client_id = :client_id
+             INNER JOIN engagements e ON e.id = a.engagement_id AND e.client_id = :appointment_client_id
              LEFT JOIN services s ON s.id = a.service_id
-             WHERE a.client_id = :client_id
-               AND e.public_id = :engagement_id
+             WHERE a.client_id = :appointment_client_id
+               AND e.public_id = :engagement_public_id
                AND a.visibility IN (\'client\', \'both\')
              ORDER BY a.scheduled_at ASC'
         );
-        $statement->execute(['client_id' => $clientId, 'engagement_id' => $engagementPublicId]);
+        $statement->execute([
+            'appointment_client_id' => $clientId,
+            'engagement_public_id' => $engagementPublicId,
+        ]);
         return $this->appointmentDates($statement->fetchAll());
     }
 

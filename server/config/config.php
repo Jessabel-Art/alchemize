@@ -75,7 +75,20 @@ function alchemize_resolve_project_path(string $path): string
         throw new RuntimeException('Relative configuration paths may not traverse parent directories.');
     }
 
-    return alchemize_project_root() . '/' . ltrim(str_replace('\\', '/', $trimmed), '/');
+    $normalized = ltrim(str_replace('\\', '/', $trimmed), '/');
+    $rootCandidates = [
+        alchemize_project_root(),
+        dirname(alchemize_project_root()),
+    ];
+
+    foreach ($rootCandidates as $rootCandidate) {
+        $candidate = rtrim(str_replace('\\', '/', $rootCandidate), '/') . '/' . $normalized;
+        if (is_file($candidate) || is_dir($candidate)) {
+            return $candidate;
+        }
+    }
+
+    return rtrim(str_replace('\\', '/', $rootCandidates[0]), '/') . '/' . $normalized;
 }
 
 function alchemize_config(): array

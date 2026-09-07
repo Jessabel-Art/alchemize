@@ -244,8 +244,9 @@ try {
     if ($error->httpStatus === 405) {
         header('Allow: GET, POST, PUT');
     }
+    alchemize_runtime_error_log($_SERVER['REQUEST_URI'] ?? $_SERVER['PATH_INFO'] ?? 'portal', $error, ['route' => trim((string) ($_GET['route'] ?? 'portal'))]);
     alchemize_error_response($error->httpStatus, $error->errorCode, $error->getMessage());
 } catch (Throwable $error) {
-    error_log(sprintf('Client portal API failure [%s]: %s', get_class($error), $error->getMessage()));
+    alchemize_runtime_error_log($_SERVER['REQUEST_URI'] ?? $_SERVER['PATH_INFO'] ?? 'portal', $error, ['route' => trim((string) ($_GET['route'] ?? 'portal'))]);
     alchemize_error_response(500, 'INTERNAL_ERROR', 'The client portal is temporarily unavailable.');
 }
