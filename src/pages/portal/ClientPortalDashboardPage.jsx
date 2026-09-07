@@ -444,7 +444,13 @@ function ClientPortalDashboardPage() {
             {nextAppointment ? (
               <>
                 <h2>{nextAppointment.appointment_type || "Consultation"}</h2>
-                <p>{formatDate(nextAppointment.scheduled_at, true)}</p>
+                <p>
+                  {formatDate(
+                    nextAppointment.scheduled_start ||
+                      nextAppointment.scheduled_at,
+                    true,
+                  )}
+                </p>
                 <small>
                   {nextAppointment.meeting_method ||
                     nextAppointment.location_type ||
@@ -457,7 +463,7 @@ function ClientPortalDashboardPage() {
               </>
             )}
             <Link to="/client-portal/appointments" className="portal-side-link">
-              View appointments
+              {nextAppointment ? "View appointments" : "Book an appointment"}
             </Link>
           </article>
 

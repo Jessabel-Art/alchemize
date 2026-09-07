@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { portalApi } from "../../services/portal-api.js";
 import { auth } from "../../services/admin-api.js";
 import "./portal.css";
+import ClientAppointments from "./ClientAppointments.jsx";
 import TasksDocumentsWorkspace from "./TasksDocumentsWorkspace.jsx";
 
 const pageContent = {
@@ -32,7 +33,7 @@ const pageContent = {
   appointments: [
     "Appointments",
     "Appointments",
-    "Confirm consultations or request scheduling changes without overwriting the appointment.",
+    "Book and manage time with Alchemize.",
     "No upcoming appointments.",
   ],
   messages: [
@@ -413,15 +414,35 @@ function ServiceDetail({
         ) : null}
       </div>
       <aside className="portal-workspace-utility">
+        <a
+          className="portal-action-button"
+          href={
+            "/client-portal/appointments?engagement=" +
+            encodeURIComponent(item.id)
+          }
+        >
+          Book an appointment
+        </a>
         {appointments.length ? (
           <section className="portal-service-support">
             <span className="section-kicker">Appointments</span>
-            <h3>Upcoming appointments</h3>
+            <h3>Appointments</h3>
             <ul>
               {appointments.map((appointment) => (
                 <li key={appointment.id}>
                   {appointment.appointment_type || "Consultation"} ·{" "}
-                  {formatDate(appointment.scheduled_at, true)}
+                  {formatDate(
+                    appointment.scheduled_start || appointment.scheduled_at,
+                    true,
+                  )}{" "}
+                  <a
+                    href={
+                      "/client-portal/appointments?appointment=" +
+                      encodeURIComponent(appointment.id)
+                    }
+                  >
+                    View appointment
+                  </a>
                 </li>
               ))}
             </ul>
@@ -957,252 +978,8 @@ function DocumentUpload({ item, busy, run }) {
   );
 }
 
-function Appointments({ items, empty, busy, run }) {
-  const [requests, setRequests] = useState({});
-  const [newRequest, setNewRequest] = useState({
-    preferred_at: "",
-    appointment_type: "Consultation",
-    location_type: "virtual",
-    reason: "",
-  });
-  return (
-    <div className="portal-workspace-grid">
-      <section className="portal-workspace-primary">
-        <h2>Scheduled appointments</h2>
-
-        {!items.length ? (
-          <EmptyState>{empty}</EmptyState>
-        ) : (
-          <ul className="portal-record-list">
-            {items.map((item) => (
-              <li key={item.id}>
-                <div>
-                  <strong>{item.appointment_type}</strong>
-                  <p>
-                    {item.client_instructions ||
-                      item.engagement_title ||
-                      "Appointment details"}
-                  </p>
-                  <small>
-                    {item.location_type
-                      ? labelFor(item.location_type)
-                      : "Method to be confirmed"}
-                  </small>
-                  {item.pending_request ? (
-                    <p className="portal-pending-note">
-                      Your {labelFor(item.pending_request)} request is awaiting
-                      Alchemize review.
-                    </p>
-                  ) : null}
-                  {!["completed", "cancelled"].includes(item.status) &&
-                  !item.pending_request ? (
-                    <div className="portal-appointment-request">
-                      <label>
-                        <span>Preferred new date and time</span>
-                        <input
-                          type="datetime-local"
-                          value={requests[item.id]?.date || ""}
-                          onChange={(event) =>
-                            setRequests({
-                              ...requests,
-                              [item.id]: {
-                                ...requests[item.id],
-                                date: event.target.value,
-                              },
-                            })
-                          }
-                        />
-                      </label>
-                      <label>
-                        <span>Reason (optional)</span>
-                        <input
-                          maxLength={2000}
-                          value={requests[item.id]?.reason || ""}
-                          onChange={(event) =>
-                            setRequests({
-                              ...requests,
-                              [item.id]: {
-                                ...requests[item.id],
-                                reason: event.target.value,
-                              },
-                            })
-                          }
-                        />
-                      </label>
-                    </div>
-                  ) : null}
-                </div>
-                <div className="portal-record-meta">
-                  <span>{labelFor(item.status)}</span>
-                  <small>{formatDate(item.scheduled_at, true)}</small>
-                  <div className="portal-action-group">
-                    {item.client_instructions ? (
-                      <ActionButton
-                        busy={busy === `${item.id}-acknowledge`}
-                        onClick={() =>
-                          run(
-                            `${item.id}-acknowledge`,
-                            () =>
-                              portalApi.appointmentAction(
-                                item.id,
-                                "acknowledge",
-                              ),
-                            "Appointment instructions acknowledged.",
-                          )
-                        }
-                      >
-                        Acknowledge instructions
-                      </ActionButton>
-                    ) : null}
-                    {["requested", "scheduled"].includes(item.status) &&
-                    !item.pending_request ? (
-                      <ActionButton
-                        busy={busy === `${item.id}-confirm`}
-                        onClick={() =>
-                          run(
-                            `${item.id}-confirm`,
-                            () =>
-                              portalApi.appointmentAction(item.id, "confirm"),
-                            "Appointment confirmed.",
-                          )
-                        }
-                      >
-                        Confirm
-                      </ActionButton>
-                    ) : null}
-                    {!["completed", "cancelled"].includes(item.status) &&
-                    !item.pending_request ? (
-                      <>
-                        <ActionButton
-                          busy={busy === `${item.id}-reschedule`}
-                          onClick={() =>
-                            run(
-                              `${item.id}-reschedule`,
-                              () =>
-                                portalApi.appointmentAction(
-                                  item.id,
-                                  "request-reschedule",
-                                  {
-                                    requested_at: requests[item.id]?.date,
-                                    reason: requests[item.id]?.reason,
-                                  },
-                                ),
-                              "Reschedule request sent.",
-                            )
-                          }
-                        >
-                          Request reschedule
-                        </ActionButton>
-                        <ActionButton
-                          busy={busy === `${item.id}-cancel`}
-                          onClick={() =>
-                            run(
-                              `${item.id}-cancel`,
-                              () =>
-                                portalApi.appointmentAction(
-                                  item.id,
-                                  "request-cancellation",
-                                  { reason: requests[item.id]?.reason },
-                                ),
-                              "Cancellation request sent.",
-                            )
-                          }
-                        >
-                          Request cancellation
-                        </ActionButton>
-                      </>
-                    ) : null}
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-      <aside className="portal-workspace-utility">
-        {" "}
-        <form
-          className="portal-composer"
-          onSubmit={(event) => {
-            event.preventDefault();
-            run(
-              "appointment-request",
-              () =>
-                portalApi.requestAppointment({
-                  ...newRequest,
-                  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                }),
-              "Appointment request sent for scheduling review.",
-            );
-          }}
-        >
-          <h2>Request an appointment</h2>
-          <label>
-            <span>Preferred date and time</span>
-            <input
-              required
-              type="datetime-local"
-              value={newRequest.preferred_at}
-              onChange={(event) =>
-                setNewRequest({
-                  ...newRequest,
-                  preferred_at: event.target.value,
-                })
-              }
-            />
-          </label>
-          <label>
-            <span>Appointment type</span>
-            <input
-              required
-              maxLength="80"
-              value={newRequest.appointment_type}
-              onChange={(event) =>
-                setNewRequest({
-                  ...newRequest,
-                  appointment_type: event.target.value,
-                })
-              }
-            />
-          </label>
-          <label>
-            <span>Meeting method</span>
-            <select
-              value={newRequest.location_type}
-              onChange={(event) =>
-                setNewRequest({
-                  ...newRequest,
-                  location_type: event.target.value,
-                })
-              }
-            >
-              <option value="virtual">Virtual</option>
-              <option value="phone">Phone</option>
-              <option value="in_person">In person</option>
-            </select>
-          </label>
-          <label>
-            <span>Reason (optional)</span>
-            <textarea
-              maxLength="2000"
-              value={newRequest.reason}
-              onChange={(event) =>
-                setNewRequest({ ...newRequest, reason: event.target.value })
-              }
-            />
-          </label>
-          <button
-            className="portal-action-button"
-            disabled={busy === "appointment-request"}
-          >
-            {busy === "appointment-request"
-              ? "Sending…"
-              : "Request appointment"}
-          </button>
-        </form>
-      </aside>
-    </div>
-  );
+function Appointments({ items }) {
+  return <ClientAppointments initialItems={items} />;
 }
 
 function Messages({ items, empty, busy, run }) {

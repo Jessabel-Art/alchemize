@@ -223,7 +223,7 @@ final class AlchemizePortalActionRepository
     public function findAppointment(string $publicId, int $clientId, bool $lock = false): ?array
     {
         return $this->one(
-            'SELECT id, public_id, client_id, engagement_id, appointment_type, scheduled_at, status, visibility
+            'SELECT id, public_id, client_id, engagement_id, appointment_type, scheduled_at, timezone, status, visibility
              FROM appointments WHERE public_id = :public_id AND client_id = :client_id
                AND visibility IN (\'client\', \'both\') LIMIT 1' . ($lock ? ' FOR UPDATE' : ''),
             ['public_id' => $publicId, 'client_id' => $clientId],

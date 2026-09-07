@@ -306,7 +306,7 @@ final class AlchemizePortalActionService
                 $this->repository->updateAppointment((int) $appointment['id'], ['status' => 'confirmed']);
                 $event = 'client.appointment.confirmed';
             } elseif (in_array($action, ['request-reschedule', 'request-cancellation'], true)) {
-                if (in_array($appointment['status'], ['completed', 'cancelled'], true) || $this->repository->hasPendingAppointmentRequest((int) $appointment['id'])) {
+                if (new DateTimeImmutable($appointment['scheduled_at'],new DateTimeZone($appointment['timezone'] ?? 'America/New_York')) <= new DateTimeImmutable() || in_array($appointment['status'], ['completed', 'cancelled','no_show'], true) || $this->repository->hasPendingAppointmentRequest((int) $appointment['id'])) {
                     throw new AlchemizeRequestException(409, 'APPOINTMENT_STATE_INVALID', 'This appointment cannot accept another change request.');
                 }
                 $type = $action === 'request-reschedule' ? 'reschedule' : 'cancellation';

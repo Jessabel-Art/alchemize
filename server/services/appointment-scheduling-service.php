@@ -42,7 +42,11 @@ final class AlchemizeAppointmentSchedulingService
         $working = $overrides !== []
             ? array_values(array_filter($overrides, static fn (array $row): bool => (int) $row['is_available'] === 1))
             : array_values(array_filter($rows, static fn (array $row): bool => $row['kind'] === 'weekday' && (int) $row['is_available'] === 1));
-        if ($working === []) {
+        if ($rows === []) {
+            $working = $this->defaultBusinessScheduleForDate($date);
+        }
+        // Blocks may exist without a weekly schedule; only explicit closed hours suppress defaults.
+        if ($working === [] && $overrides === [] && !array_filter($rows, static fn(array $row): bool => $row['kind'] === 'weekday')) {
             $working = $this->defaultBusinessScheduleForDate($date);
         }
 
@@ -112,7 +116,9 @@ final class AlchemizeAppointmentSchedulingService
     public function requireAvailable(array $link, string $selectedStart, array $externalBusy = []): array
     {
         $timezone = new DateTimeZone((string) ($link['timezone'] ?? $this->defaultTimezone));
-        $start = new DateTimeImmutable($selectedStart, $timezone);
+        try { $start = new DateTimeImmutable($selectedStart, $timezone); }
+        catch (Throwable) { throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Select an available appointment time.'); }
+        $start = $start->setTimezone($timezone);
         foreach ($this->slots($link, $start->format('Y-m-d'), $externalBusy) as $slot) {
             if ((new DateTimeImmutable($slot['start']))->getTimestamp() === $start->getTimestamp()) return $slot;
         }

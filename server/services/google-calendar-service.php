@@ -77,7 +77,8 @@ final class AlchemizeGoogleCalendarService
 
     public function busyPeriods(DateTimeImmutable $start, DateTimeImmutable $end, string $timezone): array
     {
-        if (!$this->configured() || !class_exists('Google\\Service\\Calendar')) return [];
+        if (!$this->configured()) return [];
+        if (!class_exists('Google\\Service\\Calendar')) throw new RuntimeException('The Google Calendar service library is not installed.');
         $calendar = new Google\Service\Calendar($this->clients->create(['https://www.googleapis.com/auth/calendar.readonly']));
         $request = new Google\Service\Calendar\FreeBusyRequest([
             'timeMin' => $start->format(DateTimeInterface::RFC3339),
@@ -87,7 +88,7 @@ final class AlchemizeGoogleCalendarService
         ]);
         $response = $calendar->freebusy->query($request);
         $calendarBusy = $response->getCalendars()[(string) $this->config['calendar_id']] ?? null;
-        if ($calendarBusy === null) return [];
+        if ($calendarBusy === null || $calendarBusy->getErrors()) throw new RuntimeException('Calendar busy periods could not be verified.');
         return array_map(static fn ($period): array => ['start' => $period->getStart(), 'end' => $period->getEnd()], $calendarBusy->getBusy());
     }
 }

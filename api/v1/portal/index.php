@@ -55,6 +55,15 @@ try {
     );
     $intakes = new AlchemizeIntakeService(new AlchemizeIntakeRepository($database), new AlchemizeActivityRepository($database));
 
+
+    if ($resource === 'appointments') {
+        $bookingRepository=new AlchemizeAppointmentRepository($database);
+        $bookingSettings=(new AlchemizeSettingsRepository($database))->all();
+        $booking=new AlchemizePortalBookingService($database,$bookingRepository,new AlchemizeAppointmentSchedulingService($bookingRepository,$bookingSettings['timezone']),alchemize_external_integrations($database,$config),new AlchemizeNotificationService(new AlchemizeNotificationRepository($database),alchemize_email_provider($config)),$bookingSettings,trim((string)($config['google']['calendar_id'] ?? ''))!=='');
+        if ($method==='GET' && count($parts)===2 && $parts[1]==='booking') alchemize_json_response(['data'=>$booking->context($access)],200);
+        if ($method==='GET' && count($parts)===2 && $parts[1]==='availability') alchemize_json_response(['data'=>$booking->availability($access,$_GET)],200);
+        if ($method==='GET' && count($parts)===3 && $parts[2]==='availability') alchemize_json_response(['data'=>$booking->rescheduleAvailability($access,$parts[1],(string)($_GET['date'] ?? ''))],200);
+    }
     if ($method === 'GET' && count($parts) === 1) {
         $data = match ($resource) {
         'dashboard' => $service->dashboard($access),
@@ -106,6 +115,9 @@ try {
     }
 
     $payload = alchemize_read_json_request($method);
+    if ($method==='POST' && $resource==='appointments' && count($parts)===2 && $parts[1]==='book') alchemize_json_response(['data'=>$booking->book($access,$payload)],201);
+    if ($method==='POST' && $resource==='appointments' && count($parts)===3 && $parts[2]==='request-reschedule') $payload['requested_at']=$booking->validateReschedule($access,$parts[1],(string)($payload['requested_at'] ?? ''));
+
     if ($resource === 'intakes' && ($parts[1] ?? '') === 'profile' && in_array(($parts[2] ?? ''), ['addresses','people'], true)) {
         $kind=$parts[2];$recordId=$parts[3]??null;
         if($method==='POST'&&$recordId===null)alchemize_json_response(['data'=>$kind==='addresses'?$intakes->saveAddress($access,null,$payload):$intakes->savePerson($access,null,$payload)],201);

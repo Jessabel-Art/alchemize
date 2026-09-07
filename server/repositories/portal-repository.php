@@ -138,11 +138,19 @@ final class AlchemizePortalRepository
         return $statement->fetchAll();
     }
 
-    public function listAppointments(int $clientId): array
+    private function appointmentDates(array $rows): array {
+ return array_map(static function(array $row): array {
+ $zone=new DateTimeZone($row['timezone'] ?? 'America/New_York');
+ $row['scheduled_start']=(new DateTimeImmutable($row['scheduled_at'],$zone))->format(DateTimeInterface::RFC3339);
+ $row['scheduled_end']=!empty($row['end_at']) ? (new DateTimeImmutable($row['end_at'],$zone))->format(DateTimeInterface::RFC3339) : null;
+ return $row;
+ },$rows);
+ }
+ public function listAppointments(int $clientId): array
     {
         $statement = $this->database->prepare(
             'SELECT a.public_id AS id, a.appointment_type, a.scheduled_at, a.end_at,
-                    a.timezone, a.location_type, a.status, a.client_instructions,
+                    a.timezone, a.location_type, a.meeting_method, a.meeting_url, a.location, a.duration_minutes, a.status, a.client_instructions,
                     a.preparation_required, a.follow_up_required,
                     (SELECT acr.request_type FROM appointment_change_requests acr
                      WHERE acr.appointment_id = a.id AND acr.status = \'pending\' LIMIT 1) AS pending_request,
@@ -152,11 +160,10 @@ final class AlchemizePortalRepository
              LEFT JOIN services s ON s.id = a.service_id
              WHERE a.client_id = :client_id
                AND a.visibility IN (\'client\', \'both\')
-               AND a.status <> \'cancelled\'
              ORDER BY a.scheduled_at ASC'
         );
         $statement->execute(['client_id' => $clientId]);
-        return $statement->fetchAll();
+        return $this->appointmentDates($statement->fetchAll());
     }
 
     public function listDocumentsForEngagement(int $clientId, string $engagementPublicId): array
@@ -195,11 +202,10 @@ final class AlchemizePortalRepository
              WHERE a.client_id = :client_id
                AND e.public_id = :engagement_id
                AND a.visibility IN (\'client\', \'both\')
-               AND a.status <> \'cancelled\'
              ORDER BY a.scheduled_at ASC'
         );
         $statement->execute(['client_id' => $clientId, 'engagement_id' => $engagementPublicId]);
-        return $statement->fetchAll();
+        return $this->appointmentDates($statement->fetchAll());
     }
 
     public function listInvoices(int $clientId): array

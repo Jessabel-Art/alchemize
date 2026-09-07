@@ -46,7 +46,7 @@ final class AlchemizePortalService
         ));
         $upcomingAppointments = array_values(array_filter(
             $appointments,
-            static fn (array $row): bool => strtotime((string) $row['scheduled_at']) >= time(),
+            static fn (array $row): bool => !in_array($row['status'], ['completed','cancelled','no_show'], true) && (new DateTimeImmutable((string)$row['scheduled_at'],new DateTimeZone($row['timezone'] ?? 'America/New_York')))->getTimestamp() >= time(),
         ));
         $openInvoices = array_values(array_filter(
             $invoices,

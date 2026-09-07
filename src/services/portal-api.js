@@ -4,7 +4,7 @@ async function getPortalResource(resource) {
   return portalRequest(resource);
 }
 
-async function portalRequest(resource, options = {}) {
+async function portalRequest(resource, options = {}, params = {}) {
   const method = String(options.method || "GET").toUpperCase();
   const headers = { Accept: "application/json", ...(options.headers || {}) };
   if (options.body && !(options.body instanceof window.FormData)) {
@@ -14,7 +14,7 @@ async function portalRequest(resource, options = {}) {
   if (!["GET", "HEAD"].includes(method) && csrfToken) {
     headers["X-CSRF-Token"] = csrfToken;
   }
-  const response = await fetch(buildApiUrl(`portal/${resource}`), {
+  const response = await fetch(buildApiUrl(`portal/${resource}`, params), {
     ...options,
     method,
     credentials: "same-origin",
@@ -48,6 +48,16 @@ async function portalRequest(resource, options = {}) {
 }
 
 export const portalApi = {
+  appointmentBooking: () => portalRequest("appointments/booking"),
+  appointmentAvailability: (params) =>
+    portalRequest("appointments/availability", {}, params),
+  rescheduleAvailability: (id, date) =>
+    portalRequest("appointments/" + id + "/availability", {}, { date }),
+  bookAppointment: (payload) =>
+    portalRequest("appointments/book", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
   dashboard: () => getPortalResource("dashboard"),
   services: () => getPortalResource("services"),
   service: (id) => getPortalResource(`services/${id}`),

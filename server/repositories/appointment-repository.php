@@ -6,6 +6,24 @@ final class AlchemizeAppointmentRepository
 {
     public function __construct(private readonly PDO $database) {}
 
+    // All appointment writers share this lock, including Admin and public links.
+    public function acquireBookingLock(): void
+    {
+        if ((int) $this->database->query("SELECT GET_LOCK('alchemize-appointment-booking', 10)")->fetchColumn() !== 1) {
+            throw new AlchemizeRequestException(409, 'SLOT_UNAVAILABLE', 'Scheduling is busy. Please refresh available times and try again.');
+        }
+        register_shutdown_function(function (): void {
+            $this->database->query("SELECT RELEASE_LOCK('alchemize-appointment-booking')");
+        });
+    }
+
+    public function findClientBooking(string $publicId, int $clientId): ?array
+    {
+        $statement = $this->database->prepare("SELECT * FROM appointments WHERE public_id=:id AND client_id=:client AND source='client_portal_booking' LIMIT 1");
+        $statement->execute(['id'=>$publicId,'client'=>$clientId]);
+        $row=$statement->fetch(); return is_array($row) ? $row : null;
+    }
+
     public function listAll(): array
     {
         $statement = $this->database->query(
@@ -138,16 +156,16 @@ final class AlchemizeAppointmentRepository
         return $statement->fetchAll();
     }
 
-    public function appointmentConflicts(string $start, string $end): array
+    public function appointmentConflicts(string $start, string $end, ?int $excludeId = null): array
     {
         $statement = $this->database->prepare(
             "SELECT id, scheduled_at, COALESCE(end_at, DATE_ADD(scheduled_at, INTERVAL duration_minutes MINUTE)) AS end_at
              FROM appointments
-             WHERE status <> 'cancelled'
+             WHERE status <> 'cancelled' AND id <> :exclude_id
                AND scheduled_at < :end_at
                AND COALESCE(end_at, DATE_ADD(scheduled_at, INTERVAL duration_minutes MINUTE)) > :start_at"
         );
-        $statement->execute(['start_at' => $start, 'end_at' => $end]);
+        $statement->execute(['start_at' => $start, 'end_at' => $end, 'exclude_id' => $excludeId ?? 0]);
         return $statement->fetchAll();
     }
 
@@ -173,7 +191,7 @@ final class AlchemizeAppointmentRepository
              VALUES (:public_id, :event_type, :actor_type, \'appointment\', :entity_id, :lead_id, :client_id, :engagement_id, :summary, :visibility)'
         )->execute([
             'public_id' => alchemize_uuid_v4(), 'event_type' => $eventType,
-            'actor_type' => $eventType === 'appointment.public_booked' ? 'public_scheduler' : 'admin',
+            'actor_type' => str_starts_with($eventType, 'client.') ? 'client' : ($eventType === 'appointment.public_booked' ? 'public_scheduler' : 'admin'),
             'entity_id' => $publicId, 'lead_id' => $appointment['lead_id'] ?? null,
             'client_id' => $appointment['client_id'] ?? null, 'engagement_id' => $appointment['engagement_id'] ?? null,
             'summary' => $summary, 'visibility' => !empty($appointment['client_id']) ? 'both' : 'admin',

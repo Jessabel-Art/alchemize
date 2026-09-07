@@ -76,7 +76,7 @@ final class AlchemizeExternalIntegrationService
         }
     }
 
-    public function appointmentBusyPeriods(string $date, string $timezone): array
+    public function appointmentBusyPeriods(string $date, string $timezone, bool $strict = false): array
     {
         if ($this->calendar === null || !$this->calendar->configured()) return [];
         try {
@@ -85,6 +85,7 @@ final class AlchemizeExternalIntegrationService
             return $this->calendar->busyPeriods($start, $start->modify('+1 day'), $timezone);
         } catch (Throwable $error) {
             error_log(sprintf('Google Calendar busy-period lookup failed [%s].', get_class($error)));
+            if ($strict) throw new AlchemizeRequestException(503, 'CALENDAR_UNAVAILABLE', 'Calendar availability is temporarily unavailable. Please try again or request another time.');
             return [];
         }
     }

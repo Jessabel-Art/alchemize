@@ -56,6 +56,7 @@ try {
     }
 
     if ($method === 'POST' && count($parts) === 3 && $parts[0] === 'scheduling-links' && $parts[2] === 'book') {
+        $repository->acquireBookingLock();
         $token = (string) $parts[1];
         $link = $repository->findSchedulingLink($token);
         if ($link === null) throw new AlchemizeRequestException(404, 'INVALID_SCHEDULING_LINK', 'This scheduling link is invalid, expired, revoked, or no longer available.');
@@ -65,7 +66,8 @@ try {
         try {
             $link = $repository->findSchedulingLink($token);
             if ($link === null) throw new AlchemizeRequestException(409, 'SLOT_UNAVAILABLE', 'That time is no longer available. Please select another time.');
-            $slot = $scheduler->requireAvailable($link, (string) $slot['start']);
+            $busy = $integrations->appointmentBusyPeriods(substr($slot['start'],0,10),(string)$link['timezone'],true);
+            $slot = $scheduler->requireAvailable($link, (string) $slot['start'], $busy);
             $appointment = [
                 'public_id' => alchemize_uuid_v4(), 'client_id' => $link['client_id'], 'lead_id' => $link['lead_id'],
                 'appointment_type' => $link['appointment_type'], 'service_id' => $link['service_id'],
@@ -126,6 +128,7 @@ try {
             throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Appointment type and scheduled time are required.');
         }
 
+        $repository->acquireBookingLock();
         $duration = max(15, (int) ($payload['duration_minutes'] ?? 60));
         $timezone = trim((string) ($payload['timezone'] ?? 'America/New_York')) ?: 'America/New_York';
         $endAt = trim((string) ($payload['end_at'] ?? ''));
@@ -194,7 +197,7 @@ try {
         alchemize_json_response(['data'=>$row],200);
     }
     if (count($parts) === 1 && ctype_digit((string)$parts[0]) && $method === 'PUT') {
-        alchemize_require_staff_or_admin(); alchemize_require_csrf(); $id=(int)$parts[0];
+        alchemize_require_staff_or_admin(); alchemize_require_csrf(); $repository->acquireBookingLock(); $id=(int)$parts[0];
         if($repository->findById($id)===null)throw new AlchemizeRequestException(404,'NOT_FOUND','Appointment was not found.');
         $payload=alchemize_read_json_request('PUT');$values=[];
         foreach(['appointment_type','scheduled_at','end_at','timezone','location_type','client_instructions','internal_notes'] as $field)if(array_key_exists($field,$payload))$values[$field]=trim((string)$payload[$field])?:null;
@@ -205,6 +208,8 @@ try {
         if (array_key_exists('meeting_url', $payload)) { $values['meeting_url'] = trim((string) $payload['meeting_url']) !== '' ? trim((string) $payload['meeting_url']) : null; }
         if (array_key_exists('location', $payload)) { $values['location'] = trim((string) $payload['location']) !== '' ? trim((string) $payload['location']) : null; }
         if (array_key_exists('duration_minutes', $payload)) { $values['duration_minutes'] = max(15, (int) $payload['duration_minutes']); }
+        $candidate=array_replace($repository->findById($id),$values);
+        if($candidate['status']!=='cancelled' && $repository->appointmentConflicts((string)$candidate['scheduled_at'],(string)($candidate['end_at'] ?: (new DateTimeImmutable($candidate['scheduled_at']))->modify('+'.(int)$candidate['duration_minutes'].' minutes')->format('Y-m-d H:i:s')),$id)!==[]) throw new AlchemizeRequestException(409,'SLOT_UNAVAILABLE','That time conflicts with an existing appointment.');
         $repository->update($id,$values);$sync=$integrations->synchronizeAppointment($id);$row=$repository->findById($id);
         if (!empty($row['client_id'])) $notifications->notifyClient((int)$row['client_id'], 'admin.appointment.updated', 'appointment', (string)$id, 'Appointment updated', 'An appointment in your client portal was updated.', 'appointment-updated:' . $id . ':' . (string)($row['updated_at'] ?? microtime(true)));
         $row['calendar_sync_status']=$sync['status'];alchemize_json_response(['data'=>$row],200);

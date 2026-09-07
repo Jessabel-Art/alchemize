@@ -66,6 +66,7 @@ require_once __DIR__ . '/services/external-integration-service.php';
 require_once __DIR__ . '/services/portal-account-service.php';
 require_once __DIR__ . '/services/document-storage-service.php';
 require_once __DIR__ . '/services/portal-action-service.php';
+require_once __DIR__ . '/services/portal-booking-service.php';
 require_once __DIR__ . '/services/portal-admin-service.php';
 require_once __DIR__ . '/services/notification-service.php';
 require_once __DIR__ . '/services/email-template.php';

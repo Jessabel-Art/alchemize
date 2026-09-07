@@ -234,13 +234,15 @@ test("service landing page shows active and past services with collapsed request
   );
 
   await page.goto("/client-portal/services/");
-  await expect(page.getByRole("heading", { name: "Services" })).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Active services" }),
+    page.getByRole("heading", { name: "Services", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Active services", exact: true }),
   ).toBeVisible();
   await expect(page.getByText("Business formation")).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Past services" }),
+    page.getByRole("heading", { name: "Past services", exact: true }),
   ).toBeVisible();
   await expect(page.getByText("Annual tax review")).toBeVisible();
   await expect(
@@ -340,6 +342,60 @@ test("service and task pages render only API records", async ({ page }) => {
     page.getByRole("heading", { name: "Tasks & Intake" }),
   ).toBeVisible();
   await expect(page.getByText("Review formation details")).toBeVisible();
+});
+
+test("billing route loads real invoice data without the generic portal unavailable state", async ({
+  page,
+}) => {
+  await page.route("**/alchemize-api.php?route=portal%2Fbilling", (route) =>
+    route.fulfill({
+      json: {
+        data: {
+          invoices: [
+            {
+              id: "inv-1042",
+              invoice_number: "INV-1042",
+              invoice_date: "2026-09-01",
+              due_date: "2026-09-15",
+              status: "open",
+              currency: "USD",
+              subtotal: 1250,
+              adjustment_total: 0,
+              credit_deposit_total: 0,
+              paid_total: 0,
+              outstanding_balance: 1250,
+              client_facing_notes: "Formation setup balance",
+              engagement_title: "Business formation",
+            },
+          ],
+          payments: [],
+          summary: { open_balance: "1250.00" },
+        },
+      },
+    }),
+  );
+
+  await page.goto("/client-portal/billing/");
+  await expect(page).toHaveURL(/\/client-portal\/billing\/?$/);
+  await expect(
+    page.getByRole("heading", { name: "Billing", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText("Open balance", { exact: true })).toBeVisible();
+  await expect(
+    page
+      .locator("section")
+      .filter({ hasText: "Open balance" })
+      .getByRole("strong")
+      .first(),
+  ).toHaveText("$1,250.00");
+  await expect(
+    page.getByRole("heading", { name: "INV-1042", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("The client portal is temporarily unavailable.", {
+      exact: true,
+    }),
+  ).toHaveCount(0);
 });
 
 test("messages has no admin templates or fabricated records", async ({
