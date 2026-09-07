@@ -131,7 +131,7 @@ function ActionButton({ children, busy, ...props }) {
   );
 }
 
-function PortalRecordsPage({ resource }) {
+function PortalRecordsPage({ resource, engagementId = null }) {
   const [state, setState] = useState({
     status: "loading",
     data: null,
@@ -163,6 +163,15 @@ function PortalRecordsPage({ resource }) {
         return;
       }
 
+      if (resource === "services" && engagementId) {
+        setState({
+          status: "ready",
+          data: await portalApi.service(engagementId),
+          error: "",
+        });
+        return;
+      }
+
       setState({
         status: "ready",
         data: await portalApi[resource](),
@@ -171,7 +180,7 @@ function PortalRecordsPage({ resource }) {
     } catch (error) {
       setState({ status: "error", data: null, error: error.message });
     }
-  }, [resource]);
+  }, [resource, engagementId]);
   useEffect(() => {
     load();
   }, [load]);
@@ -258,10 +267,25 @@ function groupRecords(resource, items) {
 
 function ResourceContent(props) {
   const { resource, data, groups, empty, busy, run } = props;
-  if (resource === "services")
+  if (resource === "services") {
+    if (data?.item) {
+      return (
+        <ServiceDetail
+          item={data.item}
+          tasks={data.tasks || []}
+          documents={data.documents || []}
+          appointments={data.appointments || []}
+          activity={data.activity || []}
+          empty={empty}
+          busy={busy}
+          run={run}
+        />
+      );
+    }
     return (
       <Services items={data.items || []} empty={empty} busy={busy} run={run} />
     );
+  }
   if (resource === "tasks")
     return <Tasks groups={groups} empty={empty} busy={busy} run={run} />;
   if (resource === "tasks-and-documents")
@@ -296,6 +320,127 @@ function ResourceContent(props) {
   if (resource === "profile")
     return <Profile data={data} empty={empty} busy={busy} run={run} />;
   return <EmptyState>{empty}</EmptyState>;
+}
+
+function ServiceDetail({
+  item,
+  tasks = [],
+  documents = [],
+  appointments = [],
+  activity = [],
+  empty,
+}) {
+  return (
+    <div className="portal-workspace-grid">
+      <div className="portal-workspace-primary">
+        <section className="portal-service-detail" aria-label="Service detail">
+          <div className="portal-services-header">
+            <div>
+              <span className="section-kicker">Active service</span>
+              <h2>{item.title}</h2>
+            </div>
+            <a className="portal-action-button" href="/client-portal/services">
+              Back to services
+            </a>
+          </div>
+          <p>{item.description || "Service in progress."}</p>
+          <div className="portal-service-meta">
+            <small>Status: {labelFor(item.status)}</small>
+            {item.start_date ? (
+              <small>Started: {formatDate(item.start_date)}</small>
+            ) : null}
+            {item.target_date ? (
+              <small>Target date: {formatDate(item.target_date)}</small>
+            ) : null}
+          </div>
+        </section>
+
+        {tasks.length ? (
+          <section className="portal-group-stack">
+            <h2>Tasks</h2>
+            <ul className="portal-record-list">
+              {tasks.map((task) => (
+                <li key={task.id}>
+                  <div>
+                    <strong>{task.title}</strong>
+                    <p>
+                      {task.description ||
+                        task.engagement_title ||
+                        "Client-visible task"}
+                    </p>
+                  </div>
+                  <div className="portal-record-meta">
+                    <span>{labelFor(task.status)}</span>
+                    {task.due_date ? (
+                      <small>Due {formatDate(task.due_date)}</small>
+                    ) : null}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
+        {documents.length ? (
+          <section className="portal-group-stack">
+            <h2>Documents</h2>
+            <ul className="portal-record-list">
+              {documents.map((document) => (
+                <li key={document.id}>
+                  <div>
+                    <strong>{document.document_name}</strong>
+                    <p>
+                      {document.client_instructions || "Requested document"}
+                    </p>
+                  </div>
+                  <div className="portal-record-meta">
+                    <span>{labelFor(document.status)}</span>
+                    {document.due_date ? (
+                      <small>Due {formatDate(document.due_date)}</small>
+                    ) : null}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
+        {!tasks.length &&
+        !documents.length &&
+        !appointments.length &&
+        !activity.length ? (
+          <EmptyState>{empty}</EmptyState>
+        ) : null}
+      </div>
+      <aside className="portal-workspace-utility">
+        {appointments.length ? (
+          <section className="portal-service-support">
+            <span className="section-kicker">Appointments</span>
+            <h3>Upcoming appointments</h3>
+            <ul>
+              {appointments.map((appointment) => (
+                <li key={appointment.id}>
+                  {appointment.appointment_type || "Consultation"} ·{" "}
+                  {formatDate(appointment.scheduled_at, true)}
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+        {activity.length ? (
+          <section className="portal-service-support muted">
+            <span className="section-kicker">Recent activity</span>
+            <h3>Latest updates</h3>
+            <ul>
+              {activity.slice(0, 5).map((entry) => (
+                <li key={entry.id}>{entry.summary}</li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+      </aside>
+    </div>
+  );
 }
 
 function Services({ items, empty, busy, run }) {
@@ -376,22 +521,10 @@ function Services({ items, empty, busy, run }) {
                   <div className="portal-action-group">
                     <a
                       className="portal-action-button"
-                      href="/client-portal/tasks-and-documents"
+                      href={`/client-portal/services/${item.id}`}
                     >
-                      Review service
+                      View service
                     </a>
-                    <ActionButton
-                      busy={busy === item.id}
-                      onClick={() =>
-                        run(
-                          item.id,
-                          () => portalApi.acknowledge("engagement", item.id),
-                          "Service update acknowledged.",
-                        )
-                      }
-                    >
-                      Acknowledge update
-                    </ActionButton>
                   </div>
                 </div>
               </li>

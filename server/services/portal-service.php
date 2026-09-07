@@ -96,6 +96,23 @@ final class AlchemizePortalService
         return ['items' => $this->normalizeServices($this->repository->listServices((int) $access['client_id']))];
     }
 
+    public function serviceDetail(array $access, string $engagementPublicId): array
+    {
+        $clientId = (int) $access['client_id'];
+        $detail = $this->repository->getServiceDetail($clientId, $engagementPublicId);
+        if ($detail === null) {
+            throw new AlchemizeRequestException(404, 'NOT_FOUND', 'The related service was not found.');
+        }
+        $normalized = $this->normalizeServices([$detail]);
+        return [
+            'item' => $normalized[0],
+            'tasks' => $this->repository->listTasksForEngagement($clientId, $engagementPublicId),
+            'documents' => $this->repository->listDocumentsForEngagement($clientId, $engagementPublicId),
+            'appointments' => $this->repository->listAppointmentsForEngagement($clientId, $engagementPublicId),
+            'activity' => $this->repository->listActivity($clientId, 10),
+        ];
+    }
+
     public function tasks(array $access): array
     {
         return ['items' => $this->repository->listTasks((int) $access['client_id'])];

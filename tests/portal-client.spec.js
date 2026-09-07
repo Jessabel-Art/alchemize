@@ -255,6 +255,79 @@ test("service landing page shows active and past services with collapsed request
   ).toBeVisible();
 });
 
+test("service cards route to the engagement detail workspace and scope records to that engagement", async ({
+  page,
+}) => {
+  await page.route("**/alchemize-api.php?route=portal%2Fservices", (route) =>
+    route.fulfill({
+      json: {
+        data: {
+          items: [
+            {
+              id: "eng-a",
+              title: "Business formation",
+              description: "Formation and setup support.",
+              status: "in_progress",
+              start_date: "2026-08-01",
+              target_date: "2026-09-30",
+              service_names: ["Business Formation"],
+            },
+            {
+              id: "eng-b",
+              title: "Annual tax review",
+              description: "Prior year filing guidance.",
+              status: "completed",
+              start_date: "2025-12-02",
+              service_names: ["Business Tax"],
+            },
+          ],
+        },
+      },
+    }),
+  );
+  await page.route(
+    "**/alchemize-api.php?route=portal%2Fservices%2Feng-a",
+    (route) =>
+      route.fulfill({
+        json: {
+          data: {
+            item: {
+              id: "eng-a",
+              title: "Business formation",
+              description: "Formation and setup support.",
+              status: "in_progress",
+              start_date: "2026-08-01",
+              target_date: "2026-09-30",
+              service_names: ["Business Formation"],
+            },
+            tasks: [
+              {
+                id: "task-a",
+                title: "Review formation details",
+                description: "Confirm the client-facing information.",
+                status: "waiting_on_client",
+                due_date: "2026-09-10",
+              },
+            ],
+            documents: [],
+            appointments: [],
+            intakes: [],
+            activity: [],
+          },
+        },
+      }),
+  );
+
+  await page.goto("/client-portal/services/");
+  await page.getByRole("link", { name: "View service" }).first().click();
+  await expect(page).toHaveURL(/\/client-portal\/services\/eng-a\/?$/);
+  await expect(
+    page.getByRole("heading", { name: "Business formation" }),
+  ).toBeVisible();
+  await expect(page.getByText("Review formation details")).toBeVisible();
+  await expect(page.getByText("Annual tax review")).toHaveCount(0);
+});
+
 test("service and task pages render only API records", async ({ page }) => {
   await page.goto("/client-portal/services/");
   await expect(

@@ -51,6 +51,30 @@ final class AlchemizePortalRepository
         return $statement->fetchAll();
     }
 
+    public function getServiceDetail(int $clientId, string $engagementPublicId): ?array
+    {
+        $statement = $this->database->prepare(
+            'SELECT e.public_id AS id, e.title, e.description, e.status,
+                    e.start_date, e.target_date, e.completion_date,
+                    u.display_name AS assigned_contact,
+                    GROUP_CONCAT(DISTINCT COALESCE(esi.service_name_snapshot, s.service_name)
+                        ORDER BY COALESCE(esi.service_name_snapshot, s.service_name) SEPARATOR \'||\') AS service_names
+             FROM engagements e
+             LEFT JOIN users u ON u.id = e.owner_user_id
+             LEFT JOIN engagement_service_items esi ON esi.engagement_id = e.id
+             LEFT JOIN services s ON s.id = esi.service_id
+             WHERE e.client_id = :client_id
+               AND e.public_id = :engagement_id
+               AND e.archived_at IS NULL
+             GROUP BY e.id, e.public_id, e.title, e.description, e.status,
+                      e.start_date, e.target_date, e.completion_date, u.display_name
+             LIMIT 1'
+        );
+        $statement->execute(['client_id' => $clientId, 'engagement_id' => $engagementPublicId]);
+        $row = $statement->fetch();
+        return is_array($row) ? $row : null;
+    }
+
     public function listTasks(int $clientId): array
     {
         $statement = $this->database->prepare(
@@ -66,6 +90,25 @@ final class AlchemizePortalRepository
              ORDER BY t.status = \'completed\', t.due_date IS NULL, t.due_date ASC, t.created_at DESC'
         );
         $statement->execute(['client_id' => $clientId]);
+        return $statement->fetchAll();
+    }
+
+    public function listTasksForEngagement(int $clientId, string $engagementPublicId): array
+    {
+        $statement = $this->database->prepare(
+            'SELECT t.public_id AS id, t.title, t.description, t.priority, t.due_date,
+                    t.status, t.completed_at, e.public_id AS engagement_id,
+                    e.title AS engagement_title, s.service_name
+             FROM tasks t
+             INNER JOIN engagements e ON e.id = t.engagement_id AND e.client_id = :client_id
+             LEFT JOIN services s ON s.id = t.service_id
+             WHERE t.client_id = :client_id
+               AND e.public_id = :engagement_id
+               AND t.visibility IN (\'client\', \'both\')
+               AND t.archived_at IS NULL
+             ORDER BY t.status = \'completed\', t.due_date IS NULL, t.due_date ASC, t.created_at DESC'
+        );
+        $statement->execute(['client_id' => $clientId, 'engagement_id' => $engagementPublicId]);
         return $statement->fetchAll();
     }
 
@@ -113,6 +156,49 @@ final class AlchemizePortalRepository
              ORDER BY a.scheduled_at ASC'
         );
         $statement->execute(['client_id' => $clientId]);
+        return $statement->fetchAll();
+    }
+
+    public function listDocumentsForEngagement(int $clientId, string $engagementPublicId): array
+    {
+        $statement = $this->database->prepare(
+            'SELECT d.public_id AS id, d.document_name, d.document_type, d.status,
+                    d.visibility, d.requested_date, d.due_date, d.client_instructions,
+                    d.received_date, d.reviewed_date, d.mime_type,
+                    e.public_id AS engagement_id, e.title AS engagement_title,
+                    (SELECT ds.original_filename FROM document_submissions ds WHERE ds.document_id = d.id
+                     ORDER BY ds.submitted_at DESC LIMIT 1) AS submitted_filename,
+                    s.service_name
+             FROM documents_metadata d
+             INNER JOIN engagements e ON e.id = d.engagement_id AND e.client_id = :client_id
+             LEFT JOIN services s ON s.id = d.service_id
+             WHERE d.client_id = :client_id
+               AND e.public_id = :engagement_id
+               AND d.visibility IN (\'client\', \'shared\')
+               AND d.archived_at IS NULL
+             ORDER BY d.requested_date DESC, d.created_at DESC'
+        );
+        $statement->execute(['client_id' => $clientId, 'engagement_id' => $engagementPublicId]);
+        return $statement->fetchAll();
+    }
+
+    public function listAppointmentsForEngagement(int $clientId, string $engagementPublicId): array
+    {
+        $statement = $this->database->prepare(
+            'SELECT a.public_id AS id, a.appointment_type, a.scheduled_at, a.end_at,
+                    a.timezone, a.location_type, a.status, a.client_instructions,
+                    a.preparation_required, a.follow_up_required,
+                    e.public_id AS engagement_id, e.title AS engagement_title, s.service_name
+             FROM appointments a
+             INNER JOIN engagements e ON e.id = a.engagement_id AND e.client_id = :client_id
+             LEFT JOIN services s ON s.id = a.service_id
+             WHERE a.client_id = :client_id
+               AND e.public_id = :engagement_id
+               AND a.visibility IN (\'client\', \'both\')
+               AND a.status <> \'cancelled\'
+             ORDER BY a.scheduled_at ASC'
+        );
+        $statement->execute(['client_id' => $clientId, 'engagement_id' => $engagementPublicId]);
         return $statement->fetchAll();
     }
 

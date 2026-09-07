@@ -317,6 +317,7 @@ function App() {
           />
           <Route path="dashboard" element={<ClientPortalDashboardPage />} />
           <Route path="services" element={<ClientPortalPage />} />
+          <Route path="services/:engagementId" element={<ClientPortalPage />} />
           <Route path="intake" element={<ClientIntakePage />} />
           <Route path="tasks-and-documents" element={<ClientPortalPage />} />
           <Route path="tasks" element={<ClientPortalPage />} />

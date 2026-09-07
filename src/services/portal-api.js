@@ -50,6 +50,7 @@ async function portalRequest(resource, options = {}) {
 export const portalApi = {
   dashboard: () => getPortalResource("dashboard"),
   services: () => getPortalResource("services"),
+  service: (id) => getPortalResource(`services/${id}`),
   requestService: (payload) =>
     portalRequest("services/request", {
       method: "POST",

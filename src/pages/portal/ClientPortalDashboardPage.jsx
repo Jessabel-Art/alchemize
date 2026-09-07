@@ -340,9 +340,21 @@ function ClientPortalDashboardPage() {
                         <div>
                           <dt>Current phase</dt>
                           <dd>
-                            {item.service_names?.[0] ||
-                              item.status?.replaceAll("_", " ") ||
-                              "In progress"}
+                            {Array.isArray(item.service_names) &&
+                            item.service_names.some(
+                              (name) =>
+                                name &&
+                                name.toLowerCase() !==
+                                  item.title?.toLowerCase(),
+                            )
+                              ? item.service_names.find(
+                                  (name) =>
+                                    name &&
+                                    name.toLowerCase() !==
+                                      item.title?.toLowerCase(),
+                                )
+                              : item.status?.replaceAll("_", " ") ||
+                                "In progress"}
                           </dd>
                         </div>
                       </dl>
@@ -352,13 +364,7 @@ function ClientPortalDashboardPage() {
                       </div>
                       <div className="portal-service-actions">
                         <Link
-                          to="/client-portal/tasks-and-documents"
-                          className="portal-secondary-link"
-                        >
-                          View in Tasks &amp; Documents
-                        </Link>
-                        <Link
-                          to="/client-portal/services"
+                          to={`/client-portal/services/${item.id}`}
                           className="portal-primary-link"
                         >
                           View service

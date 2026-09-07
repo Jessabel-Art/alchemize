@@ -14,7 +14,11 @@ const resources = new Set([
 
 function ClientPortalPage() {
   const location = useLocation();
-  const resource = location.pathname.split("/").filter(Boolean).at(-1);
+  const segments = location.pathname.split("/").filter(Boolean);
+  const resource =
+    segments[1] === "services" && segments[2] ? "services" : segments.at(-1);
+  const engagementId =
+    segments[1] === "services" && segments[2] ? segments[2] : null;
 
   if (resource === "tasks" || resource === "documents") {
     return (
@@ -29,7 +33,7 @@ function ClientPortalPage() {
     return <Navigate to="/client-portal/dashboard" replace />;
   }
 
-  return <PortalRecordsPage resource={resource} />;
+  return <PortalRecordsPage resource={resource} engagementId={engagementId} />;
 }
 
 export default ClientPortalPage;

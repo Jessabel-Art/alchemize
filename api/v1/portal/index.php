@@ -73,6 +73,9 @@ try {
         };
         alchemize_json_response(['data' => $data], 200);
     }
+    if ($method === 'GET' && $resource === 'services' && count($parts) === 2) {
+        alchemize_json_response(['data' => $service->serviceDetail($access, $parts[1])], 200);
+    }
 
     if ($method === 'GET' && $resource === 'messages' && count($parts) === 2) {
         alchemize_json_response(['data' => $actions->thread($access, $parts[1], true)], 200);
