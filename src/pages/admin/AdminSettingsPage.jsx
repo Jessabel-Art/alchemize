@@ -1097,7 +1097,10 @@ export default function AdminSettingsPage() {
               {state.loading ? (
                 <p role="status">Loading business settings…</p>
               ) : values ? (
-                <form className="business-settings-form" onSubmit={save}>
+                <form
+                  className="business-settings-form"
+                  onSubmit={(event) => save(event, "Settings saved.")}
+                >
                   <p className="settings-note">
                     Additional defaults are saved here for the upcoming workflow
                     phases. Current workflows continue using their existing

@@ -87,18 +87,18 @@ test("Business persistence contract, navigation, validation and responsive shell
   ).toBeVisible();
   await page.getByRole("button", { name: "Business", exact: true }).click();
   await page.getByLabel(/Business notification email/i).fill("bad-email");
-  await page.getByRole("button", { name: "Save Business settings" }).click();
+  await page.getByRole("button", { name: "Save Settings", exact: true }).click();
   expect(writes).toBe(0);
   await page
     .getByLabel(/Business notification email/i)
     .fill("new-ops@example.com");
   await page.getByLabel("Default appointment duration (minutes)").fill("0");
-  await page.getByRole("button", { name: "Save Business settings" }).click();
+  await page.getByRole("button", { name: "Save Settings", exact: true }).click();
   expect(writes).toBe(0);
   await page.getByLabel("Default appointment duration (minutes)").fill("90");
   await page.getByLabel("Email clients when a portal message is sent").check();
-  await page.getByRole("button", { name: "Save Business settings" }).click();
-  await expect(page.getByText("Business settings saved.")).toBeVisible();
+  await page.getByRole("button", { name: "Save Settings", exact: true }).click();
+  await expect(page.getByText("Settings saved.")).toBeVisible();
   expect(saved.portal_message_email_notifications).toBe(true);
   expect(saved.appointment_default_duration).toBe(90);
   await page.reload();
@@ -418,7 +418,7 @@ test("Load failure never presents fallback settings to save", async ({
   await page.goto("/admin/settings");
   await expect(page.getByRole("alert")).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Save Business settings" }),
+    page.getByRole("button", { name: "Save Settings", exact: true }),
   ).toHaveCount(0);
   await expect(
     page.getByRole("button", { name: "Retry loading settings" }),
