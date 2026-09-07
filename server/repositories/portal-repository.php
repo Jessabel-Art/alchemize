@@ -138,15 +138,43 @@ final class AlchemizePortalRepository
         return $statement->fetchAll();
     }
 
-    private function appointmentDates(array $rows): array {
- return array_map(static function(array $row): array {
- $zone=new DateTimeZone($row['timezone'] ?? 'America/New_York');
- $row['scheduled_start']=(new DateTimeImmutable($row['scheduled_at'],$zone))->format(DateTimeInterface::RFC3339);
- $row['scheduled_end']=!empty($row['end_at']) ? (new DateTimeImmutable($row['end_at'],$zone))->format(DateTimeInterface::RFC3339) : null;
- return $row;
- },$rows);
- }
- public function listAppointments(int $clientId): array
+    private function appointmentDates(array $rows): array
+    {
+        return array_map(function (array $row): array {
+            $timezone = trim((string) ($row['timezone'] ?? ''));
+            $zone = new DateTimeZone('UTC');
+            if ($timezone !== '') {
+                try {
+                    $zone = new DateTimeZone($timezone);
+                } catch (Exception) {
+                    $zone = new DateTimeZone('UTC');
+                }
+            }
+
+            $scheduledAt = (string) ($row['scheduled_at'] ?? '');
+            $row['scheduled_start'] = $scheduledAt !== ''
+                ? $this->formatDateTime($scheduledAt, $zone)
+                : null;
+
+            $endAt = (string) ($row['end_at'] ?? '');
+            $row['scheduled_end'] = $endAt !== ''
+                ? $this->formatDateTime($endAt, $zone)
+                : null;
+
+            return $row;
+        }, $rows);
+    }
+
+    private function formatDateTime(string $value, DateTimeZone $timezone): ?string
+    {
+        try {
+            return (new DateTimeImmutable($value, $timezone))->format(DateTimeInterface::RFC3339);
+        } catch (Exception) {
+            return null;
+        }
+    }
+
+    public function listAppointments(int $clientId): array
     {
         $statement = $this->database->prepare(
             'SELECT a.public_id AS id, a.appointment_type, a.scheduled_at, a.end_at,
