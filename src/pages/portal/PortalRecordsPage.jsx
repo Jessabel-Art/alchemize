@@ -500,6 +500,10 @@ function TasksAndDocuments({ tasks, documents, intakes, empty, busy, run }) {
             groups.map((group) => (
               <section key={group.label}>
                 <h2>{group.label}</h2>
+                {group.label === "Action needed" &&
+                group.items.some((item) => item.kind === "task") ? (
+                  <h3>Waiting on you</h3>
+                ) : null}
                 <ul className="portal-record-list">
                   {group.items.map((item) => (
                     <li key={`${item.kind}-${item.id}`}>

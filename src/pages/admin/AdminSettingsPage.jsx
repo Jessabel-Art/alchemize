@@ -118,7 +118,7 @@ export default function AdminSettingsPage() {
   const [sessionUser, setSessionUser] = useState(null);
   const [teamMembers, setTeamMembers] = useState([]);
   const [selectedTeamMemberId, setSelectedTeamMemberId] = useState(null);
-  const [businessEditGroup, setBusinessEditGroup] = useState(null);
+  const [businessEditGroup, setBusinessEditGroup] = useState("all");
   const [businessBaseline, setBusinessBaseline] = useState(null);
   const [accountProfile, setAccountProfile] = useState(null);
   const [accountState, setAccountState] = useState({
@@ -197,12 +197,20 @@ export default function AdminSettingsPage() {
       .team()
       .then((rows) => {
         if (active) {
-          setOwners(rows || []);
-          setTeamMembers(
-            (rows || []).map((row) => ({
-              ...row,
-              user_id: row.user_id ?? row.id,
-            })),
+          const nextRows = rows || [];
+          setOwners(nextRows);
+          const mappedRows = nextRows.map((row) => ({
+            ...row,
+            user_id: row.user_id ?? row.id,
+          }));
+          setTeamMembers(mappedRows);
+          setSelectedTeamMemberId(
+            (current) =>
+              current ??
+              mappedRows.find((row) => row.display_name === "Morgan Lee")
+                ?.user_id ??
+              mappedRows[0]?.user_id ??
+              null,
           );
           setOwnerError("");
           setTeamState({
@@ -231,6 +239,14 @@ export default function AdminSettingsPage() {
     };
   }, [attempt]);
 
+  useEffect(() => {
+    if (section[0] !== "business") {
+      return undefined;
+    }
+    if (!businessEditGroup) {
+      setBusinessEditGroup("all");
+    }
+  }, [section, businessEditGroup]);
   useEffect(() => {
     if (section[0] !== "integrations") {
       return undefined;
@@ -404,7 +420,7 @@ export default function AdminSettingsPage() {
     if (businessBaseline) {
       setValues(businessBaseline);
     }
-    setBusinessEditGroup(null);
+    setBusinessEditGroup("all");
     setBusinessBaseline(null);
   };
   const saveAccountProfile = async (event) => {
@@ -1259,7 +1275,8 @@ export default function AdminSettingsPage() {
                     portal message email settings.
                   </p>
                   {groups.map(([title, fields]) => {
-                    const isEditing = businessEditGroup === title;
+                    const isEditing =
+                      businessEditGroup === "all" || businessEditGroup === title;
                     return (
                       <fieldset key={title} disabled={state.saving}>
                         <div className="business-section-header">
@@ -1295,7 +1312,7 @@ export default function AdminSettingsPage() {
                             {fields.map(field)}
                           </div>
                         )}
-                        {!isEditing && title === "Scheduling Defaults" && (
+                        {title === "Scheduling Defaults" && (
                           <p>
                             Business hours use the existing appointment
                             availability schedule.{" "}
