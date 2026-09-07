@@ -105,17 +105,17 @@ export const portalApi = {
   billing: () => getPortalResource("billing"),
   checkoutInvoice: (id) =>
     portalRequest(`billing/${id}/checkout`, {
-      method: 'POST',
+      method: "POST",
     }),
 
   createPaypalOrder: (id) =>
     portalRequest(`billing/${id}/paypal/order`, {
-      method: 'POST',
+      method: "POST",
     }),
 
   capturePaypalOrder: (id, orderId) =>
     portalRequest(`billing/${id}/paypal/capture`, {
-      method: 'POST',
+      method: "POST",
       body: JSON.stringify({
         order_id: orderId,
       }),

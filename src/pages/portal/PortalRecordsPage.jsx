@@ -1199,11 +1199,7 @@ function PayPalInvoiceButton({ invoice, clientId, run }) {
           onApprove: async (data) => {
             await run(
               `${invoice.id}-paypal`,
-              () =>
-                portalApi.capturePaypalOrder(
-                  invoice.id,
-                  data.orderID,
-                ),
+              () => portalApi.capturePaypalOrder(invoice.id, data.orderID),
               "PayPal payment completed.",
             );
           },
