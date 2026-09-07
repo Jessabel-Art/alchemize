@@ -1276,7 +1276,8 @@ export default function AdminSettingsPage() {
                   </p>
                   {groups.map(([title, fields]) => {
                     const isEditing =
-                      businessEditGroup === "all" || businessEditGroup === title;
+                      businessEditGroup === "all" ||
+                      businessEditGroup === title;
                     return (
                       <fieldset key={title} disabled={state.saving}>
                         <div className="business-section-header">
