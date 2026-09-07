@@ -299,12 +299,21 @@ function buildUnifiedGroups(tasks, documents, intakes) {
       Completed: ["completed"],
     },
     document: {
-      "Action needed": ["requested", "awaiting_upload", "replacement_requested"],
+      "Action needed": [
+        "requested",
+        "awaiting_upload",
+        "replacement_requested",
+      ],
       "Under review": ["received", "under_review"],
       Completed: ["accepted", "archived"],
     },
     intake: {
-      "Action needed": ["assigned", "in_progress", "changes_requested", "waiting_on_client"],
+      "Action needed": [
+        "assigned",
+        "in_progress",
+        "changes_requested",
+        "waiting_on_client",
+      ],
       "Under review": ["submitted", "under_review", "approved"],
       Completed: ["completed"],
     },
@@ -314,12 +323,14 @@ function buildUnifiedGroups(tasks, documents, intakes) {
     { label: "Action needed", items: [] },
     { label: "Under review", items: [] },
     { label: "Completed", items: [] },
-  ].map((group) => ({
-    ...group,
-    items: records.filter((item) =>
-      (rules[item.kind]?.[group.label] || []).includes(item.status),
-    ),
-  })).filter((group) => group.items.length);
+  ]
+    .map((group) => ({
+      ...group,
+      items: records.filter((item) =>
+        (rules[item.kind]?.[group.label] || []).includes(item.status),
+      ),
+    }))
+    .filter((group) => group.items.length);
 }
 
 function ResourceContent(props) {
@@ -494,7 +505,11 @@ function TasksAndDocuments({ tasks, documents, intakes, empty, busy, run }) {
                     <li key={`${item.kind}-${item.id}`}>
                       <div>
                         <strong>{item.title}</strong>
-                        <p>{item.description || item.engagement_title || "Client-visible item"}</p>
+                        <p>
+                          {item.description ||
+                            item.engagement_title ||
+                            "Client-visible item"}
+                        </p>
                         {item.kind === "task" && item.status !== "completed" ? (
                           <label className="portal-inline-field">
                             <span>Optional response</span>
@@ -505,7 +520,12 @@ function TasksAndDocuments({ tasks, documents, intakes, empty, busy, run }) {
                             />
                           </label>
                         ) : null}
-                        {item.kind === "document" && ["requested", "awaiting_upload", "replacement_requested"].includes(item.status) ? (
+                        {item.kind === "document" &&
+                        [
+                          "requested",
+                          "awaiting_upload",
+                          "replacement_requested",
+                        ].includes(item.status) ? (
                           <DocumentUpload item={item} busy={busy} run={run} />
                         ) : null}
                         {item.kind === "intake" ? (
@@ -565,7 +585,9 @@ function TasksAndDocuments({ tasks, documents, intakes, empty, busy, run }) {
                               className="portal-action-button"
                               href={`/client-portal/intake?assignment=${encodeURIComponent(item.id)}`}
                             >
-                              {item.status === "completed" ? "View submission" : "Continue intake"}
+                              {item.status === "completed"
+                                ? "View submission"
+                                : "Continue intake"}
                             </a>
                           </div>
                         ) : null}
