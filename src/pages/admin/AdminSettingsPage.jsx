@@ -231,7 +231,8 @@ export default function AdminSettingsPage() {
     settings
       .integrations()
       .then((status) => {
-        if (active) setIntegrationStatus({ loading: false, error: "", data: status });
+        if (active)
+          setIntegrationStatus({ loading: false, error: "", data: status });
       })
       .catch((error) => {
         if (active)
@@ -262,10 +263,13 @@ export default function AdminSettingsPage() {
         if (!active) return;
 
         const sessionUserData =
-          sessionResult.status === "fulfilled" ? sessionResult.value?.user : null;
+          sessionResult.status === "fulfilled"
+            ? sessionResult.value?.user
+            : null;
         const accountPayload =
           accountResult.status === "fulfilled" ? accountResult.value : null;
-        const user = accountPayload?.user || sessionUserData || sessionUser || null;
+        const user =
+          accountPayload?.user || sessionUserData || sessionUser || null;
         const profile = user
           ? {
               ...user,
@@ -665,7 +669,12 @@ export default function AdminSettingsPage() {
               {state.loading ? (
                 <p role="status">Loading notification settings…</p>
               ) : values ? (
-                <form className="business-settings-form" onSubmit={(event) => save(event, "Notification settings saved.")}>
+                <form
+                  className="business-settings-form"
+                  onSubmit={(event) =>
+                    save(event, "Notification settings saved.")
+                  }
+                >
                   <p className="settings-note">
                     Operational staff notifications are routed through the
                     existing Resend and dashboard notification infrastructure.
@@ -678,7 +687,9 @@ export default function AdminSettingsPage() {
                         <span>Operational notification delivery mode</span>
                         <select
                           id="notifications-staff_delivery_mode"
-                          value={values.staff_notification_delivery_mode ?? "both"}
+                          value={
+                            values.staff_notification_delivery_mode ?? "both"
+                          }
                           onChange={(event) =>
                             change(
                               "staff_notification_delivery_mode",
@@ -688,15 +699,17 @@ export default function AdminSettingsPage() {
                         >
                           <option value="both">Email + Admin Dashboard</option>
                           <option value="email">Email only</option>
-                          <option value="dashboard">Admin Dashboard only</option>
+                          <option value="dashboard">
+                            Admin Dashboard only
+                          </option>
                           <option value="disabled">Disabled</option>
                         </select>
                       </label>
                     </div>
                     <p>
-                      Email routes to the configured business notification email.
-                      Dashboard sends the same event into the existing staff
-                      notification feed and read history.
+                      Email routes to the configured business notification
+                      email. Dashboard sends the same event into the existing
+                      staff notification feed and read history.
                     </p>
                   </fieldset>
                   <div className="settings-save">
@@ -730,29 +743,58 @@ export default function AdminSettingsPage() {
           ) : section[0] === "data-maintenance" ? (
             <>
               <p className="settings-note">
-                Review cleanup candidates before any archive or purge action. This phase is intentionally limited to safe maintenance actions for stale, temporary, and explicitly reviewed records.
+                Review cleanup candidates before any archive or purge action.
+                This phase is intentionally limited to safe maintenance actions
+                for stale, temporary, and explicitly reviewed records.
               </p>
               <div className="maintenance-grid">
                 <div className="business-settings-form">
                   <fieldset>
                     <legend>Review inactive prospects</legend>
-                    <button type="button" className="secondary-button" onClick={() => settings.maintenance("overview")}>Review stale prospects</button>
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() => settings.maintenance("overview")}
+                    >
+                      Review stale prospects
+                    </button>
                   </fieldset>
                   <fieldset>
                     <legend>Review completed engagements</legend>
-                    <button type="button" className="secondary-button" onClick={() => settings.maintenance("overview")}>Review completed engagements</button>
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() => settings.maintenance("overview")}
+                    >
+                      Review completed engagements
+                    </button>
                   </fieldset>
                   <fieldset>
                     <legend>Review expired scheduling links</legend>
-                    <button type="button" className="secondary-button" onClick={() => settings.maintenance("overview")}>Review expired scheduling links</button>
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() => settings.maintenance("overview")}
+                    >
+                      Review expired scheduling links
+                    </button>
                   </fieldset>
                   <fieldset>
                     <legend>Review expired invitations</legend>
-                    <button type="button" className="secondary-button" onClick={() => settings.maintenance("overview")}>Review expired invitations</button>
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() => settings.maintenance("overview")}
+                    >
+                      Review expired invitations
+                    </button>
                   </fieldset>
                   <fieldset>
                     <legend>Maintenance history</legend>
-                    <p>Recent cleanup and archive activity is recorded through the existing audit log.</p>
+                    <p>
+                      Recent cleanup and archive activity is recorded through
+                      the existing audit log.
+                    </p>
                   </fieldset>
                 </div>
               </div>
@@ -760,12 +802,16 @@ export default function AdminSettingsPage() {
           ) : section[0] === "integrations" ? (
             <>
               <p className="settings-note">
-                Safe operational status only. This page reports configuration and recent activity without exposing secrets, credentials, or raw provider payloads.
+                Safe operational status only. This page reports configuration
+                and recent activity without exposing secrets, credentials, or
+                raw provider payloads.
               </p>
               {integrationStatus.loading ? (
                 <p role="status">Loading system status…</p>
               ) : integrationStatus.error ? (
-                <p role="alert" className="admin-feedback">{integrationStatus.error}</p>
+                <p role="alert" className="admin-feedback">
+                  {integrationStatus.error}
+                </p>
               ) : (
                 <div className="integrations-grid">
                   {[
@@ -779,16 +825,35 @@ export default function AdminSettingsPage() {
                       <div key={slug} className="integration-card">
                         <div className="integration-card-header">
                           <h3>{label}</h3>
-                          <span className={`status-pill status-${String(item?.status || "Unknown").toLowerCase().replace(/\s+/g, "-")}`}>
+                          <span
+                            className={`status-pill status-${String(
+                              item?.status || "Unknown",
+                            )
+                              .toLowerCase()
+                              .replace(/\s+/g, "-")}`}
+                          >
                             {item?.status || "Unknown"}
                           </span>
                         </div>
                         <dl>
-                          <div><dt>Configured</dt><dd>{item?.configured ? "Yes" : "No"}</dd></div>
-                          <div><dt>Last success</dt><dd>{item?.last_success || "Not available"}</dd></div>
-                          <div><dt>Last error</dt><dd>{item?.last_error || "None recorded"}</dd></div>
+                          <div>
+                            <dt>Configured</dt>
+                            <dd>{item?.configured ? "Yes" : "No"}</dd>
+                          </div>
+                          <div>
+                            <dt>Last success</dt>
+                            <dd>{item?.last_success || "Not available"}</dd>
+                          </div>
+                          <div>
+                            <dt>Last error</dt>
+                            <dd>{item?.last_error || "None recorded"}</dd>
+                          </div>
                         </dl>
-                        <button type="button" className="secondary-button" onClick={() => settings.checkIntegration(slug)}>
+                        <button
+                          type="button"
+                          className="secondary-button"
+                          onClick={() => settings.checkIntegration(slug)}
+                        >
                           Check Connection
                         </button>
                       </div>
@@ -797,12 +862,33 @@ export default function AdminSettingsPage() {
                   <div className="integration-card system-card">
                     <div className="integration-card-header">
                       <h3>System</h3>
-                      <span className="status-pill status-connected">{integrationStatus.data?.system?.database?.status || "Unknown"}</span>
+                      <span className="status-pill status-connected">
+                        {integrationStatus.data?.system?.database?.status ||
+                          "Unknown"}
+                      </span>
                     </div>
                     <dl>
-                      <div><dt>Database</dt><dd>{integrationStatus.data?.system?.database?.status || "Unknown"}</dd></div>
-                      <div><dt>Application version</dt><dd>{integrationStatus.data?.system?.application?.version || "Unknown"}</dd></div>
-                      <div><dt>Runtime</dt><dd>{integrationStatus.data?.system?.application?.runtime || "Unknown"}</dd></div>
+                      <div>
+                        <dt>Database</dt>
+                        <dd>
+                          {integrationStatus.data?.system?.database?.status ||
+                            "Unknown"}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Application version</dt>
+                        <dd>
+                          {integrationStatus.data?.system?.application
+                            ?.version || "Unknown"}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Runtime</dt>
+                        <dd>
+                          {integrationStatus.data?.system?.application
+                            ?.runtime || "Unknown"}
+                        </dd>
+                      </div>
                     </dl>
                   </div>
                 </div>
@@ -814,11 +900,15 @@ export default function AdminSettingsPage() {
                 <p role="status">Loading account details…</p>
               ) : accountProfile ? (
                 <div className="account-security-layout">
-                  <form className="business-settings-form" onSubmit={saveAccountProfile}>
+                  <form
+                    className="business-settings-form"
+                    onSubmit={saveAccountProfile}
+                  >
                     <p className="settings-note">
-                      Your personal admin account is managed through the existing
-                      authentication layer. This screen only updates the currently
-                      signed-in user and enforces backend validation.
+                      Your personal admin account is managed through the
+                      existing authentication layer. This screen only updates
+                      the currently signed-in user and enforces backend
+                      validation.
                     </p>
                     <fieldset disabled={accountState.saving}>
                       <legend>Account profile</legend>
@@ -854,10 +944,18 @@ export default function AdminSettingsPage() {
                       </div>
                     </fieldset>
                     <div className="settings-save">
-                      <button className="primary-button" type="submit" disabled={accountState.saving}>
-                        {accountState.saving ? "Saving…" : "Save account profile"}
+                      <button
+                        className="primary-button"
+                        type="submit"
+                        disabled={accountState.saving}
+                      >
+                        {accountState.saving
+                          ? "Saving…"
+                          : "Save account profile"}
                       </button>
-                      {accountState.message && <p role="status">{accountState.message}</p>}
+                      {accountState.message && (
+                        <p role="status">{accountState.message}</p>
+                      )}
                     </div>
                     {accountState.error && (
                       <p role="alert" className="admin-feedback">
@@ -866,7 +964,10 @@ export default function AdminSettingsPage() {
                     )}
                   </form>
 
-                  <form className="business-settings-form" onSubmit={savePassword}>
+                  <form
+                    className="business-settings-form"
+                    onSubmit={savePassword}
+                  >
                     <fieldset disabled={passwordState.saving}>
                       <legend>Security</legend>
                       <div className="business-fields">
@@ -901,10 +1002,16 @@ export default function AdminSettingsPage() {
                       </div>
                     </fieldset>
                     <div className="settings-save">
-                      <button className="primary-button" type="submit" disabled={passwordState.saving}>
+                      <button
+                        className="primary-button"
+                        type="submit"
+                        disabled={passwordState.saving}
+                      >
                         {passwordState.saving ? "Updating…" : "Change password"}
                       </button>
-                      {passwordState.message && <p role="status">{passwordState.message}</p>}
+                      {passwordState.message && (
+                        <p role="status">{passwordState.message}</p>
+                      )}
                     </div>
                     {passwordState.error && (
                       <p role="alert" className="admin-feedback">
@@ -919,11 +1026,31 @@ export default function AdminSettingsPage() {
                       <div className="business-fields">
                         <label>
                           <span>Last login</span>
-                          <input type="text" readOnly value={accountProfile.last_login_at ? new Date(accountProfile.last_login_at).toLocaleString() : "Never"} />
+                          <input
+                            type="text"
+                            readOnly
+                            value={
+                              accountProfile.last_login_at
+                                ? new Date(
+                                    accountProfile.last_login_at,
+                                  ).toLocaleString()
+                                : "Never"
+                            }
+                          />
                         </label>
                         <label>
                           <span>Password last changed</span>
-                          <input type="text" readOnly value={accountProfile.password_changed_at ? new Date(accountProfile.password_changed_at).toLocaleString() : "Never"} />
+                          <input
+                            type="text"
+                            readOnly
+                            value={
+                              accountProfile.password_changed_at
+                                ? new Date(
+                                    accountProfile.password_changed_at,
+                                  ).toLocaleString()
+                                : "Never"
+                            }
+                          />
                         </label>
                       </div>
                       <p>
@@ -932,20 +1059,29 @@ export default function AdminSettingsPage() {
                       </p>
                       <p>MFA is not configured for this workspace yet.</p>
                     </fieldset>
-                    {Array.isArray(accountProfile?.recent_activity) && accountProfile.recent_activity.length > 0 && (
-                      <fieldset>
-                        <legend>Recent activity</legend>
-                        <ul>
-                          {accountProfile.recent_activity.map((item, index) => (
-                            <li key={`${item.event_type}-${index}`}>
-                              <strong>{item.event_type}</strong>
-                              <div>{item.action_summary}</div>
-                              <small>{item.created_at ? new Date(item.created_at).toLocaleString() : ""}</small>
-                            </li>
-                          ))}
-                        </ul>
-                      </fieldset>
-                    )}
+                    {Array.isArray(accountProfile?.recent_activity) &&
+                      accountProfile.recent_activity.length > 0 && (
+                        <fieldset>
+                          <legend>Recent activity</legend>
+                          <ul>
+                            {accountProfile.recent_activity.map(
+                              (item, index) => (
+                                <li key={`${item.event_type}-${index}`}>
+                                  <strong>{item.event_type}</strong>
+                                  <div>{item.action_summary}</div>
+                                  <small>
+                                    {item.created_at
+                                      ? new Date(
+                                          item.created_at,
+                                        ).toLocaleString()
+                                      : ""}
+                                  </small>
+                                </li>
+                              ),
+                            )}
+                          </ul>
+                        </fieldset>
+                      )}
                   </div>
                 </div>
               ) : (

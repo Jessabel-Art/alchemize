@@ -81,9 +81,13 @@ export const auth = {
   },
 
   async account() {
-    const data = await apiRequest(buildApiUrl("auth/account")).catch(() => null);
+    const data = await apiRequest(buildApiUrl("auth/account")).catch(
+      () => null,
+    );
     const fallback =
-      data && !Array.isArray(data) ? data : { user: null, recent_activity: [], security: {} };
+      data && !Array.isArray(data)
+        ? data
+        : { user: null, recent_activity: [], security: {} };
 
     if (!fallback.user) {
       const session = await auth.session().catch(() => null);

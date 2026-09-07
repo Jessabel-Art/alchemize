@@ -141,7 +141,12 @@ test("Account & Security loads personal details and supports self-service passwo
         json: {
           data: {
             authenticated: true,
-            user: { user_id: 1, role_slug: "owner-admin", email: account.email, display_name: account.display_name },
+            user: {
+              user_id: 1,
+              role_slug: "owner-admin",
+              email: account.email,
+              display_name: account.display_name,
+            },
             csrf_token: "test-token",
           },
         },
@@ -157,10 +162,17 @@ test("Account & Security loads personal details and supports self-service passwo
             data: {
               updated: true,
               user: account,
-              recent_activity: [{ event_type: "user.profile.updated", action_summary: "Updated account profile.", created_at: "2025-01-18T09:00:00.000000Z" }],
+              recent_activity: [
+                {
+                  event_type: "user.profile.updated",
+                  action_summary: "Updated account profile.",
+                  created_at: "2025-01-18T09:00:00.000000Z",
+                },
+              ],
               security: {
                 mfa_available: false,
-                session_note: "Current browser session is managed by secure cookies and can be ended by signing out.",
+                session_note:
+                  "Current browser session is managed by secure cookies and can be ended by signing out.",
               },
             },
           },
@@ -170,10 +182,17 @@ test("Account & Security loads personal details and supports self-service passwo
         json: {
           data: {
             user: account,
-            recent_activity: [{ event_type: "portal.password.changed", action_summary: "Changed password for the current account.", created_at: "2025-01-15T10:00:00.000000Z" }],
+            recent_activity: [
+              {
+                event_type: "portal.password.changed",
+                action_summary: "Changed password for the current account.",
+                created_at: "2025-01-15T10:00:00.000000Z",
+              },
+            ],
             security: {
               mfa_available: false,
-              session_note: "Current browser session is managed by secure cookies and can be ended by signing out.",
+              session_note:
+                "Current browser session is managed by secure cookies and can be ended by signing out.",
             },
           },
         },
@@ -199,8 +218,12 @@ test("Account & Security loads personal details and supports self-service passwo
   ).toBeVisible();
   await expect(page.getByLabel("Display name")).toHaveValue("Alex Rivera");
   await expect(page.getByLabel("Login email")).toHaveValue("alex@alchemize.co");
-  await expect(page.getByText("Current browser session is managed by secure cookies")).toBeVisible();
-  await expect(page.getByText("MFA is not configured for this workspace yet.")).toBeVisible();
+  await expect(
+    page.getByText("Current browser session is managed by secure cookies"),
+  ).toBeVisible();
+  await expect(
+    page.getByText("MFA is not configured for this workspace yet."),
+  ).toBeVisible();
 
   await page.getByLabel("Display name").fill("Alex R. Rivera");
   await page.getByRole("button", { name: "Save account profile" }).click();
@@ -254,8 +277,12 @@ test("Notifications section saves delivery mode without creating a second notifi
   await expect(
     page.getByLabel("Operational notification delivery mode"),
   ).toHaveValue("both");
-  await page.getByLabel("Operational notification delivery mode").selectOption("dashboard");
-  await page.getByRole("button", { name: "Save notification settings" }).click();
+  await page
+    .getByLabel("Operational notification delivery mode")
+    .selectOption("dashboard");
+  await page
+    .getByRole("button", { name: "Save notification settings" })
+    .click();
   await expect(page.getByText("Notification settings saved.")).toBeVisible();
   expect(saved.staff_notification_delivery_mode).toBe("dashboard");
   expect(saved.business_email).toBe("ops@example.com");
