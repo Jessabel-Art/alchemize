@@ -16,6 +16,12 @@ const pageContent = {
     "See and respond to client-facing action items connected to your active service work.",
     "No tasks require your attention.",
   ],
+  "tasks-and-documents": [
+    "Tasks & Documents",
+    "Tasks & Documents",
+    "Review active tasks and document requests together so your next steps stay clear.",
+    "No tasks or document requests require your attention.",
+  ],
   documents: [
     "Documents",
     "Documents",
@@ -136,6 +142,22 @@ function PortalRecordsPage({ resource }) {
   const load = useCallback(async () => {
     setState({ status: "loading", data: null, error: "" });
     try {
+      if (resource === "tasks-and-documents") {
+        const [tasks, documents] = await Promise.all([
+          portalApi.tasks(),
+          portalApi.documents(),
+        ]);
+        setState({
+          status: "ready",
+          data: {
+            tasks: tasks.items || [],
+            documents: documents.items || [],
+          },
+          error: "",
+        });
+        return;
+      }
+
       setState({
         status: "ready",
         data: await portalApi[resource](),
@@ -161,10 +183,10 @@ function PortalRecordsPage({ resource }) {
       setBusy("");
     }
   };
-  const groups = useMemo(
-    () => groupRecords(resource, state.data?.items || []),
-    [resource, state.data],
-  );
+  const groups = useMemo(() => {
+    if (resource === "tasks-and-documents") return [];
+    return groupRecords(resource, state.data?.items || []);
+  }, [resource, state.data]);
 
   return (
     <div
@@ -237,6 +259,16 @@ function ResourceContent(props) {
     );
   if (resource === "tasks")
     return <Tasks groups={groups} empty={empty} busy={busy} run={run} />;
+  if (resource === "tasks-and-documents")
+    return (
+      <TasksAndDocuments
+        tasks={data?.tasks || []}
+        documents={data?.documents || []}
+        empty={empty}
+        busy={busy}
+        run={run}
+      />
+    );
   if (resource === "documents")
     return <Documents groups={groups} empty={empty} busy={busy} run={run} />;
   if (resource === "appointments")
@@ -370,6 +402,35 @@ function Services({ items, empty, busy, run }) {
             {busy === "service-request" ? "Sending…" : "Request service"}
           </button>
         </form>
+      </aside>
+    </div>
+  );
+}
+
+function TasksAndDocuments({ tasks, documents, empty, busy, run }) {
+  const taskGroups = groupRecords("tasks", tasks);
+  const documentGroups = groupRecords("documents", documents);
+  return (
+    <div className="portal-workspace-grid">
+      <div className="portal-workspace-primary">
+        <div className="portal-group-stack">
+          {taskGroups.length ? (
+            <Tasks groups={taskGroups} empty={empty} busy={busy} run={run} />
+          ) : (
+            <EmptyState>{empty}</EmptyState>
+          )}
+          {documentGroups.length ? (
+            <Documents
+              groups={documentGroups}
+              empty={empty}
+              busy={busy}
+              run={run}
+            />
+          ) : null}
+        </div>
+      </div>
+      <aside className="portal-workspace-utility">
+        <GeneralDocumentUpload busy={busy} run={run} />
       </aside>
     </div>
   );

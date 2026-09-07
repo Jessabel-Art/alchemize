@@ -60,6 +60,7 @@ final class AlchemizePortalService
         $counts = [
             'tasks' => count(array_filter($openTasks, static fn (array $row): bool => in_array($row['status'], ['not_started', 'waiting_on_client'], true))),
             'documents' => count($neededDocuments),
+            'tasks-and-documents' => count(array_filter($openTasks, static fn (array $row): bool => in_array($row['status'], ['not_started', 'waiting_on_client'], true))) + count($neededDocuments),
             'messages' => max($this->repository->countUnreadMessages($clientId), $this->repository->countClientActionMessages($clientId)),
             'billing' => count(array_filter($openInvoices, static fn (array $row): bool => $row['status'] === 'past_due')),
         ];
@@ -180,10 +181,10 @@ final class AlchemizePortalService
             if (!in_array($task['status'], ['not_started', 'waiting_on_client'], true)) continue;
             $due = empty($task['due_date']) ? null : strtotime((string) $task['due_date']);
             $priority = $due !== null && $due < $today ? 1 : ($due !== null && $due <= strtotime('+7 days', $today) ? 3 : 2);
-            $items[] = ['kind' => 'task', 'priority' => $priority, 'title' => $task['title'], 'detail' => $due !== null ? 'Due ' . $task['due_date'] : 'Action requested', 'to' => '/client-portal/tasks'];
+            $items[] = ['kind' => 'task', 'priority' => $priority, 'title' => $task['title'], 'detail' => $due !== null ? 'Due ' . $task['due_date'] : 'Action requested', 'to' => '/client-portal/tasks-and-documents'];
         }
         foreach ($documents as $document) {
-            $items[] = ['kind' => 'document', 'priority' => $document['status'] === 'replacement_requested' ? 2 : 3, 'title' => $document['document_name'], 'detail' => $document['status'] === 'replacement_requested' ? 'Replacement requested' : 'Document requested', 'to' => '/client-portal/documents'];
+            $items[] = ['kind' => 'document', 'priority' => $document['status'] === 'replacement_requested' ? 2 : 3, 'title' => $document['document_name'], 'detail' => $document['status'] === 'replacement_requested' ? 'Replacement requested' : 'Document requested', 'to' => '/client-portal/tasks-and-documents'];
         }
         foreach ($invoices as $invoice) {
             if ($invoice['status'] !== 'past_due') continue;
@@ -204,8 +205,8 @@ final class AlchemizePortalService
             ['key' => 'profile', 'label' => 'Confirm profile information', 'complete' => !empty($access['primary_email']) && !empty($access['preferred_contact_method']), 'to' => '/client-portal/profile'],
         ];
         if ($services !== []) $steps[] = ['key' => 'service', 'label' => 'Review active service', 'complete' => false, 'to' => '/client-portal/services'];
-        if ($tasks !== []) $steps[] = ['key' => 'task', 'label' => 'Complete your first task', 'complete' => count(array_filter($tasks, static fn (array $row): bool => $row['status'] === 'completed')) > 0, 'to' => '/client-portal/tasks'];
-        if ($documents !== []) $steps[] = ['key' => 'document', 'label' => 'Provide requested documents', 'complete' => count(array_filter($documents, static fn (array $row): bool => in_array($row['status'], ['accepted', 'received', 'under_review'], true))) > 0, 'to' => '/client-portal/documents'];
+        if ($tasks !== []) $steps[] = ['key' => 'task', 'label' => 'Complete your first task', 'complete' => count(array_filter($tasks, static fn (array $row): bool => $row['status'] === 'completed')) > 0, 'to' => '/client-portal/tasks-and-documents'];
+        if ($documents !== []) $steps[] = ['key' => 'document', 'label' => 'Provide requested documents', 'complete' => count(array_filter($documents, static fn (array $row): bool => in_array($row['status'], ['accepted', 'received', 'under_review'], true))) > 0, 'to' => '/client-portal/tasks-and-documents'];
         if ($appointments !== []) $steps[] = ['key' => 'appointment', 'label' => 'Review upcoming appointment', 'complete' => count(array_filter($appointments, static fn (array $row): bool => $row['status'] === 'confirmed')) > 0, 'to' => '/client-portal/appointments'];
         return ['dismissed' => !empty($access['portal_onboarding_dismissed_at']), 'steps' => $steps, 'complete' => count(array_filter($steps, static fn (array $step): bool => !$step['complete'])) === 0];
     }

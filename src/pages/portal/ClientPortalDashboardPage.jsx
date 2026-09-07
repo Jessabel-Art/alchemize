@@ -96,13 +96,13 @@ function ClientPortalDashboardPage() {
       label: "Tasks requiring action",
       value: summary.tasks_requiring_action,
       detail: "Client-visible tasks awaiting you",
-      to: "/client-portal/tasks",
+      to: "/client-portal/tasks-and-documents",
     },
     {
       label: "Documents needed",
       value: summary.documents_needed,
       detail: "Outstanding client-visible requests",
-      to: "/client-portal/documents",
+      to: "/client-portal/tasks-and-documents",
     },
     {
       label: "Upcoming appointments",
@@ -194,9 +194,7 @@ function ClientPortalDashboardPage() {
               <ul className="portal-checklist">
                 {onboarding.steps.map((step) => (
                   <li key={step.key}>
-                    <span aria-hidden="true">
-                      {step.complete ? "âœ“" : "â—‹"}
-                    </span>
+                    <span aria-hidden="true">{step.complete ? "✓" : "•"}</span>
                     <Link to={step.to}>{step.label}</Link>
                     <small>{step.complete ? "Complete" : "To do"}</small>
                   </li>
@@ -261,7 +259,9 @@ function ClientPortalDashboardPage() {
                   No tasks require your attention.
                 </div>
               )}
-              <Link to="/client-portal/tasks">View tasks</Link>
+              <Link to="/client-portal/tasks-and-documents">
+                View tasks & documents
+              </Link>
             </article>
           ) : null}
           <section className="portal-service-summary">
@@ -392,7 +392,9 @@ function ClientPortalDashboardPage() {
                 ? "Requested files awaiting your upload."
                 : "No outstanding document requests."}
             </p>
-            <Link to="/client-portal/documents">View documents</Link>
+            <Link to="/client-portal/tasks-and-documents">
+              View tasks & documents
+            </Link>
           </section>
           <nav className="portal-quick-actions" aria-label="Quick actions">
             <h2>Quick actions</h2>

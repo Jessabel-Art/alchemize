@@ -9,9 +9,7 @@ import "../pages/portal/client-workspace.css";
 const baseNavItems = [
   { label: "Dashboard", to: "/client-portal/dashboard" },
   { label: "Services", to: "/client-portal/services" },
-  { label: "Onboarding / Intake", to: "/client-portal/intake" },
-  { label: "Tasks", to: "/client-portal/tasks" },
-  { label: "Documents", to: "/client-portal/documents" },
+  { label: "Tasks & Documents", to: "/client-portal/tasks-and-documents" },
   { label: "Appointments", to: "/client-portal/appointments" },
   { label: "Messages", to: "/client-portal/messages" },
   { label: "Billing", to: "/client-portal/billing" },

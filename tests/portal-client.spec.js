@@ -122,6 +122,50 @@ test("the dashboard renders authenticated client summaries and intentional empty
   await expect(page.getByText("No open invoices.")).toBeVisible();
 });
 
+test("tasks and documents use the unified portal destination and dashboard checklist characters are clean", async ({
+  page,
+}) => {
+  await page.route("**/alchemize-api.php?route=portal%2Fdashboard", (route) =>
+    route.fulfill({
+      json: {
+        data: {
+          ...portalPayloads.dashboard,
+          onboarding: {
+            dismissed: false,
+            steps: [
+              {
+                key: "profile",
+                label: "Confirm profile information",
+                complete: true,
+                to: "/client-portal/profile",
+              },
+              {
+                key: "service",
+                label: "Review active service",
+                complete: false,
+                to: "/client-portal/services",
+              },
+            ],
+          },
+        },
+      },
+    }),
+  );
+
+  await page.goto("/client-portal/dashboard/");
+  await expect(
+    page.getByRole("heading", { name: "Your service workspace" }),
+  ).toBeVisible();
+  await expect(page.getByText("✓")).toHaveCount(1);
+  await expect(page.getByText("âœ“")).toHaveCount(0);
+
+  await page.goto("/client-portal/tasks/");
+  await expect(page).toHaveURL(/\/client-portal\/tasks-and-documents\/?$/);
+  await expect(
+    page.getByRole("heading", { name: "Tasks & Documents" }),
+  ).toBeVisible();
+});
+
 test("service and task pages render only API records", async ({ page }) => {
   await page.goto("/client-portal/services/");
   await expect(
