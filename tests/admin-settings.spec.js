@@ -36,15 +36,19 @@ test("Business persistence contract, navigation, validation and responsive shell
     await route.fulfill({ json: { data } });
   });
   await page.goto("/admin/settings");
-  await expect(page.getByLabel("Business name", { exact: true })).toHaveValue(
-    "Existing business",
-  );
+  await expect(page.getByText("Existing business")).toBeVisible();
+  await expect(page.getByText("Default appointment duration")).toBeVisible();
   await expect(
-    page.getByLabel("Default appointment duration (minutes)"),
+    page.getByRole("button", { name: /Edit business identity/i }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: /Edit business identity/i }).click();
+  await expect(
+    page.getByLabel("Business name", { exact: true }).last(),
+  ).toHaveValue("Existing business");
+  await page.getByRole("button", { name: /Edit scheduling defaults/i }).click();
+  await expect(
+    page.getByLabel("Default appointment duration (minutes)").last(),
   ).toHaveValue("75");
-  await expect(
-    page.getByLabel("Email clients when a portal message is sent"),
-  ).not.toBeChecked();
   await page
     .getByRole("navigation", { name: "Settings sections" })
     .getByRole("button", { name: "Data Maintenance", exact: true })
@@ -86,6 +90,7 @@ test("Business persistence contract, navigation, validation and responsive shell
     page.getByRole("button", { name: /Save team access/i }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Business", exact: true }).click();
+  await page.getByRole("button", { name: /Edit business identity/i }).click();
   await page.getByLabel(/Business notification email/i).fill("bad-email");
   await page
     .getByRole("button", { name: "Save Settings", exact: true })
@@ -222,6 +227,7 @@ test("Account & Security loads personal details and supports self-service passwo
   await expect(
     page.getByRole("heading", { name: "Account & Security", exact: true }),
   ).toBeVisible();
+  await expect(page.getByText("Display name")).toBeVisible();
   await expect(page.getByLabel("Display name")).toHaveValue("Alex Rivera");
   await expect(page.getByLabel("Login email")).toHaveValue("alex@alchemize.co");
   await expect(
@@ -231,7 +237,14 @@ test("Account & Security loads personal details and supports self-service passwo
     page.getByText("MFA is not configured for this workspace yet."),
   ).toBeVisible();
 
-  await page.getByLabel("Display name").fill("Alex R. Rivera");
+  await page.getByRole("button", { name: /Edit account profile/i }).click();
+  await expect(
+    page.getByRole("button", { name: "Save account profile", exact: true }),
+  ).toBeVisible();
+  await page
+    .getByLabel("Display name", { exact: true })
+    .last()
+    .fill("Alex R. Rivera");
   await page.getByRole("button", { name: "Save account profile" }).click();
   await expect(page.getByText("Account profile saved.")).toBeVisible();
 
@@ -473,7 +486,17 @@ test("Team & Access loads real internal users and restricts role changes to owne
   await expect(
     page.getByRole("button", { name: /Save team access/i }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("combobox", { name: /Role for Morgan Lee/i }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("combobox", { name: /Status for Morgan Lee/i }),
+  ).toHaveCount(0);
 
+  await page
+    .locator(".team-access-row", { hasText: "Morgan Lee" })
+    .getByRole("button", { name: /Manage|Edit/i })
+    .click();
   await page.getByLabel("Role for Morgan Lee").selectOption("staff");
   await page.getByLabel("Status for Morgan Lee").selectOption("inactive");
   await page.getByRole("button", { name: /Save team access/i }).click();

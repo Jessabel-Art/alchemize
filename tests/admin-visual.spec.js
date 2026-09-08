@@ -230,6 +230,62 @@ for (const width of [1440, 834, 390]) {
     expect(errors).toEqual([]);
   });
 }
+test("Admin Settings page supports edit-on-demand mutation", async ({
+  page,
+}) => {
+  let writes = 0;
+  await page.route("**/alchemize-api.php?*", async (route) => {
+    const key = new URL(route.request().url()).searchParams.get("route");
+    if (key === "auth/session") {
+      await route.fulfill({
+        json: {
+          data: {
+            authenticated: true,
+            user: { user_id: 1, role_slug: "owner-admin" },
+            csrf_token: "ui-test-token",
+          },
+        },
+      });
+      return;
+    }
+    if (key === "settings") {
+      if (route.request().method() === "PUT") {
+        writes++;
+      }
+      await route.fulfill({
+        json: {
+          data:
+            route.request().method() === "PUT"
+              ? route.request().postDataJSON()
+              : {
+                  business_name: "Alchemize Business Services",
+                  business_email: "operations@example.test",
+                  timezone: "America/New_York",
+                  appointment_default_duration: 60,
+                  portal_message_email_notifications: true,
+                },
+        },
+      });
+      return;
+    }
+    if (key === "portal-admin/attention") {
+      await route.fulfill({ json: { data: { items: [] } } });
+      return;
+    }
+    await route.fulfill({ json: { data: [] } });
+  });
+
+  await page.goto("/admin/settings");
+  await expect(page.getByText("Alchemize Business Services")).toBeVisible();
+  await page.getByRole("button", { name: /Edit business identity/i }).click();
+  await page.getByLabel("Business name", { exact: true }).fill("Alchemize Pro");
+  await page
+    .getByRole("button", { name: "Save Settings", exact: true })
+    .click();
+  await expect(page.getByText("Settings saved.")).toBeVisible();
+  expect(writes).toBe(1);
+});
+
 test("Communication selection and compact compose preserve controls", async ({
   page,
 }) => {
@@ -270,8 +326,9 @@ test("Empty conversations stay compact and settings mutation is preserved", asyn
     (await page.locator(".admin-workspace-grid").boundingBox()).height,
   ).toBeLessThan(180);
   await page.goto("/admin/settings/");
+  await page.getByRole("button", { name: /Edit business identity/i }).click();
   await page
-    .getByLabel("Business name", { exact: true })
+    .locator("#business-business_name")
     .fill("Alchemize Business Services");
   const request = page.waitForRequest(
     (r) =>
