@@ -321,7 +321,9 @@ test("Account profile stays read-only until an explicit edit action is chosen", 
   await expect(page.getByText("Display name")).toBeVisible();
   await expect(page.getByLabel("Display name")).toHaveValue("Alex Rivera");
   await expect(page.getByLabel("Login email")).toHaveValue("alex@alchemize.co");
-  await expect(page.getByRole("button", { name: /Edit account profile/i })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: /Edit account profile/i }),
+  ).toBeVisible();
   await page.getByRole("button", { name: /Edit account profile/i }).click();
   await expect(page.getByLabel("Display name")).toHaveValue("Alex Rivera");
   await expect(page.getByLabel("Login email")).toHaveValue("alex@alchemize.co");
