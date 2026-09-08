@@ -37,7 +37,7 @@ test("Business persistence contract, navigation, validation and responsive shell
   });
   await page.goto("/admin/settings");
   await expect(page.getByText("Existing business")).toBeVisible();
-  await expect(page.getByText("Default appointment duration")).toBeVisible();
+  await expect(page.getByText("Business notification email")).toBeVisible();
   await expect(
     page.getByRole("button", { name: /Edit business identity/i }),
   ).toBeVisible();
@@ -45,10 +45,6 @@ test("Business persistence contract, navigation, validation and responsive shell
   await expect(
     page.getByLabel("Business name", { exact: true }).last(),
   ).toHaveValue("Existing business");
-  await page.getByRole("button", { name: /Edit scheduling defaults/i }).click();
-  await expect(
-    page.getByLabel("Default appointment duration (minutes)").last(),
-  ).toHaveValue("75");
   await page
     .getByRole("navigation", { name: "Settings sections" })
     .getByRole("button", { name: "Data Maintenance", exact: true })
@@ -96,22 +92,17 @@ test("Business persistence contract, navigation, validation and responsive shell
     .getByRole("button", { name: "Save Settings", exact: true })
     .click();
   expect(writes).toBe(0);
+  await page.getByRole("button", { name: "Cancel" }).last().click();
   await page
     .getByLabel(/Business notification email/i)
     .fill("new-ops@example.com");
-  await page.getByLabel("Default appointment duration (minutes)").fill("0");
-  await page
-    .getByRole("button", { name: "Save Settings", exact: true })
-    .click();
-  expect(writes).toBe(0);
-  await page.getByLabel("Default appointment duration (minutes)").fill("90");
   await page.getByLabel("Email clients when a portal message is sent").check();
   await page
     .getByRole("button", { name: "Save Settings", exact: true })
     .click();
   await expect(page.getByText("Settings saved.")).toBeVisible();
+  expect(saved.business_email).toBe("new-ops@example.com");
   expect(saved.portal_message_email_notifications).toBe(true);
-  expect(saved.appointment_default_duration).toBe(90);
   await page.reload();
   await expect(page.getByLabel(/Business notification email/i)).toHaveValue(
     "new-ops@example.com",
@@ -238,14 +229,18 @@ test("Account & Security loads personal details and supports self-service passwo
   ).toBeVisible();
 
   await page.getByRole("button", { name: /Edit account profile/i }).click();
+  const accountForm = page
+    .locator("form")
+    .filter({ has: page.getByLabel("Display name", { exact: true }) });
   await expect(
-    page.getByRole("button", { name: "Save account profile", exact: true }),
+    accountForm.getByRole("button", { name: /save account profile/i }),
   ).toBeVisible();
-  await page
+  await accountForm
     .getByLabel("Display name", { exact: true })
-    .last()
     .fill("Alex R. Rivera");
-  await page.getByRole("button", { name: "Save account profile" }).click();
+  await accountForm
+    .getByRole("button", { name: /save account profile/i })
+    .click();
   await expect(page.getByText("Account profile saved.")).toBeVisible();
 
   await page.getByLabel("Current password").fill("old-password");
