@@ -1,0 +1,381 @@
+/* Scoped Reports and Billing workspace refinements. */
+:is(.reports-module, .billing-module) {
+  gap: 1rem;
+  min-width: 0;
+}
+:is(.reports-module, .billing-module) .admin-page-header {
+  padding-bottom: 0.8rem;
+  margin-bottom: 0;
+}
+:is(.reports-module, .billing-module) .admin-metrics {
+  gap: 0.7rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+:is(.reports-module, .billing-module) .admin-metric-card {
+  min-height: 0;
+  padding: 1rem;
+  border-radius: var(--radius-lg);
+  border-top: 2px solid var(--color-accent);
+  gap: 0.25rem;
+}
+:is(.reports-module, .billing-module) .admin-metric-card strong {
+  font-size: clamp(1.3rem, 2vw, 1.9rem);
+}
+:is(.reports-module, .billing-module)
+  :is(
+    .admin-section,
+    .detail-block,
+    .report-control-card,
+    .report-results-card
+  ) {
+  padding: 1.1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  min-width: 0;
+}
+:is(.reports-module, .billing-module) :is(h2, h3) {
+  color: var(--color-primary);
+  margin-top: 0;
+}
+:is(.reports-module, .billing-module)
+  :is(button, input, select, textarea):focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+}
+:is(.reports-module, .billing-module) button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+:is(.reports-module, .billing-module) button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.reports-module .report-control-card {
+  display: grid;
+  gap: 0.8rem;
+}
+.reports-module :is(.report-controls-grid, .report-filter-grid) {
+  gap: 0.75rem;
+}
+.reports-module .report-controls-grid {
+  grid-template-columns: 1fr 1fr 1.5fr;
+}
+.reports-module .report-filter-grid {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+.reports-module .report-search-control {
+  grid-column: auto;
+}
+.reports-module .report-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  border-top: 1px solid var(--color-border);
+  padding-top: 0.8rem;
+  gap: 0.6rem;
+}
+.reports-module .report-actions-row .link-button {
+  margin-right: auto;
+}
+.reports-module .report-feedback {
+  margin: 0;
+  color: var(--color-primary);
+  font-size: 0.85rem;
+  border-left: 3px solid var(--color-accent);
+  padding: 0.25rem 0.7rem;
+}
+.reports-module .report-shelf {
+  grid-template-columns: minmax(0, 2fr) minmax(220px, 1fr);
+  gap: 1rem;
+}
+.reports-module .report-preset-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.reports-module .report-preset-button {
+  border-radius: var(--radius-md);
+  padding: 0.6rem 0.8rem;
+  background: var(--color-background);
+  color: var(--color-primary);
+  border: 1px solid var(--color-border);
+  text-align: left;
+  font-weight: 600;
+}
+.reports-module .report-preset-button:hover {
+  border-color: var(--color-primary);
+}
+.reports-module .report-preset-button[aria-pressed="true"] {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+  box-shadow: inset 0 -3px var(--color-accent);
+}
+.reports-module .saved-report-ui p {
+  margin: 0;
+  font-size: 0.88rem;
+}
+.reports-module .report-results-card[data-state="ready"] {
+  border-top: 3px solid var(--color-primary);
+  animation: report-reveal 220ms ease-out;
+}
+.reports-module .report-results-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.5rem;
+}
+.reports-module .report-result-meta {
+  background: var(--color-background);
+  padding: 0.7rem;
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.reports-module .report-column-picker {
+  padding: 0.7rem 0;
+  gap: 0.65rem;
+}
+.reports-module .report-empty-state {
+  min-height: 0;
+  padding: 1rem;
+  text-align: left;
+  display: block;
+}
+:is(.reports-module, .billing-module)
+  :is(.admin-table-wrap, .report-table-wrap) {
+  overflow-x: auto;
+  max-width: 100%;
+}
+:is(.reports-module, .billing-module) :is(th, td) {
+  padding: 0.7rem 0.65rem;
+  font-size: 0.82rem;
+}
+:is(.reports-module, .billing-module) th {
+  background: var(--color-background);
+  white-space: nowrap;
+}
+:is(.reports-module, .billing-module) tbody tr:hover {
+  background: #f7f6f3;
+}
+.billing-module td:first-child {
+  font-weight: 650;
+  color: var(--color-primary);
+  white-space: nowrap;
+}
+.billing-module .table-actions {
+  flex-wrap: nowrap;
+}
+.billing-module .table-actions button {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 0.3rem 0.5rem;
+}
+.billing-module .admin-toolbar {
+  padding: 0.85rem;
+}
+.billing-module .invoice-create-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgb(6 43 43 / 65%);
+  backdrop-filter: blur(4px);
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  overflow: auto;
+}
+.billing-module .invoice-builder {
+  width: min(1100px, 100%);
+  max-width: 100%;
+  height: auto;
+  max-height: calc(100dvh - 3rem);
+  overflow-y: auto;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  box-shadow: 0 24px 80px rgb(0 0 0 / 25%);
+}
+.billing-module .invoice-builder .admin-detail-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--color-primary);
+  color: white;
+  padding: 1rem 1.25rem;
+}
+.billing-module .invoice-builder .admin-detail-header h2 {
+  color: white;
+  margin: 0;
+}
+.billing-module .invoice-builder .admin-detail-header button {
+  background: white;
+}
+.billing-module .invoice-builder .admin-detail-body {
+  padding: 1.2rem;
+  display: grid;
+  gap: 1rem;
+}
+.billing-module .invoice-builder .client-detail-editor-grid {
+  padding: 1rem;
+  background: white;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.billing-module .invoice-builder h3.full-span {
+  margin: 0.4rem 0 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+}
+.billing-module .invoice-line-header {
+  display: none;
+}
+.billing-module .invoice-line-row {
+  grid-template-columns: minmax(0, 2fr) repeat(3, minmax(0, 1fr));
+  align-items: end;
+  background: white;
+  border-radius: var(--radius-lg);
+}
+.billing-module .invoice-line-row label {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+  font-size: 0.78rem;
+  color: var(--color-text-soft);
+}
+.billing-module .invoice-catalog-field {
+  grid-column: span 2;
+}
+.billing-module .invoice-line-row label:nth-child(2) {
+  grid-column: span 2;
+}
+.billing-module .invoice-line-row input,
+.billing-module .invoice-line-row select {
+  min-width: 0;
+  padding: 0.5rem;
+}
+.billing-module .invoice-line-row > button {
+  grid-column: 4;
+}
+.billing-module .payment-totals-box {
+  width: min(440px, 100%);
+  justify-self: end;
+  background: white;
+  margin: 0;
+}
+.billing-module .payment-totals-box > div:last-child {
+  border-top: 2px solid var(--color-accent);
+  padding-top: 0.7rem;
+  color: var(--color-primary);
+  font-size: 1.15rem;
+}
+.billing-module .invoice-builder .admin-detail-body > .admin-header-actions {
+  position: sticky;
+  bottom: -1.2rem;
+  background: var(--color-background);
+  border-top: 1px solid var(--color-border);
+  padding: 0.9rem 0;
+  z-index: 1;
+}
+@media screen {
+  .invoice-detail-module .admin-detail-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    gap: 1rem;
+    align-items: start;
+  }
+  .invoice-detail-module dl {
+    display: grid;
+    gap: 0;
+    margin: 0;
+  }
+  .invoice-detail-module dl > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    border-bottom: 1px solid var(--color-border);
+    padding: 0.55rem 0;
+  }
+  .invoice-detail-module dd {
+    margin: 0;
+    text-align: right;
+    font-weight: 600;
+  }
+  .invoice-detail-module
+    .admin-detail-grid:first-of-type
+    .detail-block:last-child
+    dl
+    > div:last-child {
+    background: var(--color-background);
+    padding: 0.8rem;
+  }
+}
+@media (max-width: 1000px) {
+  :is(.reports-module, .billing-module) .admin-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .reports-module .report-shelf {
+    grid-template-columns: 1fr;
+  }
+  .reports-module .report-results-card > .admin-section-header {
+    align-items: start;
+    flex-direction: column;
+  }
+}
+@media (max-width: 760px) {
+  .reports-module .report-controls-grid,
+  .invoice-detail-module .admin-detail-grid {
+    grid-template-columns: 1fr;
+  }
+  .billing-module .invoice-create-overlay {
+    padding: 0.5rem;
+  }
+  .billing-module .invoice-builder {
+    max-height: calc(100dvh - 1rem);
+  }
+  .billing-module .invoice-builder .client-detail-editor-grid {
+    grid-template-columns: 1fr;
+  }
+  .billing-module .invoice-line-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .billing-module .invoice-line-row > button {
+    grid-column: 2;
+  }
+  .billing-module .invoice-builder .admin-detail-body {
+    padding: 0.75rem;
+  }
+}
+@keyframes report-reveal {
+  from {
+    opacity: 0.5;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reports-module .report-results-card[data-state="ready"] {
+    animation: none;
+  }
+}
+.billing-module .invoice-builder .admin-detail-header .secondary-button {
+  color: var(--color-primary);
+}
+.billing-module .payment-totals-box {
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+.billing-module .payment-totals-box > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 0.4rem 0;
+  font-variant-numeric: tabular-nums;
+}

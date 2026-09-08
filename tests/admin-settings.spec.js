@@ -241,6 +241,92 @@ test("Account & Security loads personal details and supports self-service passwo
   await expect(page.getByText("Password updated.")).toBeVisible();
 });
 
+test("Account profile stays read-only until an explicit edit action is chosen", async ({
+  page,
+}) => {
+  const account = {
+    user_id: 1,
+    public_id: "user-1",
+    display_name: "Alex Rivera",
+    email: "alex@alchemize.co",
+    role_slug: "owner-admin",
+    role_name: "Owner / Administrator",
+    status: "active",
+    last_login_at: "2025-01-18T08:32:10.000000Z",
+    password_changed_at: "2025-01-10T12:00:00.000000Z",
+  };
+
+  await page.route("**/alchemize-api.php?*", async (route) => {
+    const path = new URL(route.request().url()).searchParams.get("route");
+    if (path === "auth/session") {
+      return route.fulfill({
+        json: {
+          data: {
+            authenticated: true,
+            user: {
+              user_id: 1,
+              role_slug: "owner-admin",
+              email: account.email,
+              display_name: account.display_name,
+            },
+            csrf_token: "test-token",
+          },
+        },
+      });
+    }
+    if (path === "auth/account") {
+      if (route.request().method() === "PUT") {
+        const payload = route.request().postDataJSON();
+        account.display_name = payload.display_name || account.display_name;
+        account.email = payload.email || account.email;
+        return route.fulfill({
+          json: {
+            data: {
+              updated: true,
+              user: account,
+              recent_activity: [],
+              security: {
+                mfa_available: false,
+                session_note:
+                  "Current browser session is managed by secure cookies and can be ended by signing out.",
+              },
+            },
+          },
+        });
+      }
+      return route.fulfill({
+        json: {
+          data: {
+            user: account,
+            recent_activity: [],
+            security: {
+              mfa_available: false,
+              session_note:
+                "Current browser session is managed by secure cookies and can be ended by signing out.",
+            },
+          },
+        },
+      });
+    }
+    if (path === "settings") {
+      return route.fulfill({ json: { data: { business_name: "Alchemize" } } });
+    }
+    if (path === "portal-admin/attention") {
+      return route.fulfill({ json: { data: { items: [] } } });
+    }
+    await route.fulfill({ json: { data: [] } });
+  });
+
+  await page.goto("/admin/settings?section=account-security");
+  await expect(page.getByText("Display name")).toBeVisible();
+  await expect(page.getByLabel("Display name")).toHaveValue("Alex Rivera");
+  await expect(page.getByLabel("Login email")).toHaveValue("alex@alchemize.co");
+  await expect(page.getByRole("button", { name: /Edit account profile/i })).toBeVisible();
+  await page.getByRole("button", { name: /Edit account profile/i }).click();
+  await expect(page.getByLabel("Display name")).toHaveValue("Alex Rivera");
+  await expect(page.getByLabel("Login email")).toHaveValue("alex@alchemize.co");
+});
+
 test("Notifications section saves delivery mode without creating a second notification architecture", async ({
   page,
 }) => {
@@ -397,6 +483,89 @@ test("Team & Access loads real internal users and restricts role changes to owne
   await expect(
     page.getByRole("combobox", { name: /Status for Morgan Lee/i }),
   ).toHaveValue("inactive");
+});
+
+test("Team access supports adding an authorized administrator with a unique email", async ({
+  page,
+}) => {
+  let teamUsers = [
+    {
+      id: 1,
+      public_id: "user-1",
+      display_name: "Alex Rivera",
+      email: "alex@alchemize.co",
+      status: "active",
+      role_name: "Owner / Administrator",
+      role_slug: "owner-admin",
+    },
+    {
+      id: 2,
+      public_id: "user-2",
+      display_name: "Morgan Lee",
+      email: "morgan@alchemize.co",
+      status: "active",
+      role_name: "Administrator",
+      role_slug: "administrator",
+    },
+  ];
+
+  await page.route("**/alchemize-api.php?*", async (route) => {
+    const path = new URL(route.request().url()).searchParams.get("route");
+    if (path === "auth/session") {
+      return route.fulfill({
+        json: {
+          data: {
+            authenticated: true,
+            user: { user_id: 1, role_slug: "owner-admin" },
+            csrf_token: "test-token",
+          },
+        },
+      });
+    }
+    if (path === "settings") {
+      return route.fulfill({ json: { data: { business_name: "Alchemize" } } });
+    }
+    if (path === "clients/team") {
+      if (route.request().method() === "POST") {
+        const payload = route.request().postDataJSON();
+        teamUsers = [
+          ...teamUsers,
+          {
+            id: 3,
+            public_id: "user-3",
+            display_name: payload.display_name,
+            email: payload.email,
+            status: payload.status || "active",
+            role_name: "Administrator",
+            role_slug: payload.role_slug || "administrator",
+          },
+        ];
+        return route.fulfill({
+          json: {
+            data: {
+              created: true,
+              user: teamUsers[teamUsers.length - 1],
+              team: teamUsers,
+            },
+          },
+        });
+      }
+      return route.fulfill({ json: { data: teamUsers } });
+    }
+    if (path === "portal-admin/attention") {
+      return route.fulfill({ json: { data: { items: [] } } });
+    }
+    await route.fulfill({ json: { data: [] } });
+  });
+
+  await page.goto("/admin/settings?section=team-access");
+  await page.getByRole("button", { name: /\+ Add administrator/i }).click();
+  await page.getByLabel("Display name").fill("Nina Patel");
+  await page.getByLabel("Login email").fill("nina@alchemize.co");
+  await page.getByLabel("Role").selectOption("administrator");
+  await page.getByRole("button", { name: /Create administrator/i }).click();
+  await expect(page.getByText("Nina Patel")).toBeVisible();
+  await expect(page.getByText("nina@alchemize.co")).toBeVisible();
 });
 
 test("Load failure never presents fallback settings to save", async ({

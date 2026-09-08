@@ -181,6 +181,11 @@ export const clients = {
   enablePortal: (id) =>
     apiRequest(buildApiUrl(`clients/${id}/enable-portal`), { method: "POST" }),
   team: () => apiRequest(buildApiUrl("clients/team")),
+  createTeamMember: (payload) =>
+    apiRequest(buildApiUrl("clients/team"), {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
   updateTeamMember: (payload) =>
     apiRequest(buildApiUrl("clients/team"), {
       method: "PUT",

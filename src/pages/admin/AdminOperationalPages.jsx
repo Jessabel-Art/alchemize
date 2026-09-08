@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import "./admin-reports-billing.css";
+import "./admin-appointments.css";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   AdminDetailDrawer,
@@ -6789,7 +6791,7 @@ function DocumentManagementPage() {
 function AppointmentManagementPage() {
   const snapshot = adminStore.getSnapshot();
   const [appointments, setAppointments] = useState(snapshot.appointments);
-  const [viewMode, setViewMode] = useState("week");
+  const [viewMode, setViewMode] = useState("month");
   const [currentDate, setCurrentDate] = useState(() => {
     const baseDate = snapshot.appointments.find(
       (appointment) => appointment.date,
@@ -7838,7 +7840,11 @@ function AppointmentManagementPage() {
       key={appointment.id}
       type="button"
       className={`calendar-event ${appointment.status.toLowerCase().replace(/\s+/g, "-")}${compact ? " compact" : ""}`}
-      onClick={() => setSelectedAppointmentId(appointment.id)}
+      aria-pressed={selectedAppointmentId === appointment.id}
+      onClick={() => {
+        setSelectedAppointmentId(appointment.id);
+        setCurrentDate(new Date(`${appointment.date}T12:00:00`));
+      }}
     >
       <span>{formatDisplayTime(appointment.time)}</span>
       <strong>
@@ -7900,7 +7906,7 @@ function AppointmentManagementPage() {
           <button
             type="button"
             className="secondary-button"
-            onClick={() => setTimeframe("today")}
+            onClick={() => setCurrentDate(new Date())}
           >
             Today
           </button>
@@ -7920,7 +7926,9 @@ function AppointmentManagementPage() {
           </button>
         </div>
 
-        <div className="scheduler-date-label">{visualDateLabel()}</div>
+        <div className="scheduler-date-label" aria-live="polite">
+          {visualDateLabel()}
+        </div>
 
         <div className="scheduler-view-switcher">
           {["month", "week", "day", "agenda"].map((mode) => (
@@ -7930,6 +7938,7 @@ function AppointmentManagementPage() {
               className={
                 viewMode === mode ? "primary-button" : "secondary-button"
               }
+              aria-pressed={viewMode === mode}
               onClick={() => setViewMode(mode)}
             >
               {mode === "agenda"
@@ -8101,7 +8110,7 @@ function AppointmentManagementPage() {
               type="button"
               className="secondary-button compact-action-button"
               onClick={() => {
-                setViewMode("week");
+                setViewMode("month");
                 setCurrentDate(new Date());
               }}
             >
@@ -8147,14 +8156,31 @@ function AppointmentManagementPage() {
                 const dateKey = toDateString(day);
                 const dayAppointments = dailyAppointments.get(dateKey) || [];
                 return (
-                  <button
+                  <div
                     key={dateKey}
-                    type="button"
-                    className={`calendar-day ${day.getMonth() !== currentDate.getMonth() ? "muted" : ""}`}
-                    onClick={() => setAppointmentFromCalendar(day)}
+                    className={`calendar-day ${day.getMonth() !== currentDate.getMonth() ? "muted" : ""} ${dateKey === toDateString(new Date()) ? "is-today" : ""} ${dateKey === toDateString(currentDate) ? "is-selected" : ""}`}
                   >
                     <div className="calendar-day-header">
-                      <span>{day.getDate()}</span>
+                      <button
+                        type="button"
+                        className="calendar-date-button"
+                        aria-label={`Schedule appointment on ${day.toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" })}`}
+                        aria-current={
+                          dateKey === toDateString(new Date())
+                            ? "date"
+                            : undefined
+                        }
+                        onClick={() => setAppointmentFromCalendar(day)}
+                      >
+                        {day.getDate()}
+                      </button>
+                      {dayAppointments.length > 0 ? (
+                        <small
+                          aria-label={`${dayAppointments.length} appointments`}
+                        >
+                          {dayAppointments.length}
+                        </small>
+                      ) : null}
                     </div>
                     <div className="calendar-day-events">
                       {dayAppointments
@@ -8163,12 +8189,19 @@ function AppointmentManagementPage() {
                           renderAppointmentCard(appointment, true),
                         )}
                       {dayAppointments.length > 2 ? (
-                        <span className="more-events">
+                        <button
+                          type="button"
+                          className="more-events"
+                          onClick={() => {
+                            setCurrentDate(day);
+                            setViewMode("day");
+                          }}
+                        >
                           + {dayAppointments.length - 2} more
-                        </span>
+                        </button>
                       ) : null}
                     </div>
-                  </button>
+                  </div>
                 );
               })}
             </div>
@@ -8339,7 +8372,10 @@ function AppointmentManagementPage() {
         </div>
 
         {detailAppointment ? (
-          <aside className="scheduler-detail-panel">
+          <aside
+            className="scheduler-detail-panel"
+            aria-label="Appointment detail"
+          >
             <div className="scheduler-detail-header">
               <h3>{detailAppointment.type}</h3>
               <button
@@ -8364,14 +8400,23 @@ function AppointmentManagementPage() {
                 />
               </div>
 
+              <h4 className="appointment-detail-kicker">Appointment details</h4>
               <dl className="detail-list">
                 <div>
                   <dt>Service</dt>
-                  <dd>{detailAppointment.serviceName}</dd>
+                  <dd>{detailAppointment.serviceName || "Not specified"}</dd>
                 </div>
                 <div>
                   <dt>Date</dt>
-                  <dd>{formatDate(detailAppointment.date)}</dd>
+                  <dd>
+                    {new Date(
+                      `${detailAppointment.date}T12:00:00`,
+                    ).toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </dd>
                 </div>
                 <div>
                   <dt>Time</dt>
@@ -8387,6 +8432,11 @@ function AppointmentManagementPage() {
                     {detailAppointment.assignedTo || "Owner / Administrator"}
                   </dd>
                 </div>
+              </dl>
+              <h4 className="appointment-detail-kicker">
+                Preparation &amp; follow-up
+              </h4>
+              <dl className="detail-list appointment-requirements">
                 <div>
                   <dt>Preparation required</dt>
                   <dd>{detailAppointment.needsPreparation ? "Yes" : "No"}</dd>
@@ -8395,6 +8445,9 @@ function AppointmentManagementPage() {
                   <dt>Follow-up required</dt>
                   <dd>{detailAppointment.followUpRequired ? "Yes" : "No"}</dd>
                 </div>
+              </dl>
+              <h4 className="appointment-detail-kicker">Notes</h4>
+              <dl className="detail-list appointment-notes">
                 <div>
                   <dt>Notes</dt>
                   <dd>
@@ -8409,11 +8462,11 @@ function AppointmentManagementPage() {
                   className="secondary-button"
                   onClick={() => openDraftForm("edit", detailAppointment)}
                 >
-                  Edit
+                  Edit details
                 </button>
                 <button
                   type="button"
-                  className="secondary-button"
+                  className="primary-button"
                   onClick={() => openDraftForm("reschedule", detailAppointment)}
                 >
                   Reschedule
@@ -8421,7 +8474,7 @@ function AppointmentManagementPage() {
                 {detailAppointment.status !== "Cancelled" ? (
                   <button
                     type="button"
-                    className="secondary-button"
+                    className="secondary-button appointment-cancel-action"
                     onClick={() => {
                       setFormMode("cancel");
                       setIsFormOpen(true);
@@ -8434,7 +8487,7 @@ function AppointmentManagementPage() {
                 {detailAppointment.status === "Scheduled" ? (
                   <button
                     type="button"
-                    className="primary-button"
+                    className="secondary-button"
                     onClick={() =>
                       changeStatus(detailAppointment.id, "Confirmed")
                     }
@@ -8446,7 +8499,7 @@ function AppointmentManagementPage() {
                 detailAppointment.status !== "Cancelled" ? (
                   <button
                     type="button"
-                    className="primary-button"
+                    className="secondary-button"
                     onClick={() =>
                       changeStatus(detailAppointment.id, "Completed")
                     }
@@ -8494,7 +8547,15 @@ function AppointmentManagementPage() {
               <tbody>
                 {filteredAppointments.map((appointment) => (
                   <tr key={appointment.id}>
-                    <td>{formatDate(appointment.date)}</td>
+                    <td>
+                      {new Date(
+                        `${appointment.date}T12:00:00`,
+                      ).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </td>
                     <td>{appointment.time}</td>
                     <td>
                       {snapshot.clients.find(
@@ -8537,7 +8598,7 @@ function AppointmentManagementPage() {
                           className="link-button"
                           onClick={() => openDraftForm("edit", appointment)}
                         >
-                          Edit
+                          Edit details
                         </button>
                         <button
                           type="button"
@@ -9483,6 +9544,22 @@ function BillingManagementPage() {
   const [statusFilter, setStatusFilter] = useState("All");
   const [clientFilter, setClientFilter] = useState("All");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [catalogSearch, setCatalogSearch] = useState({});
+  useEffect(() => {
+    if (!isCreateOpen) return;
+    const previousFocus = document.activeElement;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const handleEscape = (event) => {
+      if (event.key === "Escape") setIsCreateOpen(false);
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleEscape);
+      previousFocus?.focus();
+    };
+  }, [isCreateOpen]);
   const [invoiceDraft, setInvoiceDraft] = useState({
     clientId: "",
     engagementId: "",
@@ -9812,7 +9889,7 @@ function BillingManagementPage() {
   };
 
   return (
-    <div className="admin-module">
+    <div className="admin-module billing-module">
       <AdminPageHeader
         eyebrow="Billing"
         title="Billing"
@@ -9843,10 +9920,9 @@ function BillingManagementPage() {
             hint: "Current month",
           },
           {
-            label: "Open Invoices",
+            label: "Draft Invoices",
             value: snapshot.invoices.filter(
-              (invoice) =>
-                !["Paid", "Void"].includes(getEffectiveInvoiceStatus(invoice)),
+              (invoice) => getEffectiveInvoiceStatus(invoice) === "Draft",
             ).length,
             hint: "Count",
           },
@@ -9879,7 +9955,7 @@ function BillingManagementPage() {
       {invoiceMessage ? (
         <div className="admin-toast success">{invoiceMessage}</div>
       ) : null}
-      <AdminSection title="Invoice tracker">
+      <AdminSection title={`Invoice tracker · ${filterRows.length} invoices`}>
         {filterRows.length ? (
           <div className="admin-table-wrap">
             <AdminTable className="admin-table">
@@ -9890,9 +9966,9 @@ function BillingManagementPage() {
                   <th>Service</th>
                   <th>Invoice Date</th>
                   <th>Due Date</th>
-                  <th>Subtotal</th>
+                  <th>Total</th>
                   <th>Paid</th>
-                  <th>Outstanding</th>
+                  <th>Balance</th>
                   <th>Status</th>
                   <th>Actions</th>
                 </tr>
@@ -9965,15 +10041,37 @@ function BillingManagementPage() {
 
       {isCreateOpen ? (
         <div
-          className="admin-detail-overlay"
+          className="admin-detail-overlay invoice-create-overlay"
           onClick={() => setIsCreateOpen(false)}
         >
           <div
             className="admin-detail-panel invoice-builder"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="invoice-create-title"
+            onKeyDown={(event) => {
+              if (event.key === "Escape") setIsCreateOpen(false);
+              if (event.key === "Tab") {
+                const controls = [
+                  ...event.currentTarget.querySelectorAll(
+                    "button:not(:disabled), input, select:not(:disabled), textarea",
+                  ),
+                ];
+                const first = controls[0];
+                const last = controls[controls.length - 1];
+                if (event.shiftKey && document.activeElement === first) {
+                  event.preventDefault();
+                  last.focus();
+                } else if (!event.shiftKey && document.activeElement === last) {
+                  event.preventDefault();
+                  first.focus();
+                }
+              }
+            }}
             onClick={(event) => event.stopPropagation()}
           >
             <div className="admin-detail-header">
-              <h2>Create invoice</h2>
+              <h2 id="invoice-create-title">Create invoice</h2>
               <button
                 type="button"
                 className="secondary-button"
@@ -9984,9 +10082,11 @@ function BillingManagementPage() {
             </div>
             <div className="admin-detail-body">
               <div className="client-detail-editor-grid">
+                <h3 className="full-span">Client &amp; Service</h3>
                 <label>
                   <span>Client</span>
                   <input
+                    autoFocus
                     list="billing-client-list"
                     value={
                       snapshot.clients.find(
@@ -10034,6 +10134,7 @@ function BillingManagementPage() {
                     ))}
                   </select>
                 </label>
+                <h3 className="full-span">Invoice Details</h3>
                 <label>
                   <span>Invoice date</span>
                   <input
@@ -10103,6 +10204,7 @@ function BillingManagementPage() {
                     }
                   />
                 </label>
+                <h3 className="full-span">Notes / Memo</h3>
                 <label className="full-span">
                   <span>Client-facing notes</span>
                   <textarea
@@ -10138,7 +10240,7 @@ function BillingManagementPage() {
                   className="secondary-button"
                   onClick={addLineItem}
                 >
-                  + Add line
+                  + Add Line Item
                 </button>
               </div>
 
@@ -10154,103 +10256,148 @@ function BillingManagementPage() {
 
                 {invoiceDraft.lines.map((line, index) => (
                   <div key={line.id} className="invoice-line-row">
-                    <select
-                      value={
-                        line.relatedServiceId && line.relatedTierId
-                          ? `${line.relatedServiceId}:${line.relatedTierId}`
-                          : ""
-                      }
-                      onChange={(event) =>
-                        selectCatalogTier(line.id, event.target.value)
-                      }
-                      aria-label={`Catalog service for line ${index + 1}`}
-                      className="invoice-line-service-picker"
-                    >
-                      <option value="">Custom line</option>
-                      {snapshot.services
-                        .filter((service) => service.selectable)
-                        .flatMap((service) =>
-                          (service.tiers || [])
-                            .filter(
-                              (tier) =>
-                                tier.active &&
-                                ![
-                                  "NOT_OFFERED",
-                                  "PENDING_AUTHORIZATION",
-                                  "FUTURE_EXPANSION",
-                                ].includes(tier.status),
-                            )
-                            .map((tier) => (
-                              <option
-                                key={`${service.id}:${tier.id}`}
-                                value={`${service.id}:${tier.id}`}
-                              >
-                                {service.serviceName} — {tier.tierName} (
-                                {tier.pricingType === "CUSTOM_SOW"
-                                  ? "Custom SOW"
-                                  : tier.pricingType === "STARTING_AT"
-                                    ? `Starting at ${formatCurrency(tier.minimumPrice || tier.basePrice)}`
-                                    : formatCurrency(tier.basePrice)}
+                    <label className="invoice-catalog-field">
+                      <span>Item / service</span>
+                      <input
+                        type="search"
+                        aria-label={`Search services for line ${index + 1}`}
+                        placeholder="Search service or tier"
+                        value={catalogSearch[line.id] || ""}
+                        onChange={(event) =>
+                          setCatalogSearch((current) => ({
+                            ...current,
+                            [line.id]: event.target.value,
+                          }))
+                        }
+                      />
+                      <select
+                        value={
+                          line.relatedServiceId && line.relatedTierId
+                            ? `${line.relatedServiceId}:${line.relatedTierId}`
+                            : ""
+                        }
+                        onChange={(event) =>
+                          selectCatalogTier(line.id, event.target.value)
+                        }
+                        aria-label={`Catalog service for line ${index + 1}`}
+                        className="invoice-line-service-picker"
+                      >
+                        <option value="">Custom line</option>
+                        {snapshot.services
+                          .filter((service) => service.selectable)
+                          .map((service) => (
+                            <optgroup
+                              key={service.id}
+                              label={service.serviceName}
+                            >
+                              {(service.tiers || [])
+                                .filter(
+                                  (tier) =>
+                                    tier.active &&
+                                    ![
+                                      "NOT_OFFERED",
+                                      "PENDING_AUTHORIZATION",
+                                      "FUTURE_EXPANSION",
+                                    ].includes(tier.status),
                                 )
-                              </option>
-                            )),
-                        )}
-                    </select>
-                    <input
-                      type="text"
-                      value={line.description}
-                      placeholder="Description"
-                      onChange={(event) =>
-                        updateLine(line.id, "description", event.target.value)
-                      }
-                    />
-                    <input
-                      type="number"
-                      min="1"
-                      step="1"
-                      value={line.quantity}
-                      onChange={(event) =>
-                        updateLine(
-                          line.id,
-                          "quantity",
-                          Number(event.target.value || 1),
-                        )
-                      }
-                    />
-                    <input
-                      type="number"
-                      min="0"
-                      step="1"
-                      value={line.unitPrice}
-                      onChange={(event) =>
-                        updateLine(
-                          line.id,
-                          "unitPrice",
-                          Number(event.target.value || 0),
-                        )
-                      }
-                    />
-                    <input
-                      type="number"
-                      min="0"
-                      step="1"
-                      value={
-                        line.amount ||
-                        Number(line.quantity || 1) * Number(line.unitPrice || 0)
-                      }
-                      readOnly
-                    />
-                    <select
-                      value={line.billingType}
-                      onChange={(event) =>
-                        updateLine(line.id, "billingType", event.target.value)
-                      }
-                    >
-                      <option value="Fixed Fee">Fixed Fee</option>
-                      <option value="Hourly">Hourly</option>
-                      <option value="Project-Based">Project-Based</option>
-                      <option value="Custom">Custom</option>
-                    </select>
+                                .filter(
+                                  (tier) =>
+                                    `${service.serviceName} ${tier.tierName}`
+                                      .toLowerCase()
+                                      .includes(
+                                        (
+                                          catalogSearch[line.id] || ""
+                                        ).toLowerCase(),
+                                      ) ||
+                                    (line.relatedServiceId === service.id &&
+                                      line.relatedTierId === tier.id),
+                                )
+                                .map((tier) => (
+                                  <option
+                                    key={tier.id}
+                                    value={`${service.id}:${tier.id}`}
+                                  >
+                                    {tier.tierName} —{" "}
+                                    {tier.pricingType === "CUSTOM_SOW"
+                                      ? "Custom SOW"
+                                      : `${tier.pricingType === "STARTING_AT" ? "From " : ""}${formatCurrency(tier.minimumPrice || tier.basePrice)}`}
+                                  </option>
+                                ))}
+                            </optgroup>
+                          ))}
+                      </select>
+                    </label>
+                    <label>
+                      <span>Description</span>{" "}
+                      <input
+                        type="text"
+                        value={line.description}
+                        placeholder="Description"
+                        onChange={(event) =>
+                          updateLine(line.id, "description", event.target.value)
+                        }
+                      />
+                    </label>
+                    <label>
+                      <span>Quantity</span>{" "}
+                      <input
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={line.quantity}
+                        onChange={(event) =>
+                          updateLine(
+                            line.id,
+                            "quantity",
+                            Number(event.target.value || 1),
+                          )
+                        }
+                      />
+                    </label>
+                    <label>
+                      <span>Rate</span>{" "}
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={line.unitPrice}
+                        onChange={(event) =>
+                          updateLine(
+                            line.id,
+                            "unitPrice",
+                            Number(event.target.value || 0),
+                          )
+                        }
+                      />
+                    </label>
+                    <label>
+                      <span>Line total</span>{" "}
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={
+                          line.amount ||
+                          Number(line.quantity || 1) *
+                            Number(line.unitPrice || 0)
+                        }
+                        readOnly
+                      />
+                    </label>
+                    <label>
+                      <span>Type</span>{" "}
+                      <select
+                        value={line.billingType}
+                        onChange={(event) =>
+                          updateLine(line.id, "billingType", event.target.value)
+                        }
+                      >
+                        <option value="Fixed Fee">Fixed Fee</option>
+                        <option value="Hourly">Hourly</option>
+                        <option value="Project-Based">Project-Based</option>
+                        <option value="Custom">Custom</option>
+                      </select>
+                    </label>
                     <button
                       type="button"
                       className="secondary-button"
@@ -10444,7 +10591,7 @@ function InvoiceDetailPage() {
   };
 
   return (
-    <div className="admin-module invoice-print-root">
+    <div className="admin-module invoice-print-root billing-module invoice-detail-module">
       <div className="invoice-print-sheet" aria-label="Invoice print view">
         <div className="invoice-print-header">
           <div className="invoice-print-brand">
@@ -11260,6 +11407,14 @@ function ReportsPage() {
     defaultColumns["Overview"],
   );
   const [reportVersion, setReportVersion] = useState(0);
+  const [selectedPreset, setSelectedPreset] = useState(null);
+  const [reportNotice, setReportNotice] = useState("");
+  const [hasRun, setHasRun] = useState(false);
+  const invalidateReport = () => {
+    setHasRun(false);
+    setSelectedPreset(null);
+    setReportNotice("Configuration changed. Run report to view results.");
+  };
 
   const getClientName = (clientId) =>
     snapshot.clients.find((client) => client.id === clientId)?.displayName ||
@@ -12215,6 +12370,9 @@ function ReportsPage() {
   ]);
 
   const resetFilters = () => {
+    setHasRun(false);
+    setSelectedPreset(null);
+    setReportNotice("Report reset. Choose a report to begin.");
     setReportType("Overview");
     setDatePreset("30");
     setCustomStart("");
@@ -12232,6 +12390,9 @@ function ReportsPage() {
   };
 
   const clearFilters = () => {
+    setHasRun(false);
+    setSelectedPreset(null);
+    setReportNotice("Filters cleared. Run report to view results.");
     setSearchValue("");
     setStatusFilter("all");
     setClientFilter("all");
@@ -12427,7 +12588,11 @@ function ReportsPage() {
         }))}
       />
 
-      <div className="report-control-card">
+      <div className="report-control-card" onChange={invalidateReport}>
+        <div className="admin-section-header">
+          <h2>Report builder</h2>
+          <span className="section-kicker">01 · Configure</span>
+        </div>
         <div className="report-controls-grid">
           <label className="report-control">
             <span>Report Type</span>
@@ -12555,11 +12720,7 @@ function ReportsPage() {
         ) : null}
 
         <div className="report-actions-row">
-          <button
-            type="button"
-            className="secondary-button"
-            onClick={clearFilters}
-          >
+          <button type="button" className="link-button" onClick={clearFilters}>
             Clear Filters
           </button>
           <button
@@ -12572,13 +12733,22 @@ function ReportsPage() {
           <button
             type="button"
             className="primary-button"
-            onClick={() => setReportVersion((value) => value + 1)}
+            onClick={() => {
+              setReportVersion((value) => value + 1);
+              setHasRun(true);
+              setReportNotice(
+                `Report ready · ${reportRows.length} records. Results updated.`,
+              );
+            }}
           >
             Run Report
           </button>
         </div>
       </div>
 
+      <p className="report-feedback" role="status">
+        {reportNotice || "Choose a common report or build your own."}
+      </p>
       <div className="report-shelf">
         <section className="admin-section report-quick-section">
           <div className="admin-section-header">
@@ -12590,7 +12760,16 @@ function ReportsPage() {
                 key={report.id}
                 type="button"
                 className="report-preset-button"
-                onClick={report.preset}
+                aria-pressed={selectedPreset === report.id}
+                onClick={() => {
+                  resetFilters();
+                  report.preset();
+                  setSelectedColumns(defaultColumns[report.reportType]);
+                  setSelectedPreset(report.id);
+                  setReportNotice(
+                    `${report.label} selected. Run report to view results.`,
+                  );
+                }}
               >
                 {report.label}
               </button>
@@ -12603,17 +12782,10 @@ function ReportsPage() {
             <h2>Saved reports</h2>
           </div>
           <div className="saved-report-ui">
-            <div className="saved-report-list">
-              <span className="saved-report-item disabled">
-                Monthly Lead Pipeline
-              </span>
-              <span className="saved-report-item disabled">
-                Tax Clients With Open Tasks
-              </span>
-              <span className="saved-report-item disabled">
-                Past Due Accounts
-              </span>
-            </div>
+            <p>
+              Saved reports are not available yet. Start with a common report,
+              then export your results.
+            </p>{" "}
             <button
               type="button"
               className="primary-button disabled-button"
@@ -12622,156 +12794,214 @@ function ReportsPage() {
               Save report unavailable
             </button>
             <small>
-              Saved report persistence is not currently available in the
-              existing admin data layer.
+              Your report configuration is available during this visit only.
             </small>
           </div>
         </section>
       </div>
 
-      <div className="report-results-card">
-        <div className="admin-section-header">
-          <h2>{resultsLabel}</h2>
-          <div className="report-results-actions">
-            <label className="report-control compact-control">
-              <span>Sort</span>
-              <select
-                value={sortBy}
-                onChange={(event) => setSortBy(event.target.value)}
-              >
-                <option value="date">Date</option>
-                <option value="name">Name</option>
-                <option value="service">Service</option>
-                <option value="client">Client</option>
-                <option value="owner">Owner</option>
-                <option value="status">Status</option>
-                <option value="amount">Amount</option>
-                <option value="dueDate">Due date</option>
-              </select>
-            </label>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() =>
-                setSortDirection((current) =>
-                  current === "asc" ? "desc" : "asc",
-                )
-              }
-            >
-              {sortDirection === "asc" ? "Ascending" : "Descending"}
-            </button>
-            <label className="report-control compact-control">
-              <span>Group by</span>
-              <select
-                value={groupBy}
-                onChange={(event) => setGroupBy(event.target.value)}
-              >
-                <option value="none">None</option>
-                <option value="status">Status</option>
-                <option value="service">Service</option>
-                <option value="client">Client</option>
-                <option value="owner">Owner</option>
-              </select>
-            </label>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={handleExportCsv}
-            >
-              CSV Export
-            </button>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() => window.print()}
-            >
-              Print
-            </button>
-          </div>
-        </div>
-
-        <div className="report-result-meta">
-          <strong>{reportRows.length} records</strong>
-          <span>
-            {activeFilterSummary.length
-              ? activeFilterSummary.join(" • ")
-              : "No active filters"}
-          </span>
-        </div>
-
-        <div className="report-column-picker">
-          {columnOptions.map((column) => (
-            <label key={column} className="report-column-toggle">
-              <input
-                type="checkbox"
-                checked={activeColumns.includes(column)}
-                onChange={() => toggleColumn(column)}
-              />
-              <span>
-                {column
-                  .replace(/([A-Z])/g, " $1")
-                  .replace(/^./, (value) => value.toUpperCase())}
-              </span>
-            </label>
-          ))}
-          <button
-            type="button"
-            className="secondary-button"
-            onClick={() => setSelectedColumns(columnOptions)}
-          >
-            Select all
-          </button>
-          <button
-            type="button"
-            className="secondary-button"
-            onClick={() => setSelectedColumns([])}
-          >
-            Clear all
-          </button>
-        </div>
-
-        {reportRows.length ? (
-          <div className="report-table-wrap">
-            <AdminTable className="report-table">
-              <thead>
-                <tr>
-                  {activeColumns.map((column) => (
-                    <th key={column}>
-                      {column
-                        .replace(/([A-Z])/g, " $1")
-                        .replace(/^./, (value) => value.toUpperCase())}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {reportRows.map((row) => (
-                  <tr key={`${row.rowKind}-${row.id}`}>
-                    {activeColumns.map((column) => (
-                      <td key={`${row.id}-${column}`}>
-                        {getDisplayValue(row, column)}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </AdminTable>
+      <div
+        className="report-results-card"
+        key={reportVersion}
+        data-state={hasRun ? "ready" : "empty"}
+      >
+        {!hasRun ? (
+          <div className="report-empty-state">
+            <span className="section-kicker">02 · Results</span>
+            <h2>Your report starts here</h2>
+            <p>
+              Choose a report and date range, then select Run Report to review
+              and export matching records.
+            </p>
           </div>
         ) : (
-          <div className="dashboard-empty-state report-empty-state">
-            No records match the current report filters.
-            <button
-              type="button"
-              className="primary-button"
-              onClick={clearFilters}
-            >
-              Clear Filters
-            </button>
-          </div>
+          <>
+            <div className="admin-section-header">
+              <h2>{resultsLabel}</h2>
+              <div className="report-results-actions">
+                <label className="report-control compact-control">
+                  <span>Sort</span>
+                  <select
+                    value={sortBy}
+                    onChange={(event) => setSortBy(event.target.value)}
+                  >
+                    <option value="date">Date</option>
+                    <option value="name">Name</option>
+                    <option value="service">Service</option>
+                    <option value="client">Client</option>
+                    <option value="owner">Owner</option>
+                    <option value="status">Status</option>
+                    <option value="amount">Amount</option>
+                    <option value="dueDate">Due date</option>
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() =>
+                    setSortDirection((current) =>
+                      current === "asc" ? "desc" : "asc",
+                    )
+                  }
+                >
+                  {sortDirection === "asc" ? "Ascending" : "Descending"}
+                </button>
+                <label className="report-control compact-control">
+                  <span>Group by</span>
+                  <select
+                    value={groupBy}
+                    onChange={(event) => setGroupBy(event.target.value)}
+                  >
+                    <option value="none">None</option>
+                    <option value="status">Status</option>
+                    <option value="service">Service</option>
+                    <option value="client">Client</option>
+                    <option value="owner">Owner</option>
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={handleExportCsv}
+                >
+                  CSV Export
+                </button>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => window.print()}
+                >
+                  Print
+                </button>
+              </div>
+            </div>
+
+            <div className="report-result-meta">
+              <strong>{reportRows.length} records</strong>
+              <span>
+                {activeFilterSummary.length
+                  ? activeFilterSummary.join(" • ")
+                  : "No active filters"}
+              </span>
+            </div>
+
+            <div className="report-column-picker">
+              {columnOptions.map((column) => (
+                <label key={column} className="report-column-toggle">
+                  <input
+                    type="checkbox"
+                    checked={activeColumns.includes(column)}
+                    onChange={() => toggleColumn(column)}
+                  />
+                  <span>
+                    {column
+                      .replace(/([A-Z])/g, " $1")
+                      .replace(/^./, (value) => value.toUpperCase())}
+                  </span>
+                </label>
+              ))}
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => setSelectedColumns(columnOptions)}
+              >
+                Select all
+              </button>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => setSelectedColumns([])}
+              >
+                Clear all
+              </button>
+            </div>
+
+            {reportRows.length ? (
+              <div className="report-table-wrap">
+                <AdminTable className="report-table">
+                  <thead>
+                    <tr>
+                      {activeColumns.map((column) => (
+                        <th
+                          key={column}
+                          aria-sort={
+                            sortBy === column
+                              ? sortDirection === "asc"
+                                ? "ascending"
+                                : "descending"
+                              : undefined
+                          }
+                        >
+                          {[
+                            "date",
+                            "name",
+                            "service",
+                            "client",
+                            "owner",
+                            "status",
+                            "amount",
+                            "dueDate",
+                          ].includes(column) ? (
+                            <button
+                              className="link-button"
+                              type="button"
+                              onClick={() => {
+                                setSortBy(column);
+                                setSortDirection(
+                                  sortBy === column && sortDirection === "asc"
+                                    ? "desc"
+                                    : "asc",
+                                );
+                              }}
+                            >
+                              {column
+                                .replace(/([A-Z])/g, " $1")
+                                .replace(/^./, (value) => value.toUpperCase())}
+                              {sortBy === column
+                                ? sortDirection === "asc"
+                                  ? " ↑"
+                                  : " ↓"
+                                : " ↕"}
+                            </button>
+                          ) : (
+                            column
+                              .replace(/([A-Z])/g, " $1")
+                              .replace(/^./, (value) => value.toUpperCase())
+                          )}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {reportRows.map((row) => (
+                      <tr key={`${row.rowKind}-${row.id}`}>
+                        {activeColumns.map((column) => (
+                          <td key={`${row.id}-${column}`}>
+                            {getDisplayValue(row, column)}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </AdminTable>
+              </div>
+            ) : (
+              <div className="dashboard-empty-state report-empty-state">
+                No records match the current report filters.
+                <button
+                  type="button"
+                  className="primary-button"
+                  onClick={clearFilters}
+                >
+                  Clear Filters
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
 
-      {reportType === "Overview" ? (
+      {hasRun && reportType === "Overview" ? (
         <div className="report-visual-summaries">
           <section className="admin-section">
             <div className="admin-section-header">
@@ -12862,8 +13092,6 @@ function ReportsPage() {
           </section>
         </div>
       ) : null}
-
-      {reportVersion}
     </div>
   );
 }

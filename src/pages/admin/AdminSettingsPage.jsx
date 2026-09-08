@@ -118,9 +118,11 @@ export default function AdminSettingsPage() {
   const [sessionUser, setSessionUser] = useState(null);
   const [teamMembers, setTeamMembers] = useState([]);
   const [selectedTeamMemberId, setSelectedTeamMemberId] = useState(null);
-  const [businessEditGroup, setBusinessEditGroup] = useState("all");
+  const [businessEditGroup, setBusinessEditGroup] = useState(null);
   const [businessBaseline, setBusinessBaseline] = useState(null);
   const [accountProfile, setAccountProfile] = useState(null);
+  const [accountEditMode, setAccountEditMode] = useState(false);
+  const [accountEditBaseline, setAccountEditBaseline] = useState(null);
   const [accountState, setAccountState] = useState({
     loading: true,
     saving: false,
@@ -204,14 +206,7 @@ export default function AdminSettingsPage() {
             user_id: row.user_id ?? row.id,
           }));
           setTeamMembers(mappedRows);
-          setSelectedTeamMemberId(
-            (current) =>
-              current ??
-              mappedRows.find((row) => row.display_name === "Morgan Lee")
-                ?.user_id ??
-              mappedRows[0]?.user_id ??
-              null,
-          );
+          setSelectedTeamMemberId((current) => current ?? null);
           setOwnerError("");
           setTeamState({
             loading: false,
@@ -243,8 +238,8 @@ export default function AdminSettingsPage() {
     if (section[0] !== "business") {
       return undefined;
     }
-    if (!businessEditGroup) {
-      setBusinessEditGroup("all");
+    if (businessEditGroup === null) {
+      setBusinessEditGroup(null);
     }
   }, [section, businessEditGroup]);
   useEffect(() => {
@@ -420,8 +415,25 @@ export default function AdminSettingsPage() {
     if (businessBaseline) {
       setValues(businessBaseline);
     }
-    setBusinessEditGroup("all");
+    setBusinessEditGroup(null);
     setBusinessBaseline(null);
+  };
+  const beginAccountEdit = () => {
+    setAccountEditBaseline({
+      display_name: accountForm.display_name,
+      email: accountForm.email,
+    });
+    setAccountEditMode(true);
+  };
+  const cancelAccountEdit = () => {
+    if (accountEditBaseline) {
+      setAccountForm({
+        display_name: accountEditBaseline.display_name,
+        email: accountEditBaseline.email,
+      });
+    }
+    setAccountEditMode(false);
+    setAccountEditBaseline(null);
   };
   const saveAccountProfile = async (event) => {
     event.preventDefault();
@@ -448,6 +460,8 @@ export default function AdminSettingsPage() {
         display_name: nextProfile?.display_name || accountForm.display_name,
         email: nextProfile?.email || accountForm.email,
       });
+      setAccountEditMode(false);
+      setAccountEditBaseline(null);
       setAccountState({
         loading: false,
         saving: false,
@@ -490,6 +504,13 @@ export default function AdminSettingsPage() {
       });
     }
   };
+  const [teamForm, setTeamForm] = useState({
+    display_name: "",
+    email: "",
+    role_slug: "administrator",
+    status: "active",
+  });
+  const [teamCreateMode, setTeamCreateMode] = useState(false);
   const handleTeamMemberChange = (userId, field, value) => {
     setTeamMembers((current) =>
       current.map((member) =>
@@ -498,6 +519,43 @@ export default function AdminSettingsPage() {
           : member,
       ),
     );
+  };
+  const saveNewTeamMember = async (event) => {
+    event.preventDefault();
+    setTeamState((current) => ({
+      ...current,
+      saving: true,
+      error: "",
+      message: "",
+    }));
+    try {
+      const created = await clients.createTeamMember(teamForm);
+      const nextMembers =
+        created?.team || created?.user
+          ? [...teamMembers, created.user]
+          : teamMembers;
+      setTeamMembers(nextMembers);
+      setTeamForm({
+        display_name: "",
+        email: "",
+        role_slug: "administrator",
+        status: "active",
+      });
+      setTeamCreateMode(false);
+      setTeamState({
+        loading: false,
+        saving: false,
+        error: "",
+        message: "Administrator added.",
+      });
+    } catch (error) {
+      setTeamState({
+        loading: false,
+        saving: false,
+        error: error.message,
+        message: "",
+      });
+    }
   };
   const saveTeamAccess = async (event) => {
     event.preventDefault();
@@ -702,10 +760,101 @@ export default function AdminSettingsPage() {
               {teamState.loading ? (
                 <p role="status">Loading team access…</p>
               ) : (
-                <form className="team-access-form" onSubmit={saveTeamAccess}>
+                <div className="team-access-form">
                   <p className="settings-note">
                     Manage administrative access, roles, and account status.
                   </p>
+                  {teamCreateMode && (
+                    <form
+                      className="business-settings-form"
+                      onSubmit={saveNewTeamMember}
+                    >
+                      <fieldset>
+                        <legend>Add administrator</legend>
+                        <div className="business-fields">
+                          <label htmlFor="team-new-display-name">
+                            <span>Display name</span>
+                            <input
+                              id="team-new-display-name"
+                              type="text"
+                              value={teamForm.display_name}
+                              onChange={(event) =>
+                                setTeamForm((current) => ({
+                                  ...current,
+                                  display_name: event.target.value,
+                                }))
+                              }
+                            />
+                          </label>
+                          <label htmlFor="team-new-email">
+                            <span>Login email</span>
+                            <input
+                              id="team-new-email"
+                              type="email"
+                              value={teamForm.email}
+                              onChange={(event) =>
+                                setTeamForm((current) => ({
+                                  ...current,
+                                  email: event.target.value,
+                                }))
+                              }
+                            />
+                          </label>
+                          <label htmlFor="team-new-role">
+                            <span>Role</span>
+                            <select
+                              id="team-new-role"
+                              value={teamForm.role_slug}
+                              onChange={(event) =>
+                                setTeamForm((current) => ({
+                                  ...current,
+                                  role_slug: event.target.value,
+                                }))
+                              }
+                            >
+                              <option value="owner-admin">
+                                Owner / Administrator
+                              </option>
+                              <option value="administrator">
+                                Administrator
+                              </option>
+                              <option value="staff">Staff</option>
+                              <option value="read-only">Read only</option>
+                            </select>
+                          </label>
+                        </div>
+                      </fieldset>
+                      <div className="settings-save">
+                        <button
+                          className="primary-button"
+                          type="submit"
+                          disabled={teamState.saving}
+                        >
+                          {teamState.saving
+                            ? "Creating…"
+                            : "Create administrator"}
+                        </button>
+                        <button
+                          type="button"
+                          className="secondary-button"
+                          onClick={() => setTeamCreateMode(false)}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                  {!teamCreateMode && (
+                    <div className="settings-save">
+                      <button
+                        type="button"
+                        className="primary-button"
+                        onClick={() => setTeamCreateMode(true)}
+                      >
+                        + Add administrator
+                      </button>
+                    </div>
+                  )}
                   <div className="team-access-list">
                     {teamMembers.map((member) => {
                       const memberId = member.user_id ?? member.id;
@@ -806,7 +955,8 @@ export default function AdminSettingsPage() {
                   <div className="settings-save">
                     <button
                       className="primary-button"
-                      type="submit"
+                      type="button"
+                      onClick={saveTeamAccess}
                       disabled={
                         teamState.saving ||
                         !sessionUser ||
@@ -826,7 +976,7 @@ export default function AdminSettingsPage() {
                       {teamState.error}
                     </p>
                   )}
-                </form>
+                </div>
               )}
             </>
           ) : section[0] === "notifications" ? (
@@ -1077,53 +1227,111 @@ export default function AdminSettingsPage() {
                       the currently signed-in user and enforces backend
                       validation.
                     </p>
-                    <fieldset disabled={accountState.saving}>
-                      <legend>Account profile</legend>
-                      <div className="business-fields">
-                        <label htmlFor="account-display-name">
-                          <span>Display name</span>
-                          <input
-                            id="account-display-name"
-                            type="text"
-                            value={accountForm.display_name}
-                            onChange={(event) =>
-                              setAccountForm((current) => ({
-                                ...current,
-                                display_name: event.target.value,
-                              }))
-                            }
-                          />
-                        </label>
-                        <label htmlFor="account-email">
-                          <span>Login email</span>
-                          <input
-                            id="account-email"
-                            type="email"
-                            value={accountForm.email}
-                            onChange={(event) =>
-                              setAccountForm((current) => ({
-                                ...current,
-                                email: event.target.value,
-                              }))
-                            }
-                          />
-                        </label>
-                      </div>
-                    </fieldset>
-                    <div className="settings-save">
-                      <button
-                        className="primary-button"
-                        type="submit"
-                        disabled={accountState.saving}
-                      >
-                        {accountState.saving
-                          ? "Saving…"
-                          : "Save account profile"}
-                      </button>
-                      {accountState.message && (
-                        <p role="status">{accountState.message}</p>
-                      )}
-                    </div>
+                    {!accountEditMode ? (
+                      <>
+                        <fieldset>
+                          <legend>Account profile</legend>
+                          <div className="business-fields">
+                            <label htmlFor="account-display-name-readonly">
+                              <span>Display name</span>
+                              <input
+                                id="account-display-name-readonly"
+                                type="text"
+                                value={
+                                  accountProfile?.display_name ||
+                                  accountForm.display_name ||
+                                  ""
+                                }
+                                readOnly
+                              />
+                            </label>
+                            <label htmlFor="account-email-readonly">
+                              <span>Login email</span>
+                              <input
+                                id="account-email-readonly"
+                                type="email"
+                                value={
+                                  accountProfile?.email ||
+                                  accountForm.email ||
+                                  ""
+                                }
+                                readOnly
+                              />
+                            </label>
+                          </div>
+                        </fieldset>
+                        <div className="settings-save">
+                          <button
+                            type="button"
+                            className="primary-button"
+                            onClick={beginAccountEdit}
+                          >
+                            Edit account profile
+                          </button>
+                          {accountState.message && (
+                            <p role="status">{accountState.message}</p>
+                          )}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <fieldset disabled={accountState.saving}>
+                          <legend>Account profile</legend>
+                          <div className="business-fields">
+                            <label htmlFor="account-display-name">
+                              <span>Display name</span>
+                              <input
+                                id="account-display-name"
+                                type="text"
+                                value={accountForm.display_name}
+                                onChange={(event) =>
+                                  setAccountForm((current) => ({
+                                    ...current,
+                                    display_name: event.target.value,
+                                  }))
+                                }
+                              />
+                            </label>
+                            <label htmlFor="account-email">
+                              <span>Login email</span>
+                              <input
+                                id="account-email"
+                                type="email"
+                                value={accountForm.email}
+                                onChange={(event) =>
+                                  setAccountForm((current) => ({
+                                    ...current,
+                                    email: event.target.value,
+                                  }))
+                                }
+                              />
+                            </label>
+                          </div>
+                        </fieldset>
+                        <div className="settings-save">
+                          <button
+                            className="primary-button"
+                            type="submit"
+                            disabled={accountState.saving}
+                          >
+                            {accountState.saving
+                              ? "Saving…"
+                              : "Save account profile"}
+                          </button>
+                          <button
+                            type="button"
+                            className="secondary-button"
+                            onClick={cancelAccountEdit}
+                            disabled={accountState.saving}
+                          >
+                            Cancel
+                          </button>
+                          {accountState.message && (
+                            <p role="status">{accountState.message}</p>
+                          )}
+                        </div>
+                      </>
+                    )}
                     {accountState.error && (
                       <p role="alert" className="admin-feedback">
                         {accountState.error}
@@ -1275,9 +1483,7 @@ export default function AdminSettingsPage() {
                     portal message email settings.
                   </p>
                   {groups.map(([title, fields]) => {
-                    const isEditing =
-                      businessEditGroup === "all" ||
-                      businessEditGroup === title;
+                    const isEditing = businessEditGroup === title;
                     return (
                       <fieldset key={title} disabled={state.saving}>
                         <div className="business-section-header">
@@ -1351,12 +1557,25 @@ export default function AdminSettingsPage() {
                       Configuration will follow in a later phase.
                     </p>
                   </fieldset>
-                  <div className="settings-save">
-                    <button className="primary-button" disabled={state.saving}>
-                      {state.saving ? "Saving…" : "Save Settings"}
-                    </button>
-                    {state.message && <p role="status">{state.message}</p>}
-                  </div>
+                  {businessEditGroup && (
+                    <div className="settings-save">
+                      <button
+                        className="primary-button"
+                        disabled={state.saving}
+                      >
+                        {state.saving ? "Saving…" : "Save Settings"}
+                      </button>
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        onClick={cancelBusinessEdit}
+                        disabled={state.saving}
+                      >
+                        Cancel
+                      </button>
+                      {state.message && <p role="status">{state.message}</p>}
+                    </div>
+                  )}
                 </form>
               ) : (
                 <button

@@ -96,6 +96,46 @@ try {
         alchemize_json_response(['data' => $userRepository->listInternalUsers()], 200);
     }
 
+    if ($method === 'POST' && $parts === ['team']) {
+        $actor = alchemize_require_team_access_manager();
+        alchemize_require_csrf();
+        $payload = alchemize_read_json_request('POST');
+
+        $displayName = trim((string) ($payload['display_name'] ?? ''));
+        $email = strtolower(trim((string) ($payload['email'] ?? '')));
+        $roleSlug = trim((string) ($payload['role_slug'] ?? 'administrator'));
+        $status = trim((string) ($payload['status'] ?? 'active'));
+
+        if ($displayName === '') throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Enter a valid display name.');
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Enter a valid email address.');
+        if (!in_array($roleSlug, ['owner-admin', 'administrator', 'staff', 'read-only'], true)) {
+            throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Select a valid team role.');
+        }
+        if (!in_array($status, ['active', 'inactive', 'suspended', 'archived'], true)) {
+            throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Select a valid team status.');
+        }
+        if ($userRepository->findByEmail($email) !== null) {
+            throw new AlchemizeRequestException(409, 'EMAIL_IN_USE', 'That email is already associated with an account.');
+        }
+
+        $role = $database->prepare('SELECT id FROM roles WHERE slug = :slug AND is_active = 1 LIMIT 1');
+        $role->execute(['slug' => $roleSlug]);
+        $roleId = $role->fetchColumn();
+        if ($roleId === false) throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'The selected role is not available.');
+
+        $newUserId = $userRepository->create([
+            'public_id' => alchemize_uuid_v4(),
+            'email' => $email,
+            'password_hash' => null,
+            'display_name' => $displayName,
+            'status' => $status,
+            'role_id' => (int) $roleId,
+        ]);
+
+        $user = $userRepository->findById((int) $newUserId);
+        alchemize_json_response(['data' => ['created' => true, 'user' => $user, 'team' => $userRepository->listInternalUsers()]], 201);
+    }
+
     if ($method === 'PUT' && $parts === ['team']) {
         $actor = alchemize_require_team_access_manager();
         alchemize_require_csrf();
