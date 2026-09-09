@@ -1,10 +1,17 @@
 import { Children, cloneElement, isValidElement } from "react";
-export function AdminPageHeader({ eyebrow, title, summary, actions = [] }) {
+export function AdminPageHeader({
+  eyebrow,
+  title,
+  subtitle,
+  summary,
+  actions = [],
+}) {
   return (
     <header className="portal-page-header admin-page-header">
       <div>
         {eyebrow ? <span className="section-kicker">{eyebrow}</span> : null}
         <h1>{title}</h1>
+        {subtitle ? <p className="admin-page-subtitle">{subtitle}</p> : null}
       </div>
       <div className="admin-header-meta">
         {summary ? <p>{summary}</p> : null}

@@ -8798,6 +8798,7 @@ function AppointmentManagementPage() {
                 <label>
                   <span>Recipient type</span>
                   <select
+                    aria-label="Recipient type"
                     value={draftState.recipientType}
                     onChange={(event) =>
                       setDraftField("recipientType", event.target.value)
@@ -8812,6 +8813,7 @@ function AppointmentManagementPage() {
                   <label>
                     <span>Name</span>
                     <input
+                      aria-label="Name"
                       value={draftState.recipientName || ""}
                       onChange={(event) =>
                         setDraftField("recipientName", event.target.value)
@@ -8826,6 +8828,7 @@ function AppointmentManagementPage() {
                   </span>
                   {draftState.recipientType === "client" ? (
                     <select
+                      aria-label="Client"
                       value={draftState.clientId}
                       onChange={(event) => {
                         const selectedClientId = event.target.value;
@@ -8884,6 +8887,7 @@ function AppointmentManagementPage() {
                 <label className="full-span">
                   <span>Notification email</span>
                   <input
+                    aria-label="Notification email"
                     type="email"
                     value={draftState.notificationEmail || ""}
                     onChange={(event) =>
@@ -8913,6 +8917,7 @@ function AppointmentManagementPage() {
                 <label>
                   <span>Appointment type</span>
                   <select
+                    aria-label="Appointment type"
                     value={draftState.type}
                     onChange={(event) =>
                       setDraftField("type", event.target.value)
@@ -8928,6 +8933,7 @@ function AppointmentManagementPage() {
                 <label>
                   <span>Meeting method</span>
                   <select
+                    aria-label="Meeting method"
                     value={draftState.meetingMethod || "Phone Call"}
                     onChange={(event) =>
                       setDraftField("meetingMethod", event.target.value)
@@ -8943,6 +8949,7 @@ function AppointmentManagementPage() {
                 <label>
                   <span>Service</span>
                   <select
+                    aria-label="Service"
                     value={draftState.serviceId}
                     onChange={(event) => {
                       const selected = snapshot.services.find(
@@ -8965,6 +8972,7 @@ function AppointmentManagementPage() {
                 <label>
                   <span>Date</span>
                   <input
+                    aria-label="Date"
                     type="date"
                     value={draftState.date}
                     onChange={(event) =>
@@ -8975,6 +8983,7 @@ function AppointmentManagementPage() {
                 <label>
                   <span>Start time</span>
                   <input
+                    aria-label="Start time"
                     type="time"
                     value={draftState.startTime}
                     onChange={(event) =>
@@ -8985,6 +8994,7 @@ function AppointmentManagementPage() {
                 <label>
                   <span>Duration</span>
                   <input
+                    aria-label="Duration"
                     type="number"
                     min="15"
                     step="15"
@@ -8997,6 +9007,7 @@ function AppointmentManagementPage() {
                 <label>
                   <span>Location</span>
                   <select
+                    aria-label="Location"
                     value={draftState.location}
                     onChange={(event) =>
                       setDraftField("location", event.target.value)
@@ -9011,6 +9022,7 @@ function AppointmentManagementPage() {
                 <label>
                   <span>Status</span>
                   <select
+                    aria-label="Status"
                     value={draftState.status}
                     onChange={(event) =>
                       setDraftField("status", event.target.value)
@@ -9026,6 +9038,7 @@ function AppointmentManagementPage() {
                 <label>
                   <span>Owner</span>
                   <select
+                    aria-label="Owner"
                     value={draftState.assignedTo}
                     onChange={(event) =>
                       setDraftField("assignedTo", event.target.value)
@@ -9063,6 +9076,7 @@ function AppointmentManagementPage() {
                 <label className="full-span">
                   <span>Internal notes</span>
                   <textarea
+                    aria-label="Internal notes"
                     rows="4"
                     value={draftState.notes}
                     onChange={(event) =>
