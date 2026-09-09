@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import "./admin-reports-billing.css";
 import "./admin-appointments.css";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { Receipt, Clock, CreditCard, FileClock, Sparkles } from "lucide-react";
 import {
   AdminDetailDrawer,
   AdminTable,
@@ -129,6 +130,8 @@ const statusTone = {
   Cancelled: "neutral",
   Draft: "neutral",
   Open: "info",
+  Issued: "info",
+  "Partially Paid": "warning",
   "Past Due": "warning",
   Paid: "success",
   Pending: "info",
@@ -9639,8 +9642,26 @@ function BillingManagementPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [clientFilter, setClientFilter] = useState("All");
+  const [sortBy, setSortBy] = useState("newest");
+  const [statusTab, setStatusTab] = useState("all");
+  const [openRowMenuId, setOpenRowMenuId] = useState(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [catalogSearch, setCatalogSearch] = useState({});
+  useEffect(() => {
+    if (!openRowMenuId) return;
+    const closeOnOutsideClick = (event) => {
+      if (!event.target.closest(".billing-row-menu")) setOpenRowMenuId(null);
+    };
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setOpenRowMenuId(null);
+    };
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("mousedown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [openRowMenuId]);
   useEffect(() => {
     if (!isCreateOpen) return;
     const previousFocus = document.activeElement;
@@ -9703,6 +9724,21 @@ function BillingManagementPage() {
     }));
   };
 
+  const statusTabMatches = (renderedStatus) => {
+    switch (statusTab) {
+      case "open":
+        return ["Issued", "Partially Paid"].includes(renderedStatus);
+      case "past-due":
+        return renderedStatus === "Past Due";
+      case "paid":
+        return renderedStatus === "Paid";
+      case "drafts":
+        return renderedStatus === "Draft";
+      default:
+        return true;
+    }
+  };
+
   const filterRows = useMemo(() => {
     return snapshot.invoices.filter((invoice) => {
       const client =
@@ -9715,12 +9751,39 @@ function BillingManagementPage() {
       const target =
         `${invoice.invoiceNumber || invoice.id} ${client} ${engagement} ${invoice.serviceName || ""}`.toLowerCase();
       return (
+        statusTabMatches(renderedStatus) &&
         (!search || target.includes(search.toLowerCase())) &&
         (statusFilter === "All" || renderedStatus === statusFilter) &&
         (clientFilter === "All" || client === clientFilter)
       );
     });
-  }, [search, statusFilter, clientFilter, snapshot]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, statusFilter, clientFilter, statusTab, snapshot]);
+
+  const sortedRows = useMemo(() => {
+    const clientNameOf = (invoice) =>
+      snapshot.clients.find((entry) => entry.id === invoice.clientId)
+        ?.displayName || "";
+    const rows = [...filterRows];
+    if (sortBy === "oldest") {
+      rows.sort(
+        (a, b) => new Date(a.invoiceDate || 0) - new Date(b.invoiceDate || 0),
+      );
+    } else if (sortBy === "balance") {
+      rows.sort(
+        (a, b) =>
+          getInvoiceCalculatedTotals(b).balance -
+          getInvoiceCalculatedTotals(a).balance,
+      );
+    } else if (sortBy === "client") {
+      rows.sort((a, b) => clientNameOf(a).localeCompare(clientNameOf(b)));
+    } else {
+      rows.sort(
+        (a, b) => new Date(b.invoiceDate || 0) - new Date(a.invoiceDate || 0),
+      );
+    }
+    return rows;
+  }, [filterRows, sortBy, snapshot]);
 
   const clientOptions = [
     "All",
@@ -9729,32 +9792,36 @@ function BillingManagementPage() {
     ),
   ];
 
-  const openBalance = snapshot.invoices
-    .filter(
-      (invoice) =>
-        !["Paid", "Void"].includes(getEffectiveInvoiceStatus(invoice)),
-    )
-    .reduce(
-      (sum, invoice) => sum + getInvoiceCalculatedTotals(invoice).balance,
-      0,
-    );
-  const pastDue = snapshot.invoices
-    .filter((invoice) => getEffectiveInvoiceStatus(invoice) === "Past Due")
-    .reduce(
-      (sum, invoice) => sum + getInvoiceCalculatedTotals(invoice).balance,
-      0,
-    );
-  const paidThisPeriod = snapshot.payments
-    .filter((payment) => {
-      const paymentDate = new Date(`${payment.date}T12:00:00`);
-      const start = new Date(
-        new Date().getFullYear(),
-        new Date().getMonth(),
-        1,
-      );
-      return paymentDate >= start;
-    })
-    .reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+  const openBalanceInvoices = snapshot.invoices.filter(
+    (invoice) => !["Paid", "Void"].includes(getEffectiveInvoiceStatus(invoice)),
+  );
+  const openBalance = openBalanceInvoices.reduce(
+    (sum, invoice) => sum + getInvoiceCalculatedTotals(invoice).balance,
+    0,
+  );
+  const pastDueInvoices = snapshot.invoices.filter(
+    (invoice) => getEffectiveInvoiceStatus(invoice) === "Past Due",
+  );
+  const pastDue = pastDueInvoices.reduce(
+    (sum, invoice) => sum + getInvoiceCalculatedTotals(invoice).balance,
+    0,
+  );
+  const paymentsThisPeriod = snapshot.payments.filter((payment) => {
+    const paymentDate = new Date(`${payment.date}T12:00:00`);
+    const start = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    return paymentDate >= start;
+  });
+  const paidThisPeriod = paymentsThisPeriod.reduce(
+    (sum, payment) => sum + Number(payment.amount || 0),
+    0,
+  );
+  const draftInvoices = snapshot.invoices.filter(
+    (invoice) => getEffectiveInvoiceStatus(invoice) === "Draft",
+  );
+  const currentPeriodLabel = new Date().toLocaleDateString(undefined, {
+    month: "short",
+    year: "numeric",
+  });
 
   const applySelectedEngagement = (engagementId) => {
     setInvoiceDraft((current) => {
@@ -9989,6 +10056,7 @@ function BillingManagementPage() {
       <AdminPageHeader
         eyebrow="Billing"
         title="Billing"
+        subtitle="Invoices, payments & receivables"
         summary="Track invoices, payments, and outstanding obligations with current operational records."
         actions={[
           {
@@ -10003,27 +10071,52 @@ function BillingManagementPage() {
           {
             label: "Open Balance",
             value: formatCurrency(openBalance),
-            hint: "Current",
+            hint: openBalanceInvoices.length
+              ? `Across ${openBalanceInvoices.length} invoice${openBalanceInvoices.length === 1 ? "" : "s"}`
+              : "No open invoices",
+            icon: <Receipt size={16} aria-hidden="true" />,
           },
           {
             label: "Past Due",
             value: formatCurrency(pastDue),
-            hint: "Outstanding",
+            hint: `${pastDueInvoices.length} invoice${pastDueInvoices.length === 1 ? "" : "s"}`,
+            icon: <Clock size={16} aria-hidden="true" />,
+            tone: pastDue > 0 ? "attention" : undefined,
+            onClick: () => setStatusTab("past-due"),
           },
           {
             label: "Paid This Period",
             value: formatCurrency(paidThisPeriod),
-            hint: "Current month",
+            hint: paymentsThisPeriod.length
+              ? `${paymentsThisPeriod.length} payment${paymentsThisPeriod.length === 1 ? "" : "s"} · ${currentPeriodLabel}`
+              : "No payments recorded",
+            icon: <CreditCard size={16} aria-hidden="true" />,
           },
           {
             label: "Draft Invoices",
-            value: snapshot.invoices.filter(
-              (invoice) => getEffectiveInvoiceStatus(invoice) === "Draft",
-            ).length,
-            hint: "Count",
+            value: draftInvoices.length,
+            hint: draftInvoices.length ? "Awaiting review" : "No drafts",
+            icon: <FileClock size={16} aria-hidden="true" />,
+            onClick: () => setStatusTab("drafts"),
           },
         ]}
       />
+      <div className="billing-status-nav">
+        <AdminTabs
+          tabs={[
+            { id: "all", label: "All Invoices" },
+            { id: "open", label: "Open" },
+            { id: "past-due", label: "Past Due" },
+            { id: "paid", label: "Paid" },
+            { id: "drafts", label: "Drafts" },
+          ]}
+          activeTab={statusTab}
+          onChange={setStatusTab}
+        />
+        <span className="billing-status-nav-count">
+          {filterRows.length} invoice{filterRows.length === 1 ? "" : "s"}
+        </span>
+      </div>
       <AdminToolbar
         searchValue={search}
         onSearchChange={setSearch}
@@ -10046,13 +10139,36 @@ function BillingManagementPage() {
               label: option,
             })),
           },
+          {
+            label: "Sort by",
+            value: sortBy,
+            onChange: setSortBy,
+            options: [
+              { value: "newest", label: "Newest" },
+              { value: "oldest", label: "Oldest" },
+              { value: "balance", label: "Highest balance" },
+              { value: "client", label: "Client (A–Z)" },
+            ],
+          },
+        ]}
+        actions={[
+          {
+            label: "Clear",
+            onClick: () => {
+              setSearch("");
+              setStatusFilter("All");
+              setClientFilter("All");
+              setSortBy("newest");
+              setStatusTab("all");
+            },
+          },
         ]}
       />
       {invoiceMessage ? (
         <div className="admin-toast success">{invoiceMessage}</div>
       ) : null}
       <AdminSection title={`Invoice tracker · ${filterRows.length} invoices`}>
-        {filterRows.length ? (
+        {sortedRows.length ? (
           <div className="admin-table-wrap">
             <AdminTable className="admin-table">
               <thead>
@@ -10070,12 +10186,22 @@ function BillingManagementPage() {
                 </tr>
               </thead>
               <tbody>
-                {filterRows.map((invoice) => {
+                {sortedRows.map((invoice) => {
                   const status = getEffectiveInvoiceStatus(invoice);
                   const totals = getInvoiceCalculatedTotals(invoice);
                   return (
                     <tr key={invoice.id}>
-                      <td>{invoice.invoiceNumber || invoice.id}</td>
+                      <td>
+                        <button
+                          type="button"
+                          className="billing-invoice-link"
+                          onClick={() =>
+                            navigate(`/admin/billing/invoices/${invoice.id}`)
+                          }
+                        >
+                          {invoice.invoiceNumber || invoice.id}
+                        </button>
+                      </td>
                       <td>
                         {snapshot.clients.find(
                           (client) => client.id === invoice.clientId,
@@ -10101,22 +10227,48 @@ function BillingManagementPage() {
                         <div className="table-actions">
                           <button
                             type="button"
-                            className="link-button"
+                            className="secondary-button billing-view-button"
                             onClick={() =>
                               navigate(`/admin/billing/invoices/${invoice.id}`)
                             }
                           >
                             View
                           </button>
-                          <button
-                            type="button"
-                            className="link-button"
-                            onClick={() =>
-                              navigate(`/admin/billing/invoices/${invoice.id}`)
-                            }
-                          >
-                            Print
-                          </button>
+                          <div className="billing-row-menu">
+                            <button
+                              type="button"
+                              className="link-button billing-row-menu-trigger"
+                              aria-haspopup="menu"
+                              aria-expanded={openRowMenuId === invoice.id}
+                              aria-label={`More actions for invoice ${invoice.invoiceNumber || invoice.id}`}
+                              onClick={() =>
+                                setOpenRowMenuId((current) =>
+                                  current === invoice.id ? null : invoice.id,
+                                )
+                              }
+                            >
+                              •••
+                            </button>
+                            {openRowMenuId === invoice.id ? (
+                              <div
+                                className="billing-row-menu-panel"
+                                role="menu"
+                              >
+                                <button
+                                  type="button"
+                                  role="menuitem"
+                                  onClick={() => {
+                                    setOpenRowMenuId(null);
+                                    navigate(
+                                      `/admin/billing/invoices/${invoice.id}`,
+                                    );
+                                  }}
+                                >
+                                  Print / Export
+                                </button>
+                              </div>
+                            ) : null}
+                          </div>
                         </div>
                       </td>
                     </tr>
@@ -10134,6 +10286,42 @@ function BillingManagementPage() {
           />
         )}
       </AdminSection>
+
+      <section className="admin-section billing-support-panel">
+        <div className="billing-support-copy">
+          <Sparkles size={18} aria-hidden="true" />
+          <div>
+            <h3>Keep your billing organized</h3>
+            <p>
+              Create invoices, record payments, and track outstanding balances —
+              all in one place.
+            </p>
+          </div>
+        </div>
+        <div className="billing-support-links">
+          <button type="button" onClick={() => setIsCreateOpen(true)}>
+            Create a new invoice <span aria-hidden="true">→</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setStatusTab("past-due");
+              setStatusFilter("All");
+            }}
+          >
+            View past due invoices <span aria-hidden="true">→</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setStatusTab("paid");
+              setStatusFilter("All");
+            }}
+          >
+            View paid invoices <span aria-hidden="true">→</span>
+          </button>
+        </div>
+      </section>
 
       {isCreateOpen ? (
         <div

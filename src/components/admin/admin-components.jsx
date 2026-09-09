@@ -37,13 +37,23 @@ export function AdminPageHeader({
   );
 }
 
-export function AdminMetricCard({ label, value, hint, tone }) {
+export function AdminMetricCard({ label, value, hint, tone, icon, onClick }) {
+  const Tag = onClick ? "button" : "article";
   return (
-    <article className={`admin-metric-card${tone ? ` tone-${tone}` : ""}`}>
+    <Tag
+      type={onClick ? "button" : undefined}
+      className={`admin-metric-card${tone ? ` tone-${tone}` : ""}${onClick ? " is-interactive" : ""}`}
+      onClick={onClick}
+    >
+      {icon ? (
+        <span className="admin-metric-icon" aria-hidden="true">
+          {icon}
+        </span>
+      ) : null}
       <span>{label}</span>
       <strong>{value}</strong>
       {hint ? <small>{hint}</small> : null}
-    </article>
+    </Tag>
   );
 }
 
