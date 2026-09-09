@@ -304,14 +304,74 @@
     text-align: right;
     font-weight: 600;
   }
-  .invoice-detail-module
-    .admin-detail-grid:first-of-type
-    .detail-block:last-child
-    dl
-    > div:last-child {
-    background: var(--color-background);
-    padding: 0.8rem;
+  .invoice-detail-module .invoice-meta-columns {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 2rem;
   }
+  .invoice-detail-module .invoice-meta-columns dl:last-child > div:last-child {
+    background: var(--color-background);
+    padding: 0.7rem 0.8rem;
+    border-bottom: 0;
+  }
+  .invoice-detail-module
+    .invoice-payment-grid
+    > .invoice-payment-panel:last-child {
+    border-left: 1px solid var(--color-border);
+    padding-left: 1.5rem;
+  }
+}
+
+.invoice-detail-module .invoice-payment-panel {
+  background: transparent;
+  border: 0;
+  border-top: 2px solid var(--color-border);
+  border-radius: 0;
+  padding: 1rem 0 0;
+}
+
+.invoice-detail-module .invoice-payment-form {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 0.6rem;
+}
+
+.invoice-detail-module .invoice-payment-hint,
+.invoice-detail-module .invoice-empty-hint {
+  margin: 0;
+  color: var(--color-text-soft);
+  font-size: 0.88rem;
+}
+
+.invoice-detail-module .invoice-line-service-code {
+  color: var(--color-text-soft);
+  font-size: 0.82rem;
+}
+
+.invoice-detail-module .invoice-notes-panel .admin-tabs {
+  margin-top: 0.4rem;
+}
+
+.invoice-detail-module .invoice-notes-body {
+  padding-top: 0.9rem;
+}
+
+.invoice-detail-module .invoice-note-internal {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.invoice-detail-module .invoice-note-internal-flag {
+  flex: 0 0 auto;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: var(--admin-pending-soft);
+  color: var(--admin-pending);
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 @media (max-width: 1000px) {
   :is(.reports-module, .billing-module) .admin-metrics {
@@ -327,8 +387,16 @@
 }
 @media (max-width: 760px) {
   .reports-module .report-controls-grid,
-  .invoice-detail-module .admin-detail-grid {
+  .invoice-detail-module .admin-detail-grid,
+  .invoice-detail-module .invoice-meta-columns {
     grid-template-columns: 1fr;
+  }
+  .invoice-detail-module
+    .invoice-payment-grid
+    > .invoice-payment-panel:last-child {
+    border-left: 0;
+    padding-left: 0;
+    border-top: 2px solid var(--color-border);
   }
   .billing-module .invoice-create-overlay {
     padding: 0.5rem;

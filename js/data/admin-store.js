@@ -1393,7 +1393,10 @@ export function createAdminStore(initialData = emptyAdminData) {
     }
 
     const entry = {
-      id: `pay-${Date.now().toString().slice(-6)}`,
+      id:
+        payment.id !== undefined && payment.id !== null
+          ? `pay-${payment.id}`
+          : `pay-${Date.now().toString().slice(-6)}`,
       invoiceId: invoice.id,
       amount,
       date: payment.date || new Date().toISOString().slice(0, 10),

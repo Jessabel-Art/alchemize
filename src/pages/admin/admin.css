@@ -20,6 +20,17 @@
   align-items: end;
 }
 
+.admin-page-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.admin-page-title-badge {
+  display: inline-flex;
+}
+
 .admin-header-meta {
   display: grid;
   gap: 1rem;
@@ -2629,8 +2640,8 @@
 }
 
 @media print {
-  .portal-shell,
   .portal-sidebar,
+  .portal-topbar,
   .admin-page-header,
   .report-actions-row,
   .report-preset-grid,
@@ -2649,6 +2660,20 @@
   .admin-detail-drawer,
   .admin-module:not(.invoice-print-root) {
     display: none !important;
+  }
+
+  /* .portal-shell is a grid with a fixed sidebar track; hiding the
+     sidebar alone leaves the grid track (and its ancestor's own
+     display:none would hide the invoice sheet nested inside it), so it
+     must be reset to a plain block flow instead of hidden. */
+  .portal-shell {
+    display: block;
+    min-height: 0;
+    background: white;
+  }
+
+  .portal-main {
+    padding: 0;
   }
 
   .invoice-print-root {

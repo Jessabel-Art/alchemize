@@ -2,6 +2,7 @@ import { Children, cloneElement, isValidElement } from "react";
 export function AdminPageHeader({
   eyebrow,
   title,
+  badge,
   subtitle,
   summary,
   actions = [],
@@ -10,7 +11,12 @@ export function AdminPageHeader({
     <header className="portal-page-header admin-page-header">
       <div>
         {eyebrow ? <span className="section-kicker">{eyebrow}</span> : null}
-        <h1>{title}</h1>
+        <div className="admin-page-title-row">
+          <h1>{title}</h1>
+          {badge ? (
+            <span className="admin-page-title-badge">{badge}</span>
+          ) : null}
+        </div>
         {subtitle ? <p className="admin-page-subtitle">{subtitle}</p> : null}
       </div>
       <div className="admin-header-meta">

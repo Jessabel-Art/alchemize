@@ -3,7 +3,7 @@ import {
   appointmentPayload,
   mapAdminAppointment,
 } from "../../utils/admin-appointments.js";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import "./admin-reports-billing.css";
 import "./admin-appointments.css";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -10772,6 +10772,13 @@ function InvoiceDetailPage() {
   const [paymentError, setPaymentError] = useState("");
   const [paymentMessage, setPaymentMessage] = useState("");
   const [refreshIndex, setRefreshIndex] = useState(0);
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [activeNoteTab, setActiveNoteTab] = useState("client");
+  const paymentAmountRef = useRef(null);
+
+  useEffect(() => {
+    if (showPaymentForm) paymentAmountRef.current?.focus();
+  }, [showPaymentForm]);
 
   const invoiceSnapshot = useMemo(() => {
     if (!invoice) return null;
@@ -10819,7 +10826,7 @@ function InvoiceDetailPage() {
     }
 
     try {
-      await paymentApi.create({
+      const recorded = await paymentApi.create({
         request_key: recordPayment.requestKey,
         invoice_id: Number(invoiceSnapshot.id),
         client_id: Number(invoiceSnapshot.clientId),
@@ -10832,7 +10839,8 @@ function InvoiceDetailPage() {
         internal_note: recordPayment.note,
       });
       adminStore.recordPayment(invoiceSnapshot.id, {
-        amount,
+        id: recorded?.id,
+        amount: recorded?.amount != null ? Number(recorded.amount) : amount,
         date: recordPayment.date,
         methodLabel: recordPayment.methodLabel,
         reference: recordPayment.reference,
@@ -10848,6 +10856,7 @@ function InvoiceDetailPage() {
         reference: "",
         note: "",
       });
+      setShowPaymentForm(false);
       setRefreshIndex((current) => current + 1);
     } catch (error) {
       setPaymentError(error.message || "Unable to record this payment.");
@@ -10855,7 +10864,38 @@ function InvoiceDetailPage() {
     }
   };
 
+  const handleCancelPayment = () => {
+    setShowPaymentForm(false);
+    setPaymentError("");
+    setRecordPayment({
+      requestKey: window.crypto.randomUUID(),
+      amount: "",
+      date: new Date().toISOString().slice(0, 10),
+      methodLabel: "ACH / Bank Transfer",
+      reference: "",
+      note: "",
+    });
+  };
+
   const effectiveStatus = getEffectiveInvoiceStatus(invoiceSnapshot);
+  const financialMetrics = [
+    { label: "Invoice total", value: formatCurrency(totals.total) },
+    {
+      label: "Paid",
+      value: formatCurrency(totals.paidAmount),
+      tone: "positive",
+    },
+    {
+      label: "Balance due",
+      value: formatCurrency(totals.balance),
+      tone: totals.balance > 0 ? "attention" : "positive",
+    },
+    {
+      label: "Due date",
+      value: formatDate(invoiceSnapshot.dueAt),
+      tone: effectiveStatus === "Past Due" ? "danger" : undefined,
+    },
+  ];
   const printInvoice = {
     lineItems: invoiceSnapshot.lineItems || [],
     subtotal: totals.subtotal,
@@ -10974,9 +11014,15 @@ function InvoiceDetailPage() {
       </div>
 
       <AdminPageHeader
-        eyebrow="Billing"
+        eyebrow="Billing / Invoice"
         title={`Invoice ${invoiceSnapshot.invoiceNumber || invoiceSnapshot.id}`}
-        summary="Operational invoice detail and payment history."
+        badge={
+          <AdminStatusBadge
+            status={effectiveStatus}
+            tone={statusTone[effectiveStatus] || "neutral"}
+          />
+        }
+        subtitle={`${client?.displayName || "Unknown client"} · ${engagement?.serviceName || "No linked engagement"}`}
         actions={[
           {
             label: "← Back to billing",
@@ -10990,30 +11036,20 @@ function InvoiceDetailPage() {
           },
         ]}
       />
-      <div className="admin-detail-grid">
-        <div className="detail-block">
-          <h3>Invoice summary</h3>
+
+      <AdminMetrics items={financialMetrics} />
+
+      <div className="detail-block full-width invoice-meta-panel">
+        <h3>Invoice details</h3>
+        <div className="invoice-meta-columns">
           <dl>
             <div>
               <dt>Invoice number</dt>
               <dd>{invoiceSnapshot.invoiceNumber || invoiceSnapshot.id}</dd>
             </div>
             <div>
-              <dt>Status</dt>
-              <dd>
-                <AdminStatusBadge
-                  status={effectiveStatus}
-                  tone={statusTone[effectiveStatus] || "neutral"}
-                />
-              </dd>
-            </div>
-            <div>
               <dt>Invoice date</dt>
-              <dd>{formatDate(invoiceSnapshot.issuedAt)}</dd>
-            </div>
-            <div>
-              <dt>Due date</dt>
-              <dd>{formatDate(invoiceSnapshot.dueAt)}</dd>
+              <dd>{formatDate(invoiceSnapshot.invoiceDate)}</dd>
             </div>
             <div>
               <dt>Client</dt>
@@ -11021,16 +11057,13 @@ function InvoiceDetailPage() {
             </div>
             <div>
               <dt>Business name</dt>
-              <dd>{client?.businessName || "—"}</dd>
+              <dd>{client?.businessName || "Not provided"}</dd>
             </div>
             <div>
               <dt>Engagement / SOW</dt>
               <dd>{engagement?.serviceName || "Not linked"}</dd>
             </div>
           </dl>
-        </div>
-        <div className="detail-block">
-          <h3>Totals</h3>
           <dl>
             <div>
               <dt>Subtotal</dt>
@@ -11049,34 +11082,36 @@ function InvoiceDetailPage() {
               <dd>{formatCurrency(totals.paidAmount)}</dd>
             </div>
             <div>
-              <dt>Outstanding</dt>
+              <dt>Balance due</dt>
               <dd>{formatCurrency(totals.balance)}</dd>
             </div>
           </dl>
         </div>
       </div>
 
-      <div className="detail-block full-width">
+      <div className="detail-block full-width invoice-line-items-panel">
         <h3>Line items</h3>
         <div className="admin-table-wrap">
           <AdminTable className="admin-table">
             <thead>
               <tr>
-                <th>Service code</th>
                 <th>Description</th>
                 <th>Qty</th>
                 <th>Rate</th>
                 <th>Amount</th>
+                <th>Service code</th>
               </tr>
             </thead>
             <tbody>
               {(invoiceSnapshot.lineItems || []).map((lineItem) => (
                 <tr key={lineItem.id}>
-                  <td>{lineItem.serviceCode || "—"}</td>
                   <td>{lineItem.description || "Custom invoice line"}</td>
                   <td>{lineItem.quantity || 1}</td>
                   <td>{formatCurrency(lineItem.unitPrice || 0)}</td>
                   <td>{formatCurrency(lineItem.amount || 0)}</td>
+                  <td className="invoice-line-service-code">
+                    {lineItem.serviceCode || "—"}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -11084,103 +11119,149 @@ function InvoiceDetailPage() {
         </div>
       </div>
 
-      <div className="admin-detail-grid">
-        <div className="detail-block">
-          <h3>Record payment</h3>
-          <div className="client-detail-editor-grid">
-            <label>
-              <span>Amount</span>
-              <input
-                type="number"
-                min="0"
-                step="1"
-                value={recordPayment.amount}
-                onChange={(event) =>
-                  setRecordPayment((current) => ({
-                    ...current,
-                    amount: event.target.value,
-                  }))
-                }
-              />
-            </label>
-            <label>
-              <span>Payment date</span>
-              <input
-                type="date"
-                value={recordPayment.date}
-                onChange={(event) =>
-                  setRecordPayment((current) => ({
-                    ...current,
-                    date: event.target.value,
-                  }))
-                }
-              />
-            </label>
-            <label>
-              <span>Method</span>
-              <select
-                value={recordPayment.methodLabel}
-                onChange={(event) =>
-                  setRecordPayment((current) => ({
-                    ...current,
-                    methodLabel: event.target.value,
-                  }))
-                }
+      <div className="admin-detail-grid invoice-payment-grid">
+        <div className="detail-block invoice-payment-panel">
+          <div className="admin-section-header">
+            <h3>Record payment</h3>
+            {!showPaymentForm ? (
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => {
+                  setShowPaymentForm(true);
+                  setPaymentMessage("");
+                }}
               >
-                <option value="ACH / Bank Transfer">ACH / Bank Transfer</option>
-                <option value="Check">Check</option>
-                <option value="Cash">Cash</option>
-                <option value="Card / External Processor">
-                  Card / External Processor
-                </option>
-                <option value="Other">Other</option>
-              </select>
-            </label>
-            <label>
-              <span>Reference</span>
-              <input
-                type="text"
-                value={recordPayment.reference}
-                onChange={(event) =>
-                  setRecordPayment((current) => ({
-                    ...current,
-                    reference: event.target.value,
-                  }))
-                }
-              />
-            </label>
-            <label className="full-span">
-              <span>Internal note</span>
-              <textarea
-                rows="2"
-                value={recordPayment.note}
-                onChange={(event) =>
-                  setRecordPayment((current) => ({
-                    ...current,
-                    note: event.target.value,
-                  }))
-                }
-              />
-            </label>
+                + Record payment
+              </button>
+            ) : null}
           </div>
           {paymentError ? (
-            <div className="admin-toast error">{paymentError}</div>
+            <div className="admin-toast error" role="alert">
+              {paymentError}
+            </div>
           ) : null}
           {paymentMessage ? (
-            <div className="admin-toast success">{paymentMessage}</div>
+            <div className="admin-toast success" role="status">
+              {paymentMessage}
+            </div>
           ) : null}
-          <div className="admin-header-actions">
-            <button
-              type="button"
-              className="primary-button"
-              onClick={handleRecordPayment}
+          {showPaymentForm ? (
+            <div
+              className="invoice-payment-form"
+              onKeyDown={(event) => {
+                if (event.key === "Escape") {
+                  event.stopPropagation();
+                  handleCancelPayment();
+                }
+              }}
             >
-              Record payment
-            </button>
-          </div>
+              <div className="client-detail-editor-grid">
+                <label>
+                  <span>Amount</span>
+                  <input
+                    ref={paymentAmountRef}
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={recordPayment.amount}
+                    onChange={(event) =>
+                      setRecordPayment((current) => ({
+                        ...current,
+                        amount: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+                <label>
+                  <span>Payment date</span>
+                  <input
+                    type="date"
+                    value={recordPayment.date}
+                    onChange={(event) =>
+                      setRecordPayment((current) => ({
+                        ...current,
+                        date: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+                <label>
+                  <span>Method</span>
+                  <select
+                    value={recordPayment.methodLabel}
+                    onChange={(event) =>
+                      setRecordPayment((current) => ({
+                        ...current,
+                        methodLabel: event.target.value,
+                      }))
+                    }
+                  >
+                    <option value="ACH / Bank Transfer">
+                      ACH / Bank Transfer
+                    </option>
+                    <option value="Check">Check</option>
+                    <option value="Cash">Cash</option>
+                    <option value="Card / External Processor">
+                      Card / External Processor
+                    </option>
+                    <option value="Other">Other</option>
+                  </select>
+                </label>
+                <label>
+                  <span>Reference</span>
+                  <input
+                    type="text"
+                    value={recordPayment.reference}
+                    onChange={(event) =>
+                      setRecordPayment((current) => ({
+                        ...current,
+                        reference: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+                <label className="full-span">
+                  <span>Internal note</span>
+                  <textarea
+                    rows="2"
+                    value={recordPayment.note}
+                    onChange={(event) =>
+                      setRecordPayment((current) => ({
+                        ...current,
+                        note: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+              </div>
+              <div className="admin-header-actions">
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={handleCancelPayment}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="primary-button"
+                  onClick={handleRecordPayment}
+                >
+                  Record payment
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p className="invoice-payment-hint">
+              {totals.balance > 0
+                ? `Outstanding balance: ${formatCurrency(totals.balance)}.`
+                : "This invoice is fully paid — no balance remaining."}
+            </p>
+          )}
         </div>
 
-        <div className="detail-block">
+        <div className="detail-block invoice-payment-panel">
           <h3>Payment history</h3>
           {paymentRecords.length ? (
             <div className="admin-table-wrap">
@@ -11206,21 +11287,32 @@ function InvoiceDetailPage() {
               </AdminTable>
             </div>
           ) : (
-            <p>No payments have been recorded for this invoice yet.</p>
+            <p className="invoice-empty-hint">No payments recorded yet.</p>
           )}
         </div>
       </div>
 
-      <div className="detail-block full-width">
+      <div className="detail-block full-width invoice-notes-panel">
         <h3>Notes and activity</h3>
-        <p>
-          <strong>Client-facing notes:</strong>{" "}
-          {invoiceSnapshot.notes || "No client-facing note provided."}
-        </p>
-        <p>
-          <strong>Internal memo:</strong>{" "}
-          {invoiceSnapshot.internalMemo || "No internal billing note recorded."}
-        </p>
+        <AdminTabs
+          tabs={[
+            { id: "client", label: "Client-facing note" },
+            { id: "internal", label: "Internal memo" },
+          ]}
+          activeTab={activeNoteTab}
+          onChange={setActiveNoteTab}
+        />
+        <div className="invoice-notes-body">
+          {activeNoteTab === "client" ? (
+            <p>{invoiceSnapshot.notes || "No client-facing note provided."}</p>
+          ) : (
+            <p className="invoice-note-internal">
+              <span className="invoice-note-internal-flag">Internal only</span>
+              {invoiceSnapshot.internalMemo ||
+                "No internal billing note recorded."}
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );

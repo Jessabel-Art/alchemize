@@ -56,6 +56,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Remove preinstalled Google Chrome apt source
+        # The GitHub-hosted ubuntu-latest runner image ships with a
+        # google-chrome.list apt source pre-registered. `playwright install
+        # --with-deps` runs `apt-get update` against every configured
+        # source, and dl.google.com's repo intermittently serves a
+        # Packages.gz whose hash doesn't match its own Release file,
+        # failing the whole step. We only need Playwright's bundled
+        # Chromium, not system google-chrome-stable, so drop the source
+        # rather than depend on Google's apt CDN being consistent.
+        run: sudo rm -f /etc/apt/sources.list.d/google-chrome.list
+
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
 
