@@ -1,0 +1,322 @@
+/* Page-scoped styling for the Admin Communication Center. Deliberately
+   kept in its own file so this pass cannot bleed into other Admin pages
+   that also use the shared .admin-workspace-grid / .admin-list-row /
+   .admin-context-panel primitives (Reports, etc. do not use them, but
+   nothing here should ever need to touch admin.css or
+   admin-workspace.css directly). */
+
+.comm-tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.3rem;
+  height: 1.3rem;
+  margin-left: 0.4rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: rgba(6, 43, 43, 0.08);
+  color: var(--color-text-soft);
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+.admin-communications.admin-module
+  .portal-filter-bar
+  button.active
+  .comm-tab-count {
+  background: var(--emerald-deep);
+  color: var(--white);
+}
+
+.comm-avatar {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 999px;
+  background: var(--admin-archived-soft);
+  color: var(--emerald-deep);
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.comm-avatar-lg {
+  width: 2.6rem;
+  height: 2.6rem;
+  font-size: 0.85rem;
+}
+
+.comm-avatar-sm {
+  width: 1.7rem;
+  height: 1.7rem;
+  font-size: 0.62rem;
+}
+
+/* Inbox rows: avatar + stacked body (name/time, preview, status). */
+.admin-communications.admin-module .admin-list-row {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 0.65rem;
+}
+
+.comm-row-body {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.comm-row-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.comm-row-heading strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.88rem;
+}
+
+.comm-row-heading small {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  color: var(--color-text-soft);
+  font-size: 0.68rem;
+}
+
+.comm-row-subject {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-text-soft);
+}
+
+.admin-communications.admin-module .admin-list-row.unread .comm-row-subject {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.comm-row-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.15rem;
+}
+
+.comm-list-count {
+  margin: 0.5rem 0 0;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--admin-line);
+  color: var(--color-text-soft);
+  font-size: 0.72rem;
+}
+
+/* Active conversation header */
+.comm-thread-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.comm-thread-heading {
+  min-width: 0;
+}
+
+.comm-thread-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.admin-communications.admin-module
+  .admin-conversation-panel
+  .comm-thread-title-row
+  h2 {
+  margin: 0;
+}
+
+.comm-thread-subject {
+  margin: 0.15rem 0 0;
+  color: var(--color-text-soft);
+  font-size: 0.85rem;
+}
+
+.comm-thread-contact {
+  margin: 0.15rem 0 0;
+  color: var(--color-text-soft);
+  font-size: 0.78rem;
+}
+
+/* Message thread: date separators + sender-distinguished rows */
+.comm-date-separator {
+  margin: 0.9rem 0 0.4rem;
+  text-align: center;
+  color: var(--color-text-soft);
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.comm-date-group:first-child .comm-date-separator {
+  margin-top: 0;
+}
+
+.admin-communications.admin-module .admin-conversation-panel .portal-thread li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.comm-message-body {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.admin-communications.admin-module
+  .admin-conversation-panel
+  .portal-thread
+  li.staff {
+  border-left: 2px solid var(--emerald-forest);
+  padding-left: 0.5rem;
+}
+
+.admin-communications.admin-module
+  .admin-conversation-panel
+  .portal-thread
+  li.staff
+  .comm-avatar {
+  background: var(--admin-positive-soft);
+  color: var(--admin-positive);
+}
+
+.comm-archived-note {
+  margin: 0.75rem 0 0;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--admin-line);
+  color: var(--color-text-soft);
+  font-size: 0.85rem;
+}
+
+.admin-feedback.success {
+  color: var(--admin-positive);
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+/* Right rail: Client details / Conversation details sections */
+.comm-context-section {
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid var(--admin-line);
+}
+
+.comm-context-section:last-of-type {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.comm-context-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+
+.comm-context-header a,
+.comm-inline-link {
+  font-size: 0.72rem;
+  color: var(--emerald-forest);
+  white-space: nowrap;
+}
+
+.comm-inline-link {
+  display: block;
+  margin-top: 0.2rem;
+}
+
+.comm-client-identity {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin-bottom: 0.7rem;
+}
+
+.comm-client-identity strong {
+  display: block;
+  font-size: 0.9rem;
+}
+
+.comm-client-identity p {
+  margin: 0.1rem 0 0;
+  color: var(--color-text-soft);
+  font-size: 0.75rem;
+}
+
+.comm-detail-list {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+}
+
+.comm-detail-list > div {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.comm-detail-list dt {
+  margin: 0;
+  color: var(--color-text-soft);
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.comm-detail-list dd {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+/* Unselected-conversation empty state — deliberately compact so the
+   workspace never reads as one enormous empty region. */
+.comm-empty-state {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.7rem 0.15rem 0;
+  border-top: 1px solid var(--admin-line);
+  color: var(--color-text-soft);
+}
+
+.comm-empty-state h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-text);
+}
+
+.comm-empty-state p {
+  margin: 0;
+  max-width: 44ch;
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+
+@media (max-width: 600px) {
+  .comm-row-heading {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.1rem;
+  }
+}

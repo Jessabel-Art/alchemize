@@ -97,6 +97,12 @@ const baseRecords = {
   ],
   leads: [],
   appointments: [],
+  settings: {
+    business_name: "Alchemize Business Services",
+    business_email: "billing@getalchemize.com",
+    invoice_payment_terms_days: 14,
+    invoice_footer: null,
+  },
 };
 
 async function mockAdmin(page, { records = baseRecords, onPayment } = {}) {
@@ -333,6 +339,90 @@ test("Print/Export remains available and the print stylesheet reveals the brande
   );
   await expect(page.locator(".invoice-print-sheet")).toContainText("INV-3001");
   await expect(page.locator(".portal-sidebar")).toBeHidden();
+  await expect(page.locator(".portal-topbar")).toBeHidden();
+  await expect(page.locator(".admin-page-header")).toBeHidden();
+  await page.emulateMedia({ media: "screen" });
+});
+
+test("printable invoice logo resolves to a real image instead of a broken asset", async ({
+  page,
+}) => {
+  await mockAdmin(page);
+  await page.goto("/admin/billing/invoices/301");
+  await page.emulateMedia({ media: "print" });
+  const logo = page.locator(".invoice-print-logo");
+  await expect(logo).toHaveAttribute(
+    "src",
+    "/assets/logos/alchemize-logo-dark.png",
+  );
+  await expect(logo).toHaveJSProperty("complete", true);
+  const naturalWidth = await logo.evaluate((img) => img.naturalWidth);
+  expect(naturalWidth).toBeGreaterThan(0);
+  await page.emulateMedia({ media: "screen" });
+});
+
+test("printable invoice renders real client/business data, dates, status, and two-decimal totals", async ({
+  page,
+}) => {
+  await mockAdmin(page);
+  await page.goto("/admin/billing/invoices/301");
+  await page.emulateMedia({ media: "print" });
+  const sheet = page.locator(".invoice-print-sheet");
+
+  // Computed the same way formatDate() renders it, so this assertion
+  // is not tied to the test runner's local timezone offset.
+  const dateLabel = (iso) =>
+    new Date(iso).toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  await expect(sheet).toContainText(dateLabel("2026-09-25")); // due date
+  await expect(sheet).toContainText(dateLabel("2026-08-20")); // issue date
+  await expect(sheet.locator(".invoice-print-status")).toContainText(
+    "Partially Paid",
+  );
+
+  const billTo = sheet.locator(".invoice-print-parties > div").first();
+  await expect(billTo).toContainText("North Harbor Studio");
+  await expect(billTo).toContainText("North Harbor Studio LLC");
+  await expect(billTo).toContainText("hello@example.test");
+  await expect(billTo).toContainText("555-0100");
+
+  const from = sheet.locator(".invoice-print-parties > div").last();
+  await expect(from).toContainText("Alchemize Business Services");
+  await expect(from).toContainText("billing@getalchemize.com");
+  await expect(from).toContainText("getalchemize.com");
+
+  await expect(sheet).toContainText("Bookkeeping - August");
+  // Internal service codes are admin-only metadata, not client-facing.
+  await expect(sheet).not.toContainText("BOOK-100");
+
+  const totals = sheet.locator(".invoice-print-totals");
+  await expect(totals).toContainText("$1,200.00"); // subtotal
+  await expect(totals).toContainText("-$500.00"); // payments reduce the total
+  await expect(sheet.locator(".invoice-print-balance")).toContainText(
+    "$700.00",
+  );
+  await page.emulateMedia({ media: "screen" });
+});
+
+test("printable invoice excludes the internal memo and admin chrome, and includes payment info and client notes", async ({
+  page,
+}) => {
+  await mockAdmin(page);
+  await page.goto("/admin/billing/invoices/301");
+  await page.emulateMedia({ media: "print" });
+  const sheet = page.locator(".invoice-print-sheet");
+
+  await expect(sheet).toContainText("Thank you for your business.");
+  await expect(sheet).not.toContainText("Client requested extended terms.");
+  await expect(sheet).toContainText("Payment Information");
+  await expect(sheet).toContainText("billing@getalchemize.com");
+  await expect(page.locator(".admin-header-actions")).toBeHidden();
+  await expect(
+    page.getByRole("button", { name: "+ Record payment" }),
+  ).toBeHidden();
   await page.emulateMedia({ media: "screen" });
 });
 

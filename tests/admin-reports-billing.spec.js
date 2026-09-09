@@ -1,31 +1,79 @@
 import { test, expect } from "@playwright/test";
 
 test.beforeEach(async ({ page }) => {
+  const savedReports = [];
+
   await page.route("**/alchemize-api.php?*", async (route) => {
     const apiRoute = new URL(route.request().url()).searchParams.get("route");
+    const method = route.request().method();
+
+    if (apiRoute === "auth/session") {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          data: {
+            authenticated: true,
+            user: { user_id: 1, role_slug: "owner-admin" },
+            csrf_token: "ui-test",
+          },
+        }),
+      });
+      return;
+    }
+
+    if (apiRoute === "leads") {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          data: [
+            {
+              id: 8,
+              full_name: "Cedar Services",
+              email: "cedar@example.test",
+              status: "new",
+              created_at: new Date().toISOString(),
+            },
+          ],
+        }),
+      });
+      return;
+    }
+
+    if (apiRoute === "reports") {
+      if (method === "GET") {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({ data: savedReports }),
+        });
+        return;
+      }
+
+      if (method === "POST") {
+        const payload = route.request().postDataJSON();
+        const report = {
+          id: String(savedReports.length + 1),
+          name: payload.name,
+          report_type: payload.report_type,
+          config: payload.config,
+          created_at: new Date().toISOString(),
+        };
+        savedReports.push(report);
+        await route.fulfill({
+          status: 201,
+          contentType: "application/json",
+          body: JSON.stringify({ data: report }),
+        });
+        return;
+      }
+    }
+
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({
-        data:
-          apiRoute === "auth/session"
-            ? {
-                authenticated: true,
-                user: { user_id: 1, role_slug: "owner-admin" },
-                csrf_token: "ui-test",
-              }
-            : apiRoute === "leads"
-              ? [
-                  {
-                    id: 8,
-                    full_name: "Cedar Services",
-                    email: "cedar@example.test",
-                    status: "new",
-                    created_at: new Date().toISOString(),
-                  },
-                ]
-              : [],
-      }),
+      body: JSON.stringify({ data: [] }),
     });
   });
 });
@@ -56,9 +104,9 @@ test("Reports presets, results and reset have explicit states", async ({
   await page.getByRole("button", { name: "Reset Report" }).click();
   await expect(preset).toHaveAttribute("aria-pressed", "false");
   await expect(page.getByText("Your report starts here")).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "Save report unavailable" }),
-  ).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Save report" })).toBeEnabled();
+  await page.getByRole("button", { name: "Save report" }).click();
+  await expect(page.locator('.report-feedback')).toContainText('Saved report');
 });
 
 for (const width of [1440, 1024, 768]) {

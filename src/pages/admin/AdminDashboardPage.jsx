@@ -18,7 +18,7 @@ import {
   ChevronRight,
   ClipboardList,
   CheckCircle2,
-  Sparkles,
+  Sprout,
 } from "lucide-react";
 import { adminStore } from "../../../js/data/admin-store.js";
 import { portalAdmin } from "../../services/admin-api.js";
@@ -29,6 +29,7 @@ import {
 import { isActiveClient } from "../../utils/client-status.js";
 import { AdminDetailDrawer } from "../../components/admin/admin-components.jsx";
 import "./admin.css";
+import "./admin-dashboard-polish.css";
 
 const activityTone = {
   lead_status_changed: "status",
@@ -73,13 +74,26 @@ const safeDate = (value) => {
 };
 
 const formatDate = (value) => {
-  const date = safeDate(value);
+  const date = safeDate(
+    /^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value}T00:00:00` : value,
+  );
   if (!date) return "—";
   return date.toLocaleDateString(undefined, {
     month: "short",
     day: "numeric",
     year: "numeric",
   });
+};
+
+const relativeTime = (value) => {
+  const date = safeDate(value);
+  if (!date) return "—";
+  const minutes = Math.floor((Date.now() - date.getTime()) / 60000);
+  if (minutes < 0) return formatDate(value);
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 1440) return `${Math.floor(minutes / 60)}h ago`;
+  return `${Math.floor(minutes / 1440)}d ago`;
 };
 
 const isWithinDays = (value, limitDays) => {
@@ -563,7 +577,6 @@ function AdminDashboardPage() {
     <div className="portal-page admin-dashboard">
       <header className="portal-page-header admin-dashboard-header">
         <div>
-          <span className="section-kicker">Workspace</span>
           <h1>Operations dashboard</h1>
           <p>
             Today&rsquo;s priorities, client activity, and upcoming work at a
@@ -662,7 +675,7 @@ function AdminDashboardPage() {
               return (
                 <CardTag
                   key={card.key}
-                  className="dashboard-focus-card"
+                  className={`dashboard-focus-card focus-${card.key}`}
                   {...tagProps}
                 >
                   <span className="dashboard-focus-top">
@@ -713,8 +726,7 @@ function AdminDashboardPage() {
                           <small>
                             {entry.clientId
                               ? getClientName(snapshot, entry.clientId)
-                              : entry.actorName || "System"}{" "}
-                            · {formatDate(entry.timestamp)}
+                              : entry.actorName || "System"}
                           </small>
                         </div>
                         <span
@@ -724,6 +736,13 @@ function AdminDashboardPage() {
                             ? entry.type.replaceAll("_", " ")
                             : "Update"}
                         </span>
+                        <time
+                          className="activity-time"
+                          title={formatDate(entry.timestamp)}
+                          dateTime={safeDate(entry.timestamp)?.toISOString()}
+                        >
+                          {relativeTime(entry.timestamp)}
+                        </time>
                       </li>
                     );
                   })}
@@ -772,7 +791,9 @@ function AdminDashboardPage() {
               {nextInvoice ? (
                 <div className="invoice-preview">
                   <div>
-                    <strong>{nextInvoice.id}</strong>
+                    <strong>
+                      {nextInvoice.invoiceNumber || nextInvoice.id}
+                    </strong>
                     <small>
                       {getClientName(snapshot, nextInvoice.clientId)}
                     </small>
@@ -798,6 +819,12 @@ function AdminDashboardPage() {
                   No open invoices right now.
                 </div>
               )}
+              <Link
+                to="/admin/billing"
+                className="dashboard-view-link dashboard-panel-footer"
+              >
+                View all invoices <ArrowRight size={14} aria-hidden="true" />
+              </Link>
             </article>
           </div>
         </div>
@@ -829,14 +856,15 @@ function AdminDashboardPage() {
                   >
                     <div className="schedule-date-block">
                       <span>
-                        {new Date(appointment.date).toLocaleDateString(
-                          undefined,
-                          {
-                            month: "short",
-                            day: "numeric",
-                          },
-                        )}
+                        {new Date(
+                          `${appointment.date}T00:00:00`,
+                        ).toLocaleDateString(undefined, {
+                          month: "short",
+                        })}
                       </span>
+                      <strong>
+                        {new Date(`${appointment.date}T00:00:00`).getDate()}
+                      </strong>
                     </div>
                     <div className="schedule-copy">
                       <strong>
@@ -864,6 +892,12 @@ function AdminDashboardPage() {
                 No appointments in the next 7 days.
               </div>
             )}
+            <Link
+              to="/admin/appointments"
+              className="dashboard-view-link dashboard-panel-footer"
+            >
+              View full calendar <ArrowRight size={14} aria-hidden="true" />
+            </Link>
           </article>
 
           <aside className="dashboard-quick-actions">
@@ -911,7 +945,7 @@ function AdminDashboardPage() {
           </aside>
 
           <aside className="dashboard-brand-note">
-            <Sparkles size={16} aria-hidden="true" />
+            <Sprout size={32} aria-hidden="true" />
             <div>
               <strong>Make a bigger impact</strong>
               <p>Keep clients moving forward, one step at a time.</p>

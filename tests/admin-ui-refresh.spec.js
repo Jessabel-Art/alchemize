@@ -151,7 +151,7 @@ async function mockAdmin(page, empty = false) {
   });
 }
 
-for (const width of [1440, 1024, 768]) {
+for (const width of [1440, 1280, 1024, 834, 768, 390]) {
   test(`Dashboard is responsive and shows honest visualizations at ${width}px`, async ({
     page,
   }) => {
@@ -397,7 +397,7 @@ test("Dashboard empty states stay clean and intentional with no data", async ({
   ).toBeVisible();
 });
 
-for (const width of [1440, 1024, 768]) {
+for (const width of [1440, 1280, 1024, 834, 768, 390]) {
   test(`Clients page stays usable and toned at ${width}px`, async ({
     page,
   }) => {
@@ -638,4 +638,39 @@ test("Nav labels, routes, and primary actions remain intact across refreshed pag
   await expect(
     page.getByRole("button", { name: "+ New Conversation", exact: true }),
   ).toBeVisible();
+});
+
+test("Dashboard polish preserves fixture values and calendar navigation", async ({
+  page,
+}) => {
+  await mockAdmin(page);
+  await page.goto("/admin/dashboard/");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+  for (const label of [
+    "Open Leads",
+    "Active Clients",
+    "Open Invoices",
+    "Upcoming",
+  ]) {
+    await expect(
+      page
+        .locator(".dashboard-kpi-card")
+        .filter({ hasText: label })
+        .locator("strong"),
+    ).toHaveText("1");
+  }
+  await expect(page.locator(".invoice-donut-center strong")).toHaveText("$350");
+  await expect(page.locator(".invoice-preview")).toContainText("INV-1006");
+  await expect(page.locator(".schedule-date-block strong")).toHaveText(
+    String(
+      new Date(
+        records.appointments[0].scheduled_at.replace(" ", "T"),
+      ).getDate(),
+    ),
+  );
+  await expect(page.locator(".schedule-item")).toContainText(
+    "North Harbor Studio",
+  );
+  await page.getByRole("link", { name: "View full calendar" }).click();
+  await expect(page).toHaveURL(/\/admin\/appointments\/?$/);
 });

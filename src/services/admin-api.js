@@ -238,6 +238,25 @@ export const settings = {
     }),
 };
 
+export const reports = {
+  list: () => apiRequest(buildApiUrl("reports")),
+  get: (id) => apiRequest(buildApiUrl(`reports/${id}`)),
+  create: (payload) =>
+    apiRequest(buildApiUrl("reports"), {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  update: (id, payload) =>
+    apiRequest(buildApiUrl(`reports/${id}`), {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    }),
+  remove: (id) =>
+    apiRequest(buildApiUrl(`reports/${id}`), {
+      method: "DELETE",
+    }),
+};
+
 export const engagements = {
   list: () => apiRequest(buildApiUrl("engagements")),
   get: (id) => apiRequest(buildApiUrl(`engagements/${id}`)),
@@ -459,6 +478,7 @@ export default {
   clients,
   services,
   settings,
+  reports,
   engagements,
   tasks,
   appointments,

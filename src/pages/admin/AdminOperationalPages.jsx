@@ -7,7 +7,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import "./admin-reports-billing.css";
 import "./admin-appointments.css";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { Receipt, Clock, CreditCard, FileClock, Sparkles } from "lucide-react";
+import {
+  Receipt,
+  Clock,
+  CreditCard,
+  FileClock,
+  Sparkles,
+  Sprout,
+} from "lucide-react";
 import {
   AdminDetailDrawer,
   AdminTable,
@@ -26,6 +33,7 @@ import {
   staffOptions,
 } from "../../../js/data/admin-store.js";
 import { getDocumentTypeOptionsForEngagement } from "../../data/documentTypeCatalog.js";
+import { businessContact, contactRouting } from "../../data/contactInfo.js";
 import {
   getInvoiceRemainingBalance,
   getOpenInvoiceBalance,
@@ -42,6 +50,7 @@ import {
   portalAdmin,
   services as serviceApi,
   settings as settingsApi,
+  reports as reportsApi,
   tasks as taskApi,
 } from "../../services/admin-api.js";
 
@@ -158,6 +167,14 @@ const formatCurrency = (value) =>
     style: "currency",
     currency: "USD",
     maximumFractionDigits: 0,
+  }).format(Number(value || 0));
+
+// Client-facing printable documents (invoices) always show cents;
+// the operational Admin UI's formatCurrency above intentionally does not.
+const formatInvoiceCurrency = (value) =>
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
   }).format(Number(value || 0));
 
 const toTitleCase = (value) =>
@@ -10774,11 +10791,27 @@ function InvoiceDetailPage() {
   const [refreshIndex, setRefreshIndex] = useState(0);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [activeNoteTab, setActiveNoteTab] = useState("client");
+  const [businessSettings, setBusinessSettings] = useState(null);
   const paymentAmountRef = useRef(null);
 
   useEffect(() => {
     if (showPaymentForm) paymentAmountRef.current?.focus();
   }, [showPaymentForm]);
+
+  useEffect(() => {
+    let active = true;
+    settingsApi
+      .get()
+      .then((data) => {
+        if (active) setBusinessSettings(data || {});
+      })
+      .catch(() => {
+        if (active) setBusinessSettings({});
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const invoiceSnapshot = useMemo(() => {
     if (!invoice) return null;
@@ -10896,6 +10929,37 @@ function InvoiceDetailPage() {
       tone: effectiveStatus === "Past Due" ? "danger" : undefined,
     },
   ];
+  // Terms are derived from this invoice's own real dates rather than a
+  // hardcoded default, since no per-invoice "terms" field is persisted.
+  const invoiceDateObj = invoiceSnapshot.invoiceDate
+    ? new Date(invoiceSnapshot.invoiceDate)
+    : null;
+  const dueDateObj = invoiceSnapshot.dueAt
+    ? new Date(invoiceSnapshot.dueAt)
+    : null;
+  const termsDays =
+    invoiceDateObj &&
+    dueDateObj &&
+    !Number.isNaN(invoiceDateObj.getTime()) &&
+    !Number.isNaN(dueDateObj.getTime())
+      ? Math.round((dueDateObj - invoiceDateObj) / 86400000)
+      : null;
+  const paymentTermsLabel =
+    termsDays === null
+      ? ""
+      : termsDays <= 0
+        ? "Due on receipt"
+        : `Net ${termsDays}`;
+
+  const businessName =
+    businessSettings?.business_name || "Alchemize Business Services";
+  const businessEmail =
+    businessSettings?.business_email || contactRouting.billing.email;
+  const businessWebsite = "getalchemize.com";
+  const businessPhone = businessContact.phone.display;
+  const clientFacingNote =
+    invoiceSnapshot.notes || businessSettings?.invoice_footer || "";
+
   const printInvoice = {
     lineItems: invoiceSnapshot.lineItems || [],
     subtotal: totals.subtotal,
@@ -10904,113 +10968,179 @@ function InvoiceDetailPage() {
     total: totals.total,
     paidAmount: totals.paidAmount,
     balance: totals.balance,
-    paymentTerms: invoiceSnapshot.paymentTerms || "Net 14",
+    paymentTermsLabel,
     clientName: client?.displayName || client?.businessName || "Client",
-    clientAddress: client?.businessName || "",
     billingMeta: [
       client?.businessName || "",
       client?.email || "",
       client?.phone || "",
     ].filter(Boolean),
+    businessName,
+    businessEmail,
+    businessWebsite,
+    businessPhone,
+    clientFacingNote,
   };
 
   return (
     <div className="admin-module invoice-print-root billing-module invoice-detail-module">
       <div className="invoice-print-sheet" aria-label="Invoice print view">
-        <div className="invoice-print-header">
-          <div className="invoice-print-brand">
-            <img
-              src="/assets/logo-dark.svg"
-              alt="Alchemize"
-              className="invoice-print-logo"
-            />
+        <div className="invoice-print-page">
+          <header className="invoice-print-header">
+            <div className="invoice-print-brand">
+              <img
+                src="/assets/logos/alchemize-logo-dark.png"
+                alt="Alchemize Business Services"
+                className="invoice-print-logo"
+              />
+              <p className="invoice-print-tagline">
+                Transforming complexity into opportunity.
+              </p>
+            </div>
+            <div className="invoice-print-title-block">
+              <h2 className="invoice-print-title">Invoice</h2>
+              <dl className="invoice-print-meta">
+                <div>
+                  <dt>Invoice #</dt>
+                  <dd>{invoiceSnapshot.invoiceNumber || invoiceSnapshot.id}</dd>
+                </div>
+                <div>
+                  <dt>Issue date</dt>
+                  <dd>{formatDate(invoiceSnapshot.invoiceDate)}</dd>
+                </div>
+                <div>
+                  <dt>Due date</dt>
+                  <dd>{formatDate(invoiceSnapshot.dueAt)}</dd>
+                </div>
+                {printInvoice.paymentTermsLabel ? (
+                  <div>
+                    <dt>Terms</dt>
+                    <dd>{printInvoice.paymentTermsLabel}</dd>
+                  </div>
+                ) : null}
+                <div>
+                  <dt>Status</dt>
+                  <dd>
+                    <span
+                      className={`invoice-print-status tone-${statusTone[effectiveStatus] || "neutral"}`}
+                    >
+                      {effectiveStatus}
+                    </span>
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          </header>
+
+          <section className="invoice-print-parties">
             <div>
-              <strong>Alchemize Business Services</strong>
-              <span>Invoice</span>
+              <h3>Bill To</h3>
+              <p className="invoice-print-party-name">
+                {printInvoice.clientName}
+              </p>
+              {printInvoice.billingMeta.map((line) => (
+                <p key={line}>{line}</p>
+              ))}
+            </div>
+            <div>
+              <h3>From</h3>
+              <p className="invoice-print-party-name">
+                {printInvoice.businessName}
+              </p>
+              <p>{printInvoice.businessEmail}</p>
+              <p>{printInvoice.businessWebsite}</p>
+              <p>{printInvoice.businessPhone}</p>
+            </div>
+          </section>
+
+          <table className="invoice-print-table">
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th>Qty</th>
+                <th>Rate</th>
+                <th>Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {printInvoice.lineItems.map((lineItem) => (
+                <tr key={lineItem.id}>
+                  <td>{lineItem.description || "Custom invoice line"}</td>
+                  <td>{lineItem.quantity || 1}</td>
+                  <td>{formatInvoiceCurrency(lineItem.unitPrice || 0)}</td>
+                  <td>{formatInvoiceCurrency(lineItem.amount || 0)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div className="invoice-print-summary">
+            <div className="invoice-print-totals">
+              <div>
+                <span>Subtotal</span>
+                <strong>{formatInvoiceCurrency(printInvoice.subtotal)}</strong>
+              </div>
+              <div>
+                <span>Adjustments</span>
+                <strong>
+                  {formatInvoiceCurrency(printInvoice.adjustments)}
+                </strong>
+              </div>
+              <div>
+                <span>Credits / Deposits</span>
+                <strong>
+                  {printInvoice.creditsApplied > 0 ? "-" : ""}
+                  {formatInvoiceCurrency(printInvoice.creditsApplied)}
+                </strong>
+              </div>
+              {printInvoice.total !== printInvoice.subtotal ? (
+                <div>
+                  <span>Invoice Total</span>
+                  <strong>{formatInvoiceCurrency(printInvoice.total)}</strong>
+                </div>
+              ) : null}
+              <div>
+                <span>Payments</span>
+                <strong>
+                  {printInvoice.paidAmount > 0 ? "-" : ""}
+                  {formatInvoiceCurrency(printInvoice.paidAmount)}
+                </strong>
+              </div>
+              <div className="invoice-print-balance">
+                <span>Balance Due</span>
+                <strong>{formatInvoiceCurrency(printInvoice.balance)}</strong>
+              </div>
             </div>
           </div>
-          <div className="invoice-print-meta">
-            <h2>{invoiceSnapshot.invoiceNumber || invoiceSnapshot.id}</h2>
-            <p>Invoice date: {formatDate(invoiceSnapshot.invoiceDate)}</p>
-            <p>Due date: {formatDate(invoiceSnapshot.dueAt)}</p>
-            <p>Terms: {printInvoice.paymentTerms}</p>
-          </div>
-        </div>
 
-        <div className="invoice-print-grid">
-          <div>
-            <h3>Bill To</h3>
-            <p>{printInvoice.clientName}</p>
-            {printInvoice.billingMeta.length ? (
-              <div className="invoice-print-address">
-                {printInvoice.billingMeta.map((line) => (
-                  <p key={line}>{line}</p>
-                ))}
+          <section className="invoice-print-lower">
+            <div>
+              <h3>Payment Information</h3>
+              <p>
+                Please contact {printInvoice.businessName} at{" "}
+                {printInvoice.businessEmail} for available payment options for
+                this invoice.
+              </p>
+            </div>
+            {printInvoice.clientFacingNote ? (
+              <div>
+                <h3>Notes</h3>
+                <p>{printInvoice.clientFacingNote}</p>
               </div>
             ) : null}
-          </div>
-          <div>
-            <h3>Invoice Summary</h3>
-            {engagement ? <p>Engagement: {engagement.serviceName}</p> : null}
-            <p>Status: {effectiveStatus}</p>
-            <p>Outstanding: {formatCurrency(printInvoice.balance)}</p>
-          </div>
+          </section>
+
+          <footer className="invoice-print-footer">
+            <div className="invoice-print-footer-contact">
+              <strong>{printInvoice.businessName}</strong>
+              <span>{printInvoice.businessEmail}</span>
+              <span>{printInvoice.businessWebsite}</span>
+            </div>
+            <p className="invoice-print-footer-statement">
+              Transforming complexity into opportunity.
+            </p>
+          </footer>
         </div>
-
-        <table className="invoice-print-table">
-          <thead>
-            <tr>
-              <th>Description</th>
-              <th>Qty</th>
-              <th>Rate</th>
-              <th>Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            {printInvoice.lineItems.map((lineItem) => (
-              <tr key={lineItem.id}>
-                <td>{lineItem.description || "Custom invoice line"}</td>
-                <td>{lineItem.quantity || 1}</td>
-                <td>{formatCurrency(lineItem.unitPrice || 0)}</td>
-                <td>{formatCurrency(lineItem.amount || 0)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        <div className="invoice-print-totals">
-          <div>
-            <span>Subtotal</span>
-            <strong>{formatCurrency(printInvoice.subtotal)}</strong>
-          </div>
-          <div>
-            <span>Adjustments</span>
-            <strong>{formatCurrency(printInvoice.adjustments)}</strong>
-          </div>
-          <div>
-            <span>Credits / deposits</span>
-            <strong>{formatCurrency(printInvoice.creditsApplied)}</strong>
-          </div>
-          <div>
-            <span>Payments</span>
-            <strong>{formatCurrency(printInvoice.paidAmount)}</strong>
-          </div>
-          <div>
-            <span>Invoice total</span>
-            <strong>{formatCurrency(printInvoice.total)}</strong>
-          </div>
-          <div>
-            <span>Remaining balance</span>
-            <strong>{formatCurrency(printInvoice.balance)}</strong>
-          </div>
-        </div>
-
-        {invoiceSnapshot.notes ? (
-          <div className="invoice-print-notes">
-            <h3>Client-facing notes</h3>
-            <p>{invoiceSnapshot.notes}</p>
-          </div>
-        ) : null}
       </div>
 
       <AdminPageHeader
@@ -11635,6 +11765,100 @@ function ContentManagementPage() {
   );
 }
 
+// Restrained line/area trend chart for the Reports analytics summary.
+// Deliberately hand-rolled (no charting dependency) to match the existing
+// InvoiceDonut-style approach already used on the Dashboard.
+function ReportTrendChart({ series }) {
+  if (!series.length || series.every((point) => !point.value)) {
+    return (
+      <p className="report-visual-empty">No matching data for this period.</p>
+    );
+  }
+  const width = 280;
+  const height = 88;
+  const max = Math.max(1, ...series.map((point) => point.value));
+  const stepX = series.length > 1 ? width / (series.length - 1) : 0;
+  const coords = series.map((point, index) => [
+    index * stepX,
+    height - (point.value / max) * height,
+  ]);
+  const linePoints = coords.map(([x, y]) => `${x},${y}`).join(" ");
+  const areaPoints = `0,${height} ${linePoints} ${width},${height}`;
+
+  return (
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      className="report-line-chart"
+      preserveAspectRatio="none"
+      role="img"
+      aria-label={`Trend from ${series[0].label} to ${series[series.length - 1].label}`}
+    >
+      <polygon points={areaPoints} className="report-line-area" />
+      <polyline
+        points={linePoints}
+        className="report-line-stroke"
+        fill="none"
+      />
+    </svg>
+  );
+}
+
+// Compact donut built the same way InvoiceDonut is on the Dashboard
+// (normalized-to-100 stroke-dasharray segments), reused here for visual
+// consistency across the Admin portal.
+function ReportDonut({ segments, total }) {
+  if (!total) {
+    return (
+      <svg
+        viewBox="0 0 42 42"
+        className="invoice-donut"
+        role="img"
+        aria-label="No engagement data to visualize yet"
+      >
+        <circle
+          cx="21"
+          cy="21"
+          r="15.915"
+          fill="none"
+          stroke="var(--admin-line, #e3e3e3)"
+          strokeWidth="4"
+        />
+      </svg>
+    );
+  }
+  let cumulative = 0;
+  return (
+    <svg
+      viewBox="0 0 42 42"
+      className="invoice-donut"
+      role="img"
+      aria-label={segments
+        .map((segment) => `${segment.label} ${segment.count}`)
+        .join(", ")}
+    >
+      {segments.map((segment) => {
+        const pct = (segment.count / total) * 100;
+        const circle = (
+          <circle
+            key={segment.label}
+            cx="21"
+            cy="21"
+            r="15.915"
+            fill="none"
+            className={`invoice-donut-segment accent-${segment.tone}`}
+            strokeWidth="4"
+            strokeDasharray={`${pct} ${100 - pct}`}
+            strokeDashoffset={-cumulative}
+            transform="rotate(-90 21 21)"
+          />
+        );
+        cumulative += pct;
+        return circle;
+      })}
+    </svg>
+  );
+}
+
 function ReportsPage() {
   const snapshot = adminStore.getSnapshot();
   const reportTypes = [
@@ -11647,6 +11871,22 @@ function ReportsPage() {
     "Appointments",
     "Billing",
     "Cross-Module / Operational",
+  ];
+
+  // Compact category nav shown near the top of the page. Maps 1:1 onto
+  // existing reportType values — "Cross-Module / Operational" has no
+  // clean short label for this nav, so it stays reachable only via the
+  // Report Type field in the builder below rather than being invented a
+  // new short name here.
+  const reportCategoryNav = [
+    { value: "Overview", label: "Overview" },
+    { value: "Clients", label: "Clients" },
+    { value: "Leads", label: "Leads" },
+    { value: "Appointments", label: "Appointments" },
+    { value: "Services / Engagements", label: "Services" },
+    { value: "Billing", label: "Billing" },
+    { value: "Tasks", label: "Tasks" },
+    { value: "Documents", label: "Documents" },
   ];
 
   const dateRangeOptions = [
@@ -11784,12 +12024,45 @@ function ReportsPage() {
   );
   const [reportVersion, setReportVersion] = useState(0);
   const [selectedPreset, setSelectedPreset] = useState(null);
+  const [savedReports, setSavedReports] = useState([]);
+  const [isSavingReport, setIsSavingReport] = useState(false);
   const [reportNotice, setReportNotice] = useState("");
   const [hasRun, setHasRun] = useState(false);
+  const [saveReportName, setSaveReportName] = useState("");
+  const [savedReportMenuId, setSavedReportMenuId] = useState(null);
+  const [renamingReportId, setRenamingReportId] = useState(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [savedReportBusyId, setSavedReportBusyId] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    reportsApi
+      .list()
+      .then((items) => {
+        if (isMounted) {
+          setSavedReports(Array.isArray(items) ? items : []);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setSavedReports([]);
+        }
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const invalidateReport = () => {
     setHasRun(false);
     setSelectedPreset(null);
     setReportNotice("Configuration changed. Run report to view results.");
+  };
+
+  const selectReportType = (type) => {
+    setReportType(type);
+    setSelectedColumns(defaultColumns[type] || ["name", "status", "date"]);
+    invalidateReport();
   };
 
   const getClientName = (clientId) =>
@@ -12037,10 +12310,10 @@ function ReportsPage() {
           snapshot.engagements.find(
             (engagement) => engagement.id === invoice.engagementId,
           )?.serviceName || "General",
-        date: recordDate(invoice.issuedAt),
+        date: recordDate(invoice.invoiceDate),
         owner: "Owner / Administrator",
         dueDate: invoice.dueAt,
-        invoiceDate: invoice.issuedAt,
+        invoiceDate: invoice.invoiceDate,
         amount: Number(invoice.amount || 0),
         paid: Number(invoice.paidAmount || 0),
         outstanding: outstanding,
@@ -12745,6 +13018,97 @@ function ReportsPage() {
     customEnd,
   ]);
 
+  // Analytics summary — always derived from the already-loaded snapshot
+  // (no separate analytics fetch), so it stays useful before a specific
+  // report is even run.
+  const clientGrowthSeries = useMemo(() => {
+    const months = [];
+    const now = new Date();
+    for (let i = 11; i >= 0; i--) {
+      months.push(new Date(now.getFullYear(), now.getMonth() - i, 1));
+    }
+    return months.map((monthDate) => {
+      const monthEnd = new Date(
+        monthDate.getFullYear(),
+        monthDate.getMonth() + 1,
+        0,
+        23,
+        59,
+        59,
+        999,
+      );
+      const value = snapshot.clients.filter((client) => {
+        if (!client.createdAt) return true;
+        const created = new Date(client.createdAt);
+        return Number.isNaN(created.getTime()) || created <= monthEnd;
+      }).length;
+      return {
+        label: monthDate.toLocaleDateString(undefined, { month: "short" }),
+        value,
+      };
+    });
+  }, [snapshot.clients]);
+
+  const serviceDistribution = useMemo(() => {
+    const activeEngagements = snapshot.engagements.filter(
+      (engagement) =>
+        !["Completed", "Cancelled", "Paused"].includes(engagement.status),
+    );
+    const counts = new Map();
+    activeEngagements.forEach((engagement) => {
+      const key = engagement.serviceName || "Other";
+      counts.set(key, (counts.get(key) || 0) + 1);
+    });
+    const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+    const tones = ["positive", "info", "pending", "attention"];
+    const segments = sorted.slice(0, 4).map(([label, count], index) => ({
+      label,
+      count,
+      tone: tones[index % tones.length],
+    }));
+    const otherCount = sorted
+      .slice(4)
+      .reduce((sum, [, count]) => sum + count, 0);
+    if (otherCount > 0) {
+      segments.push({ label: "Other", count: otherCount, tone: "archived" });
+    }
+    return { segments, total: activeEngagements.length };
+  }, [snapshot.engagements]);
+
+  const revenueSeries = useMemo(() => {
+    const months = [];
+    const now = new Date();
+    for (let i = 5; i >= 0; i--) {
+      months.push(new Date(now.getFullYear(), now.getMonth() - i, 1));
+    }
+    return months.map((monthStart) => {
+      const monthEnd = new Date(
+        monthStart.getFullYear(),
+        monthStart.getMonth() + 1,
+        0,
+        23,
+        59,
+        59,
+        999,
+      );
+      const value = snapshot.invoices
+        .filter((invoice) => {
+          if (!invoice.invoiceDate) return false;
+          const issued = new Date(invoice.invoiceDate);
+          return (
+            !Number.isNaN(issued.getTime()) &&
+            issued >= monthStart &&
+            issued <= monthEnd
+          );
+        })
+        .reduce((sum, invoice) => sum + Number(invoice.amount || 0), 0);
+      return {
+        label: monthStart.toLocaleDateString(undefined, { month: "short" }),
+        value,
+      };
+    });
+  }, [snapshot.invoices]);
+
   const resetFilters = () => {
     setHasRun(false);
     setSelectedPreset(null);
@@ -12777,6 +13141,121 @@ function ReportsPage() {
     setOwnerFilter("all");
     setSortBy("date");
     setSortDirection("desc");
+  };
+
+  const saveCurrentReport = async () => {
+    const trimmed = (saveReportName || "").trim() || (searchValue || "").trim();
+    const name = trimmed || `${reportType} report`;
+    try {
+      setIsSavingReport(true);
+      const payload = {
+        name,
+        report_type: reportType,
+        config: {
+          datePreset,
+          customStart,
+          customEnd,
+          searchValue,
+          statusFilter,
+          clientFilter,
+          serviceFilter,
+          typeFilter,
+          ownerFilter,
+          sortBy,
+          sortDirection,
+          groupBy,
+          selectedColumns,
+          reportType,
+        },
+      };
+      const saved = await reportsApi.create(payload);
+      setSavedReports((current) => [saved, ...current]);
+      setSelectedPreset(null);
+      setSaveReportName("");
+      setReportNotice(`Saved report "${saved.name}".`);
+    } catch (error) {
+      setReportNotice(error.message || "Unable to save the report.");
+    } finally {
+      setIsSavingReport(false);
+    }
+  };
+
+  const loadSavedReport = (report) => {
+    const config = report.config || {};
+    const type = config.reportType || report.report_type || "Overview";
+    setReportType(type);
+    setDatePreset(config.datePreset || "30");
+    setCustomStart(config.customStart || "");
+    setCustomEnd(config.customEnd || "");
+    setSearchValue(config.searchValue || "");
+    setStatusFilter(config.statusFilter || "all");
+    setClientFilter(config.clientFilter || "all");
+    setServiceFilter(config.serviceFilter || "all");
+    setTypeFilter(config.typeFilter || "all");
+    setOwnerFilter(config.ownerFilter || "all");
+    setSortBy(config.sortBy || "date");
+    setSortDirection(config.sortDirection || "desc");
+    setGroupBy(config.groupBy || "none");
+    setSelectedColumns(
+      Array.isArray(config.selectedColumns)
+        ? config.selectedColumns
+        : defaultColumns[type] || defaultColumns.Overview,
+    );
+    setSelectedPreset(report.id);
+    setReportVersion((value) => value + 1);
+    setHasRun(true);
+    setReportNotice(`Loaded saved report "${report.name}".`);
+  };
+
+  const startRenameSavedReport = (report) => {
+    setSavedReportMenuId(null);
+    setRenamingReportId(report.id);
+    setRenameValue(report.name);
+  };
+
+  const cancelRenameSavedReport = () => {
+    setRenamingReportId(null);
+    setRenameValue("");
+  };
+
+  const confirmRenameSavedReport = async (report) => {
+    const name = renameValue.trim();
+    if (!name) return;
+    setSavedReportBusyId(report.id);
+    try {
+      const updated = await reportsApi.update(report.id, {
+        name,
+        report_type: report.report_type,
+        config: report.config,
+      });
+      setSavedReports((current) =>
+        current.map((entry) => (entry.id === report.id ? updated : entry)),
+      );
+      setReportNotice(`Renamed saved report to "${updated.name}".`);
+      setRenamingReportId(null);
+      setRenameValue("");
+    } catch (error) {
+      setReportNotice(error.message || "Unable to rename the saved report.");
+    } finally {
+      setSavedReportBusyId(null);
+    }
+  };
+
+  const deleteSavedReport = async (report) => {
+    setSavedReportMenuId(null);
+    setSavedReportBusyId(report.id);
+    try {
+      await reportsApi.remove(report.id);
+      setSavedReports((current) =>
+        current.filter((entry) => entry.id !== report.id),
+      );
+      if (selectedPreset === report.id) setSelectedPreset(null);
+      setReportNotice(`Deleted saved report "${report.name}".`);
+    } catch (error) {
+      setReportNotice(error.message || "Unable to delete the saved report.");
+    } finally {
+      setSavedReportBusyId(null);
+    }
   };
 
   const commonReports = [
@@ -12951,18 +13430,146 @@ function ReportsPage() {
   return (
     <div className="admin-module reports-module">
       <AdminPageHeader
-        eyebrow="Reports"
-        title="Reports"
-        summary="Operational reporting for leads, clients, tasks, appointments, documents, and billing across the active admin datasets."
+        eyebrow="Reporting"
+        title="Reports & insights"
+        summary="Operational reporting across clients, leads, services, appointments, tasks, documents, and billing."
       />
 
-      <AdminMetrics
-        items={summaryMetrics.map((metric) => ({
-          label: metric.label,
-          value: metric.value,
-          hint: metric.hint,
-        }))}
-      />
+      <div className="report-category-nav" aria-label="Report category">
+        {reportCategoryNav.map((category) => (
+          <button
+            key={category.value}
+            type="button"
+            className={reportType === category.value ? "active" : ""}
+            aria-pressed={reportType === category.value}
+            onClick={() => selectReportType(category.value)}
+          >
+            {category.label}
+          </button>
+        ))}
+      </div>
+
+      {reportType === "Overview" ? (
+        <div className="report-visual-summaries">
+          <section className="report-visual-module">
+            <div className="admin-section-header">
+              <h2>Client growth</h2>
+            </div>
+            <p className="report-visual-caption">
+              Total clients on record, last 12 months
+            </p>
+            <div className="report-visual-body">
+              <ReportTrendChart series={clientGrowthSeries} />
+              {clientGrowthSeries.length ? (
+                <div className="report-visual-callout">
+                  <strong>
+                    {clientGrowthSeries[clientGrowthSeries.length - 1].value}
+                  </strong>
+                  <span>Clients on record</span>
+                </div>
+              ) : null}
+            </div>
+            <div className="report-visual-axis">
+              <span>{clientGrowthSeries[0]?.label}</span>
+              <span>
+                {clientGrowthSeries[clientGrowthSeries.length - 1]?.label}
+              </span>
+            </div>
+          </section>
+
+          <section className="report-visual-module">
+            <div className="admin-section-header">
+              <h2>Service distribution</h2>
+            </div>
+            <p className="report-visual-caption">
+              Active engagements by service
+            </p>
+            {serviceDistribution.total ? (
+              <div className="report-visual-body report-donut-body">
+                <div className="invoice-donut-wrap">
+                  <ReportDonut
+                    segments={serviceDistribution.segments}
+                    total={serviceDistribution.total}
+                  />
+                  <div className="invoice-donut-center">
+                    <strong>{serviceDistribution.total}</strong>
+                    <span>Total engagements</span>
+                  </div>
+                </div>
+                <ul className="report-donut-legend">
+                  {serviceDistribution.segments.map((segment) => (
+                    <li key={segment.label}>
+                      <span
+                        className={`report-legend-dot accent-${segment.tone}`}
+                        aria-hidden="true"
+                      />
+                      <span className="report-legend-label">
+                        {segment.label}
+                      </span>
+                      <span className="report-legend-value">
+                        {segment.count} (
+                        {Math.round(
+                          (segment.count / serviceDistribution.total) * 100,
+                        )}
+                        %)
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <p className="report-visual-empty">
+                No matching data for this period.
+              </p>
+            )}
+          </section>
+
+          <section className="report-visual-module">
+            <div className="admin-section-header">
+              <h2>Revenue by month</h2>
+            </div>
+            <p className="report-visual-caption">
+              Invoice totals, last 6 months
+            </p>
+            {revenueSeries.some((point) => point.value > 0) ? (
+              <div className="report-bar-chart">
+                {revenueSeries.map((point) => {
+                  const max = Math.max(
+                    1,
+                    ...revenueSeries.map((entry) => entry.value),
+                  );
+                  return (
+                    <div className="report-bar-column" key={point.label}>
+                      <span className="report-bar-value">
+                        {formatCurrency(point.value)}
+                      </span>
+                      <div className="report-bar-track">
+                        <div
+                          className="report-bar-fill"
+                          style={{ height: `${(point.value / max) * 100}%` }}
+                        />
+                      </div>
+                      <span className="report-bar-label">{point.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="report-visual-empty">
+                No matching data for this period.
+              </p>
+            )}
+          </section>
+        </div>
+      ) : (
+        <AdminMetrics
+          items={summaryMetrics.map((metric) => ({
+            label: metric.label,
+            value: metric.value,
+            hint: metric.hint,
+          }))}
+        />
+      )}
 
       <div className="report-control-card" onChange={invalidateReport}>
         <div className="admin-section-header">
@@ -12974,16 +13581,7 @@ function ReportsPage() {
             <span>Report Type</span>
             <select
               value={reportType}
-              onChange={(event) => {
-                setReportType(event.target.value);
-                setSelectedColumns(
-                  defaultColumns[event.target.value] || [
-                    "name",
-                    "status",
-                    "date",
-                  ],
-                );
-              }}
+              onChange={(event) => selectReportType(event.target.value)}
             >
               {reportTypes.map((type) => (
                 <option key={type} value={type}>
@@ -13125,56 +13723,33 @@ function ReportsPage() {
       <p className="report-feedback" role="status">
         {reportNotice || "Choose a common report or build your own."}
       </p>
-      <div className="report-shelf">
-        <section className="admin-section report-quick-section">
-          <div className="admin-section-header">
-            <h2>Common reports</h2>
-          </div>
-          <div className="report-preset-grid">
-            {commonReports.map((report) => (
-              <button
-                key={report.id}
-                type="button"
-                className="report-preset-button"
-                aria-pressed={selectedPreset === report.id}
-                onClick={() => {
-                  resetFilters();
-                  report.preset();
-                  setSelectedColumns(defaultColumns[report.reportType]);
-                  setSelectedPreset(report.id);
-                  setReportNotice(
-                    `${report.label} selected. Run report to view results.`,
-                  );
-                }}
-              >
-                {report.label}
-              </button>
-            ))}
-          </div>
-        </section>
 
-        <section className="admin-section report-quick-section">
-          <div className="admin-section-header">
-            <h2>Saved reports</h2>
-          </div>
-          <div className="saved-report-ui">
-            <p>
-              Saved reports are not available yet. Start with a common report,
-              then export your results.
-            </p>{" "}
+      <section className="admin-section report-quick-section report-presets-section">
+        <div className="admin-section-header">
+          <h2>Common reports</h2>
+        </div>
+        <div className="report-preset-grid">
+          {commonReports.map((report) => (
             <button
+              key={report.id}
               type="button"
-              className="primary-button disabled-button"
-              disabled
+              className="report-preset-button"
+              aria-pressed={selectedPreset === report.id}
+              onClick={() => {
+                resetFilters();
+                report.preset();
+                setSelectedColumns(defaultColumns[report.reportType]);
+                setSelectedPreset(report.id);
+                setReportNotice(
+                  `${report.label} selected. Run report to view results.`,
+                );
+              }}
             >
-              Save report unavailable
+              {report.label}
             </button>
-            <small>
-              Your report configuration is available during this visit only.
-            </small>
-          </div>
-        </section>
-      </div>
+          ))}
+        </div>
+      </section>
 
       <div
         className="report-results-card"
@@ -13377,97 +13952,149 @@ function ReportsPage() {
         )}
       </div>
 
-      {hasRun && reportType === "Overview" ? (
-        <div className="report-visual-summaries">
-          <section className="admin-section">
-            <div className="admin-section-header">
-              <h2>Lead summary</h2>
+      <div className="report-shelf">
+        <section className="admin-section report-quick-section report-saved-section">
+          <div className="admin-section-header">
+            <h2>Saved reports</h2>
+          </div>
+          <div className="saved-report-ui">
+            <div className="saved-report-save-row">
+              <input
+                type="text"
+                className="saved-report-name-input"
+                value={saveReportName}
+                onChange={(event) => setSaveReportName(event.target.value)}
+                placeholder={`${reportType} report`}
+                aria-label="Saved report name"
+              />
+              <button
+                type="button"
+                className="primary-button"
+                disabled={isSavingReport}
+                onClick={saveCurrentReport}
+              >
+                {isSavingReport ? "Saving..." : "Save report"}
+              </button>
             </div>
-            <div className="chart-list">
-              {[
-                {
-                  label: "New",
-                  value: snapshot.leads.filter((lead) => lead.status === "New")
-                    .length,
-                },
-                {
-                  label: "Contacted",
-                  value: snapshot.leads.filter(
-                    (lead) => lead.status === "Contacted",
-                  ).length,
-                },
-                {
-                  label: "Qualified",
-                  value: snapshot.leads.filter(
-                    (lead) => lead.status === "Qualified",
-                  ).length,
-                },
-                {
-                  label: "Converted",
-                  value: snapshot.leads.filter(
-                    (lead) => lead.status === "Converted",
-                  ).length,
-                },
-              ].map((item) => (
-                <div key={item.label} className="chart-row">
-                  <div className="chart-label-row">
-                    <span>{item.label}</span>
-                    <strong>{item.value}</strong>
-                  </div>
-                  <div className="chart-bar">
-                    <span
-                      style={{
-                        width: `${50 + (item.value / Math.max(1, Math.max(...[...snapshot.leads.map((lead) => (lead.status === "New" ? 1 : 0)), 1]))) * 50}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-          <section className="admin-section">
-            <div className="admin-section-header">
-              <h2>Billing summary</h2>
-            </div>
-            <div className="chart-list">
-              {[
-                {
-                  label: "Open",
-                  value: snapshot.invoices.filter(
-                    (invoice) => invoice.status === "Open",
-                  ).length,
-                },
-                {
-                  label: "Past Due",
-                  value: snapshot.invoices.filter(
-                    (invoice) => invoice.status === "Past Due",
-                  ).length,
-                },
-                {
-                  label: "Paid",
-                  value: snapshot.invoices.filter(
-                    (invoice) => invoice.status === "Paid",
-                  ).length,
-                },
-              ].map((item) => (
-                <div key={item.label} className="chart-row">
-                  <div className="chart-label-row">
-                    <span>{item.label}</span>
-                    <strong>{item.value}</strong>
-                  </div>
-                  <div className="chart-bar">
-                    <span
-                      style={{
-                        width: `${(item.value / Math.max(1, snapshot.invoices.length)) * 100}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        </div>
-      ) : null}
+            {savedReports.length ? (
+              <ul className="saved-report-list">
+                {savedReports.map((report) => {
+                  const rangeLabel = dateRangeOptions.find(
+                    (option) => option.value === report.config?.datePreset,
+                  )?.label;
+                  return (
+                    <li key={report.id} className="saved-report-item">
+                      {renamingReportId === report.id ? (
+                        <div className="saved-report-rename-row">
+                          <input
+                            type="text"
+                            value={renameValue}
+                            onChange={(event) =>
+                              setRenameValue(event.target.value)
+                            }
+                            aria-label="Rename saved report"
+                          />
+                          <button
+                            type="button"
+                            className="link-button"
+                            disabled={savedReportBusyId === report.id}
+                            onClick={() => confirmRenameSavedReport(report)}
+                          >
+                            Save
+                          </button>
+                          <button
+                            type="button"
+                            className="link-button"
+                            onClick={cancelRenameSavedReport}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="saved-report-info">
+                            <strong>{report.name}</strong>
+                            <small>
+                              {report.report_type}
+                              {rangeLabel ? ` · ${rangeLabel}` : ""}
+                            </small>
+                            {report.updated_at ? (
+                              <small className="saved-report-meta">
+                                Last updated {formatDate(report.updated_at)}
+                              </small>
+                            ) : null}
+                          </div>
+                          <div className="saved-report-actions">
+                            <button
+                              type="button"
+                              className="link-button"
+                              onClick={() => loadSavedReport(report)}
+                            >
+                              Run →
+                            </button>
+                            <div className="saved-report-menu">
+                              <button
+                                type="button"
+                                className="link-button saved-report-menu-trigger"
+                                aria-label={`More actions for ${report.name}`}
+                                aria-expanded={savedReportMenuId === report.id}
+                                onClick={() =>
+                                  setSavedReportMenuId((current) =>
+                                    current === report.id ? null : report.id,
+                                  )
+                                }
+                              >
+                                •••
+                              </button>
+                              {savedReportMenuId === report.id ? (
+                                <div
+                                  className="saved-report-menu-list"
+                                  role="menu"
+                                >
+                                  <button
+                                    type="button"
+                                    role="menuitem"
+                                    onClick={() =>
+                                      startRenameSavedReport(report)
+                                    }
+                                  >
+                                    Rename
+                                  </button>
+                                  <button
+                                    type="button"
+                                    role="menuitem"
+                                    disabled={savedReportBusyId === report.id}
+                                    onClick={() => deleteSavedReport(report)}
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              ) : null}
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <p className="saved-report-empty">No saved reports yet.</p>
+            )}
+          </div>
+        </section>
+
+        <aside className="dashboard-brand-note report-support-note">
+          <Sprout size={28} aria-hidden="true" />
+          <div>
+            <strong>Turn data into impact</strong>
+            <p>
+              Use insights to strengthen client relationships and drive smarter
+              decisions.
+            </p>
+          </div>
+        </aside>
+      </div>
     </div>
   );
 }

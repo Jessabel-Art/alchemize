@@ -48,12 +48,23 @@ test("screen mode hides the print-only invoice markup while print mode reveals t
   assert.match(adminCss, /Alchemize Business Services/);
 });
 
+test("the printable invoice targets a deliberate US Letter portrait page", () => {
+  assert.match(adminCss, /@page\s*\{[\s\S]*size:\s*letter portrait/i);
+});
+
+test("the printable invoice logo resolves to a real, existing public asset", () => {
+  // Regression guard for the earlier broken-image defect: the print
+  // sheet must reference a logo file that actually exists on disk,
+  // not an invented or admin-relative path.
+  assert.match(adminPage, /\/assets\/logos\/alchemize-logo-dark\.png/);
+  assert.doesNotMatch(adminPage, /\/assets\/logo-dark\.svg/);
+});
+
 test("print/export includes the required branded invoice sections and excludes internal memo from the print view", () => {
   assert.match(adminPage, /invoice-print-sheet/);
-  assert.match(adminPage, /Invoice date:/);
-  assert.match(adminPage, /Due date:/);
-  assert.match(adminPage, /Terms:/);
-  assert.match(adminPage, /Remaining balance/);
+  assert.match(adminPage, /Issue date/);
+  assert.match(adminPage, /Due date/);
+  assert.match(adminPage, /Balance Due/);
   assert.doesNotMatch(adminPage, /<h3>Internal memo<\/h3>/i);
 });
 

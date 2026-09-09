@@ -2,10 +2,35 @@ import { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import Logo from "../brand/Logo.jsx";
 import "./portal-shell.css";
+import {
+  House,
+  Users,
+  LayoutGrid,
+  FileText,
+  MessagesSquare,
+  CalendarDays,
+  Receipt,
+  ChartNoAxesColumn,
+  Settings,
+} from "lucide-react";
+
+const dashboardNavIcons = {
+  Dashboard: House,
+  Clients: Users,
+  Services: LayoutGrid,
+  "Client Requests": FileText,
+  Communications: MessagesSquare,
+  Appointments: CalendarDays,
+  Billing: Receipt,
+  Reports: ChartNoAxesColumn,
+  Settings,
+};
 
 function PortalShell({ title, navItems, children }) {
   const isAdminShell = title === "Alchemize Admin";
   const location = useLocation();
+  const isDashboard =
+    isAdminShell && /^\/admin\/dashboard\/?$/.test(location.pathname);
   const [navOpen, setNavOpen] = useState(false);
 
   useEffect(() => {
@@ -57,31 +82,37 @@ function PortalShell({ title, navItems, children }) {
         </div>
 
         <nav className="portal-nav" aria-label="Portal navigation">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={
-                item.to === "/admin/dashboard" ||
-                item.to === "/client-portal/dashboard"
-              }
-              onClick={() => setNavOpen(false)}
-              className={({ isActive }) =>
-                isActive ? "portal-nav-item active" : "portal-nav-item"
-              }
-            >
-              {item.icon ? <item.icon size={18} aria-hidden="true" /> : null}
-              <span>{item.label}</span>
-              {item.count > 0 ? (
-                <span
-                  className="portal-nav-badge"
-                  aria-label={`${item.count} ${item.label.toLowerCase()} items need attention`}
-                >
-                  {item.count}
-                </span>
-              ) : null}
-            </NavLink>
-          ))}
+          {navItems.map((item) => {
+            const Icon =
+              item.icon || (isDashboard ? dashboardNavIcons[item.label] : null);
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={
+                  item.to === "/admin/dashboard" ||
+                  item.to === "/client-portal/dashboard"
+                }
+                onClick={() => setNavOpen(false)}
+                className={({ isActive }) =>
+                  isActive ? "portal-nav-item active" : "portal-nav-item"
+                }
+              >
+                {Icon ? (
+                  <Icon size={18} strokeWidth={1.8} aria-hidden="true" />
+                ) : null}
+                <span>{item.label}</span>
+                {item.count > 0 ? (
+                  <span
+                    className="portal-nav-badge"
+                    aria-label={`${item.count} ${item.label.toLowerCase()} items need attention`}
+                  >
+                    {item.count}
+                  </span>
+                ) : null}
+              </NavLink>
+            );
+          })}
         </nav>
         {isAdminShell ? (
           <a className="portal-mobile-return" href="/">
