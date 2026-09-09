@@ -15,8 +15,10 @@ import {
   Settings,
   Send,
   ArrowRight,
+  ChevronRight,
   ClipboardList,
   CheckCircle2,
+  Sparkles,
 } from "lucide-react";
 import { adminStore } from "../../../js/data/admin-store.js";
 import { portalAdmin } from "../../services/admin-api.js";
@@ -25,6 +27,7 @@ import {
   getInvoiceRemainingBalance,
 } from "../../utils/admin-metrics.js";
 import { isActiveClient } from "../../utils/client-status.js";
+import { AdminDetailDrawer } from "../../components/admin/admin-components.jsx";
 import "./admin.css";
 
 const activityTone = {
@@ -181,6 +184,7 @@ function AdminDashboardPage() {
   const [portalReplies, setPortalReplies] = useState({});
   const [replacementItem, setReplacementItem] = useState(null);
   const [replacementNote, setReplacementNote] = useState("");
+  const [portalQueueOpen, setPortalQueueOpen] = useState(false);
   const loadPortalAttention = async () => {
     try {
       const data = await portalAdmin.attention();
@@ -526,7 +530,7 @@ function AdminDashboardPage() {
         : portalAttention.items.length
           ? "Awaiting review"
           : "All caught up",
-      to: "/admin/dashboard#portal-activity",
+      onOpen: () => setPortalQueueOpen(true),
     },
     {
       key: "prospects",
@@ -586,6 +590,11 @@ function AdminDashboardPage() {
                 <span>{kpi.label}</span>
                 <small>{kpi.detail}</small>
               </span>
+              <ChevronRight
+                size={14}
+                className="dashboard-kpi-chevron"
+                aria-hidden="true"
+              />
             </Link>
           );
         })}
@@ -622,11 +631,16 @@ function AdminDashboardPage() {
                     />
                   ))}
                 </div>
-                <p className="dashboard-distribution-legend">
-                  {Object.entries(attentionBreakdown)
-                    .map(([type, count]) => `${count} ${type}`)
-                    .join(" · ")}
-                </p>
+                <ul className="dashboard-distribution-legend">
+                  {Object.entries(attentionBreakdown).map(([type, count]) => (
+                    <li key={type}>
+                      <span
+                        className={`dashboard-distribution-dot accent-${attentionAccentByType[type] || "info"}`}
+                      />
+                      {count} {type}
+                    </li>
+                  ))}
+                </ul>
               </>
             ) : (
               <div className="dashboard-empty-state">
@@ -641,31 +655,38 @@ function AdminDashboardPage() {
           >
             {focusCards.map((card) => {
               const Icon = card.icon;
+              const CardTag = card.to ? Link : "button";
+              const tagProps = card.to
+                ? { to: card.to }
+                : { type: "button", onClick: card.onOpen };
               return (
-                <Link
+                <CardTag
                   key={card.key}
-                  to={card.to}
                   className="dashboard-focus-card"
+                  {...tagProps}
                 >
-                  <span className="dashboard-focus-icon">
-                    <Icon size={18} aria-hidden="true" />
-                  </span>
-                  <span className="dashboard-focus-copy">
-                    <strong>{card.count}</strong>
+                  <span className="dashboard-focus-top">
+                    <span className="dashboard-focus-icon">
+                      <Icon size={18} aria-hidden="true" />
+                    </span>
                     <span className="dashboard-focus-label">{card.label}</span>
+                  </span>
+                  <strong className="dashboard-focus-count">
+                    {card.count}
+                  </strong>
+                  <span className="dashboard-focus-detail">
                     <small>{card.detail}</small>
                     {card.overdue ? (
                       <small className="dashboard-focus-overdue">
+                        <AlertTriangle size={11} aria-hidden="true" />
                         {card.overdue} overdue
                       </small>
                     ) : null}
                   </span>
-                  <ArrowRight
-                    size={14}
-                    className="dashboard-focus-arrow"
-                    aria-hidden="true"
-                  />
-                </Link>
+                  <span className="dashboard-focus-view">
+                    View details <ArrowRight size={12} aria-hidden="true" />
+                  </span>
+                </CardTag>
               );
             })}
           </section>
@@ -818,13 +839,16 @@ function AdminDashboardPage() {
                       </span>
                     </div>
                     <div className="schedule-copy">
-                      <strong>{appointment.title}</strong>
+                      <strong>
+                        <span
+                          className={`schedule-status-dot ${appointment.status === "Confirmed" ? "accent-positive" : "accent-info"}`}
+                          aria-hidden="true"
+                        />
+                        {appointment.title}
+                      </strong>
                       <small>{appointment.time}</small>
                       <small>
                         {getClientName(snapshot, appointment.clientId)}
-                      </small>
-                      <small>
-                        {appointment.type} · {appointment.serviceName}
                       </small>
                     </div>
                     <span
@@ -840,14 +864,6 @@ function AdminDashboardPage() {
                 No appointments in the next 7 days.
               </div>
             )}
-            {upcomingAppointments.length ? (
-              <Link
-                to="/admin/appointments"
-                className="dashboard-action-link dashboard-view-full"
-              >
-                View full calendar <ArrowRight size={12} aria-hidden="true" />
-              </Link>
-            ) : null}
           </article>
 
           <aside className="dashboard-quick-actions">
@@ -856,152 +872,174 @@ function AdminDashboardPage() {
             </div>
             <div className="quick-actions-grid">
               <Link to="/admin/clients" className="quick-action-link">
-                <UserPlus size={14} aria-hidden="true" /> Add client
+                <span className="quick-action-icon">
+                  <UserPlus size={14} aria-hidden="true" />
+                </span>
+                Add client
               </Link>
               <Link to="/admin/appointments" className="quick-action-link">
-                <CalendarPlus size={14} aria-hidden="true" /> New appointment
+                <span className="quick-action-icon">
+                  <CalendarPlus size={14} aria-hidden="true" />
+                </span>
+                New appointment
               </Link>
               <Link to="/admin/billing" className="quick-action-link">
-                <Receipt size={14} aria-hidden="true" /> Create invoice
+                <span className="quick-action-icon">
+                  <Receipt size={14} aria-hidden="true" />
+                </span>
+                Create invoice
               </Link>
               <Link to="/admin/client-requests" className="quick-action-link">
-                <Inbox size={14} aria-hidden="true" /> Client requests
+                <span className="quick-action-icon">
+                  <Inbox size={14} aria-hidden="true" />
+                </span>
+                Client requests
               </Link>
               <Link to="/admin/services" className="quick-action-link">
-                <Settings size={14} aria-hidden="true" /> Manage services
+                <span className="quick-action-icon">
+                  <Settings size={14} aria-hidden="true" />
+                </span>
+                Manage services
               </Link>
               <Link to="/admin/communications" className="quick-action-link">
-                <Send size={14} aria-hidden="true" /> Compose message
+                <span className="quick-action-icon">
+                  <Send size={14} aria-hidden="true" />
+                </span>
+                Compose message
               </Link>
+            </div>
+          </aside>
+
+          <aside className="dashboard-brand-note">
+            <Sparkles size={16} aria-hidden="true" />
+            <div>
+              <strong>Make a bigger impact</strong>
+              <p>Keep clients moving forward, one step at a time.</p>
             </div>
           </aside>
         </aside>
       </section>
 
-      <article
-        id="portal-activity"
-        className="dashboard-panel portal-client-attention"
+      <AdminDetailDrawer
+        open={portalQueueOpen}
+        title="Client portal activity — items awaiting review"
+        onClose={() => setPortalQueueOpen(false)}
+        className="portal-queue-drawer"
       >
-        <div className="panel-heading">
-          <h2>
-            Client portal activity — items awaiting review
-            {portalAttention.items.length ? (
-              <span className="panel-count">
-                {portalAttention.items.length}
-              </span>
-            ) : null}
-          </h2>
+        <div className="portal-client-attention">
+          {portalAttention.error ? (
+            <p className="dashboard-empty-state" role="alert">
+              {portalAttention.error}
+            </p>
+          ) : null}
+          {portalAttention.loading ? (
+            <div className="dashboard-empty-state">Loading client actions…</div>
+          ) : null}
+          {!portalAttention.loading && portalAttention.items.length ? (
+            <ul className="attention-list compact-list">
+              {portalAttention.items.map((item) => (
+                <li
+                  key={`${item.kind}-${item.id}`}
+                  className="attention-item compact-row"
+                >
+                  <div className="attention-item-copy">
+                    <div className="attention-item-topline">
+                      <span className="attention-kind">
+                        {item.kind.replaceAll("_", " ")}
+                      </span>
+                      <span className="status-pill info">{item.status}</span>
+                    </div>
+                    <strong>{item.title}</strong>
+                    <small>{item.client_name}</small>
+                    {item.detail ? <p>{item.detail}</p> : null}
+                  </div>
+                  <div className="portal-admin-actions">
+                    {item.kind === "document_submission" ? (
+                      <a href={portalAdmin.documentDownloadUrl(item.id)}>
+                        Download securely
+                      </a>
+                    ) : null}
+                    {item.kind === "appointment_request" ||
+                    item.kind === "profile_change" ||
+                    item.kind === "access_request" ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => resolvePortalItem(item, "approved")}
+                        >
+                          Approve
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => resolvePortalItem(item, "rejected")}
+                        >
+                          Reject
+                        </button>
+                      </>
+                    ) : null}
+                    {item.kind === "document_submission" ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => resolvePortalItem(item, "accept")}
+                        >
+                          Accept
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setReplacementItem(item);
+                            setReplacementNote("");
+                          }}
+                        >
+                          Request replacement
+                        </button>
+                      </>
+                    ) : null}
+                    {item.kind === "task_action" || item.kind === "message" ? (
+                      <button
+                        type="button"
+                        onClick={() => resolvePortalItem(item, "reviewed")}
+                      >
+                        Mark reviewed
+                      </button>
+                    ) : null}
+                  </div>
+                  {item.kind === "message" ? (
+                    <div className="portal-admin-reply">
+                      <label htmlFor={`reply-${item.id}`}>
+                        Reply to client
+                      </label>
+                      <textarea
+                        id={`reply-${item.id}`}
+                        maxLength={5000}
+                        value={portalReplies[item.id] || ""}
+                        onChange={(event) =>
+                          setPortalReplies((current) => ({
+                            ...current,
+                            [item.id]: event.target.value,
+                          }))
+                        }
+                      />
+                      <button
+                        type="button"
+                        onClick={() => replyToPortalMessage(item)}
+                      >
+                        Send reply
+                      </button>
+                    </div>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {!portalAttention.loading && !portalAttention.items.length ? (
+            <div className="dashboard-empty-state">
+              No client portal actions need review.
+            </div>
+          ) : null}
         </div>
-        {portalAttention.error ? (
-          <p className="dashboard-empty-state" role="alert">
-            {portalAttention.error}
-          </p>
-        ) : null}
-        {portalAttention.loading ? (
-          <div className="dashboard-empty-state">Loading client actions…</div>
-        ) : null}
-        {!portalAttention.loading && portalAttention.items.length ? (
-          <ul className="attention-list compact-list">
-            {portalAttention.items.map((item) => (
-              <li
-                key={`${item.kind}-${item.id}`}
-                className="attention-item compact-row"
-              >
-                <div className="attention-item-copy">
-                  <div className="attention-item-topline">
-                    <span className="attention-kind">
-                      {item.kind.replaceAll("_", " ")}
-                    </span>
-                    <span className="status-pill info">{item.status}</span>
-                  </div>
-                  <strong>{item.title}</strong>
-                  <small>{item.client_name}</small>
-                  {item.detail ? <p>{item.detail}</p> : null}
-                </div>
-                <div className="portal-admin-actions">
-                  {item.kind === "document_submission" ? (
-                    <a href={portalAdmin.documentDownloadUrl(item.id)}>
-                      Download securely
-                    </a>
-                  ) : null}
-                  {item.kind === "appointment_request" ||
-                  item.kind === "profile_change" ||
-                  item.kind === "access_request" ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => resolvePortalItem(item, "approved")}
-                      >
-                        Approve
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => resolvePortalItem(item, "rejected")}
-                      >
-                        Reject
-                      </button>
-                    </>
-                  ) : null}
-                  {item.kind === "document_submission" ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => resolvePortalItem(item, "accept")}
-                      >
-                        Accept
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setReplacementItem(item);
-                          setReplacementNote("");
-                        }}
-                      >
-                        Request replacement
-                      </button>
-                    </>
-                  ) : null}
-                  {item.kind === "task_action" || item.kind === "message" ? (
-                    <button
-                      type="button"
-                      onClick={() => resolvePortalItem(item, "reviewed")}
-                    >
-                      Mark reviewed
-                    </button>
-                  ) : null}
-                </div>
-                {item.kind === "message" ? (
-                  <div className="portal-admin-reply">
-                    <label htmlFor={`reply-${item.id}`}>Reply to client</label>
-                    <textarea
-                      id={`reply-${item.id}`}
-                      maxLength={5000}
-                      value={portalReplies[item.id] || ""}
-                      onChange={(event) =>
-                        setPortalReplies((current) => ({
-                          ...current,
-                          [item.id]: event.target.value,
-                        }))
-                      }
-                    />
-                    <button
-                      type="button"
-                      onClick={() => replyToPortalMessage(item)}
-                    >
-                      Send reply
-                    </button>
-                  </div>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        ) : null}
-        {!portalAttention.loading && !portalAttention.items.length ? (
-          <div className="dashboard-empty-state">
-            No client portal actions need review.
-          </div>
-        ) : null}
-      </article>
+      </AdminDetailDrawer>
 
       {replacementItem ? (
         <div

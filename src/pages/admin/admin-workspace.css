@@ -192,14 +192,16 @@
     gap: 10px;
   }
   .admin-portal-shell .dashboard-kpi-card {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 10px;
     min-width: 0;
-    padding: 12px 14px;
+    padding: 13px 26px 13px 14px;
     border: 1px solid var(--admin-line);
-    border-radius: 6px;
+    border-radius: 8px;
     background: var(--admin-surface);
+    box-shadow: 0 1px 2px rgba(6, 43, 43, 0.04);
     text-decoration: none;
     transition:
       border-color var(--transition-fast, 160ms ease),
@@ -209,6 +211,13 @@
   .admin-portal-shell .dashboard-kpi-card:focus-visible {
     border-color: var(--emerald-forest);
     transform: translateY(-1px);
+  }
+  .admin-portal-shell .dashboard-kpi-chevron {
+    position: absolute;
+    top: 10px;
+    right: 8px;
+    color: var(--color-text-soft);
+    opacity: 0.7;
   }
   .admin-portal-shell .dashboard-kpi-icon {
     display: inline-flex;
@@ -247,10 +256,11 @@
   }
   .admin-portal-shell .dashboard-kpi-copy strong {
     font-family: var(--font-display);
-    font-size: 22px;
-    font-weight: 500;
+    font-size: 26px;
+    font-weight: 600;
     line-height: 1.05;
     font-variant-numeric: tabular-nums;
+    color: var(--emerald-deep);
   }
   .admin-portal-shell .dashboard-kpi-copy > span {
     font-size: 10px;
@@ -367,11 +377,22 @@
     min-width: 42px;
     border-radius: 3px;
   }
-  .admin-portal-shell .dashboard-view-full {
-    display: inline-flex;
+  .admin-portal-shell .schedule-copy strong {
+    display: flex;
     align-items: center;
-    gap: 4px;
-    margin-top: 8px;
+    gap: 6px;
+  }
+  .admin-portal-shell .schedule-status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    flex: 0 0 auto;
+  }
+  .admin-portal-shell .schedule-status-dot.accent-positive {
+    background: var(--admin-positive);
+  }
+  .admin-portal-shell .schedule-status-dot.accent-info {
+    background: var(--admin-info);
   }
   .admin-portal-shell .dashboard-quick-actions {
     padding: 10px 0 2px;
@@ -393,23 +414,61 @@
   .admin-portal-shell .quick-action-link {
     display: flex;
     align-items: center;
-    gap: 7px;
-    min-height: 0;
-    padding: 9px 10px;
+    gap: 8px;
+    min-height: 40px;
+    padding: 8px 10px;
     border: 1px solid var(--admin-line);
     border-radius: 6px;
     background: var(--admin-surface);
     color: var(--emerald-deep);
     font-weight: 600;
-    transition: border-color var(--transition-fast, 160ms ease);
+    transition:
+      border-color var(--transition-fast, 160ms ease),
+      background var(--transition-fast, 160ms ease);
   }
   .admin-portal-shell .quick-action-link:hover,
   .admin-portal-shell .quick-action-link:focus-visible {
     border-color: var(--emerald-forest);
+    background: var(--white);
   }
-  .admin-portal-shell .quick-action-link svg {
+  .admin-portal-shell .quick-action-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
     flex: 0 0 auto;
-    color: var(--gold);
+    background: rgba(6, 43, 43, 0.06);
+    color: var(--emerald-deep);
+  }
+  .admin-portal-shell .dashboard-brand-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-top: 10px;
+    padding: 12px;
+    border: 1px solid rgba(12, 109, 84, 0.22);
+    border-radius: 8px;
+    background: var(--admin-positive-soft);
+    color: var(--admin-positive);
+  }
+  .admin-portal-shell .dashboard-brand-note strong {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--emerald-deep);
+  }
+  .admin-portal-shell .dashboard-brand-note p {
+    margin: 2px 0 0;
+    font-size: 11px;
+    line-height: 1.4;
+    color: var(--emerald-deep);
+    opacity: 0.75;
+  }
+  .admin-portal-shell .portal-queue-drawer {
+    width: min(680px, 100%);
   }
   .admin-portal-shell .dashboard-focus-cards {
     display: grid;
@@ -417,65 +476,85 @@
     gap: 10px;
   }
   .admin-portal-shell .dashboard-focus-card {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+    display: grid;
+    gap: 6px;
     min-width: 0;
-    padding: 12px;
+    width: 100%;
+    padding: 14px;
     border: 1px solid var(--admin-line);
-    border-radius: 6px;
+    border-radius: 8px;
     background: var(--admin-surface);
+    box-shadow: 0 1px 2px rgba(6, 43, 43, 0.04);
     text-decoration: none;
     color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
     transition: border-color var(--transition-fast, 160ms ease);
   }
   .admin-portal-shell .dashboard-focus-card:hover,
   .admin-portal-shell .dashboard-focus-card:focus-visible {
     border-color: var(--emerald-forest);
   }
+  .admin-portal-shell .dashboard-focus-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
   .admin-portal-shell .dashboard-focus-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
     border-radius: 7px;
     flex: 0 0 auto;
     background: var(--admin-info-soft);
     color: var(--admin-info);
   }
-  .admin-portal-shell .dashboard-focus-copy {
-    display: grid;
-    gap: 2px;
-    min-width: 0;
-  }
-  .admin-portal-shell .dashboard-focus-copy strong {
-    font-family: var(--font-display);
-    font-size: 20px;
-    font-weight: 500;
-    line-height: 1.05;
-  }
   .admin-portal-shell .dashboard-focus-label {
     font-size: 11px;
     font-weight: 600;
+    color: var(--color-text-soft);
+  }
+  .admin-portal-shell .dashboard-focus-count {
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 600;
+    line-height: 1.05;
     color: var(--emerald-deep);
   }
-  .admin-portal-shell .dashboard-focus-copy small {
-    font-size: 10px;
+  .admin-portal-shell .dashboard-focus-detail {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .admin-portal-shell .dashboard-focus-detail small {
+    font-size: 11px;
     color: var(--color-text-soft);
   }
   .admin-portal-shell .dashboard-focus-overdue {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
     color: var(--admin-attention);
     font-weight: 700;
   }
-  .admin-portal-shell .dashboard-focus-arrow {
-    margin-left: auto;
-    flex: 0 0 auto;
-    color: var(--color-text-soft);
+  .admin-portal-shell .dashboard-focus-view {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    margin-top: 2px;
+    padding-top: 8px;
+    border-top: 1px solid var(--admin-line);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--emerald-forest);
   }
   .admin-portal-shell .dashboard-lower-row {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
     gap: 16px;
   }
   .admin-portal-shell .activity-icon {
@@ -503,8 +582,8 @@
   }
   .admin-portal-shell .invoice-donut-wrap {
     position: relative;
-    width: 96px;
-    height: 96px;
+    width: 112px;
+    height: 112px;
     flex: 0 0 auto;
   }
   .admin-portal-shell .invoice-donut {
@@ -529,23 +608,25 @@
     display: grid;
     place-items: center;
     text-align: center;
-    gap: 1px;
-    padding: 8px;
+    gap: 2px;
+    padding: 10px;
   }
   .admin-portal-shell .invoice-donut-center strong {
     font-family: var(--font-display);
-    font-size: 15px;
+    font-size: 19px;
+    font-weight: 600;
     line-height: 1.05;
+    color: var(--emerald-deep);
   }
   .admin-portal-shell .invoice-donut-center span {
-    font-size: 8px;
+    font-size: 9px;
     letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--color-text-soft);
   }
   .admin-portal-shell .invoice-legend {
     display: grid;
-    gap: 6px;
+    gap: 8px;
     flex: 1;
     min-width: 0;
     list-style: none;
@@ -553,9 +634,10 @@
     padding: 0;
   }
   .admin-portal-shell .invoice-legend li {
-    display: flex;
+    display: grid;
+    grid-template-columns: 10px 1fr auto auto;
     align-items: center;
-    gap: 7px;
+    gap: 8px;
     font-size: 12px;
   }
   .admin-portal-shell .invoice-legend-dot {
@@ -580,7 +662,7 @@
     color: var(--color-text-soft);
   }
   .admin-portal-shell .invoice-legend-count {
-    margin-left: auto;
+    text-align: right;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
   }

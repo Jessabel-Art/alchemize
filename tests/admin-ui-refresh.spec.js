@@ -217,9 +217,11 @@ test("Dashboard renders four compact operational focus cards linking to existing
   await page.goto("/admin/dashboard/");
   const cards = page.locator(".dashboard-focus-cards .dashboard-focus-card");
   await expect(cards).toHaveCount(4);
+  // Client portal activity has no dedicated route of its own, so it drills
+  // into an on-demand detail drawer rather than a link.
   await expect(
     cards.filter({ hasText: "Client portal activity" }),
-  ).toHaveAttribute("href", "/admin/dashboard#portal-activity");
+  ).toHaveJSProperty("tagName", "BUTTON");
   await expect(cards.filter({ hasText: "Prospect follow-up" })).toHaveAttribute(
     "href",
     "/admin/leads",
@@ -230,8 +232,45 @@ test("Dashboard renders four compact operational focus cards linking to existing
   await expect(
     cards.filter({ hasText: "Active service work" }),
   ).toHaveAttribute("href", "/admin/services");
-  // None of the four cards should render an underlying record list inline.
+  // Each card exposes an explicit "View details" affordance and no inline
+  // record list.
+  await expect(cards.getByText("View details")).toHaveCount(4);
   await expect(page.locator(".dashboard-focus-cards ul")).toHaveCount(0);
+});
+
+test("Client portal activity queue is no longer rendered on the dashboard by default, and opens on demand", async ({
+  page,
+}) => {
+  await mockAdmin(page);
+  await page.goto("/admin/dashboard/");
+  // The legacy always-visible record queue and its heading must be gone.
+  await expect(page.getByText("items awaiting review")).toHaveCount(0);
+  await expect(page.locator("#portal-activity")).toHaveCount(0);
+  await expect(page.locator(".portal-client-attention")).toHaveCount(0);
+
+  const card = page
+    .locator(".dashboard-focus-card")
+    .filter({ hasText: "Client portal activity" });
+  await card.click();
+  await expect(
+    page.getByRole("heading", { name: /items awaiting review/ }),
+  ).toBeVisible();
+  await expect(page.locator(".portal-client-attention")).toBeVisible();
+  await page.getByRole("button", { name: "Close", exact: true }).click();
+  await expect(page.locator(".portal-client-attention")).toHaveCount(0);
+});
+
+test("No other legacy raw record queue remains below the dashboard panels", async ({
+  page,
+}) => {
+  await mockAdmin(page);
+  await page.goto("/admin/dashboard/");
+  // The dashboard should end after the KPI strip, focus panels, and lower
+  // row/right rail — nothing else should render at the page root level.
+  const topLevelSections = page.locator(
+    ".admin-dashboard > .dashboard-kpi-strip, .admin-dashboard > .dashboard-command-grid, .admin-dashboard > header",
+  );
+  await expect(topLevelSections).toHaveCount(3);
 });
 
 test("Upcoming schedule shows a limited preview and links to Appointments", async ({
@@ -329,8 +368,30 @@ test("Dashboard empty states stay clean and intentional with no data", async ({
   await expect(
     page.getByText("No appointments in the next 7 days."),
   ).toBeVisible();
-  await expect(page.getByText("No recent operational activity.")).toBeVisible();
+  const activityPanel = page
+    .locator(".dashboard-panel")
+    .filter({ has: page.getByRole("heading", { name: "Recent activity" }) });
+  await expect(
+    activityPanel.getByText("No recent operational activity."),
+  ).toBeVisible();
+  // An empty populated-vs-empty panel should not stretch to match its
+  // (potentially taller) row-mate.
+  const invoicesPanel = page.locator(".dashboard-panel").filter({
+    has: page.getByRole("heading", { name: "Invoices at a glance" }),
+  });
+  const [activityBox, invoicesBox] = await Promise.all([
+    activityPanel.boundingBox(),
+    invoicesPanel.boundingBox(),
+  ]);
+  expect(activityBox.height).toBeLessThan(invoicesBox.height);
   await expect(page.getByText("No open invoices right now.")).toBeVisible();
+
+  // The client portal activity queue stays closed by default even when
+  // empty — opening it must still show its own clean empty state.
+  await page
+    .locator(".dashboard-focus-card")
+    .filter({ hasText: "Client portal activity" })
+    .click();
   await expect(
     page.getByText("No client portal actions need review."),
   ).toBeVisible();

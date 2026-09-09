@@ -148,13 +148,19 @@ export function AdminEmptyState({ title, description, actionLabel, onAction }) {
   );
 }
 
-export function AdminDetailDrawer({ open, title, children, onClose }) {
+export function AdminDetailDrawer({
+  open,
+  title,
+  children,
+  onClose,
+  className,
+}) {
   if (!open) return null;
 
   return (
     <div className="admin-detail-overlay" onClick={onClose}>
       <aside
-        className="admin-detail-drawer"
+        className={`admin-detail-drawer${className ? ` ${className}` : ""}`}
         onClick={(event) => event.stopPropagation()}
       >
         <div className="admin-detail-header">
