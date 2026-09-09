@@ -1,3 +1,4 @@
+import { mapAdminAppointment as mapAppointment } from "../utils/admin-appointments.js";
 import "../pages/admin/admin-workspace.css";
 import { useEffect, useState } from "react";
 import { Outlet } from "react-router-dom";
@@ -81,34 +82,6 @@ const mapService = (row) => ({
     active: Boolean(Number(addOn.active_flag)),
   })),
 });
-const mapAppointment = (row) => {
-  const start = String(row.scheduled_at || "").replace(" ", "T");
-  const date = start.slice(0, 10);
-  const time = start
-    ? new Date(start).toLocaleTimeString([], {
-        hour: "numeric",
-        minute: "2-digit",
-      })
-    : "";
-  return {
-    id: String(row.id),
-    clientId: row.client_id == null ? "" : String(row.client_id),
-    serviceId: row.service_id == null ? "" : String(row.service_id),
-    type: titleCase(row.appointment_type),
-    title: titleCase(row.appointment_type),
-    serviceName: row.service_name || "",
-    date,
-    time,
-    status: titleCase(row.status),
-    deliveryMethod: titleCase(row.location_type || "virtual"),
-    duration: Number(row.duration_minutes || 60),
-    notes: row.internal_notes || "",
-    meetingMethod: titleCase(row.meeting_method || "phone"),
-    needsPreparation: Boolean(Number(row.preparation_required)),
-    followUpRequired: Boolean(Number(row.follow_up_required)),
-    calendarSyncStatus: titleCase(row.calendar_sync_status || "not_configured"),
-  };
-};
 const mapEngagement = (row) => ({
   id: String(row.id),
   publicId: row.public_id,

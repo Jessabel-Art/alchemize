@@ -1,3 +1,8 @@
+import {
+  adminAppointmentStatuses,
+  appointmentPayload,
+  mapAdminAppointment,
+} from "../../utils/admin-appointments.js";
 import { useEffect, useMemo, useState } from "react";
 import "./admin-reports-billing.css";
 import "./admin-appointments.css";
@@ -58,14 +63,7 @@ const taskStatuses = [
 
 const documentStatuses = ["Received", "Requested", "Under Review", "Archive"];
 
-const appointmentStatuses = [
-  "Upcoming",
-  "Confirmed",
-  "Needs Reschedule",
-  "Completed",
-  "Cancelled",
-  "Follow-up Required",
-];
+const appointmentStatuses = adminAppointmentStatuses;
 
 const appointmentTypeOptions = [
   "Consultation",
@@ -7377,6 +7375,13 @@ function AppointmentManagementPage() {
     recipientType: appointment?.leadId ? "lead" : "client",
     clientId: appointment?.clientId || "",
     leadId: appointment?.leadId || "",
+    engagementId: appointment?.engagementId || "",
+    ownerUserId: appointment?.ownerUserId || "",
+    timezone:
+      appointment?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+    meetingUrl: appointment?.meetingUrl || "",
+    locationDetails: appointment?.location || "",
+    clientInstructions: appointment?.clientInstructions || "",
     recipientName: appointment?.recipientName || "",
     notificationEmail: appointment?.notificationEmail || "",
     sendConfirmationEmail: appointment?.sendConfirmationEmail ?? true,
@@ -7402,6 +7407,7 @@ function AppointmentManagementPage() {
     setIsAvailabilityOpen(false);
     setCancelReason("Client requested");
     setAppointmentSuccess("");
+    setAppointmentError("");
     setSelectedAppointmentId(appointment?.id || selectedAppointmentId);
     setDraftState(baseDraft(appointment));
   };
@@ -7775,7 +7781,26 @@ function AppointmentManagementPage() {
     }
   };
 
+  const applySavedAppointment = (row) => {
+    const saved = mapAdminAppointment({
+      ...row,
+      service_name:
+        snapshot.services.find(
+          (service) => String(service.id) === String(row.service_id),
+        )?.serviceName || row.service_name,
+    });
+    const rows = [
+      saved,
+      ...appointments.filter((entry) => entry.id !== saved.id),
+    ];
+    setAppointments(rows);
+    adminStore.replaceCollections({ appointments: rows });
+    setSelectedAppointmentId(saved.id);
+    setCurrentDate(new Date(`${saved.date}T12:00:00`));
+    return saved;
+  };
   const saveAppointment = async () => {
+    if (appointmentSaving) return;
     setAppointmentError("");
     if (
       (draftState.recipientType === "client" && !draftState.clientId) ||
@@ -7790,176 +7815,76 @@ function AppointmentManagementPage() {
       setAppointmentError("Date and start time are required.");
       return;
     }
-    if (formMode === "create") {
-      setAppointmentSaving(true);
-      try {
-        const start = new Date(`${draftState.date}T${draftState.startTime}:00`);
-        const end = new Date(
-          start.getTime() + (Number(draftState.duration) || 60) * 60000,
-        );
+    setAppointmentSaving(true);
+    try {
+      const payload = appointmentPayload(draftState);
+      if (formMode === "create") {
         const created = await appointmentApi.create({
-          client_id:
-            draftState.recipientType === "client"
-              ? Number(draftState.clientId)
-              : null,
-          lead_id:
-            draftState.recipientType === "lead"
-              ? Number(draftState.leadId)
-              : null,
+          ...payload,
+          visibility: "admin",
           notification_email: canonicalRecipientEmail,
           send_confirmation_email: canonicalRecipientEmail !== "",
-          appointment_type: String(draftState.type)
-            .toLowerCase()
-            .replaceAll(" ", "_"),
-          service_id: draftState.serviceId
-            ? Number(draftState.serviceId)
-            : null,
-          scheduled_at: `${draftState.date} ${draftState.startTime}:00`,
-          end_at: `${toDateString(end)} ${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}:00`,
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-          location_type: String(draftState.location)
-            .toLowerCase()
-            .replaceAll(" ", "_"),
-          meeting_method: String(draftState.meetingMethod || "Phone Call")
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, "_")
-            .replace(/^_|_$/g, ""),
-          location: draftState.location || "Virtual",
-          duration_minutes: Number(draftState.duration) || 60,
-          status: String(draftState.status).toLowerCase().replaceAll(" ", "_"),
-          visibility: "admin",
-          preparation_required: draftState.needsPreparation,
-          follow_up_required: draftState.followUpRequired,
-          internal_notes: draftState.notes,
         });
+        applySavedAppointment(created.appointment);
         setAppointmentSuccess(
           `Appointment created. Calendar sync: ${created.calendar_sync}. Confirmation email: ${created.email_delivery}.`,
         );
-        const nextAppointment = {
-          id: String(created.id),
-          clientId: draftState.clientId,
-          title: `${snapshot.clients.find((client) => client.id === draftState.clientId)?.displayName || "Client"} ${draftState.type}`,
-          type: draftState.type,
-          meetingMethod: draftState.meetingMethod || "Phone Call",
-          serviceName: draftState.serviceName,
-          serviceId: draftState.serviceId,
-          date: draftState.date,
-          time: formatDisplayTime(draftState.startTime),
-          duration: Number(draftState.duration) || 60,
-          deliveryMethod: draftState.location,
-          status: draftState.status,
-          assignedTo: draftState.assignedTo,
-          notes: draftState.notes,
-          needsPreparation: draftState.needsPreparation,
-          followUpRequired: draftState.followUpRequired,
-        };
-        setAppointments((current) => [nextAppointment, ...current]);
-        adminStore.replaceCollections({
-          appointments: [nextAppointment, ...appointments],
-        });
-        setSelectedAppointmentId(nextAppointment.id);
-        setIsFormOpen(false);
-      } catch (error) {
-        setAppointmentError(
-          error.message || "The appointment could not be created.",
+      } else {
+        const updated = await appointmentApi.update(
+          selectedAppointmentId,
+          payload,
         );
-      } finally {
-        setAppointmentSaving(false);
+        applySavedAppointment(updated);
+        setAppointmentSuccess(
+          `Appointment saved. Calendar sync: ${updated.calendar_sync_status}.`,
+        );
       }
-      return;
-    }
-
-    if (formMode === "edit") {
-      await appointmentApi.update(selectedAppointmentId, {
-        client_id: Number(draftState.clientId),
-        appointment_type: String(draftState.type)
-          .toLowerCase()
-          .replaceAll(" ", "_"),
-        scheduled_at: `${draftState.date} ${draftState.startTime}:00`,
-        status: String(draftState.status).toLowerCase().replaceAll(" ", "_"),
-        internal_notes: draftState.notes,
-      });
-      setAppointments((current) =>
-        current.map((appointment) =>
-          appointment.id === selectedAppointmentId
-            ? {
-                ...appointment,
-                clientId: draftState.clientId,
-                title: `${snapshot.clients.find((client) => client.id === draftState.clientId)?.displayName || "Client"} ${draftState.type}`,
-                type: draftState.type,
-                serviceName: draftState.serviceName,
-                date: draftState.date,
-                time: formatDisplayTime(draftState.startTime),
-                duration: Number(draftState.duration) || 60,
-                deliveryMethod: draftState.location,
-                status: draftState.status,
-                assignedTo: draftState.assignedTo,
-                notes: draftState.notes,
-                needsPreparation: draftState.needsPreparation,
-                followUpRequired: draftState.followUpRequired,
-              }
-            : appointment,
-        ),
+      setIsFormOpen(false);
+    } catch (error) {
+      setAppointmentError(
+        error.message || "The appointment could not be saved.",
       );
+    } finally {
+      setAppointmentSaving(false);
     }
-
-    if (formMode === "reschedule") {
-      await appointmentApi.update(selectedAppointmentId, {
-        scheduled_at: `${draftState.date} ${draftState.startTime}:00`,
-        status: "scheduled",
-      });
-      setAppointments((current) =>
-        current.map((appointment) =>
-          appointment.id === selectedAppointmentId
-            ? {
-                ...appointment,
-                date: draftState.date,
-                time: formatDisplayTime(draftState.startTime),
-                duration: Number(draftState.duration) || 60,
-                status:
-                  appointment.status === "Needs Reschedule"
-                    ? "Scheduled"
-                    : appointment.status,
-              }
-            : appointment,
-        ),
+  };
+  const mutateAppointment = async (id, payload, message) => {
+    if (appointmentSaving) return;
+    setAppointmentSaving(true);
+    setAppointmentError("");
+    try {
+      const updated = await appointmentApi.update(id, payload);
+      applySavedAppointment(updated);
+      setAppointmentSuccess(
+        `${message} Calendar sync: ${updated.calendar_sync_status}.`,
       );
+      setIsFormOpen(false);
+    } catch (error) {
+      setAppointmentError(
+        error.message || "The appointment could not be updated.",
+      );
+    } finally {
+      setAppointmentSaving(false);
     }
-
-    setIsFormOpen(false);
   };
-
-  const confirmCancel = async () => {
-    await appointmentApi.update(selectedAppointmentId, {
-      status: "cancelled",
-      internal_notes: cancelReason,
-    });
-    setAppointments((current) =>
-      current.map((appointment) =>
-        appointment.id === selectedAppointmentId
-          ? {
-              ...appointment,
-              status: "Cancelled",
-              cancellationReason: cancelReason,
-            }
-          : appointment,
-      ),
+  const confirmCancel = () =>
+    mutateAppointment(
+      selectedAppointmentId,
+      { status: "cancelled", cancellation_reason: cancelReason },
+      "Appointment cancelled.",
     );
-    setIsFormOpen(false);
-  };
-
-  const changeStatus = async (appointmentId, nextStatus) => {
-    await appointmentApi.update(appointmentId, {
-      status: nextStatus.toLowerCase().replaceAll(" ", "_"),
-    });
-    setAppointments((current) =>
-      current.map((appointment) =>
-        appointment.id === appointmentId
-          ? { ...appointment, status: nextStatus }
-          : appointment,
-      ),
+  const changeStatus = (id, nextStatus) =>
+    mutateAppointment(
+      id,
+      { status: nextStatus.toLowerCase() },
+      "Appointment status saved.",
     );
-  };
+  const completeFollowUp = (id) =>
+    mutateAppointment(
+      id,
+      { follow_up_required: false },
+      "Follow-up completed.",
+    );
 
   const dailyAppointments = useMemo(() => {
     const map = new Map();
@@ -8012,6 +7937,16 @@ function AppointmentManagementPage() {
         actions={[]}
       />
 
+      {!isFormOpen && appointmentError ? (
+        <p role="alert" className="admin-feedback error">
+          {appointmentError}
+        </p>
+      ) : null}
+      {!isFormOpen && appointmentSuccess ? (
+        <p role="status" className="admin-feedback">
+          {appointmentSuccess}
+        </p>
+      ) : null}
       <AdminMetrics
         items={[
           {
@@ -8657,9 +8592,7 @@ function AppointmentManagementPage() {
                   <button
                     type="button"
                     className="secondary-button"
-                    onClick={() =>
-                      changeStatus(detailAppointment.id, "Follow-up Required")
-                    }
+                    onClick={() => completeFollowUp(detailAppointment.id)}
                   >
                     Mark Follow-Up Complete
                   </button>
@@ -8837,6 +8770,11 @@ function AppointmentManagementPage() {
                     <option value="Other">Other</option>
                   </select>
                 </label>
+                {appointmentError ? (
+                  <p role="alert" className="admin-feedback error">
+                    {appointmentError}
+                  </p>
+                ) : null}
                 <div className="scheduler-action-row">
                   <button
                     type="button"
@@ -8848,6 +8786,7 @@ function AppointmentManagementPage() {
                   <button
                     type="button"
                     className="primary-button"
+                    disabled={appointmentSaving}
                     onClick={confirmCancel}
                   >
                     Confirm Cancellation
@@ -9148,9 +9087,7 @@ function AppointmentManagementPage() {
                     type="button"
                     className="primary-button"
                     onClick={saveAppointment}
-                    disabled={
-                      appointmentSaving || snapshot.clients.length === 0
-                    }
+                    disabled={appointmentSaving}
                   >
                     {appointmentSaving
                       ? "Saving…"

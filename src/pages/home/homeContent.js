@@ -1,7 +1,4 @@
-import {
-  DOWNLOADABLE_RESOURCE_IDS,
-  getDownloadableResource,
-} from "../resources/downloadableResources.js";
+import { DOWNLOADABLE_RESOURCE_IDS } from "../resources/downloadableResources.js";
 
 export const homeContent = {
   en: {
@@ -15,9 +12,7 @@ export const homeContent = {
       titleStart: "Transform Complexity Into",
       titleEmphasis: "Opportunity.",
       descriptor: "Your Tech-Savvy Business Partner",
-      copy: "Alchemize is a modern business-services partner for individuals, entrepreneurs, and small businesses. We handle the operational, administrative, financial, document, and digital work behind the next move.",
-      difference:
-        "Practical business support and technology-minded problem solving stay connected, so clients do not have to coordinate a different provider for every related responsibility.",
+      copy: "Practical business support and technology-minded solutions for individuals, entrepreneurs, and small businesses. We help you get organized, stay compliant, and move forward with clarity and confidence.",
       primary: "Schedule a Consultation",
       secondary: "Explore Services",
       alt: "Professional reviewing organized business materials at a desk",
@@ -26,15 +21,17 @@ export const homeContent = {
     paths: {
       eyebrow: "Start with what you need",
       title: "Support for you. Structure for your business.",
-      individualLabel: "For me",
+      copy: "Practical guidance, organized systems, and professional support for every stage — whether you're managing personal responsibilities or growing a business.",
+      individualLabel: "For individuals",
       individualTitle: "Individual Services",
-      individualCopy:
-        "Personal and business responsibilities often overlap. Tax preparation, documents, and practical organization can become part of a business decision—or the first step toward one.",
+      individualItems: [
+        "Tax Preparation",
+        "Document Services",
+        "Financial Guidance",
+      ],
       individualLink: "Explore individual services",
-      businessLabel: "Entrepreneurs · Freelancers · Businesses",
+      businessLabel: "For entrepreneurs · freelancers · businesses",
       businessTitle: "Business Services",
-      businessCopy:
-        "For owners who need the operation, records, administration, and digital presence to work together.",
       businessLink: "Explore business services",
     },
     capabilities: [
@@ -49,21 +46,44 @@ export const homeContent = {
     connect: {
       eyebrow: "Your responsibilities connect",
       title: "Many important business and personal decisions overlap.",
-      copy: "A business question can affect tax preparation. A new opportunity can expose an operational gap. A better recommendation may still need someone to help put the solution in place.",
+      copy: "A business question can affect tax preparation. A new opportunity can expose an operational gap. We help you see the bigger picture and move forward with confidence.",
       aria: "Alchemize process",
       stages: [
-        ["Assess", "Assess what is happening."],
-        ["Identify", "Identify what needs to improve."],
-        ["Implement", "Implement practical next steps."],
+        ["Assess", "Understand what is happening."],
+        ["Identify", "Determine what needs attention."],
+        ["Implement", "Put practical next steps into place."],
       ],
     },
     business: {
       eyebrow: "Business capabilities",
       title:
         "More than recommendations. Support for putting the work into place.",
-      copy: "Alchemize can identify the issue, organize the information, recommend the next move, and complete practical implementation when it falls within our scope. When it does not, we make the boundary clear and point to the kind of qualified professional the work requires.",
+      copy: "Alchemize brings together strategy, systems, and practical implementation so you can move forward with clarity and less guesswork.",
+      exploreAll: "Explore All Services",
       ariaPrefix: "Explore",
     },
+    capabilityGroups: [
+      [
+        "Business Foundation",
+        "Consulting · Readiness · Formation support",
+        "/services/businesses/advisory-optimization",
+      ],
+      [
+        "Operations & Administration",
+        "Processes · Bookkeeping · Payroll support",
+        "/services/businesses/operations-implementation",
+      ],
+      [
+        "Financial Organization",
+        "Business tax · Records · Compliance guidance",
+        "/services/businesses/business-tax-support",
+      ],
+      [
+        "Web & Digital Solutions",
+        "Website design · SEO · Digital presence",
+        "/web-digital",
+      ],
+    ],
     trust: {
       alt: "Jessy Santos working with business documents at a desk",
       eyebrow: "Clear guidance. Practical support.",
@@ -74,24 +94,29 @@ export const homeContent = {
     resources: {
       eyebrow: "Prepare with confidence",
       title: "Clear information for the decisions in front of you.",
+      copy: "Guides, checklists, and insights to help you take the next step with confidence.",
       button: "Explore All Resources",
-      pdfLabel: "In development",
+      readGuide: "Read the guide",
+      featuredLabel: "Featured resource",
       items: [
-        [
-          "Taxes",
-          getDownloadableResource(
-            DOWNLOADABLE_RESOURCE_IDS.individualTax,
-            "es",
-          ),
-        ],
-        [
-          "Business",
-          getDownloadableResource(DOWNLOADABLE_RESOURCE_IDS.startup, "es"),
-        ],
-        [
-          "Getting started",
-          getDownloadableResource(DOWNLOADABLE_RESOURCE_IDS.consultation, "es"),
-        ],
+        {
+          kind: "guide",
+          slug: "preparing-for-tax-season",
+          descriptor: "Prepare records before filing begins.",
+        },
+        {
+          kind: "guide",
+          slug: "starting-a-business-organization-checklist",
+          descriptor: "Plan with confidence from day one.",
+        },
+        {
+          kind: "download",
+          id: DOWNLOADABLE_RESOURCE_IDS.consultation,
+          title: "Consultation Preparation Workbook",
+          category: "Getting started",
+          type: "Workbook",
+          descriptor: "Be ready for a more productive conversation.",
+        },
       ],
     },
     final: {
@@ -100,7 +125,7 @@ export const homeContent = {
         "You do not need to identify the exact service before reaching out.",
       copy: "Tell us what you are trying to accomplish, improve, or resolve. We will help identify the appropriate next step.",
       button: "Schedule a Consultation",
-      spanish: "We speak Spanish. / Se habla español.",
+      spanish: "We speak Spanish · Virtual services available",
     },
   },
   es: {
@@ -115,9 +140,7 @@ export const homeContent = {
       titleStart: "Transformamos la complejidad en",
       titleEmphasis: "oportunidad.",
       descriptor: "Su socio empresarial con dominio digital",
-      copy: "Alchemize es un socio moderno de servicios empresariales para personas, emprendedores y pequeñas empresas. Atendemos el trabajo operativo, administrativo, financiero, documental y digital detrás del próximo paso.",
-      difference:
-        "El apoyo empresarial práctico y la resolución de problemas con mentalidad tecnológica permanecen conectados, para que el cliente no tenga que coordinar un proveedor distinto para cada responsabilidad relacionada.",
+      copy: "Apoyo empresarial práctico y soluciones con mentalidad tecnológica para personas, emprendedores y pequeñas empresas. Le ayudamos a organizarse, cumplir con sus obligaciones y avanzar con claridad y confianza.",
       primary: "Programar una consulta",
       secondary: "Explorar servicios",
       alt: "Profesional revisando materiales empresariales organizados en un escritorio",
@@ -126,15 +149,18 @@ export const homeContent = {
     paths: {
       eyebrow: "Comience con lo que necesita",
       title: "Apoyo para usted. Estructura para su empresa.",
-      individualLabel: "Para mí",
+      copy: "Orientación práctica, sistemas organizados y apoyo profesional para cada etapa, ya sea que esté gestionando responsabilidades personales o haciendo crecer una empresa.",
+      individualLabel: "Para personas",
       individualTitle: "Servicios para personas",
-      individualCopy:
-        "Las responsabilidades personales y empresariales suelen superponerse. Los impuestos, los documentos y la organización práctica pueden formar parte de una decisión empresarial o ser su primer paso.",
+      individualItems: [
+        "Preparación de impuestos",
+        "Servicios de documentos",
+        "Asesoría financiera",
+      ],
       individualLink: "Explorar servicios para personas",
-      businessLabel: "Emprendedores · Profesionales independientes · Empresas",
+      businessLabel:
+        "Para emprendedores · profesionales independientes · empresas",
       businessTitle: "Servicios para empresas",
-      businessCopy:
-        "Para propietarios que necesitan que la operación, los registros, la administración y la presencia digital funcionen de manera coordinada.",
       businessLink: "Explorar servicios para empresas",
     },
     capabilities: [
@@ -162,11 +188,11 @@ export const homeContent = {
       eyebrow: "Sus responsabilidades están conectadas",
       title:
         "Muchas decisiones empresariales y personales importantes se relacionan entre sí.",
-      copy: "Una pregunta empresarial puede afectar la preparación de impuestos. Una nueva oportunidad puede revelar una deficiencia operativa. Incluso una buena recomendación puede requerir a alguien que ayude a poner la solución en práctica.",
+      copy: "Una pregunta empresarial puede afectar la preparación de impuestos. Una nueva oportunidad puede revelar una deficiencia operativa. Le ayudamos a ver el panorama completo y avanzar con confianza.",
       aria: "Proceso de Alchemize",
       stages: [
         ["Evaluar", "Comprender lo que está ocurriendo."],
-        ["Identificar", "Determinar qué necesita mejorar."],
+        ["Identificar", "Determinar qué necesita atención."],
         ["Implementar", "Poner en práctica los próximos pasos."],
       ],
     },
@@ -174,9 +200,32 @@ export const homeContent = {
       eyebrow: "Capacidades empresariales",
       title:
         "Más que recomendaciones. Apoyo para poner el trabajo en práctica.",
-      copy: "Alchemize puede identificar el problema, organizar la información, recomendar el próximo paso y realizar la implementación práctica cuando esté dentro de nuestro alcance. Cuando no lo esté, aclaramos el límite e indicamos qué tipo de profesional calificado requiere el trabajo.",
+      copy: "Alchemize combina estrategia, sistemas e implementación práctica para que usted avance con claridad y menos incertidumbre.",
+      exploreAll: "Explorar todos los servicios",
       ariaPrefix: "Explorar",
     },
+    capabilityGroups: [
+      [
+        "Bases del negocio",
+        "Asesoría · Preparación · Apoyo de formación",
+        "/services/businesses/advisory-optimization",
+      ],
+      [
+        "Operaciones y administración",
+        "Procesos · Teneduría de libros · Nómina",
+        "/services/businesses/operations-implementation",
+      ],
+      [
+        "Organización financiera",
+        "Impuestos empresariales · Registros · Cumplimiento",
+        "/services/businesses/business-tax-support",
+      ],
+      [
+        "Web y soluciones digitales",
+        "Diseño de sitios · SEO · Presencia digital",
+        "/web-digital",
+      ],
+    ],
     trust: {
       alt: "Jessy Santos trabajando con documentos empresariales en un escritorio",
       eyebrow: "Orientación clara. Apoyo práctico.",
@@ -187,21 +236,30 @@ export const homeContent = {
     resources: {
       eyebrow: "Prepárese con confianza",
       title: "Información clara para las decisiones que tiene por delante.",
+      copy: "Guías, listas de verificación e información práctica para ayudarle a dar el próximo paso con confianza.",
       button: "Explorar todos los recursos",
-      pdfLabel: "En desarrollo",
+      readGuide: "Leer la guía",
+      featuredLabel: "Recurso destacado",
       items: [
-        [
-          "Impuestos",
-          getDownloadableResource(DOWNLOADABLE_RESOURCE_IDS.individualTax),
-        ],
-        [
-          "Empresas",
-          getDownloadableResource(DOWNLOADABLE_RESOURCE_IDS.startup),
-        ],
-        [
-          "Primeros pasos",
-          getDownloadableResource(DOWNLOADABLE_RESOURCE_IDS.consultation),
-        ],
+        {
+          kind: "guide",
+          slug: "preparing-for-tax-season",
+          descriptor:
+            "Organice sus registros antes de que comience la temporada.",
+        },
+        {
+          kind: "guide",
+          slug: "starting-a-business-organization-checklist",
+          descriptor: "Planifique con confianza desde el primer día.",
+        },
+        {
+          kind: "download",
+          id: DOWNLOADABLE_RESOURCE_IDS.consultation,
+          title: "Cuaderno de Preparación para la Consulta",
+          category: "Primeros pasos",
+          type: "Cuaderno de trabajo",
+          descriptor: "Prepárese para una conversación más productiva.",
+        },
       ],
     },
     final: {
@@ -209,7 +267,7 @@ export const homeContent = {
       title: "No necesita identificar el servicio exacto antes de comunicarse.",
       copy: "Cuéntenos qué desea lograr, mejorar o resolver. Le ayudaremos a identificar el próximo paso apropiado.",
       button: "Programar una consulta",
-      spanish: "Atención disponible en español.",
+      spanish: "Hablamos español · Servicios virtuales disponibles",
     },
   },
 };

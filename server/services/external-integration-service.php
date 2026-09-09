@@ -60,7 +60,7 @@ final class AlchemizeExternalIntegrationService
     {
         $appointment = $this->repository->appointment($appointmentId);
         if ($appointment === null) return ['status' => 'failed'];
-        if (!in_array((string) $appointment['status'], ['confirmed', 'cancelled'], true)) return ['status' => 'pending'];
+        if (!in_array((string) $appointment['status'], ['confirmed', 'cancelled'], true) && empty($appointment['google_calendar_event_id'])) return ['status' => 'pending'];
         if ($this->calendar === null || !$this->calendar->configured()) {
             $this->repository->setCalendarState($appointmentId, 'not_configured', null, 'not_configured');
             return ['status' => 'not_configured'];

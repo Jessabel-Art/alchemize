@@ -6,15 +6,65 @@ export const resourcesUi = {
         "Practical guides, checklists, and reference materials for taxes, business operations, document preparation, web and digital support, and day-to-day business administration.",
     },
     directory: {
-      eyebrow: "Understand · Prepare · Organize · Act",
-      title: "Resources by responsibility.",
-      text: "Browse practical guidance by the responsibility in front of you.",
-      filters: "Filter resources by category",
       resource: "resource",
       resources: "resources",
       read: "Read",
       updated: "Updated",
-      action: "Read resource",
+      action: "Read guide",
+      search: "Search resources",
+      searchPlaceholder: "Search guides, checklists, topics…",
+      noResults: "No resources match this search.",
+      ctaEyebrow: "Still have questions?",
+      ctaTitle: "Need more than a guide?",
+      ctaText:
+        "Some business questions need individual attention. Discuss your situation with Alchemize and determine the next best step.",
+      ctaPrimary: "Schedule a consultation",
+      ctaSecondary: "Explore services",
+      ctaSupport: "Practical support for a more organized, confident business.",
+    },
+    browse: {
+      eyebrow: "Find what you need",
+      title: "Browse by responsibility.",
+      text: "Explore resources organized by the areas that matter most to you.",
+      viewAll: "View all resources",
+      categories: {
+        Taxes: "Guides and checklists for tax preparation and filing.",
+        "Web & Digital Solutions":
+          "Practical guidance for your online presence.",
+        "Starting a Business":
+          "From idea to structure, get organized from the start.",
+        "Business Operations":
+          "Processes, systems, and tools to keep things running smoothly.",
+        "Records & Administration":
+          "Organize and protect the information that matters.",
+        "Guides & Checklists":
+          "Ready-to-use templates and step-by-step resources.",
+      },
+    },
+    journey: {
+      eyebrow: "Not sure where to start?",
+      title: "Follow the journey.",
+      text: "Resources for every stage of your business.",
+      steps: [
+        ["Understand", "Learn the basics and see the big picture."],
+        ["Prepare", "Gather what you need and get organized."],
+        ["Organize", "Put systems in place and take control."],
+        ["Act", "Move forward with confidence."],
+      ],
+    },
+    library: {
+      eyebrow: "Explore the library",
+      title: "All resources.",
+      text: "Search, filter, and find practical guidance for your next step.",
+      allTypes: "All types",
+      allResponsibilities: "All responsibilities",
+      sortLabel: "Sort",
+      sortRecent: "Most recent",
+      sortTitle: "Title (A–Z)",
+      view: "View",
+      grid: "Grid",
+      list: "List",
+      loadMore: "Load more resources",
     },
     article: {
       back: "Back to Resources",
@@ -46,15 +96,67 @@ export const resourcesUi = {
         "Guías prácticas, listas de verificación y materiales de referencia sobre impuestos, operaciones empresariales, preparación documental, apoyo web y digital, y administración diaria.",
     },
     directory: {
-      eyebrow: "Comprender · Preparar · Organizar · Actuar",
-      title: "Recursos por responsabilidad.",
-      text: "Explore orientación práctica según la responsabilidad que tiene por delante.",
-      filters: "Filtrar recursos por categoría",
       resource: "recurso",
       resources: "recursos",
       read: "Leer",
       updated: "Actualizado",
-      action: "Leer el recurso",
+      action: "Leer la guía",
+      search: "Buscar recursos",
+      searchPlaceholder: "Buscar guías, listas, temas…",
+      noResults: "Ningún recurso coincide con esta búsqueda.",
+      ctaEyebrow: "¿Aún tiene preguntas?",
+      ctaTitle: "¿Necesita más que una guía?",
+      ctaText:
+        "Algunas preguntas de negocio requieren atención individual. Hable sobre su situación con Alchemize y determine el próximo paso.",
+      ctaPrimary: "Programar una consulta",
+      ctaSecondary: "Explorar servicios",
+      ctaSupport:
+        "Apoyo práctico para un negocio más organizado y seguro de sí mismo.",
+    },
+    browse: {
+      eyebrow: "Encuentre lo que necesita",
+      title: "Explore por responsabilidad.",
+      text: "Explore recursos organizados según las áreas que más le importan.",
+      viewAll: "Ver todos los recursos",
+      categories: {
+        Taxes:
+          "Guías y listas para la preparación y presentación de impuestos.",
+        "Web & Digital Solutions":
+          "Orientación práctica para su presencia en línea.",
+        "Starting a Business":
+          "De la idea a la estructura: organícese desde el principio.",
+        "Business Operations":
+          "Procesos, sistemas y herramientas para un funcionamiento fluido.",
+        "Records & Administration":
+          "Organice y proteja la información que importa.",
+        "Guides & Checklists":
+          "Plantillas listas para usar y recursos paso a paso.",
+      },
+    },
+    journey: {
+      eyebrow: "¿No sabe por dónde empezar?",
+      title: "Siga el recorrido.",
+      text: "Recursos para cada etapa de su negocio.",
+      steps: [
+        ["Comprender", "Aprenda lo básico y vea el panorama general."],
+        ["Preparar", "Reúna lo que necesita y organícese."],
+        ["Organizar", "Ponga sistemas en marcha y tome el control."],
+        ["Actuar", "Avance con confianza."],
+      ],
+    },
+    library: {
+      eyebrow: "Explore la biblioteca",
+      title: "Todos los recursos.",
+      text: "Busque, filtre y encuentre orientación práctica para su próximo paso.",
+      allTypes: "Todos los tipos",
+      allResponsibilities: "Todas las responsabilidades",
+      sortLabel: "Ordenar",
+      sortRecent: "Más reciente",
+      sortTitle: "Título (A–Z)",
+      view: "Vista",
+      grid: "Cuadrícula",
+      list: "Lista",
+      loadMore: "Cargar más recursos",
     },
     article: {
       back: "Volver a Recursos",
@@ -95,6 +197,10 @@ export const featuredContent = {
         label: "Featured guide · Taxes",
         summary:
           "A practical framework for organizing tax records before filing begins, identifying missing information, and reducing the last-minute search for documents.",
+        heroImage: {
+          src: "/assets/images/resources/featured-tax-organizer-hero.png",
+          alt: "A tax preparation checklist, folders, and a pen arranged on a desk with a small plant",
+        },
         panelLabel: "A calmer preparation sequence",
         panelItems: [
           [
@@ -175,6 +281,10 @@ export const featuredContent = {
         label: "Guía destacada · Impuestos",
         summary:
           "Un marco práctico para organizar registros tributarios, identificar información faltante y reducir la búsqueda de documentos a última hora.",
+        heroImage: {
+          src: "/assets/images/resources/featured-tax-organizer-hero.png",
+          alt: "Una lista de preparación de impuestos, carpetas y un bolígrafo sobre un escritorio con una planta pequeña",
+        },
         panelLabel: "Una preparación más tranquila",
         panelItems: [
           [

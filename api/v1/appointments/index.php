@@ -128,6 +128,7 @@ try {
             throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Appointment type and scheduled time are required.');
         }
 
+        $payload = array_replace($payload, $scheduler->normalizeAdminMutation($payload));
         $repository->acquireBookingLock();
         $duration = max(15, (int) ($payload['duration_minutes'] ?? 60));
         $timezone = trim((string) ($payload['timezone'] ?? 'America/New_York')) ?: 'America/New_York';
@@ -168,8 +169,15 @@ try {
         if ($appointment['meeting_method'] === 'microsoft_teams' && $appointment['meeting_url'] === null) {
             throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'A Microsoft Teams meeting URL is required.');
         }
-        $id = $repository->create($appointment);
-        $repository->recordAppointmentEvents($id, $appointment, 'appointment.admin_created', 'Appointment created by an administrator.');
+        $database->beginTransaction();
+        try {
+            $id = $repository->create($appointment);
+            $repository->recordAppointmentEvents($id, $appointment, 'appointment.admin_created', 'Appointment created by an administrator.');
+            $database->commit();
+        } catch (Throwable $error) {
+            if ($database->inTransaction()) $database->rollBack();
+            throw $error;
+        }
 
         $sync = $integrations->synchronizeAppointment($id);
         $notificationEmail = trim((string) ($payload['notification_email'] ?? $payload['recipient_email'] ?? ''));
@@ -188,7 +196,7 @@ try {
             $emailResult = ['status' => 'unavailable', 'provider' => 'resend', 'provider_id' => null, 'error' => 'email_disabled_or_missing', 'attempted' => false];
         }
         $delivery = $emailResult['status'] ?? 'unavailable';
-        alchemize_json_response(['data' => ['id' => $id, 'appointment_type' => $appointmentType, 'appointment_created' => true, 'calendar_sync' => $sync['status'], 'email_delivery' => $delivery, 'email_attempted' => !empty($emailResult['attempted']), 'email_delivered_to_provider' => ($delivery === 'sent'), 'email_provider' => $emailResult['provider'] ?? 'resend', 'email_provider_id' => $emailResult['provider_id'] ?? null, 'email_error' => $emailResult['error'] ?? null]], 201);
+        alchemize_json_response(['data' => ['id' => $id, 'appointment' => $repository->findById($id), 'appointment_type' => $appointmentType, 'appointment_created' => true, 'calendar_sync' => $sync['status'], 'email_delivery' => $delivery, 'email_attempted' => !empty($emailResult['attempted']), 'email_delivered_to_provider' => ($delivery === 'sent'), 'email_provider' => $emailResult['provider'] ?? 'resend', 'email_provider_id' => $emailResult['provider_id'] ?? null, 'email_error' => $emailResult['error'] ?? null]], 201);
     }
 
     if (count($parts) === 1 && ctype_digit((string)$parts[0]) && $method === 'GET') {
@@ -199,18 +207,22 @@ try {
     if (count($parts) === 1 && ctype_digit((string)$parts[0]) && $method === 'PUT') {
         alchemize_require_staff_or_admin(); alchemize_require_csrf(); $repository->acquireBookingLock(); $id=(int)$parts[0];
         if($repository->findById($id)===null)throw new AlchemizeRequestException(404,'NOT_FOUND','Appointment was not found.');
-        $payload=alchemize_read_json_request('PUT');$values=[];
-        foreach(['appointment_type','scheduled_at','end_at','timezone','location_type','client_instructions','internal_notes'] as $field)if(array_key_exists($field,$payload))$values[$field]=trim((string)$payload[$field])?:null;
-        foreach(['client_id','lead_id','engagement_id','service_id','owner_user_id','preparation_required','follow_up_required'] as $field)if(array_key_exists($field,$payload))$values[$field]=$payload[$field]===''?null:$payload[$field];
-        if(isset($payload['status'])&&in_array($payload['status'],['requested','scheduled','confirmed','completed','cancelled'],true))$values['status']=$payload['status'];
-        if(isset($payload['visibility'])&&in_array($payload['visibility'],['admin','client','both'],true))$values['visibility']=$payload['visibility'];
-        if (array_key_exists('meeting_method', $payload) && trim((string) $payload['meeting_method']) !== '') { $values['meeting_method'] = trim((string) $payload['meeting_method']); }
-        if (array_key_exists('meeting_url', $payload)) { $values['meeting_url'] = trim((string) $payload['meeting_url']) !== '' ? trim((string) $payload['meeting_url']) : null; }
-        if (array_key_exists('location', $payload)) { $values['location'] = trim((string) $payload['location']) !== '' ? trim((string) $payload['location']) : null; }
-        if (array_key_exists('duration_minutes', $payload)) { $values['duration_minutes'] = max(15, (int) $payload['duration_minutes']); }
+        $existing = $repository->findById($id);
+        $payload = alchemize_read_json_request('PUT');
+        $values = $scheduler->normalizeAdminMutation($payload, $existing);
         $candidate=array_replace($repository->findById($id),$values);
         if($candidate['status']!=='cancelled' && $repository->appointmentConflicts((string)$candidate['scheduled_at'],(string)($candidate['end_at'] ?: (new DateTimeImmutable($candidate['scheduled_at']))->modify('+'.(int)$candidate['duration_minutes'].' minutes')->format('Y-m-d H:i:s')),$id)!==[]) throw new AlchemizeRequestException(409,'SLOT_UNAVAILABLE','That time conflicts with an existing appointment.');
-        $repository->update($id,$values);$sync=$integrations->synchronizeAppointment($id);$row=$repository->findById($id);
+        $database->beginTransaction();
+        try {
+            $repository->update($id, $values);
+            $event = ($values['status'] ?? '') === 'cancelled' ? 'appointment.cancelled' : (array_key_exists('follow_up_required', $values) && !$values['follow_up_required'] && !empty($existing['follow_up_required']) ? 'appointment.follow_up_completed' : 'appointment.updated');
+            $repository->recordAppointmentEvents($id, $candidate, $event, str_replace(['appointment.', '_'], ['', ' '], $event));
+            $database->commit();
+        } catch (Throwable $error) {
+            if ($database->inTransaction()) $database->rollBack();
+            throw $error;
+        }
+        $sync=$integrations->synchronizeAppointment($id);$row=$repository->findById($id);
         if (!empty($row['client_id'])) $notifications->notifyClient((int)$row['client_id'], 'admin.appointment.updated', 'appointment', (string)$id, 'Appointment updated', 'An appointment in your client portal was updated.', 'appointment-updated:' . $id . ':' . (string)($row['updated_at'] ?? microtime(true)));
         $row['calendar_sync_status']=$sync['status'];alchemize_json_response(['data'=>$row],200);
     }

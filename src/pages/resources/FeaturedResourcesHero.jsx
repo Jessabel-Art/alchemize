@@ -68,7 +68,9 @@ export default function FeaturedResourcesHero() {
         {content.label} {activeIndex + 1} {language === "es" ? "de" : "of"}{" "}
         {slides.length}: {active.resource.title}
       </p>
-      <div className="resource-showcase-grid">
+      <div
+        className={`resource-showcase-grid${active.heroImage ? " has-image" : ""}`}
+      >
         <div className="resource-showcase-main">
           <div className="resource-showcase-copy" key={`copy-${active.slug}`}>
             <span className="resource-showcase-label">{active.label}</span>
@@ -119,6 +121,16 @@ export default function FeaturedResourcesHero() {
             </button>
           </div>
         </div>
+        {active.heroImage ? (
+          <div className="resource-showcase-image" key={`image-${active.slug}`}>
+            <img
+              src={active.heroImage.src}
+              alt={active.heroImage.alt}
+              loading="eager"
+              decoding="async"
+            />
+          </div>
+        ) : null}
         <aside className="resource-showcase-panel" key={`panel-${active.slug}`}>
           <span>{active.panelLabel}</span>
           <div>

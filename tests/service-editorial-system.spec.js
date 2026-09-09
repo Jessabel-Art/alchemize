@@ -112,10 +112,12 @@ test("merged web & digital content is visible beyond a website-only landing page
     }),
   ).toBeVisible();
   await expect(
-    page.getByText(/SEO|Local SEO|Google Business Profile|automation/i),
+    page.getByText(/SEO|Local SEO|Google Business Profile|automation/i).first(),
   ).toBeVisible();
   await expect(
-    page.getByText(/website maintenance|ongoing support|workflow automation/i),
+    page
+      .getByText(/website maintenance|ongoing support|workflow automation/i)
+      .first(),
   ).toBeVisible();
   await expect(
     page.getByRole("link", { name: "Request a Project Proposal" }),

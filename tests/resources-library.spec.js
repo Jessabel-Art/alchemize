@@ -95,24 +95,45 @@ test("downloadable resources provide locale-specific English and Spanish PDF tar
   }
 });
 
-test("resource library filters the current collection accessibly", async ({
+test("browse by responsibility renders real category counts and filters the library", async ({
   page,
 }) => {
   await page.goto("/resources", { waitUntil: "networkidle" });
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
     "Individual Tax Preparation Organizer",
   );
-  await expect(page.locator(".resource-row")).toHaveCount(15);
+  await expect(
+    page.getByRole("heading", { name: "Browse by responsibility." }),
+  ).toBeVisible();
 
-  const digitalFilter = page.getByRole("button", {
-    name: "Web & Digital Solutions",
-  });
-  await digitalFilter.click();
-  await expect(digitalFilter).toHaveAttribute("aria-pressed", "true");
-  await expect(page.locator(".resource-row")).toHaveCount(5);
+  const cards = page.locator(".resource-category-card");
+  await expect(cards).toHaveCount(6);
+  const digitalCard = cards.filter({ hasText: "Web & Digital Solutions" });
+  await expect(digitalCard.locator("small")).toHaveText("5 resources");
+
+  await digitalCard.click();
   await expect(page.locator(".resource-result-count")).toContainText(
     "5 resources",
   );
+  await expect(
+    page.locator(".resource-toolbar .resource-select select").nth(1),
+  ).toHaveValue("Web & Digital Solutions");
+  // Selecting a responsibility card scrolls the library into view rather
+  // than duplicating resource content underneath the card itself.
+  await expect(page.locator("#all-resources")).toBeInViewport();
+});
+
+test("follow the journey renders the four editorial stages", async ({
+  page,
+}) => {
+  await page.goto("/resources", { waitUntil: "domcontentloaded" });
+  await expect(
+    page.getByRole("heading", { name: "Follow the journey." }),
+  ).toBeVisible();
+  const steps = page.locator(".resource-journey-steps li");
+  await expect(steps).toHaveCount(4);
+  await expect(steps.nth(0)).toContainText("Understand");
+  await expect(steps.nth(3)).toContainText("Act");
 });
 
 test("featured resources replace retired coverage content", async ({
@@ -267,4 +288,189 @@ test("library and digital article layouts avoid horizontal overflow", async ({
       expect(hasOverflow).toBeFalsy();
     }
   }
+});
+
+test("featured hero renders the supplied editorial image for the default resource", async ({
+  page,
+}) => {
+  await page.goto("/resources", { waitUntil: "domcontentloaded" });
+  const heroImage = page.locator(".resource-showcase-image img");
+  await expect(heroImage).toBeVisible();
+  await expect(heroImage).toHaveAttribute(
+    "src",
+    "/assets/images/resources/featured-tax-organizer-hero.png",
+  );
+  // Slides without a supplied hero photo fall back to the original
+  // two-column composition rather than reusing an unrelated image.
+  await page.getByRole("button", { name: /^Next:/i }).click();
+  await expect(page.locator(".resource-showcase-image")).toHaveCount(0);
+});
+
+test("the four supplied resource images render on their matching cards", async ({
+  page,
+}) => {
+  await page.goto("/resources", { waitUntil: "domcontentloaded" });
+  const search = page.getByPlaceholder("Search guides, checklists, topics…");
+  const expected = [
+    [
+      "tax preparation organizer",
+      "/assets/images/resources/tax-resource-organizer.png",
+      "/resources/preparing-for-tax-season",
+    ],
+    [
+      "professional website design process",
+      "/assets/images/resources/web-design-resource.png",
+      "/resources/professional-website-design-process",
+    ],
+    [
+      "digital presence audit",
+      "/assets/images/resources/digital-presence-audit-resource.png",
+      "/resources/digital-presence-audit",
+    ],
+    [
+      "SEO and website metadata",
+      "/assets/images/resources/seo-metadata-resource.png",
+      "/resources/seo-and-website-metadata",
+    ],
+  ];
+  for (const [term, src, href] of expected) {
+    await search.fill(term);
+    const card = page.locator(".resource-card").first();
+    await expect(page.locator(".resource-card")).toHaveCount(1);
+    await expect(card).toHaveAttribute("href", href);
+    await expect(card.locator(".resource-card-media img")).toHaveAttribute(
+      "src",
+      src,
+    );
+  }
+
+  // A resource without a supplied image still renders a consistent
+  // thumbnail-shaped visual — a designed icon fallback, not an invented
+  // or reused photo.
+  await search.fill("estimated tax");
+  const fallbackCard = page.locator(".resource-card").first();
+  await expect(fallbackCard.locator(".resource-card-media img")).toHaveCount(0);
+  await expect(fallbackCard.locator(".resource-card-icon")).toHaveCount(1);
+});
+
+test("type filter, sort, and grid/list controls operate on the full dataset", async ({
+  page,
+}) => {
+  await page.goto("/resources", { waitUntil: "domcontentloaded" });
+
+  // Type filter uses the resource's own `type` field.
+  await page
+    .locator(".resource-select select")
+    .first()
+    .selectOption("Assessment guide");
+  await expect(page.locator(".resource-result-count")).toContainText(
+    "1 resource",
+  );
+  await expect(page.locator(".resource-card h3")).toHaveText(
+    "What a Digital Presence Audit Can Reveal About Your Business",
+  );
+  await page.locator(".resource-select select").first().selectOption("All");
+
+  // Sort reorders the same underlying data.
+  await page
+    .locator(".resource-toolbar .resource-select select")
+    .nth(2)
+    .selectOption("title");
+  const firstTitleSorted = await page
+    .locator(".resource-card h3")
+    .first()
+    .textContent();
+  await page
+    .locator(".resource-toolbar .resource-select select")
+    .nth(2)
+    .selectOption("recent");
+  const firstRecentSorted = await page
+    .locator(".resource-card h3")
+    .first()
+    .textContent();
+  expect(firstTitleSorted).not.toEqual(firstRecentSorted);
+
+  // Grid/list toggles presentation only.
+  await expect(page.locator(".resource-card-grid")).toBeVisible();
+  await page.getByRole("button", { name: "List", exact: true }).click();
+  await expect(page.locator(".resource-rows")).toBeVisible();
+  await expect(page.locator(".resource-card-grid")).toHaveCount(0);
+  await expect(page.locator(".resource-row").first()).toBeVisible();
+  await page.getByRole("button", { name: "Grid", exact: true }).click();
+  await expect(page.locator(".resource-card-grid")).toBeVisible();
+});
+
+test("client-side search filters resources across categories using existing data", async ({
+  page,
+}) => {
+  await page.goto("/resources", { waitUntil: "domcontentloaded" });
+  const search = page.getByPlaceholder("Search guides, checklists, topics…");
+  await search.fill("estimated tax");
+  await expect(page.locator(".resource-result-count")).toContainText(
+    "1 resource",
+  );
+  await expect(page.locator(".resource-card")).toHaveCount(1);
+  await expect(page.locator(".resource-card h3")).toHaveText(
+    "Estimated Taxes: Questions to Ask Before You Ignore Them",
+  );
+
+  await search.fill("no matching resource text at all");
+  await expect(page.locator(".resource-no-results")).toBeVisible();
+  await expect(page.locator(".resource-card")).toHaveCount(0);
+});
+
+test("load more reveals additional resources from the full filtered dataset", async ({
+  page,
+}) => {
+  await page.goto("/resources", { waitUntil: "domcontentloaded" });
+  await expect(page.locator(".resource-result-count")).toContainText(
+    "15 resources",
+  );
+  await expect(page.locator(".resource-card")).toHaveCount(6);
+  const loadMore = page.getByRole("button", { name: "Load more resources" });
+  await expect(loadMore).toBeVisible();
+  await loadMore.click();
+  await expect(page.locator(".resource-card")).toHaveCount(12);
+  await loadMore.click();
+  await expect(page.locator(".resource-card")).toHaveCount(15);
+  await expect(loadMore).toHaveCount(0);
+});
+
+test("resource cards link to their correct existing routes", async ({
+  page,
+}) => {
+  await page.goto("/resources", { waitUntil: "domcontentloaded" });
+  const search = page.getByPlaceholder("Search guides, checklists, topics…");
+  await search.fill("building a business deadline calendar");
+  await expect(
+    page.getByRole("link", {
+      name: /Building a Business Deadline Calendar/,
+    }),
+  ).toHaveAttribute("href", "/resources/building-a-business-deadline-calendar");
+});
+
+test("print checklist utility from the hero remains functional", async ({
+  page,
+}) => {
+  await page.goto("/resources", { waitUntil: "domcontentloaded" });
+  await expect(
+    page.getByRole("link", { name: "Print checklist" }),
+  ).toHaveAttribute("href", "/resources/preparing-for-tax-season?print=1");
+});
+
+test("the bottom CTA uses valid existing consultation and services routes", async ({
+  page,
+}) => {
+  await page.goto("/resources", { waitUntil: "domcontentloaded" });
+  const cta = page.locator(".resource-cta");
+  await expect(cta.locator("img")).toHaveAttribute(
+    "src",
+    "/assets/images/resources/resources-botanical-cta.png",
+  );
+  await expect(
+    cta.getByRole("link", { name: "Schedule a consultation" }),
+  ).toHaveAttribute("href", "/contact");
+  await expect(
+    cta.getByRole("link", { name: "Explore services" }),
+  ).toHaveAttribute("href", "/services");
 });

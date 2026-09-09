@@ -9,6 +9,45 @@ final class AlchemizeAppointmentSchedulingService
         private readonly string $defaultTimezone = 'America/New_York',
     ) {}
 
+    public function normalizeAdminMutation(array $payload, array $existing = []): array
+    {
+        $values = array_intersect_key($payload, array_flip([
+            'appointment_type', 'scheduled_at', 'timezone', 'location_type', 'client_instructions', 'internal_notes',
+            'client_id', 'lead_id', 'engagement_id', 'service_id', 'owner_user_id', 'preparation_required', 'follow_up_required',
+            'status', 'visibility', 'meeting_method', 'meeting_url', 'location', 'duration_minutes',
+        ]));
+        if (isset($values['status']) && !in_array($values['status'], ['requested', 'scheduled', 'confirmed', 'completed', 'cancelled'], true)) {
+            throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Appointment status is invalid.');
+        }
+        foreach (['preparation_required', 'follow_up_required'] as $field) {
+            if (array_key_exists($field, $values)) $values[$field] = !empty($values[$field]) ? 1 : 0;
+        }
+        $candidate = array_replace($existing, $values);
+        if ($existing === [] || array_key_exists('scheduled_at', $values) || array_key_exists('duration_minutes', $values) || array_key_exists('timezone', $values)) {
+            $zone = (string) ($candidate['timezone'] ?? $this->defaultTimezone);
+            try { $timezone = new DateTimeZone($zone); } catch (Throwable $error) {
+                throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Appointment timezone is invalid.');
+            }
+            $rawStart = (string) ($candidate['scheduled_at'] ?? '');
+            $start = DateTimeImmutable::createFromFormat('!Y-m-d H:i:s', substr($rawStart, 0, 19), $timezone);
+            if (!$start || $start->format('Y-m-d H:i:s') !== substr($rawStart, 0, 19)) {
+                throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Appointment start time is invalid.');
+            }
+            $duration = (int) ($candidate['duration_minutes'] ?? 60);
+            if ($duration < 15 || $duration > 1440) throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Duration must be between 15 and 1440 minutes.');
+            $values['end_at'] = $start->modify('+' . $duration . ' minutes')->format('Y-m-d H:i:s');
+            $values['duration_minutes'] = $duration;
+            $values['timezone'] = $zone;
+        }
+        if (($values['status'] ?? '') === 'cancelled' && ($existing['status'] ?? '') !== 'cancelled') {
+            $values['cancelled_at'] = date('Y-m-d H:i:s');
+            $reason = trim((string) ($payload['cancellation_reason'] ?? ''));
+            if ($reason !== '') $values['internal_notes'] = trim((string) ($existing['internal_notes'] ?? '') . "\nCancellation: " . $reason);
+        }
+        if (($values['status'] ?? '') === 'completed' && ($existing['status'] ?? '') !== 'completed') $values['completed_at'] = date('Y-m-d H:i:s');
+        return $values;
+    }
+
     public function publicContext(array $link): array
     {
         return [
