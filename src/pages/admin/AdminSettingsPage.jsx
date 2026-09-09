@@ -1264,6 +1264,7 @@ export default function AdminSettingsPage() {
                           <button
                             type="button"
                             className="primary-button"
+                            key="begin-account-edit"
                             onClick={beginAccountEdit}
                           >
                             Edit account profile
@@ -1312,6 +1313,7 @@ export default function AdminSettingsPage() {
                           <button
                             className="primary-button"
                             type="submit"
+                            key="save-account-profile"
                             disabled={accountState.saving}
                           >
                             {accountState.saving

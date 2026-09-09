@@ -46,6 +46,13 @@ test("Business persistence contract, navigation, validation and responsive shell
     page.getByLabel("Business name", { exact: true }).last(),
   ).toHaveValue("Existing business");
   await page
+    .getByRole("button", { name: "Cancel", exact: true })
+    .last()
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Edit business identity", exact: true }),
+  ).toBeVisible();
+  await page
     .getByRole("navigation", { name: "Settings sections" })
     .getByRole("button", { name: "Data Maintenance", exact: true })
     .click();
@@ -86,6 +93,9 @@ test("Business persistence contract, navigation, validation and responsive shell
     page.getByRole("button", { name: /Save team access/i }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Business", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Edit business identity", exact: true }),
+  ).toBeVisible();
   await page.getByRole("button", { name: /Edit business identity/i }).click();
   await page.getByLabel(/Business notification email/i).fill("bad-email");
   await page
@@ -93,6 +103,12 @@ test("Business persistence contract, navigation, validation and responsive shell
     .click();
   expect(writes).toBe(0);
   await page.getByRole("button", { name: "Cancel" }).last().click();
+  await expect(
+    page.getByRole("button", { name: "Edit business identity", exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Edit business identity", exact: true })
+    .click();
   await page
     .getByLabel(/Business notification email/i)
     .fill("new-ops@example.com");
@@ -104,9 +120,12 @@ test("Business persistence contract, navigation, validation and responsive shell
   expect(saved.business_email).toBe("new-ops@example.com");
   expect(saved.portal_message_email_notifications).toBe(true);
   await page.reload();
-  await expect(page.getByLabel(/Business notification email/i)).toHaveValue(
-    "new-ops@example.com",
-  );
+  await expect(
+    page.getByRole("button", { name: "Edit business identity", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("new-ops@example.com", { exact: true }),
+  ).toBeVisible();
   for (const width of [1440, 768, 390]) {
     await page.setViewportSize({ width, height: 900 });
     expect(
@@ -228,19 +247,45 @@ test("Account & Security loads personal details and supports self-service passwo
     page.getByText("MFA is not configured for this workspace yet."),
   ).toBeVisible();
 
+  const profileWrites = [];
+  page.on("request", (request) => {
+    if (
+      new URL(request.url()).searchParams.get("route") === "auth/account" &&
+      request.method() === "PUT"
+    )
+      profileWrites.push(request);
+  });
   await page.getByRole("button", { name: /Edit account profile/i }).click();
-  const accountForm = page
-    .locator("form")
-    .filter({ has: page.getByLabel("Display name", { exact: true }) });
+  await expect(page.getByLabel("Display name", { exact: true })).toBeEditable();
+  expect(profileWrites).toHaveLength(0);
+  await expect(page.getByLabel("Login email", { exact: true })).toBeEditable();
   await expect(
-    accountForm.getByRole("button", { name: /save account profile/i }),
+    page.getByRole("button", { name: "Save account profile", exact: true }),
   ).toBeVisible();
-  await accountForm
-    .getByLabel("Display name", { exact: true })
-    .fill("Alex R. Rivera");
-  await accountForm
-    .getByRole("button", { name: /save account profile/i })
+  await page.getByLabel("Display name", { exact: true }).fill("Alex R. Rivera");
+  const profileRequest = page.waitForRequest(
+    (request) =>
+      new URL(request.url()).searchParams.get("route") === "auth/account" &&
+      request.method() === "PUT",
+  );
+  await page
+    .getByRole("button", { name: "Save account profile", exact: true })
     .click();
+  const request = await profileRequest;
+  expect(new URL(request.url()).pathname).toBe("/alchemize-api.php");
+  expect(new URL(request.url()).origin).toBe(new URL(page.url()).origin);
+  expect(request.headers()["content-type"]).toBe("application/json");
+  expect(request.headers()["x-csrf-token"]).toBe("test-token");
+  expect(request.postDataJSON()).toEqual({
+    display_name: "Alex R. Rivera",
+    email: "alex@alchemize.co",
+  });
+  await expect(
+    page.getByRole("button", { name: "Edit account profile", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByLabel("Display name", { exact: true }),
+  ).toHaveAttribute("readonly", "");
   await expect(page.getByText("Account profile saved.")).toBeVisible();
 
   await page.getByLabel("Current password").fill("old-password");
