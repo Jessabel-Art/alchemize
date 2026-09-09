@@ -1,5 +1,23 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import {
+  UserPlus,
+  AlertTriangle,
+  Users,
+  Receipt,
+  CalendarClock,
+  CalendarPlus,
+  MessageSquareText,
+  FileText,
+  Briefcase,
+  Activity,
+  Inbox,
+  Settings,
+  Send,
+  ArrowRight,
+  ClipboardList,
+  CheckCircle2,
+} from "lucide-react";
 import { adminStore } from "../../../js/data/admin-store.js";
 import { portalAdmin } from "../../services/admin-api.js";
 import {
@@ -21,6 +39,21 @@ const activityTone = {
   task_completed: "success",
   document_received: "success",
   service_status_changed: "status",
+};
+
+const activityIcon = {
+  lead_status_changed: UserPlus,
+  lead_created: UserPlus,
+  lead_converted: Users,
+  task_created: ClipboardList,
+  task_completed: CheckCircle2,
+  document_requested: FileText,
+  document_received: FileText,
+  invoice_status_changed: Receipt,
+  invoice_created: Receipt,
+  appointment_scheduled: CalendarClock,
+  consultation_scheduled: CalendarClock,
+  service_status_changed: Briefcase,
 };
 
 const formatCurrency = (value) =>
@@ -53,6 +86,13 @@ const isWithinDays = (value, limitDays) => {
   return diffMs >= 0 && diffMs <= limitDays * 24 * 60 * 60 * 1000;
 };
 
+const isWithinPastDays = (value, limitDays) => {
+  const date = safeDate(value);
+  if (!date) return false;
+  const diffMs = Date.now() - date.getTime();
+  return diffMs >= 0 && diffMs <= limitDays * 24 * 60 * 60 * 1000;
+};
+
 const getClientName = (snapshot, clientId) =>
   snapshot.clients.find((client) => client.id === clientId)?.displayName ||
   "Client";
@@ -69,6 +109,66 @@ const getLeadStatusPriority = (status) => {
   };
   return order[status] ?? 99;
 };
+
+// Compact donut built from stroke-dasharray segments on a circle whose
+// circumference is normalized to 100, so each segment's length is just its
+// percentage share of the total.
+function InvoiceDonut({ segments }) {
+  const total = segments.reduce((sum, segment) => sum + segment.total, 0);
+  if (!total) {
+    return (
+      <svg
+        viewBox="0 0 42 42"
+        className="invoice-donut"
+        role="img"
+        aria-label="No invoice balance to visualize yet"
+      >
+        <circle
+          cx="21"
+          cy="21"
+          r="15.915"
+          fill="none"
+          stroke="var(--admin-line, #e3e3e3)"
+          strokeWidth="4"
+        />
+      </svg>
+    );
+  }
+  let cumulative = 0;
+  return (
+    <svg
+      viewBox="0 0 42 42"
+      className="invoice-donut"
+      role="img"
+      aria-label={segments
+        .filter((segment) => segment.total > 0)
+        .map((segment) => `${segment.label} ${formatCurrency(segment.total)}`)
+        .join(", ")}
+    >
+      {segments
+        .filter((segment) => segment.total > 0)
+        .map((segment) => {
+          const pct = (segment.total / total) * 100;
+          const circle = (
+            <circle
+              key={segment.key}
+              cx="21"
+              cy="21"
+              r="15.915"
+              fill="none"
+              className={`invoice-donut-segment accent-${segment.tone}`}
+              strokeWidth="4"
+              strokeDasharray={`${pct} ${100 - pct}`}
+              strokeDashoffset={-cumulative}
+              transform="rotate(-90 21 21)"
+            />
+          );
+          cumulative += pct;
+          return circle;
+        })}
+    </svg>
+  );
+}
 
 function AdminDashboardPage() {
   const snapshot = adminStore.getSnapshot();
@@ -138,9 +238,20 @@ function AdminDashboardPage() {
     }
   };
 
+  const today = new Date();
+  const formattedToday = today.toLocaleDateString(undefined, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+
   const openLeadCount = snapshot.leads.filter(
     (lead) =>
       !["Converted", "Closed / Not Moving Forward"].includes(lead.status),
+  ).length;
+  const newLeadsThisWeek = snapshot.leads.filter((lead) =>
+    isWithinPastDays(lead.receivedAt, 7),
   ).length;
 
   const attentionItems = [
@@ -224,6 +335,19 @@ function AdminDashboardPage() {
     })
     .slice(0, 8);
 
+  const attentionBreakdown = attentionItems.reduce((totals, item) => {
+    const key = item.type;
+    totals[key] = (totals[key] || 0) + 1;
+    return totals;
+  }, {});
+  const attentionAccentByType = {
+    "Lead follow-up": "info",
+    "Task due": "pending",
+    "Document review": "attention",
+    Invoice: "danger",
+    "Client follow-up": "archived",
+  };
+
   const needsAttentionCount =
     new Set([
       ...needs.leads.map((lead) => `lead:${lead.id}`),
@@ -244,6 +368,54 @@ function AdminDashboardPage() {
       !["Paid", "Cancelled", "Void", "Closed"].includes(invoice.status),
   );
   const totalOutstanding = getOpenInvoiceBalance(openInvoiceRows);
+  const pastDueInvoiceRows = snapshot.invoices.filter(
+    (invoice) => invoice.status === "Past Due",
+  );
+  const partiallyPaidInvoiceRows = snapshot.invoices.filter(
+    (invoice) => invoice.status === "Partially Paid",
+  );
+  const paidInvoiceRows = snapshot.invoices.filter(
+    (invoice) => invoice.status === "Paid",
+  );
+  const openOnlyRows = openInvoiceRows.filter(
+    (invoice) =>
+      invoice.status !== "Past Due" && invoice.status !== "Partially Paid",
+  );
+  const sumRemaining = (rows) =>
+    rows.reduce((sum, invoice) => sum + getInvoiceRemainingBalance(invoice), 0);
+  const invoiceBuckets = [
+    {
+      key: "open",
+      label: "Open",
+      tone: "info",
+      count: openOnlyRows.length,
+      total: sumRemaining(openOnlyRows),
+    },
+    {
+      key: "overdue",
+      label: "Overdue",
+      tone: "danger",
+      count: pastDueInvoiceRows.length,
+      total: sumRemaining(pastDueInvoiceRows),
+    },
+    {
+      key: "paid",
+      label: "Paid",
+      tone: "positive",
+      count: paidInvoiceRows.length,
+      total: paidInvoiceRows.reduce(
+        (sum, invoice) => sum + Number(invoice.amount ?? invoice.subtotal ?? 0),
+        0,
+      ),
+    },
+    {
+      key: "partiallyPaid",
+      label: "Partially paid",
+      tone: "pending",
+      count: partiallyPaidInvoiceRows.length,
+      total: sumRemaining(partiallyPaidInvoiceRows),
+    },
+  ];
 
   const upcomingAppointments = snapshot.appointments
     .filter(
@@ -254,39 +426,8 @@ function AdminDashboardPage() {
     .sort(
       (left, right) =>
         new Date(left.date).getTime() - new Date(right.date).getTime(),
-    )
-    .slice(0, 5);
-
-  const leadQueue = snapshot.leads
-    .filter((lead) =>
-      ["New", "Contacted", "Consultation Scheduled"].includes(lead.status),
-    )
-    .sort(
-      (left, right) =>
-        new Date(right.receivedAt || 0).getTime() -
-        new Date(left.receivedAt || 0).getTime(),
-    )
-    .slice(0, 5);
-
-  const activeServiceWork = snapshot.engagements
-    .filter(
-      (engagement) => !["Completed", "Archived"].includes(engagement.status),
-    )
-    .sort(
-      (left, right) =>
-        new Date(left.targetDate || 0).getTime() -
-        new Date(right.targetDate || 0).getTime(),
-    )
-    .slice(0, 5);
-
-  const documentActions = snapshot.documents
-    .filter((document) => !["Archive"].includes(document.status))
-    .sort(
-      (left, right) =>
-        new Date(right.requestedAt || right.receivedAt || 0).getTime() -
-        new Date(left.requestedAt || left.receivedAt || 0).getTime(),
-    )
-    .slice(0, 5);
+    );
+  const upcomingPreview = upcomingAppointments.slice(0, 3);
 
   const billingWatch = openInvoiceRows
     .filter((invoice) => ["Open", "Past Due"].includes(invoice.status))
@@ -294,94 +435,160 @@ function AdminDashboardPage() {
       (left, right) =>
         new Date(left.dueAt || 0).getTime() -
         new Date(right.dueAt || 0).getTime(),
-    )
-    .slice(0, 5);
+    );
+  const nextInvoice = billingWatch[0] || null;
+
+  const prospectFollowUp = snapshot.leads.filter((lead) =>
+    ["New", "Contacted", "Consultation Scheduled"].includes(lead.status),
+  );
+
+  const documentsNeedingAction = snapshot.documents.filter(
+    (document) => !["Archive"].includes(document.status),
+  );
+  const documentsOverdueCount = documentsNeedingAction.filter(
+    (document) =>
+      document.dueDate &&
+      new Date(document.dueDate) < new Date() &&
+      !["Completed", "Received"].includes(document.status),
+  ).length;
+
+  const activeEngagements = snapshot.engagements.filter(
+    (engagement) => !["Completed", "Archived"].includes(engagement.status),
+  );
 
   const recentActivity = snapshot.activity.slice(0, 5);
+  const activeClientCount = snapshot.clients.filter((client) =>
+    isActiveClient(client),
+  ).length;
 
-  const dashboardMetrics = [
+  const kpis = [
     {
-      label: "Open leads",
+      key: "leads",
+      icon: UserPlus,
+      label: "Open Leads",
       value: openLeadCount,
-      detail: "Awaiting qualification or follow-up",
+      detail:
+        newLeadsThisWeek > 0
+          ? `+${newLeadsThisWeek} this week`
+          : "Awaiting qualification",
       to: "/admin/leads",
-      accent: "info",
+      tone: "info",
     },
     {
-      label: "Needs attention",
+      key: "attention",
+      icon: AlertTriangle,
+      label: "Needs Attention",
       value: needsAttentionCount,
-      detail: "Open work and follow-up",
+      detail:
+        pastDueInvoiceRows.length > 0
+          ? `${pastDueInvoiceRows.length} overdue`
+          : "Open work and follow-up",
       to: "/admin/dashboard#attention",
-      accent: "attention",
+      tone: "attention",
     },
     {
-      label: "Active clients",
-      value: snapshot.clients.filter((client) => isActiveClient(client)).length,
+      key: "clients",
+      icon: Users,
+      label: "Active Clients",
+      value: activeClientCount,
       detail: "Current client relationships",
       to: "/admin/clients",
-      accent: "positive",
+      tone: "positive",
     },
     {
-      label: "Open invoices",
+      key: "invoices",
+      icon: Receipt,
+      label: "Open Invoices",
       value: openInvoiceRows.length,
       detail: `${formatCurrency(totalOutstanding)} outstanding`,
       to: "/admin/billing",
-      accent: "pending",
+      tone: "pending",
     },
     {
+      key: "upcoming",
+      icon: CalendarClock,
       label: "Upcoming",
       value: upcomingAppointments.length,
-      detail: "Appointments in the next 7 days",
+      detail: "Next 7 days",
       to: "/admin/appointments",
-      accent: "info",
+      tone: "info",
     },
   ];
 
-  const attentionBreakdown = attentionItems.reduce((totals, item) => {
-    const key = item.type;
-    totals[key] = (totals[key] || 0) + 1;
-    return totals;
-  }, {});
-  const attentionAccentByType = {
-    "Lead follow-up": "info",
-    "Task due": "pending",
-    "Document review": "attention",
-    Invoice: "danger",
-    "Client follow-up": "archived",
-  };
-
-  const pastDueTotal = billingWatch
-    .filter((invoice) => invoice.status === "Past Due")
-    .reduce((total, invoice) => total + getInvoiceRemainingBalance(invoice), 0);
-  const openNotPastDueTotal = Math.max(0, totalOutstanding - pastDueTotal);
-  const billingBarTotal = pastDueTotal + openNotPastDueTotal || 1;
+  const focusCards = [
+    {
+      key: "portal",
+      icon: MessageSquareText,
+      count: portalAttention.items.length,
+      label: "Client portal activity",
+      detail: portalAttention.loading
+        ? "Loading…"
+        : portalAttention.items.length
+          ? "Awaiting review"
+          : "All caught up",
+      to: "/admin/dashboard#portal-activity",
+    },
+    {
+      key: "prospects",
+      icon: UserPlus,
+      count: prospectFollowUp.length,
+      label: "Prospect follow-up",
+      detail: "Pending outreach",
+      to: "/admin/leads",
+    },
+    {
+      key: "documents",
+      icon: FileText,
+      count: documentsNeedingAction.length,
+      label: "Documents requiring action",
+      detail: "Awaiting review",
+      overdue: documentsOverdueCount,
+      to: "/admin/documents",
+    },
+    {
+      key: "engagements",
+      icon: Briefcase,
+      count: activeEngagements.length,
+      label: "Active service work",
+      detail: "In progress",
+      to: "/admin/services",
+    },
+  ];
 
   return (
     <div className="portal-page admin-dashboard">
       <header className="portal-page-header admin-dashboard-header">
         <div>
-          <span className="section-kicker">Admin workspace</span>
+          <span className="section-kicker">Workspace</span>
           <h1>Operations dashboard</h1>
+          <p>
+            Today&rsquo;s priorities, client activity, and upcoming work at a
+            glance.
+          </p>
         </div>
-        <p>
-          A working view of the current operating queue: incoming leads, client
-          needs, due work, appointments, and the items that require owner
-          attention this day.
-        </p>
+        <div className="dashboard-header-date">{formattedToday}</div>
       </header>
 
-      <section className="dashboard-summary-strip" aria-label="Summary metrics">
-        {dashboardMetrics.map((metric) => (
-          <Link
-            key={metric.label}
-            to={metric.to}
-            className={`dashboard-summary-item metric-link-card accent-${metric.accent}`}
-          >
-            <span>{metric.label}</span>
-            <strong>{metric.value}</strong>
-            <small>{metric.detail}</small>
-          </Link>
-        ))}
+      <section className="dashboard-kpi-strip" aria-label="Summary metrics">
+        {kpis.map((kpi) => {
+          const Icon = kpi.icon;
+          return (
+            <Link
+              key={kpi.key}
+              to={kpi.to}
+              className={`dashboard-kpi-card tone-${kpi.tone}`}
+            >
+              <span className="dashboard-kpi-icon">
+                <Icon size={18} aria-hidden="true" />
+              </span>
+              <span className="dashboard-kpi-copy">
+                <strong>{kpi.value}</strong>
+                <span>{kpi.label}</span>
+                <small>{kpi.detail}</small>
+              </span>
+            </Link>
+          );
+        })}
       </section>
 
       <section className="dashboard-command-grid">
@@ -389,300 +596,191 @@ function AdminDashboardPage() {
           <article id="attention" className="dashboard-panel">
             <div className="panel-heading">
               <h2>
-                Today / Needs your attention
+                Today&rsquo;s focus
                 {attentionItems.length ? (
                   <span className="panel-count">{attentionItems.length}</span>
                 ) : null}
               </h2>
               <Link to="/admin/leads" className="dashboard-view-link">
-                View all
+                View all <ArrowRight size={12} aria-hidden="true" />
               </Link>
             </div>
             {attentionItems.length ? (
-              <div
-                className="dashboard-distribution-bar"
-                role="img"
-                aria-label={Object.entries(attentionBreakdown)
-                  .map(([type, count]) => `${count} ${type}`)
-                  .join(", ")}
-              >
-                {Object.entries(attentionBreakdown).map(([type, count]) => (
-                  <span
-                    key={type}
-                    className={`dashboard-distribution-segment accent-${attentionAccentByType[type] || "info"}`}
-                    style={{ flexGrow: count }}
-                  />
-                ))}
-              </div>
-            ) : null}
-            {attentionItems.length ? (
-              <p className="dashboard-distribution-legend">
-                {Object.entries(attentionBreakdown)
-                  .map(([type, count]) => `${count} ${type}`)
-                  .join(" · ")}
-              </p>
-            ) : null}
-            {attentionItems.length ? (
-              <ul className="attention-list compact-list">
-                {attentionItems.map((item) => (
-                  <li key={item.key} className="attention-item compact-row">
-                    <div className="attention-item-copy">
-                      <div className="attention-item-topline">
-                        <span className="attention-kind">{item.type}</span>
-                        <span
-                          className={`status-pill ${item.status === "Past Due" || item.reason?.includes("Past Due") ? "danger" : "info"}`}
-                        >
-                          {item.status || "Active"}
-                        </span>
-                      </div>
-                      <strong>{item.title}</strong>
-                      <small>{item.summary}</small>
-                      <div className="attention-meta-row">
-                        <span>{item.reason}</span>
-                        <span>
-                          {item.due ? formatDate(item.due) : "No date"}
-                        </span>
-                      </div>
-                    </div>
-                    <Link to={item.to} className="dashboard-action-link">
-                      View
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+              <>
+                <div
+                  className="dashboard-distribution-bar"
+                  role="img"
+                  aria-label={Object.entries(attentionBreakdown)
+                    .map(([type, count]) => `${count} ${type}`)
+                    .join(", ")}
+                >
+                  {Object.entries(attentionBreakdown).map(([type, count]) => (
+                    <span
+                      key={type}
+                      className={`dashboard-distribution-segment accent-${attentionAccentByType[type] || "info"}`}
+                      style={{ flexGrow: count }}
+                    />
+                  ))}
+                </div>
+                <p className="dashboard-distribution-legend">
+                  {Object.entries(attentionBreakdown)
+                    .map(([type, count]) => `${count} ${type}`)
+                    .join(" · ")}
+                </p>
+              </>
             ) : (
               <div className="dashboard-empty-state">
                 Nothing currently requires immediate action.
               </div>
             )}
           </article>
-          <article className="dashboard-panel portal-client-attention">
-            <div className="panel-heading">
-              <h2>Client Portal activity</h2>
-            </div>
-            {portalAttention.error ? (
-              <p className="dashboard-empty-state" role="alert">
-                {portalAttention.error}
-              </p>
-            ) : null}
-            {portalAttention.loading ? (
-              <div className="dashboard-empty-state">
-                Loading client actions…
-              </div>
-            ) : null}
-            {!portalAttention.loading && portalAttention.items.length ? (
-              <ul className="attention-list compact-list">
-                {portalAttention.items.map((item) => (
-                  <li
-                    key={`${item.kind}-${item.id}`}
-                    className="attention-item compact-row"
-                  >
-                    <div className="attention-item-copy">
-                      <div className="attention-item-topline">
-                        <span className="attention-kind">
-                          {item.kind.replaceAll("_", " ")}
-                        </span>
-                        <span className="status-pill info">{item.status}</span>
-                      </div>
-                      <strong>{item.title}</strong>
-                      <small>{item.client_name}</small>
-                      {item.detail ? <p>{item.detail}</p> : null}
-                    </div>
-                    <div className="portal-admin-actions">
-                      {item.kind === "document_submission" ? (
-                        <a href={portalAdmin.documentDownloadUrl(item.id)}>
-                          Download securely
-                        </a>
-                      ) : null}
-                      {item.kind === "appointment_request" ||
-                      item.kind === "profile_change" ||
-                      item.kind === "access_request" ? (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => resolvePortalItem(item, "approved")}
-                          >
-                            Approve
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => resolvePortalItem(item, "rejected")}
-                          >
-                            Reject
-                          </button>
-                        </>
-                      ) : null}
-                      {item.kind === "document_submission" ? (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => resolvePortalItem(item, "accept")}
-                          >
-                            Accept
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setReplacementItem(item);
-                              setReplacementNote("");
-                            }}
-                          >
-                            Request replacement
-                          </button>
-                        </>
-                      ) : null}
-                      {item.kind === "task_action" ||
-                      item.kind === "message" ? (
-                        <button
-                          type="button"
-                          onClick={() => resolvePortalItem(item, "reviewed")}
-                        >
-                          Mark reviewed
-                        </button>
-                      ) : null}
-                    </div>
-                    {item.kind === "message" ? (
-                      <div className="portal-admin-reply">
-                        <label htmlFor={`reply-${item.id}`}>
-                          Reply to client
-                        </label>
-                        <textarea
-                          id={`reply-${item.id}`}
-                          maxLength={5000}
-                          value={portalReplies[item.id] || ""}
-                          onChange={(event) =>
-                            setPortalReplies((current) => ({
-                              ...current,
-                              [item.id]: event.target.value,
-                            }))
-                          }
-                        />
-                        <button
-                          type="button"
-                          onClick={() => replyToPortalMessage(item)}
-                        >
-                          Send reply
-                        </button>
-                      </div>
+
+          <section
+            className="dashboard-focus-cards"
+            aria-label="Operational focus areas"
+          >
+            {focusCards.map((card) => {
+              const Icon = card.icon;
+              return (
+                <Link
+                  key={card.key}
+                  to={card.to}
+                  className="dashboard-focus-card"
+                >
+                  <span className="dashboard-focus-icon">
+                    <Icon size={18} aria-hidden="true" />
+                  </span>
+                  <span className="dashboard-focus-copy">
+                    <strong>{card.count}</strong>
+                    <span className="dashboard-focus-label">{card.label}</span>
+                    <small>{card.detail}</small>
+                    {card.overdue ? (
+                      <small className="dashboard-focus-overdue">
+                        {card.overdue} overdue
+                      </small>
                     ) : null}
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-            {!portalAttention.loading && !portalAttention.items.length ? (
-              <div className="dashboard-empty-state">
-                No client portal actions need review.
+                  </span>
+                  <ArrowRight
+                    size={14}
+                    className="dashboard-focus-arrow"
+                    aria-hidden="true"
+                  />
+                </Link>
+              );
+            })}
+          </section>
+
+          <div className="dashboard-lower-row">
+            <article className="dashboard-panel">
+              <div className="panel-heading">
+                <h2>Recent activity</h2>
+                <Link to="/admin/reports" className="dashboard-view-link">
+                  View all <ArrowRight size={12} aria-hidden="true" />
+                </Link>
               </div>
-            ) : null}
-          </article>
-          <article className="dashboard-panel">
-            <div className="panel-heading">
-              <h2>
-                Prospect follow-up
-                {leadQueue.length ? (
-                  <span className="panel-count">{leadQueue.length}</span>
-                ) : null}
-              </h2>
-              <Link to="/admin/leads" className="dashboard-view-link">
-                View all
-              </Link>
-            </div>
-            {leadQueue.length ? (
-              <ul className="mini-list compact-list">
-                {leadQueue.map((lead) => (
-                  <li key={lead.id}>
-                    <div>
-                      <strong>{lead.name}</strong>
-                      <small>
-                        {lead.audience} · {lead.serviceInterest}
-                      </small>
-                    </div>
-                    <div className="mini-meta">
-                      <span>{formatDate(lead.receivedAt)}</span>
-                      <span>{lead.status}</span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="dashboard-empty-state">
-                No prospects currently awaiting follow-up.
+              {recentActivity.length ? (
+                <ul className="activity-list compact-list">
+                  {recentActivity.map((entry) => {
+                    const Icon = activityIcon[entry.type] || Activity;
+                    return (
+                      <li key={entry.id}>
+                        <span className="activity-icon">
+                          <Icon size={14} aria-hidden="true" />
+                        </span>
+                        <div>
+                          <strong>{entry.summary || entry.eventType}</strong>
+                          <small>
+                            {entry.clientId
+                              ? getClientName(snapshot, entry.clientId)
+                              : entry.actorName || "System"}{" "}
+                            · {formatDate(entry.timestamp)}
+                          </small>
+                        </div>
+                        <span
+                          className={`status-pill ${activityTone[entry.type] || "info"}`}
+                        >
+                          {entry.type
+                            ? entry.type.replaceAll("_", " ")
+                            : "Update"}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <div className="dashboard-empty-state">
+                  No recent operational activity.
+                </div>
+              )}
+            </article>
+
+            <article className="dashboard-panel">
+              <div className="panel-heading">
+                <h2>Invoices at a glance</h2>
+                <Link to="/admin/billing" className="dashboard-view-link">
+                  View billing <ArrowRight size={12} aria-hidden="true" />
+                </Link>
               </div>
-            )}
-          </article>
-          <article className="dashboard-panel">
-            <div className="panel-heading">
-              <h2>
-                Documents requiring action
-                {documentActions.length ? (
-                  <span className="panel-count">{documentActions.length}</span>
-                ) : null}
-              </h2>
-              <Link to="/admin/documents" className="dashboard-view-link">
-                View all
-              </Link>
-            </div>
-            {documentActions.length ? (
-              <ul className="mini-list compact-list">
-                {documentActions.map((document) => (
-                  <li key={document.id}>
-                    <div>
-                      <strong>{document.name}</strong>
-                      <small>
-                        {getClientName(snapshot, document.clientId)} ·{" "}
-                        {document.serviceName}
-                      </small>
-                    </div>
-                    <div className="mini-meta">
-                      <span>{document.status}</span>
-                      <span>
-                        {document.requestedAt
-                          ? formatDate(document.requestedAt)
-                          : "No date"}
+              <div className="invoice-glance-body">
+                <div className="invoice-donut-wrap">
+                  <InvoiceDonut segments={invoiceBuckets} />
+                  <div className="invoice-donut-center">
+                    <strong>{formatCurrency(totalOutstanding)}</strong>
+                    <span>Open balance</span>
+                  </div>
+                </div>
+                <ul className="invoice-legend">
+                  {invoiceBuckets.map((bucket) => (
+                    <li key={bucket.key}>
+                      <span
+                        className={`invoice-legend-dot accent-${bucket.tone}`}
+                      />
+                      <span className="invoice-legend-label">
+                        {bucket.label}
                       </span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="dashboard-empty-state">
-                No documents currently require action.
+                      <span className="invoice-legend-count">
+                        {bucket.count}
+                      </span>
+                      <span className="invoice-legend-amount">
+                        {formatCurrency(bucket.total)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-            )}
-          </article>
-          <article className="dashboard-panel">
-            <div className="panel-heading">
-              <h2>Recent activity</h2>
-              <Link to="/admin/reports" className="dashboard-view-link">
-                View activity
-              </Link>
-            </div>
-            {recentActivity.length ? (
-              <ul className="activity-list compact-list">
-                {recentActivity.map((entry) => (
-                  <li key={entry.id}>
-                    <span
-                      className={`status-pill ${activityTone[entry.type] || "info"}`}
-                    >
-                      {entry.type || "Update"}
+              {nextInvoice ? (
+                <div className="invoice-preview">
+                  <div>
+                    <strong>{nextInvoice.id}</strong>
+                    <small>
+                      {getClientName(snapshot, nextInvoice.clientId)}
+                    </small>
+                  </div>
+                  <div className="invoice-preview-meta">
+                    <span>
+                      {formatCurrency(getInvoiceRemainingBalance(nextInvoice))}
                     </span>
-                    <div>
-                      <strong>{entry.summary || entry.eventType}</strong>
-                      <small>
-                        {entry.actorName || "System"} ·{" "}
-                        {formatDate(entry.timestamp)}
-                      </small>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="dashboard-empty-state">
-                No recent operational activity.
-              </div>
-            )}
-          </article>
+                    <small>
+                      {nextInvoice.dueAt
+                        ? formatDate(nextInvoice.dueAt)
+                        : "No due date"}
+                    </small>
+                  </div>
+                  <span
+                    className={`status-pill ${nextInvoice.status === "Past Due" ? "danger" : "info"}`}
+                  >
+                    {nextInvoice.status}
+                  </span>
+                </div>
+              ) : (
+                <div className="dashboard-empty-state">
+                  No open invoices right now.
+                </div>
+              )}
+            </article>
+          </div>
         </div>
+
         <aside
           className="dashboard-side-column"
           aria-label="Operations overview"
@@ -701,9 +799,9 @@ function AdminDashboardPage() {
                 View calendar
               </Link>
             </div>
-            {upcomingAppointments.length ? (
+            {upcomingPreview.length ? (
               <ul className="schedule-list compact-list">
-                {upcomingAppointments.map((appointment) => (
+                {upcomingPreview.map((appointment) => (
                   <li
                     key={appointment.id}
                     className="schedule-item compact-row"
@@ -742,133 +840,169 @@ function AdminDashboardPage() {
                 No appointments in the next 7 days.
               </div>
             )}
-          </article>
-          <article className="dashboard-panel">
-            <div className="panel-heading">
-              <h2>
-                Active service work
-                {activeServiceWork.length ? (
-                  <span className="panel-count">
-                    {activeServiceWork.length}
-                  </span>
-                ) : null}
-              </h2>
-              <Link to="/admin/services" className="dashboard-view-link">
-                View all
-              </Link>
-            </div>
-            {activeServiceWork.length ? (
-              <ul className="mini-list compact-list">
-                {activeServiceWork.map((engagement) => (
-                  <li key={engagement.id}>
-                    <div>
-                      <strong>{engagement.serviceName}</strong>
-                      <small>
-                        {getClientName(snapshot, engagement.clientId)}
-                      </small>
-                    </div>
-                    <div className="mini-meta">
-                      <span>{engagement.status}</span>
-                      <span>
-                        {engagement.targetDate
-                          ? formatDate(engagement.targetDate)
-                          : "No target"}
-                      </span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="dashboard-empty-state">
-                No active service work.
-              </div>
-            )}
-          </article>
-          <article className="dashboard-panel">
-            <div className="panel-heading">
-              <h2>Billing watch</h2>
-              <Link to="/admin/billing" className="dashboard-view-link">
-                View billing
-              </Link>
-            </div>
-            <div className="billing-summary-row">
-              <div>
-                <span className="dashboard-kicker">Open balance</span>
-                <strong>{formatCurrency(totalOutstanding)}</strong>
-              </div>
-              <div>
-                <span className="dashboard-kicker">Past due</span>
-                <strong>{formatCurrency(pastDueTotal)}</strong>
-              </div>
-            </div>
-            {totalOutstanding > 0 ? (
-              <div
-                className="dashboard-distribution-bar"
-                role="img"
-                aria-label={`${formatCurrency(pastDueTotal)} past due, ${formatCurrency(openNotPastDueTotal)} open`}
+            {upcomingAppointments.length ? (
+              <Link
+                to="/admin/appointments"
+                className="dashboard-action-link dashboard-view-full"
               >
-                {pastDueTotal > 0 ? (
-                  <span
-                    className="dashboard-distribution-segment accent-danger"
-                    style={{ flexGrow: pastDueTotal / billingBarTotal }}
-                  />
-                ) : null}
-                {openNotPastDueTotal > 0 ? (
-                  <span
-                    className="dashboard-distribution-segment accent-pending"
-                    style={{ flexGrow: openNotPastDueTotal / billingBarTotal }}
-                  />
-                ) : null}
-              </div>
+                View full calendar <ArrowRight size={12} aria-hidden="true" />
+              </Link>
             ) : null}
-            {billingWatch.length ? (
-              <ul className="mini-list compact-list">
-                {billingWatch.map((invoice) => (
-                  <li key={invoice.id}>
-                    <div>
-                      <strong>{invoice.id}</strong>
-                      <small>{getClientName(snapshot, invoice.clientId)}</small>
-                    </div>
-                    <div className="mini-meta">
-                      <span>
-                        {formatCurrency(getInvoiceRemainingBalance(invoice))}
-                      </span>
-                      <span>{invoice.status}</span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="dashboard-empty-state">No past-due invoices.</div>
-            )}
           </article>
+
           <aside className="dashboard-quick-actions">
             <div className="panel-heading">
               <h2>Quick actions</h2>
             </div>
             <div className="quick-actions-grid">
               <Link to="/admin/clients" className="quick-action-link">
-                Client management
+                <UserPlus size={14} aria-hidden="true" /> Add client
               </Link>
               <Link to="/admin/appointments" className="quick-action-link">
-                Appointments
-              </Link>
-              <Link
-                to="/admin/clients?view=requests"
-                className="quick-action-link"
-              >
-                Client requests
+                <CalendarPlus size={14} aria-hidden="true" /> New appointment
               </Link>
               <Link to="/admin/billing" className="quick-action-link">
-                Billing
+                <Receipt size={14} aria-hidden="true" /> Create invoice
+              </Link>
+              <Link to="/admin/client-requests" className="quick-action-link">
+                <Inbox size={14} aria-hidden="true" /> Client requests
               </Link>
               <Link to="/admin/services" className="quick-action-link">
-                Service work
+                <Settings size={14} aria-hidden="true" /> Manage services
+              </Link>
+              <Link to="/admin/communications" className="quick-action-link">
+                <Send size={14} aria-hidden="true" /> Compose message
               </Link>
             </div>
           </aside>
         </aside>
       </section>
+
+      <article
+        id="portal-activity"
+        className="dashboard-panel portal-client-attention"
+      >
+        <div className="panel-heading">
+          <h2>
+            Client portal activity — items awaiting review
+            {portalAttention.items.length ? (
+              <span className="panel-count">
+                {portalAttention.items.length}
+              </span>
+            ) : null}
+          </h2>
+        </div>
+        {portalAttention.error ? (
+          <p className="dashboard-empty-state" role="alert">
+            {portalAttention.error}
+          </p>
+        ) : null}
+        {portalAttention.loading ? (
+          <div className="dashboard-empty-state">Loading client actions…</div>
+        ) : null}
+        {!portalAttention.loading && portalAttention.items.length ? (
+          <ul className="attention-list compact-list">
+            {portalAttention.items.map((item) => (
+              <li
+                key={`${item.kind}-${item.id}`}
+                className="attention-item compact-row"
+              >
+                <div className="attention-item-copy">
+                  <div className="attention-item-topline">
+                    <span className="attention-kind">
+                      {item.kind.replaceAll("_", " ")}
+                    </span>
+                    <span className="status-pill info">{item.status}</span>
+                  </div>
+                  <strong>{item.title}</strong>
+                  <small>{item.client_name}</small>
+                  {item.detail ? <p>{item.detail}</p> : null}
+                </div>
+                <div className="portal-admin-actions">
+                  {item.kind === "document_submission" ? (
+                    <a href={portalAdmin.documentDownloadUrl(item.id)}>
+                      Download securely
+                    </a>
+                  ) : null}
+                  {item.kind === "appointment_request" ||
+                  item.kind === "profile_change" ||
+                  item.kind === "access_request" ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => resolvePortalItem(item, "approved")}
+                      >
+                        Approve
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => resolvePortalItem(item, "rejected")}
+                      >
+                        Reject
+                      </button>
+                    </>
+                  ) : null}
+                  {item.kind === "document_submission" ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => resolvePortalItem(item, "accept")}
+                      >
+                        Accept
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setReplacementItem(item);
+                          setReplacementNote("");
+                        }}
+                      >
+                        Request replacement
+                      </button>
+                    </>
+                  ) : null}
+                  {item.kind === "task_action" || item.kind === "message" ? (
+                    <button
+                      type="button"
+                      onClick={() => resolvePortalItem(item, "reviewed")}
+                    >
+                      Mark reviewed
+                    </button>
+                  ) : null}
+                </div>
+                {item.kind === "message" ? (
+                  <div className="portal-admin-reply">
+                    <label htmlFor={`reply-${item.id}`}>Reply to client</label>
+                    <textarea
+                      id={`reply-${item.id}`}
+                      maxLength={5000}
+                      value={portalReplies[item.id] || ""}
+                      onChange={(event) =>
+                        setPortalReplies((current) => ({
+                          ...current,
+                          [item.id]: event.target.value,
+                        }))
+                      }
+                    />
+                    <button
+                      type="button"
+                      onClick={() => replyToPortalMessage(item)}
+                    >
+                      Send reply
+                    </button>
+                  </div>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        {!portalAttention.loading && !portalAttention.items.length ? (
+          <div className="dashboard-empty-state">
+            No client portal actions need review.
+          </div>
+        ) : null}
+      </article>
+
       {replacementItem ? (
         <div
           className="replacement-modal-backdrop"

@@ -101,7 +101,9 @@ const records = {
       client_id: 1,
       service_id: 2,
       appointment_type: "Consultation",
-      scheduled_at: "2026-09-20 10:00:00",
+      // Kept relative to "now" so the appointment always falls inside the
+      // dashboard's "next 7 days" window regardless of when tests run.
+      scheduled_at: `${new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)} 10:00:00`,
       duration_minutes: 60,
       status: "scheduled",
       location_type: "virtual",
@@ -168,31 +170,170 @@ for (const width of [1440, 1024, 768]) {
   });
 }
 
-test("Dashboard operational modules and quick actions stay compact and accessible", async ({
+test("Dashboard KPI strip renders the five primary summaries", async ({
   page,
 }) => {
   await mockAdmin(page);
   await page.goto("/admin/dashboard/");
-  await expect(
-    page.locator(".dashboard-summary-strip .dashboard-summary-item").first(),
-  ).toBeVisible();
-  for (const heading of [
-    "Upcoming schedule",
-    "Active service work",
-    "Billing watch",
-    "Quick actions",
+  const kpis = page.locator(".dashboard-kpi-strip .dashboard-kpi-card");
+  await expect(kpis).toHaveCount(5);
+  for (const label of [
+    "Open Leads",
+    "Needs Attention",
+    "Active Clients",
+    "Open Invoices",
+    "Upcoming",
   ]) {
-    await expect(page.getByRole("heading", { name: heading })).toBeVisible();
+    await expect(page.getByText(label, { exact: true })).toBeVisible();
   }
+  // Open Invoices KPI must show a real dollar figure derived from the
+  // mocked invoice, not an invented trend.
+  await expect(
+    kpis.filter({ hasText: "Open Invoices" }).getByText(/\$\d/),
+  ).toBeVisible();
+});
+
+test("Today's focus renders a summarized breakdown, not the full raw attention list", async ({
+  page,
+}) => {
+  await mockAdmin(page);
+  await page.goto("/admin/dashboard/");
+  const focusPanel = page.locator("#attention");
+  await expect(
+    focusPanel.getByRole("heading", { name: /Today.s focus/ }),
+  ).toBeVisible();
+  await expect(focusPanel.locator(".dashboard-distribution-bar")).toBeVisible();
+  await expect(
+    focusPanel.locator(".dashboard-distribution-legend"),
+  ).toBeVisible();
+  // The old per-record attention list must be gone from the summary panel.
+  await expect(focusPanel.locator(".attention-list")).toHaveCount(0);
+});
+
+test("Dashboard renders four compact operational focus cards linking to existing routes", async ({
+  page,
+}) => {
+  await mockAdmin(page);
+  await page.goto("/admin/dashboard/");
+  const cards = page.locator(".dashboard-focus-cards .dashboard-focus-card");
+  await expect(cards).toHaveCount(4);
+  await expect(
+    cards.filter({ hasText: "Client portal activity" }),
+  ).toHaveAttribute("href", "/admin/dashboard#portal-activity");
+  await expect(cards.filter({ hasText: "Prospect follow-up" })).toHaveAttribute(
+    "href",
+    "/admin/leads",
+  );
+  await expect(
+    cards.filter({ hasText: "Documents requiring action" }),
+  ).toHaveAttribute("href", "/admin/documents");
+  await expect(
+    cards.filter({ hasText: "Active service work" }),
+  ).toHaveAttribute("href", "/admin/services");
+  // None of the four cards should render an underlying record list inline.
+  await expect(page.locator(".dashboard-focus-cards ul")).toHaveCount(0);
+});
+
+test("Upcoming schedule shows a limited preview and links to Appointments", async ({
+  page,
+}) => {
+  await mockAdmin(page);
+  await page.goto("/admin/dashboard/");
+  const panel = page
+    .locator(".dashboard-panel")
+    .filter({ has: page.getByRole("heading", { name: "Upcoming schedule" }) });
+  await expect(panel.locator(".schedule-item")).toHaveCount(1);
+  await expect(
+    panel.getByRole("link", { name: "View calendar" }),
+  ).toHaveAttribute("href", "/admin/appointments");
+});
+
+test("Recent activity shows a limited preview rather than an unlimited list", async ({
+  page,
+}) => {
+  await mockAdmin(page);
+  // The dashboard's activity log is populated by adminStore mutations, not
+  // by the initial API load, so seed more than the display cap (5) via the
+  // same window.adminStore handle admin-workflows.spec.js uses, then route
+  // to the dashboard client-side so the fresh mount picks up the seeded
+  // state on its first render.
+  await page.goto("/admin/clients/");
+  await page.waitForFunction(() => Boolean(window.adminStore));
+  await page.evaluate(() => {
+    for (let i = 0; i < 6; i += 1) {
+      window.adminStore.createTask({
+        title: `Seeded follow-up ${i}`,
+        clientId: "1",
+        status: "Not Started",
+      });
+    }
+  });
+  await page
+    .getByRole("navigation", { name: "Portal navigation" })
+    .getByRole("link", { name: "Dashboard", exact: true })
+    .click();
+  const panel = page
+    .locator(".dashboard-panel")
+    .filter({ has: page.getByRole("heading", { name: "Recent activity" }) });
+  await expect(panel.locator(".activity-list li")).toHaveCount(5);
+  await expect(panel.locator(".activity-icon").first()).toBeVisible();
+});
+
+test("Invoices at a glance uses real invoice data for the donut and legend", async ({
+  page,
+}) => {
+  await mockAdmin(page);
+  await page.goto("/admin/dashboard/");
+  const panel = page.locator(".dashboard-panel").filter({
+    has: page.getByRole("heading", { name: "Invoices at a glance" }),
+  });
+  await expect(panel.locator(".invoice-donut")).toBeVisible();
+  const overdueRow = panel.locator(".invoice-legend li", {
+    hasText: "Overdue",
+  });
+  await expect(overdueRow.locator(".invoice-legend-count")).toHaveText("1");
+  await expect(
+    panel.getByRole("link", { name: /View billing/ }),
+  ).toHaveAttribute("href", "/admin/billing");
+});
+
+test("Quick actions point to valid existing admin routes", async ({ page }) => {
+  await mockAdmin(page);
+  await page.goto("/admin/dashboard/");
   const quickActions = page.locator(".dashboard-quick-actions");
   await expect(quickActions).toBeVisible();
-  expect((await quickActions.boundingBox()).height).toBeLessThan(80);
+  const expectedRoutes = {
+    "Add client": "/admin/clients",
+    "New appointment": "/admin/appointments",
+    "Create invoice": "/admin/billing",
+    "Client requests": "/admin/client-requests",
+    "Manage services": "/admin/services",
+    "Compose message": "/admin/communications",
+  };
+  for (const [label, href] of Object.entries(expectedRoutes)) {
+    await expect(
+      quickActions.getByRole("link", { name: label }),
+    ).toHaveAttribute("href", href);
+  }
+});
+
+test("Dashboard empty states stay clean and intentional with no data", async ({
+  page,
+}) => {
+  await mockAdmin(page, true);
+  await page.goto("/admin/dashboard/");
+  await expect(page.locator(".dashboard-kpi-strip")).toBeVisible();
   await expect(
-    quickActions.getByRole("link", { name: "Client management" }),
-  ).toHaveAttribute("href", "/admin/clients");
+    page.getByText("Nothing currently requires immediate action."),
+  ).toBeVisible();
   await expect(
-    quickActions.getByRole("link", { name: "Billing" }),
-  ).toHaveAttribute("href", "/admin/billing");
+    page.getByText("No appointments in the next 7 days."),
+  ).toBeVisible();
+  await expect(page.getByText("No recent operational activity.")).toBeVisible();
+  await expect(page.getByText("No open invoices right now.")).toBeVisible();
+  await expect(
+    page.getByText("No client portal actions need review."),
+  ).toBeVisible();
 });
 
 for (const width of [1440, 1024, 768]) {

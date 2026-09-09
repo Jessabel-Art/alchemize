@@ -124,17 +124,14 @@
   .admin-portal-shell :is(button, a)[disabled] {
     opacity: 0.5;
   }
-  .admin-portal-shell :is(.admin-metrics, .dashboard-summary-strip) {
+  .admin-portal-shell .admin-metrics {
     margin: 0;
     padding: 0;
     gap: 0;
     border-block: 1px solid var(--admin-line);
     background: var(--admin-surface);
   }
-  .admin-portal-shell .dashboard-summary-strip {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-  }
-  .admin-portal-shell :is(.admin-metric-card, .dashboard-summary-item) {
+  .admin-portal-shell .admin-metric-card {
     min-width: 0;
     padding: 13px 16px;
     border: 0;
@@ -145,52 +142,32 @@
     display: grid;
     gap: 5px;
   }
-  .admin-portal-shell
-    :is(.admin-metric-card, .dashboard-summary-item).accent-positive,
-  .admin-portal-shell
-    :is(.admin-metric-card, .dashboard-summary-item).tone-positive {
+  .admin-portal-shell .admin-metric-card.tone-positive {
     border-left-color: var(--admin-positive);
   }
-  .admin-portal-shell
-    :is(.admin-metric-card, .dashboard-summary-item).accent-pending,
-  .admin-portal-shell
-    :is(.admin-metric-card, .dashboard-summary-item).tone-pending {
+  .admin-portal-shell .admin-metric-card.tone-pending {
     border-left-color: var(--admin-pending);
   }
-  .admin-portal-shell
-    :is(.admin-metric-card, .dashboard-summary-item).accent-attention,
-  .admin-portal-shell
-    :is(.admin-metric-card, .dashboard-summary-item).tone-attention {
+  .admin-portal-shell .admin-metric-card.tone-attention {
     border-left-color: var(--admin-attention);
   }
-  .admin-portal-shell
-    :is(.admin-metric-card, .dashboard-summary-item).accent-danger,
-  .admin-portal-shell
-    :is(.admin-metric-card, .dashboard-summary-item).tone-danger {
+  .admin-portal-shell .admin-metric-card.tone-danger {
     border-left-color: var(--admin-danger);
   }
-  .admin-portal-shell
-    :is(.admin-metric-card, .dashboard-summary-item).accent-info,
-  .admin-portal-shell
-    :is(.admin-metric-card, .dashboard-summary-item).tone-info {
+  .admin-portal-shell .admin-metric-card.tone-info {
     border-left-color: var(--admin-info);
   }
-  .admin-portal-shell
-    :is(.admin-metric-card, .dashboard-summary-item).accent-archived,
-  .admin-portal-shell
-    :is(.admin-metric-card, .dashboard-summary-item).tone-archived {
+  .admin-portal-shell .admin-metric-card.tone-archived {
     border-left-color: var(--admin-archived);
   }
-  .admin-portal-shell :is(.admin-metric-card, .dashboard-summary-item) > span {
+  .admin-portal-shell .admin-metric-card > span {
     font-size: 10px;
     line-height: 1.35;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--color-text-soft);
   }
-  .admin-portal-shell
-    :is(.admin-metric-card, .dashboard-summary-item)
-    > strong {
+  .admin-portal-shell .admin-metric-card > strong {
     font-family: var(--font-display);
     font-size: 32px;
     font-weight: 500;
@@ -198,9 +175,96 @@
     margin: 0;
     font-variant-numeric: tabular-nums;
   }
-  .admin-portal-shell :is(.admin-metric-card, .dashboard-summary-item) > small {
+  .admin-portal-shell .admin-metric-card > small {
     font-size: 11px;
     line-height: 1.35;
+  }
+  .admin-portal-shell .dashboard-header-date {
+    justify-self: end;
+    align-self: start;
+    font-size: 12px;
+    color: var(--color-text-soft);
+    font-weight: 600;
+  }
+  .admin-portal-shell .dashboard-kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .admin-portal-shell .dashboard-kpi-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    padding: 12px 14px;
+    border: 1px solid var(--admin-line);
+    border-radius: 6px;
+    background: var(--admin-surface);
+    text-decoration: none;
+    transition:
+      border-color var(--transition-fast, 160ms ease),
+      transform var(--transition-fast, 160ms ease);
+  }
+  .admin-portal-shell .dashboard-kpi-card:hover,
+  .admin-portal-shell .dashboard-kpi-card:focus-visible {
+    border-color: var(--emerald-forest);
+    transform: translateY(-1px);
+  }
+  .admin-portal-shell .dashboard-kpi-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    flex: 0 0 auto;
+    color: var(--emerald-deep);
+  }
+  .admin-portal-shell .dashboard-kpi-card.tone-positive .dashboard-kpi-icon {
+    background: var(--admin-positive-soft);
+    color: var(--admin-positive);
+  }
+  .admin-portal-shell .dashboard-kpi-card.tone-pending .dashboard-kpi-icon {
+    background: var(--admin-pending-soft);
+    color: var(--admin-pending);
+  }
+  .admin-portal-shell .dashboard-kpi-card.tone-attention .dashboard-kpi-icon {
+    background: var(--admin-attention-soft);
+    color: var(--admin-attention);
+  }
+  .admin-portal-shell .dashboard-kpi-card.tone-danger .dashboard-kpi-icon {
+    background: var(--admin-danger-soft);
+    color: var(--admin-danger);
+  }
+  .admin-portal-shell .dashboard-kpi-card.tone-info .dashboard-kpi-icon {
+    background: var(--admin-info-soft);
+    color: var(--admin-info);
+  }
+  .admin-portal-shell .dashboard-kpi-copy {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+  .admin-portal-shell .dashboard-kpi-copy strong {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 500;
+    line-height: 1.05;
+    font-variant-numeric: tabular-nums;
+  }
+  .admin-portal-shell .dashboard-kpi-copy > span {
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--color-text-soft);
+  }
+  .admin-portal-shell .dashboard-kpi-copy small {
+    font-size: 11px;
+    line-height: 1.3;
+    color: var(--color-text-soft);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .admin-portal-shell .dashboard-command-grid {
     display: grid;
@@ -303,17 +367,15 @@
     min-width: 42px;
     border-radius: 3px;
   }
+  .admin-portal-shell .dashboard-view-full {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 8px;
+  }
   .admin-portal-shell .dashboard-quick-actions {
-    display: flex;
-    align-items: baseline;
-    flex-wrap: wrap;
-    gap: 6px 14px;
     padding: 10px 0 2px;
     border-top: 1px solid var(--admin-line);
-  }
-  .admin-portal-shell .dashboard-quick-actions .panel-heading {
-    flex: 0 0 auto;
-    margin-right: 4px;
   }
   .admin-portal-shell .dashboard-quick-actions .panel-heading h2 {
     font-size: 11px;
@@ -323,16 +385,235 @@
     font-family: var(--font-body);
   }
   .admin-portal-shell .quick-actions-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px 14px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 8px;
   }
   .admin-portal-shell .quick-action-link {
+    display: flex;
+    align-items: center;
+    gap: 7px;
     min-height: 0;
-    padding: 2px 0;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
+    padding: 9px 10px;
+    border: 1px solid var(--admin-line);
+    border-radius: 6px;
+    background: var(--admin-surface);
+    color: var(--emerald-deep);
+    font-weight: 600;
+    transition: border-color var(--transition-fast, 160ms ease);
+  }
+  .admin-portal-shell .quick-action-link:hover,
+  .admin-portal-shell .quick-action-link:focus-visible {
+    border-color: var(--emerald-forest);
+  }
+  .admin-portal-shell .quick-action-link svg {
+    flex: 0 0 auto;
+    color: var(--gold);
+  }
+  .admin-portal-shell .dashboard-focus-cards {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .admin-portal-shell .dashboard-focus-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid var(--admin-line);
+    border-radius: 6px;
+    background: var(--admin-surface);
+    text-decoration: none;
+    color: inherit;
+    transition: border-color var(--transition-fast, 160ms ease);
+  }
+  .admin-portal-shell .dashboard-focus-card:hover,
+  .admin-portal-shell .dashboard-focus-card:focus-visible {
+    border-color: var(--emerald-forest);
+  }
+  .admin-portal-shell .dashboard-focus-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 7px;
+    flex: 0 0 auto;
+    background: var(--admin-info-soft);
+    color: var(--admin-info);
+  }
+  .admin-portal-shell .dashboard-focus-copy {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+  .admin-portal-shell .dashboard-focus-copy strong {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 500;
+    line-height: 1.05;
+  }
+  .admin-portal-shell .dashboard-focus-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--emerald-deep);
+  }
+  .admin-portal-shell .dashboard-focus-copy small {
+    font-size: 10px;
+    color: var(--color-text-soft);
+  }
+  .admin-portal-shell .dashboard-focus-overdue {
+    color: var(--admin-attention);
+    font-weight: 700;
+  }
+  .admin-portal-shell .dashboard-focus-arrow {
+    margin-left: auto;
+    flex: 0 0 auto;
+    color: var(--color-text-soft);
+  }
+  .admin-portal-shell .dashboard-lower-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+  .admin-portal-shell .activity-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    flex: 0 0 auto;
+    background: rgba(6, 43, 43, 0.05);
+    color: var(--emerald-deep);
+  }
+  .admin-portal-shell .activity-list li {
+    align-items: center;
+  }
+  .admin-portal-shell .activity-list .status-pill {
+    white-space: normal;
+    text-align: center;
+  }
+  .admin-portal-shell .invoice-glance-body {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .admin-portal-shell .invoice-donut-wrap {
+    position: relative;
+    width: 96px;
+    height: 96px;
+    flex: 0 0 auto;
+  }
+  .admin-portal-shell .invoice-donut {
+    width: 100%;
+    height: 100%;
+  }
+  .admin-portal-shell .invoice-donut-segment.accent-info {
+    stroke: var(--admin-info);
+  }
+  .admin-portal-shell .invoice-donut-segment.accent-danger {
+    stroke: var(--admin-danger);
+  }
+  .admin-portal-shell .invoice-donut-segment.accent-positive {
+    stroke: var(--admin-positive);
+  }
+  .admin-portal-shell .invoice-donut-segment.accent-pending {
+    stroke: var(--admin-pending);
+  }
+  .admin-portal-shell .invoice-donut-center {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    gap: 1px;
+    padding: 8px;
+  }
+  .admin-portal-shell .invoice-donut-center strong {
+    font-family: var(--font-display);
+    font-size: 15px;
+    line-height: 1.05;
+  }
+  .admin-portal-shell .invoice-donut-center span {
+    font-size: 8px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-text-soft);
+  }
+  .admin-portal-shell .invoice-legend {
+    display: grid;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .admin-portal-shell .invoice-legend li {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+  }
+  .admin-portal-shell .invoice-legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    flex: 0 0 auto;
+  }
+  .admin-portal-shell .invoice-legend-dot.accent-info {
+    background: var(--admin-info);
+  }
+  .admin-portal-shell .invoice-legend-dot.accent-danger {
+    background: var(--admin-danger);
+  }
+  .admin-portal-shell .invoice-legend-dot.accent-positive {
+    background: var(--admin-positive);
+  }
+  .admin-portal-shell .invoice-legend-dot.accent-pending {
+    background: var(--admin-pending);
+  }
+  .admin-portal-shell .invoice-legend-label {
+    color: var(--color-text-soft);
+  }
+  .admin-portal-shell .invoice-legend-count {
+    margin-left: auto;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .admin-portal-shell .invoice-legend-amount {
+    min-width: 52px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text-soft);
+  }
+  .admin-portal-shell .invoice-preview {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--admin-line);
+  }
+  .admin-portal-shell .invoice-preview strong {
+    font-size: 13px;
+  }
+  .admin-portal-shell .invoice-preview small {
+    font-size: 11px;
+    color: var(--color-text-soft);
+  }
+  .admin-portal-shell .invoice-preview-meta {
+    margin-left: auto;
+    text-align: right;
+    display: grid;
+    gap: 1px;
+  }
+  .admin-portal-shell .invoice-preview-meta span {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
   }
   .admin-portal-shell
     :is(.dashboard-empty-state, .admin-empty-state, .admin-section-empty) {
@@ -1001,8 +1282,20 @@
   .admin-portal-shell .report-shelf {
     grid-template-columns: 1fr;
   }
-  .admin-portal-shell .dashboard-summary-strip {
+  .admin-portal-shell .dashboard-kpi-strip {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .admin-portal-shell .dashboard-focus-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .admin-portal-shell .dashboard-lower-row {
+    grid-template-columns: 1fr;
+  }
+  .admin-portal-shell .admin-dashboard-header {
+    grid-template-columns: 1fr;
+  }
+  .admin-portal-shell .dashboard-header-date {
+    justify-self: start;
   }
   .admin-portal-shell :is(.panel-heading, .admin-section-header) {
     flex-wrap: wrap;
@@ -1012,12 +1305,21 @@
   .admin-portal-shell .portal-main {
     padding: 16px;
   }
-  .admin-portal-shell :is(.admin-metrics, .dashboard-summary-strip) {
+  .admin-portal-shell .admin-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .admin-portal-shell :is(.admin-metric-card, .dashboard-summary-item) {
+  .admin-portal-shell .admin-metric-card {
     padding: 12px;
     border-bottom: 1px solid var(--admin-line);
+  }
+  .admin-portal-shell .dashboard-kpi-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .admin-portal-shell .dashboard-focus-cards {
+    grid-template-columns: 1fr;
+  }
+  .admin-portal-shell .quick-actions-grid {
+    grid-template-columns: 1fr;
   }
   .admin-portal-shell .dashboard-side-column {
     grid-template-columns: 1fr;
