@@ -228,7 +228,7 @@ export default function AdminCommunicationsPage() {
         ))}
       </div>
       <div
-        className={`admin-workspace-grid ${opened ? "has-conversation three-pane" : ""}`}
+        className={`admin-workspace-grid ${opened ? "has-conversation three-pane" : "no-selection"}`}
       >
         <section className="admin-list-panel" aria-label="Client conversations">
           {visible.length ? (
@@ -263,9 +263,9 @@ export default function AdminCommunicationsPage() {
             <AdminEmptyState title="No conversations match this view." />
           )}
         </section>
-        <section className="admin-conversation-panel" aria-live="polite">
-          {opened ? (
-            <>
+        {opened ? (
+          <>
+            <section className="admin-conversation-panel" aria-live="polite">
               <header>
                 <h2>{opened.thread.subject}</h2>
                 <p>
@@ -278,114 +278,118 @@ export default function AdminCommunicationsPage() {
               <ol className="portal-thread">
                 {opened.messages.map((message) => (
                   <li key={message.id} className={message.sender_type}>
-                    <strong>{message.sender_name}</strong>
+                    <div className="portal-thread-meta">
+                      <strong>{message.sender_name}</strong>
+                      <small>{formatDate(message.created_at)}</small>
+                    </div>
                     <p>{message.message_body}</p>
-                    <small>{formatDate(message.created_at)}</small>
                   </li>
                 ))}
               </ol>
-              <label className="portal-inline-field">
-                <span>Reply</span>
-                <textarea
-                  maxLength={5000}
-                  value={reply}
-                  onChange={(event) => setReply(event.target.value)}
-                />
-              </label>
+              <div className="admin-reply-composer">
+                <label className="portal-inline-field">
+                  <span>Reply</span>
+                  <textarea
+                    maxLength={5000}
+                    value={reply}
+                    onChange={(event) => setReply(event.target.value)}
+                  />
+                </label>
+                <div className="portal-action-group">
+                  <button
+                    type="button"
+                    disabled={busy || !reply.trim()}
+                    onClick={sendReply}
+                  >
+                    Send reply
+                  </button>
+                </div>
+              </div>
+            </section>
+            <section
+              className="admin-context-panel"
+              aria-label="Conversation context and actions"
+            >
+              <h3>Conversation actions</h3>
+              <div className="portal-action-group">
+                <label>
+                  <span>Related record type</span>
+                  <select
+                    value={relation.type}
+                    onChange={(event) =>
+                      setRelation({ ...relation, type: event.target.value })
+                    }
+                  >
+                    <option value="">Select</option>
+                    {[
+                      "service",
+                      "engagement",
+                      "task",
+                      "document",
+                      "appointment",
+                      "invoice",
+                    ].map((type) => (
+                      <option key={type} value={type}>
+                        {labels[type] || type}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span>Related record reference</span>
+                  <input
+                    value={relation.id}
+                    onChange={(event) =>
+                      setRelation({ ...relation, id: event.target.value })
+                    }
+                    placeholder="Record reference"
+                  />
+                </label>
+                <button
+                  type="button"
+                  disabled={busy || !relation.type || !relation.id.trim()}
+                  onClick={linkRecord}
+                >
+                  Link record
+                </button>
+              </div>
               <div className="portal-action-group">
                 <button
                   type="button"
-                  disabled={busy || !reply.trim()}
-                  onClick={sendReply}
+                  disabled={busy}
+                  onClick={() => setStatus("waiting_on_client")}
                 >
-                  Send reply
+                  Waiting on client
+                </button>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => setStatus("waiting_on_alchemize")}
+                >
+                  Needs Alchemize response
+                </button>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => setStatus("resolved")}
+                >
+                  Mark resolved
+                </button>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => setStatus("archived")}
+                >
+                  Archive
                 </button>
               </div>
-            </>
-          ) : (
-            <AdminEmptyState title="Select a conversation to review its history." />
-          )}
-        </section>
-        {opened ? (
-          <section
-            className="admin-context-panel"
-            aria-label="Conversation context and actions"
-          >
-            <h3>Conversation actions</h3>
-            <div className="portal-action-group">
-              <label>
-                <span>Related record type</span>
-                <select
-                  value={relation.type}
-                  onChange={(event) =>
-                    setRelation({ ...relation, type: event.target.value })
-                  }
-                >
-                  <option value="">Select</option>
-                  {[
-                    "service",
-                    "engagement",
-                    "task",
-                    "document",
-                    "appointment",
-                    "invoice",
-                  ].map((type) => (
-                    <option key={type} value={type}>
-                      {labels[type] || type}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                <span>Related record reference</span>
-                <input
-                  value={relation.id}
-                  onChange={(event) =>
-                    setRelation({ ...relation, id: event.target.value })
-                  }
-                  placeholder="Record reference"
-                />
-              </label>
-              <button
-                type="button"
-                disabled={busy || !relation.type || !relation.id.trim()}
-                onClick={linkRecord}
-              >
-                Link record
-              </button>
-            </div>
-            <div className="portal-action-group">
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => setStatus("waiting_on_client")}
-              >
-                Waiting on client
-              </button>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => setStatus("waiting_on_alchemize")}
-              >
-                Needs Alchemize response
-              </button>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => setStatus("resolved")}
-              >
-                Mark resolved
-              </button>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => setStatus("archived")}
-              >
-                Archive
-              </button>
-            </div>
-          </section>
-        ) : null}
+            </section>
+          </>
+        ) : (
+          <p className="admin-conversation-hint">
+            Select a conversation from the list to view its history and reply.
+          </p>
+        )}
       </div>
     </div>
   );

@@ -168,6 +168,33 @@ for (const width of [1440, 1024, 768]) {
   });
 }
 
+test("Dashboard operational modules and quick actions stay compact and accessible", async ({
+  page,
+}) => {
+  await mockAdmin(page);
+  await page.goto("/admin/dashboard/");
+  await expect(
+    page.locator(".dashboard-summary-strip .dashboard-summary-item").first(),
+  ).toBeVisible();
+  for (const heading of [
+    "Upcoming schedule",
+    "Active service work",
+    "Billing watch",
+    "Quick actions",
+  ]) {
+    await expect(page.getByRole("heading", { name: heading })).toBeVisible();
+  }
+  const quickActions = page.locator(".dashboard-quick-actions");
+  await expect(quickActions).toBeVisible();
+  expect((await quickActions.boundingBox()).height).toBeLessThan(80);
+  await expect(
+    quickActions.getByRole("link", { name: "Client management" }),
+  ).toHaveAttribute("href", "/admin/clients");
+  await expect(
+    quickActions.getByRole("link", { name: "Billing" }),
+  ).toHaveAttribute("href", "/admin/billing");
+});
+
 for (const width of [1440, 1024, 768]) {
   test(`Clients page stays usable and toned at ${width}px`, async ({
     page,
@@ -308,6 +335,64 @@ test("Communications preserves compose width and empty-grid height", async ({
   expect(
     (await page.locator(".admin-workspace-grid").boundingBox()).height,
   ).toBeLessThan(180);
+});
+
+test("Communications no-selection state avoids a permanent actions panel", async ({
+  page,
+}) => {
+  await mockAdmin(page);
+  await page.goto("/admin/communications/");
+  await expect(
+    page.getByRole("button", { name: /Planning next steps/ }),
+  ).toBeVisible();
+  await expect(page.locator(".admin-context-panel")).toHaveCount(0);
+  await expect(page.locator(".admin-conversation-panel")).toHaveCount(0);
+  await expect(
+    page.getByText("Select a conversation from the list to view its history"),
+  ).toBeVisible();
+  expect(
+    (await page.locator(".admin-workspace-grid").boundingBox()).height,
+  ).toBeLessThan(220);
+});
+
+test("Selected conversation renders a compact message timeline, composer, and actions", async ({
+  page,
+}) => {
+  await mockAdmin(page);
+  await page.goto("/admin/communications/");
+  await page.getByRole("button", { name: /Planning next steps/ }).click();
+
+  const message = page.locator(".portal-thread li").first();
+  await expect(message.locator(".portal-thread-meta strong")).toHaveText(
+    "North Harbor Studio",
+  );
+  await expect(message.locator(".portal-thread-meta small")).not.toBeEmpty();
+  await expect(
+    page.getByText("Please review the operating plan before our meeting."),
+  ).toBeVisible();
+
+  await expect(page.getByRole("textbox", { name: "Reply" })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Send reply", exact: true }),
+  ).toBeVisible();
+
+  const context = page.locator(".admin-context-panel");
+  await expect(context).toBeVisible();
+  await expect(
+    context.getByRole("combobox", { name: "Related record type" }),
+  ).toBeVisible();
+  await expect(
+    context.getByRole("button", { name: "Link record", exact: true }),
+  ).toBeVisible();
+  await expect(
+    context.getByRole("button", { name: "Waiting on client", exact: true }),
+  ).toBeVisible();
+  await expect(
+    context.getByRole("button", { name: "Mark resolved", exact: true }),
+  ).toBeVisible();
+  await expect(
+    context.getByRole("button", { name: "Archive", exact: true }),
+  ).toBeVisible();
 });
 
 test("Nav labels, routes, and primary actions remain intact across refreshed pages", async ({

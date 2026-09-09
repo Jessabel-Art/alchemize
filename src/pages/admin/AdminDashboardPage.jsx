@@ -842,7 +842,7 @@ function AdminDashboardPage() {
               <div className="dashboard-empty-state">No past-due invoices.</div>
             )}
           </article>
-          <aside className="dashboard-panel">
+          <aside className="dashboard-quick-actions">
             <div className="panel-heading">
               <h2>Quick actions</h2>
             </div>
