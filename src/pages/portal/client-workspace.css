@@ -253,8 +253,8 @@
 .portal-secondary-link:focus-visible,
 .portal-quick-action-tile:hover,
 .portal-quick-action-tile:focus-visible,
-.portal-service-card:hover,
-.portal-service-card:focus-within,
+.portal-dashboard-service-card:hover,
+.portal-dashboard-service-card:focus-within,
 .portal-activity-list li:hover,
 .portal-activity-list li:focus-visible {
   color: var(--emerald-deep);
@@ -298,7 +298,16 @@
   gap: 1rem;
   margin-top: 1rem;
 }
-.portal-service-card {
+@media (max-width: 680px) {
+  .portal-service-card-grid {
+    grid-template-columns: 1fr;
+  }
+}
+/* Named distinctly from the Services-list page's .portal-service-card
+   (portal.css), which is a two-column horizontal row layout — reusing
+   that class name here caused this vertical tile card to inherit a
+   2-column grid-template-columns it was never meant to have. */
+.portal-dashboard-service-card {
   display: grid;
   gap: 0.9rem;
   padding: 1rem;
@@ -320,11 +329,11 @@
   width: 42px;
   height: 42px;
 }
-.portal-service-card h3 {
+.portal-dashboard-service-card h3 {
   margin: 0;
   font-size: 1.2rem;
 }
-.portal-service-card p {
+.portal-dashboard-service-card p {
   margin: 0;
   color: var(--color-text-soft);
   line-height: 1.5;
@@ -886,5 +895,296 @@
 @media (max-width: 540px) {
   .portal-financial-overview {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ---------------------------------------------------------------------
+   Client Portal Dashboard — guided service workspace redesign
+   ------------------------------------------------------------------- */
+
+.client-dashboard-header {
+  position: relative;
+  overflow: hidden;
+}
+.client-dashboard-header h1 {
+  margin-top: 4px;
+}
+.client-dashboard-subline {
+  margin-top: 2px !important;
+  font-family: var(--font-display);
+  font-size: clamp(18px, 1.6vw, 24px) !important;
+  color: var(--color-text-soft) !important;
+  max-width: none !important;
+}
+.client-dashboard-emblem {
+  position: absolute;
+  top: -30px;
+  right: -20px;
+  width: 160px;
+  height: 160px;
+  background-image: url("/assets/logos/alchemize-emblem-dark.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+  opacity: 0.06;
+  pointer-events: none;
+}
+
+.portal-status-strip {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  margin-bottom: 24px;
+  padding: 4px 0;
+  border-top: 1px solid var(--client-line);
+  border-bottom: 1px solid var(--client-line);
+}
+.portal-status-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 24px;
+  border-right: 1px solid var(--client-line);
+}
+.portal-status-item:first-child {
+  padding-left: 0;
+}
+.portal-status-item:last-child {
+  border-right: 0;
+}
+.portal-status-item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: rgba(215, 176, 95, 0.14);
+  color: var(--emerald-deep);
+}
+.portal-status-item > div {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+.portal-status-item strong {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1.1;
+  color: var(--emerald-deep);
+}
+.portal-status-item span {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-soft);
+}
+.portal-status-item small {
+  font-size: 11px;
+  color: var(--color-text-soft);
+  opacity: 0.75;
+}
+
+.portal-action-subhead {
+  margin: -4px 0 4px;
+  color: var(--color-text-soft);
+  font-size: 13px;
+}
+
+/* Honest current-state rail: a single "you are here" marker with a
+   continuing track — no fabricated named future stages, since the
+   underlying service/engagement data only exposes a current status. */
+.portal-service-progress {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 4px 0 2px;
+}
+.portal-progress-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--client-line);
+  flex: 0 0 auto;
+}
+.portal-progress-dot.active {
+  background: var(--gold);
+  box-shadow: 0 0 0 3px rgba(215, 176, 95, 0.22);
+}
+.portal-progress-track {
+  flex: 1 1 auto;
+  height: 2px;
+  background: linear-gradient(to right, var(--gold) 0%, var(--client-line) 45%);
+  border-radius: 999px;
+}
+
+.portal-appointment-body {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+.portal-appointment-date-block {
+  flex: 0 0 auto;
+  display: grid;
+  width: 52px;
+  border: 1px solid var(--client-line);
+  border-radius: 8px;
+  overflow: hidden;
+  text-align: center;
+}
+.portal-appointment-date-block span {
+  padding: 3px 0;
+  background: var(--emerald-deep);
+  color: var(--white);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.portal-appointment-date-block strong {
+  padding: 6px 0;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--emerald-deep);
+}
+.portal-appointment-body > div {
+  min-width: 0;
+}
+.portal-appointment-body h2 {
+  font-size: 19px !important;
+}
+.portal-appointment-panel.portal-record-panel {
+  min-height: 0;
+}
+
+.portal-balance-label {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-soft);
+  margin-top: 6px;
+}
+.portal-balance-label + .portal-balance {
+  margin-top: 2px;
+}
+
+/* Onboarding — compact "almost ready" banner shown once most steps are
+   complete, replacing the full checklist so it stops consuming a full
+   dashboard region for a nearly-finished task. */
+.portal-onboarding-banner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 18px;
+  border: 1px solid rgba(215, 176, 95, 0.4);
+  border-radius: 10px;
+  background: rgba(215, 176, 95, 0.08);
+}
+.portal-onboarding-banner-copy {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+.portal-onboarding-banner-copy h2 {
+  font-size: 16px !important;
+  font-weight: 600;
+}
+.portal-onboarding-banner-copy span {
+  font-size: 12px;
+  color: var(--color-text-soft);
+}
+.portal-onboarding-banner progress {
+  width: 110px;
+  height: 6px;
+  flex: 0 0 auto;
+  accent-color: var(--gold);
+}
+.portal-onboarding-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+.portal-onboarding-dismiss {
+  font-size: 12px;
+  padding: 6px 10px;
+  min-height: 0;
+}
+
+/* Quick actions — one bordered container, not a bordered tile inside a
+   bordered card. */
+.portal-quick-action-tile {
+  border: 0;
+  background: transparent;
+  border-radius: 8px;
+  padding: 0.6rem 0.5rem;
+}
+.portal-quick-action-tile:not(:last-child) {
+  border-bottom: 1px solid var(--client-line);
+  border-radius: 0;
+}
+.portal-quick-action-tile:hover,
+.portal-quick-action-tile:focus-visible {
+  background: rgba(215, 176, 95, 0.1);
+  border-radius: 8px;
+}
+.portal-quick-grid {
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
+/* Recent activity — subtle connecting timeline rail. */
+.portal-activity-list {
+  position: relative;
+}
+.portal-activity-list li {
+  position: relative;
+}
+.portal-activity-list li:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 15px;
+  top: 32px;
+  bottom: -14px;
+  width: 1px;
+  background: var(--client-line);
+}
+.portal-activity-icon {
+  position: relative;
+  z-index: 1;
+  background: var(--client-surface, #fff);
+}
+
+@media (max-width: 800px) {
+  .portal-status-strip {
+    flex-wrap: wrap;
+  }
+  .portal-status-item {
+    flex: 1 1 45%;
+    border-right: 0;
+    border-bottom: 1px solid var(--client-line);
+    padding: 10px 12px;
+  }
+  .portal-quick-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 540px) {
+  .client-dashboard-emblem {
+    display: none;
+  }
+  .portal-status-item {
+    flex: 1 1 100%;
+  }
+  .portal-onboarding-banner {
+    flex-wrap: wrap;
+  }
+  .portal-onboarding-banner-actions {
+    margin-left: 0;
+    width: 100%;
+    justify-content: space-between;
   }
 }

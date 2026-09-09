@@ -107,8 +107,13 @@ test("the portal root resolves to the one canonical service workspace", async ({
 }) => {
   await page.goto("/client-portal/");
   await expect(page).toHaveURL(/\/client-portal\/dashboard\/?$/);
+  // The dashboard headline is now the dynamic time-of-day greeting rather
+  // than a static "Your service workspace" title (deliberate redesign).
   await expect(
-    page.getByRole("heading", { level: 1, name: "Your service workspace" }),
+    page.getByRole("heading", {
+      level: 1,
+      name: /Good (morning|afternoon|evening), North Harbor/,
+    }),
   ).toBeVisible();
   await expect(page.getByText("Your business workspace")).toHaveCount(0);
 });
@@ -182,9 +187,15 @@ test("dashboard redesign renders action required and quick actions without dupli
   );
 
   await page.goto("/client-portal/dashboard/");
+  // The Action Required heading now reads as a direct sentence rather
+  // than repeating the "Action required" section kicker (deliberate
+  // redesign); the kicker text itself is asserted separately below.
   await expect(
-    page.getByRole("heading", { name: "Action required" }),
+    page.getByRole("heading", { name: "We need something from you." }),
   ).toBeVisible();
+  await expect(page.locator(".portal-action-hero .section-kicker")).toHaveText(
+    "Action required",
+  );
   await expect(page.getByText("Identification document")).toBeVisible();
   await expect(page.getByText("Review service update")).toBeVisible();
   await expect(page.getByText("Documents needed")).toHaveCount(0);
@@ -621,4 +632,139 @@ test("populated setup and action queue stay compact", async ({ page }) => {
     path: "artifacts/client-ui-dashboard-populated.png",
     fullPage: true,
   });
+});
+
+test("compact status strip reflects real service, action, and balance counts", async ({
+  page,
+}) => {
+  await page.goto("/client-portal/dashboard/");
+  const strip = page.locator(".portal-status-strip");
+  await expect(strip).toBeVisible();
+  await expect(strip).toContainText("Active Service");
+  await expect(strip).toContainText("Action Needed");
+  await expect(strip).toContainText("Balance Due");
+  // Fixture: 1 active service, 1 attention item (from next_task fallback),
+  // and open_balance "450.00" — the strip must reflect these real values,
+  // not mockup placeholders.
+  await expect(
+    strip.locator(".portal-status-item", { hasText: "Active Service" }),
+  ).toContainText("1");
+  await expect(
+    strip.locator(".portal-status-item", { hasText: "Balance Due" }),
+  ).toContainText("$450.00");
+});
+
+test("onboarding collapses to a compact banner once nearly complete, and preserves dismiss", async ({
+  page,
+}) => {
+  await page.route("**/alchemize-api.php?route=portal%2Fdashboard", (route) =>
+    route.fulfill({
+      json: {
+        data: {
+          ...portalPayloads.dashboard,
+          onboarding: {
+            dismissed: false,
+            steps: [
+              {
+                key: "profile",
+                label: "Confirm profile information",
+                complete: true,
+                to: "/client-portal/profile",
+              },
+              {
+                key: "service",
+                label: "Review active service",
+                complete: true,
+                to: "/client-portal/services",
+              },
+              {
+                key: "task",
+                label: "Complete your first task",
+                complete: true,
+                to: "/client-portal/tasks",
+              },
+              {
+                key: "documents",
+                label: "Provide requested documents",
+                complete: false,
+                to: "/client-portal/tasks-and-documents",
+              },
+            ],
+          },
+        },
+      },
+    }),
+  );
+  await page.goto("/client-portal/dashboard/");
+  await expect(page.locator(".portal-onboarding")).toHaveCount(0);
+  const banner = page.locator(".portal-onboarding-banner");
+  await expect(banner).toBeVisible();
+  await expect(banner).toContainText("3 of 4 complete");
+  await expect(
+    banner.getByRole("link", { name: /Provide requested documents/ }),
+  ).toBeVisible();
+  await banner.getByRole("button", { name: "Dismiss" }).click();
+  await expect(page.locator(".portal-onboarding-banner")).toHaveCount(0);
+});
+
+test("multiple service cards render side by side on desktop and stack cleanly on mobile without text corruption", async ({
+  page,
+}) => {
+  await page.route("**/alchemize-api.php?route=portal%2Fservices", (route) =>
+    route.fulfill({
+      json: {
+        data: {
+          items: [
+            {
+              id: "eng-a",
+              title: "Business Consulting",
+              description: "Professional business consulting services.",
+              status: "in_progress",
+              start_date: "2026-09-03",
+              service_names: ["Business Consulting"],
+            },
+            {
+              id: "eng-b",
+              title: "Website Maintenance",
+              description: "Ongoing site updates and support.",
+              status: "in_progress",
+              start_date: "2026-09-03",
+              service_names: ["Website Maintenance"],
+            },
+          ],
+        },
+      },
+    }),
+  );
+
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("/client-portal/dashboard/");
+  const cards = page.locator(".portal-dashboard-service-card");
+  await expect(cards).toHaveCount(2);
+  const [firstBox, secondBox] = await Promise.all([
+    cards.nth(0).boundingBox(),
+    cards.nth(1).boundingBox(),
+  ]);
+  // Side by side at desktop width, not stacked.
+  expect(secondBox.x).toBeGreaterThan(firstBox.x + firstBox.width - 5);
+
+  await page.setViewportSize({ width: 390, height: 1400 });
+  await page.waitForTimeout(50);
+  const mobileFirstBox = await cards.nth(0).boundingBox();
+  const description = cards
+    .nth(0)
+    .getByText("Professional business consulting services.");
+  await expect(description).toBeVisible();
+  const descriptionBox = await description.boundingBox();
+  // Regression guard: this exact scenario previously collapsed to a
+  // near-zero-width column (a shared .portal-service-card class name
+  // collided with the Services-list page's 2-column row layout),
+  // wrapping the description one character per line.
+  expect(descriptionBox.width).toBeGreaterThan(mobileFirstBox.width * 0.5);
+  const overflows = await page.evaluate(
+    () =>
+      document.documentElement.scrollWidth >
+      document.documentElement.clientWidth,
+  );
+  expect(overflows).toBeFalsy();
 });

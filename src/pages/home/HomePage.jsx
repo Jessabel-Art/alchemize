@@ -52,7 +52,7 @@ function resolveResourceCard(item, language) {
       type: item.type,
       descriptor: item.descriptor,
       featured: false,
-      image: null,
+      image: "/assets/images/home/seo-metadata-resource.png",
       icon: ClipboardCheck,
       tone: "gold",
     };

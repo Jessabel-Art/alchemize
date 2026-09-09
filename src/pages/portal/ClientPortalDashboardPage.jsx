@@ -134,6 +134,14 @@ function ClientPortalDashboardPage() {
     onboarding &&
     !onboarding.dismissed &&
     onboarding.steps?.some((step) => !step.complete);
+  const onboardingCompletedCount =
+    onboarding?.steps?.filter((step) => step.complete).length || 0;
+  const onboardingTotalCount = onboarding?.steps?.length || 0;
+  const onboardingNearlyComplete =
+    onboardingIncomplete &&
+    onboardingTotalCount > 0 &&
+    onboardingCompletedCount / onboardingTotalCount >= 0.75;
+  const onboardingNextStep = onboarding?.steps?.find((step) => !step.complete);
   const attentionItems =
     attention.length > 0
       ? attention
@@ -149,71 +157,152 @@ function ClientPortalDashboardPage() {
           ]
         : [];
 
+  const balanceDue = Number(summary?.open_balance || 0);
+
   return (
     <div className="portal-page client-workspace">
-      <header className="portal-page-header">
+      <header className="portal-page-header client-dashboard-header">
         <div>
           <span className="section-kicker">Client portal</span>
-          <h1>Your service workspace</h1>
+          <h1>{greetingFor(name)}.</h1>
+          <p className="client-dashboard-subline">
+            Here&apos;s where things stand.
+          </p>
         </div>
-        <p>
-          {greetingFor(name)}. Here&apos;s what&apos;s happening with your
-          Alchemize account.
-        </p>
+        <p>Thank you for trusting Alchemize with your business journey.</p>
+        <span className="client-dashboard-emblem" aria-hidden="true" />
       </header>
+
+      <div className="portal-status-strip" aria-label="Account overview">
+        <div className="portal-status-item">
+          <span className="portal-status-item-icon" aria-hidden="true">
+            <Briefcase size={16} />
+          </span>
+          <div>
+            <strong>{activeServices.length}</strong>
+            <span>Active Service{activeServices.length === 1 ? "" : "s"}</span>
+            <small>In progress</small>
+          </div>
+        </div>
+        <div className="portal-status-item">
+          <span className="portal-status-item-icon" aria-hidden="true">
+            <Bell size={16} />
+          </span>
+          <div>
+            <strong>{attentionItems.length}</strong>
+            <span>Action{attentionItems.length === 1 ? "" : "s"} Needed</span>
+            <small>
+              {attentionItems.length
+                ? "Requires your attention"
+                : "All caught up"}
+            </small>
+          </div>
+        </div>
+        <div className="portal-status-item">
+          <span className="portal-status-item-icon" aria-hidden="true">
+            <ReceiptText size={16} />
+          </span>
+          <div>
+            <strong>{formatCurrency(balanceDue)}</strong>
+            <span>Balance Due</span>
+            <small>{nextInvoice ? "1 invoice" : "No open invoices"}</small>
+          </div>
+        </div>
+      </div>
 
       <div className="portal-dashboard-grid">
         <div className="portal-dashboard-main">
           {onboardingIncomplete && !onboardingDismissed ? (
-            <section
-              className="portal-onboarding"
-              aria-labelledby="getting-started-title"
-            >
-              <div className="portal-section-heading">
-                <div>
-                  <span className="section-kicker">Getting started</span>
-                  <h2 id="getting-started-title">Set up your workspace</h2>
+            onboardingNearlyComplete ? (
+              <section
+                className="portal-onboarding-banner"
+                aria-labelledby="getting-started-title"
+              >
+                <div className="portal-onboarding-banner-copy">
+                  <h2 id="getting-started-title">
+                    Your workspace is almost ready
+                  </h2>
+                  <span>
+                    {onboardingCompletedCount} of {onboardingTotalCount}{" "}
+                    complete
+                  </span>
                 </div>
-                <button
-                  type="button"
-                  className="portal-action-button portal-quiet-button"
-                  onClick={async () => {
-                    await portalApi.dismissOnboarding();
-                    setOnboardingDismissed(true);
-                  }}
-                >
-                  Dismiss checklist
-                </button>
-              </div>
-              <div className="portal-setup-progress">
-                <span>
-                  {onboarding.steps.filter((step) => step.complete).length} of{" "}
-                  {onboarding.steps.length} complete
-                </span>
                 <progress
                   aria-label="Workspace setup progress"
-                  value={
-                    onboarding.steps.filter((step) => step.complete).length
-                  }
-                  max={onboarding.steps.length || 1}
+                  value={onboardingCompletedCount}
+                  max={onboardingTotalCount || 1}
                 />
-              </div>
-              <ul className="portal-checklist">
-                {onboarding.steps.map((step) => (
-                  <li key={step.key}>
-                    <span aria-hidden="true">
-                      {step.complete ? (
-                        <CheckCircle2 size={16} />
-                      ) : (
-                        <Circle size={16} />
-                      )}
-                    </span>
-                    <Link to={step.to}>{step.label}</Link>
-                    <small>{step.complete ? "Complete" : "To do"}</small>
-                  </li>
-                ))}
-              </ul>
-            </section>
+                <div className="portal-onboarding-banner-actions">
+                  {onboardingNextStep ? (
+                    <Link
+                      to={onboardingNextStep.to}
+                      className="portal-inline-link"
+                    >
+                      {onboardingNextStep.label}
+                      <ArrowRight size={14} />
+                    </Link>
+                  ) : null}
+                  <button
+                    type="button"
+                    className="portal-quiet-button portal-onboarding-dismiss"
+                    onClick={async () => {
+                      await portalApi.dismissOnboarding();
+                      setOnboardingDismissed(true);
+                    }}
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </section>
+            ) : (
+              <section
+                className="portal-onboarding"
+                aria-labelledby="getting-started-title"
+              >
+                <div className="portal-section-heading">
+                  <div>
+                    <span className="section-kicker">Getting started</span>
+                    <h2 id="getting-started-title">Set up your workspace</h2>
+                  </div>
+                  <button
+                    type="button"
+                    className="portal-action-button portal-quiet-button"
+                    onClick={async () => {
+                      await portalApi.dismissOnboarding();
+                      setOnboardingDismissed(true);
+                    }}
+                  >
+                    Dismiss checklist
+                  </button>
+                </div>
+                <div className="portal-setup-progress">
+                  <span>
+                    {onboardingCompletedCount} of {onboardingTotalCount}{" "}
+                    complete
+                  </span>
+                  <progress
+                    aria-label="Workspace setup progress"
+                    value={onboardingCompletedCount}
+                    max={onboardingTotalCount || 1}
+                  />
+                </div>
+                <ul className="portal-checklist">
+                  {onboarding.steps.map((step) => (
+                    <li key={step.key}>
+                      <span aria-hidden="true">
+                        {step.complete ? (
+                          <CheckCircle2 size={16} />
+                        ) : (
+                          <Circle size={16} />
+                        )}
+                      </span>
+                      <Link to={step.to}>{step.label}</Link>
+                      <small>{step.complete ? "Complete" : "To do"}</small>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )
           ) : null}
 
           <section
@@ -227,7 +316,9 @@ function ClientPortalDashboardPage() {
                 </span>
                 <div>
                   <span className="section-kicker">Action required</span>
-                  <h2 id="action-required-heading">Action required</h2>
+                  <h2 id="action-required-heading">
+                    We need something from you.
+                  </h2>
                 </div>
               </div>
               <Link
@@ -241,6 +332,11 @@ function ClientPortalDashboardPage() {
 
             {attentionItems.length ? (
               <div className="portal-action-list">
+                <p className="portal-subhead portal-action-subhead">
+                  {attentionItems.length} item
+                  {attentionItems.length === 1 ? "" : "s"} waiting for your
+                  attention.
+                </p>
                 {attentionItems.slice(0, 3).map((item, index) => {
                   const Icon = actionIconMap[item.kind] || Briefcase;
                   const actionLabel =
@@ -321,7 +417,10 @@ function ClientPortalDashboardPage() {
                     ? `Assigned to ${item.assigned_contact}`
                     : defaultNextStep;
                   return (
-                    <article className="portal-service-card" key={item.id}>
+                    <article
+                      className="portal-dashboard-service-card"
+                      key={item.id}
+                    >
                       <div className="portal-service-card-top">
                         <div className="portal-service-icon" aria-hidden="true">
                           <Briefcase size={18} />
@@ -332,6 +431,14 @@ function ClientPortalDashboardPage() {
                       </div>
                       <h3>{item.title}</h3>
                       <p>{item.description || "Service in progress."}</p>
+                      <div
+                        className="portal-service-progress"
+                        aria-hidden="true"
+                      >
+                        <span className="portal-progress-dot active" />
+                        <span className="portal-progress-track" />
+                        <span className="portal-progress-dot" />
+                      </div>
                       <dl className="portal-service-meta">
                         <div>
                           <dt>Started</dt>
@@ -434,34 +541,58 @@ function ClientPortalDashboardPage() {
           className="portal-dashboard-rail"
           aria-label="Workspace essentials"
         >
-          <article className="portal-record-panel portal-side-panel">
+          <article className="portal-record-panel portal-side-panel portal-appointment-panel">
             <div className="portal-side-header">
               <span className="section-kicker">Next appointment</span>
               <div className="portal-side-icon" aria-hidden="true">
                 <CalendarClock size={18} />
               </div>
             </div>
-            {nextAppointment ? (
-              <>
-                <h2>{nextAppointment.appointment_type || "Consultation"}</h2>
-                <p>
-                  {formatDate(
-                    nextAppointment.scheduled_start ||
-                      nextAppointment.scheduled_at,
-                    true,
-                  )}
-                </p>
-                <small>
-                  {nextAppointment.meeting_method ||
-                    nextAppointment.location_type ||
-                    "Meeting scheduled"}
-                </small>
-              </>
-            ) : (
-              <>
-                <p>No upcoming appointments.</p>
-              </>
-            )}
+            <div className="portal-appointment-body">
+              <div className="portal-appointment-date-block" aria-hidden="true">
+                <span>
+                  {(nextAppointment
+                    ? new Date(
+                        nextAppointment.scheduled_start ||
+                          nextAppointment.scheduled_at,
+                      )
+                    : new Date()
+                  ).toLocaleDateString(undefined, { month: "short" })}
+                </span>
+                <strong>
+                  {nextAppointment
+                    ? new Date(
+                        nextAppointment.scheduled_start ||
+                          nextAppointment.scheduled_at,
+                      ).getDate()
+                    : "—"}
+                </strong>
+              </div>
+              {nextAppointment ? (
+                <div>
+                  <h2>{nextAppointment.appointment_type || "Consultation"}</h2>
+                  <p>
+                    {formatDate(
+                      nextAppointment.scheduled_start ||
+                        nextAppointment.scheduled_at,
+                      true,
+                    )}
+                  </p>
+                  <small>
+                    {nextAppointment.meeting_method ||
+                      nextAppointment.location_type ||
+                      "Meeting scheduled"}
+                  </small>
+                </div>
+              ) : (
+                <div>
+                  <p>No upcoming appointments.</p>
+                  <small>
+                    Need to schedule a meeting? We&apos;re here to help.
+                  </small>
+                </div>
+              )}
+            </div>
             <Link to="/client-portal/appointments" className="portal-side-link">
               {nextAppointment ? "View appointments" : "Book an appointment"}
             </Link>
@@ -476,6 +607,7 @@ function ClientPortalDashboardPage() {
             </div>
             {nextInvoice ? (
               <>
+                <span className="portal-balance-label">Balance Due</span>
                 <h2 className="portal-balance">
                   {formatCurrency(
                     summary.open_balance ||
