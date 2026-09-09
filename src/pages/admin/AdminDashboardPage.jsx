@@ -305,32 +305,56 @@ function AdminDashboardPage() {
       value: openLeadCount,
       detail: "Awaiting qualification or follow-up",
       to: "/admin/leads",
+      accent: "info",
     },
     {
       label: "Needs attention",
       value: needsAttentionCount,
       detail: "Open work and follow-up",
       to: "/admin/dashboard#attention",
+      accent: "attention",
     },
     {
       label: "Active clients",
       value: snapshot.clients.filter((client) => isActiveClient(client)).length,
       detail: "Current client relationships",
       to: "/admin/clients",
+      accent: "positive",
     },
     {
       label: "Open invoices",
       value: openInvoiceRows.length,
       detail: `${formatCurrency(totalOutstanding)} outstanding`,
       to: "/admin/billing",
+      accent: "pending",
     },
     {
       label: "Upcoming",
       value: upcomingAppointments.length,
       detail: "Appointments in the next 7 days",
       to: "/admin/appointments",
+      accent: "info",
     },
   ];
+
+  const attentionBreakdown = attentionItems.reduce((totals, item) => {
+    const key = item.type;
+    totals[key] = (totals[key] || 0) + 1;
+    return totals;
+  }, {});
+  const attentionAccentByType = {
+    "Lead follow-up": "info",
+    "Task due": "pending",
+    "Document review": "attention",
+    Invoice: "danger",
+    "Client follow-up": "archived",
+  };
+
+  const pastDueTotal = billingWatch
+    .filter((invoice) => invoice.status === "Past Due")
+    .reduce((total, invoice) => total + getInvoiceRemainingBalance(invoice), 0);
+  const openNotPastDueTotal = Math.max(0, totalOutstanding - pastDueTotal);
+  const billingBarTotal = pastDueTotal + openNotPastDueTotal || 1;
 
   return (
     <div className="portal-page admin-dashboard">
@@ -351,7 +375,7 @@ function AdminDashboardPage() {
           <Link
             key={metric.label}
             to={metric.to}
-            className="dashboard-summary-item metric-link-card"
+            className={`dashboard-summary-item metric-link-card accent-${metric.accent}`}
           >
             <span>{metric.label}</span>
             <strong>{metric.value}</strong>
@@ -364,11 +388,40 @@ function AdminDashboardPage() {
         <div className="dashboard-main-column">
           <article id="attention" className="dashboard-panel">
             <div className="panel-heading">
-              <h2>Today / Needs your attention</h2>
+              <h2>
+                Today / Needs your attention
+                {attentionItems.length ? (
+                  <span className="panel-count">{attentionItems.length}</span>
+                ) : null}
+              </h2>
               <Link to="/admin/leads" className="dashboard-view-link">
                 View all
               </Link>
             </div>
+            {attentionItems.length ? (
+              <div
+                className="dashboard-distribution-bar"
+                role="img"
+                aria-label={Object.entries(attentionBreakdown)
+                  .map(([type, count]) => `${count} ${type}`)
+                  .join(", ")}
+              >
+                {Object.entries(attentionBreakdown).map(([type, count]) => (
+                  <span
+                    key={type}
+                    className={`dashboard-distribution-segment accent-${attentionAccentByType[type] || "info"}`}
+                    style={{ flexGrow: count }}
+                  />
+                ))}
+              </div>
+            ) : null}
+            {attentionItems.length ? (
+              <p className="dashboard-distribution-legend">
+                {Object.entries(attentionBreakdown)
+                  .map(([type, count]) => `${count} ${type}`)
+                  .join(" · ")}
+              </p>
+            ) : null}
             {attentionItems.length ? (
               <ul className="attention-list compact-list">
                 {attentionItems.map((item) => (
@@ -377,7 +430,7 @@ function AdminDashboardPage() {
                       <div className="attention-item-topline">
                         <span className="attention-kind">{item.type}</span>
                         <span
-                          className={`status-pill ${item.status === "Past Due" || item.reason?.includes("Past Due") ? "warning" : "info"}`}
+                          className={`status-pill ${item.status === "Past Due" || item.reason?.includes("Past Due") ? "danger" : "info"}`}
                         >
                           {item.status || "Active"}
                         </span>
@@ -524,7 +577,12 @@ function AdminDashboardPage() {
           </article>
           <article className="dashboard-panel">
             <div className="panel-heading">
-              <h2>Prospect follow-up</h2>
+              <h2>
+                Prospect follow-up
+                {leadQueue.length ? (
+                  <span className="panel-count">{leadQueue.length}</span>
+                ) : null}
+              </h2>
               <Link to="/admin/leads" className="dashboard-view-link">
                 View all
               </Link>
@@ -554,7 +612,12 @@ function AdminDashboardPage() {
           </article>
           <article className="dashboard-panel">
             <div className="panel-heading">
-              <h2>Documents requiring action</h2>
+              <h2>
+                Documents requiring action
+                {documentActions.length ? (
+                  <span className="panel-count">{documentActions.length}</span>
+                ) : null}
+              </h2>
               <Link to="/admin/documents" className="dashboard-view-link">
                 View all
               </Link>
@@ -626,7 +689,14 @@ function AdminDashboardPage() {
         >
           <article className="dashboard-panel">
             <div className="panel-heading">
-              <h2>Upcoming schedule</h2>
+              <h2>
+                Upcoming schedule
+                {upcomingAppointments.length ? (
+                  <span className="panel-count">
+                    {upcomingAppointments.length}
+                  </span>
+                ) : null}
+              </h2>
               <Link to="/admin/appointments" className="dashboard-view-link">
                 View calendar
               </Link>
@@ -675,7 +745,14 @@ function AdminDashboardPage() {
           </article>
           <article className="dashboard-panel">
             <div className="panel-heading">
-              <h2>Active service work</h2>
+              <h2>
+                Active service work
+                {activeServiceWork.length ? (
+                  <span className="panel-count">
+                    {activeServiceWork.length}
+                  </span>
+                ) : null}
+              </h2>
               <Link to="/admin/services" className="dashboard-view-link">
                 View all
               </Link>
@@ -721,19 +798,29 @@ function AdminDashboardPage() {
               </div>
               <div>
                 <span className="dashboard-kicker">Past due</span>
-                <strong>
-                  {formatCurrency(
-                    billingWatch
-                      .filter((invoice) => invoice.status === "Past Due")
-                      .reduce(
-                        (total, invoice) =>
-                          total + getInvoiceRemainingBalance(invoice),
-                        0,
-                      ),
-                  )}
-                </strong>
+                <strong>{formatCurrency(pastDueTotal)}</strong>
               </div>
             </div>
+            {totalOutstanding > 0 ? (
+              <div
+                className="dashboard-distribution-bar"
+                role="img"
+                aria-label={`${formatCurrency(pastDueTotal)} past due, ${formatCurrency(openNotPastDueTotal)} open`}
+              >
+                {pastDueTotal > 0 ? (
+                  <span
+                    className="dashboard-distribution-segment accent-danger"
+                    style={{ flexGrow: pastDueTotal / billingBarTotal }}
+                  />
+                ) : null}
+                {openNotPastDueTotal > 0 ? (
+                  <span
+                    className="dashboard-distribution-segment accent-pending"
+                    style={{ flexGrow: openNotPastDueTotal / billingBarTotal }}
+                  />
+                ) : null}
+              </div>
+            ) : null}
             {billingWatch.length ? (
               <ul className="mini-list compact-list">
                 {billingWatch.map((invoice) => (

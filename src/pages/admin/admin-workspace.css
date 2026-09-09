@@ -139,10 +139,47 @@
     padding: 13px 16px;
     border: 0;
     border-right: 1px solid var(--admin-line);
+    border-left: 3px solid transparent;
     border-radius: 0;
     background: transparent;
     display: grid;
     gap: 5px;
+  }
+  .admin-portal-shell
+    :is(.admin-metric-card, .dashboard-summary-item).accent-positive,
+  .admin-portal-shell
+    :is(.admin-metric-card, .dashboard-summary-item).tone-positive {
+    border-left-color: var(--admin-positive);
+  }
+  .admin-portal-shell
+    :is(.admin-metric-card, .dashboard-summary-item).accent-pending,
+  .admin-portal-shell
+    :is(.admin-metric-card, .dashboard-summary-item).tone-pending {
+    border-left-color: var(--admin-pending);
+  }
+  .admin-portal-shell
+    :is(.admin-metric-card, .dashboard-summary-item).accent-attention,
+  .admin-portal-shell
+    :is(.admin-metric-card, .dashboard-summary-item).tone-attention {
+    border-left-color: var(--admin-attention);
+  }
+  .admin-portal-shell
+    :is(.admin-metric-card, .dashboard-summary-item).accent-danger,
+  .admin-portal-shell
+    :is(.admin-metric-card, .dashboard-summary-item).tone-danger {
+    border-left-color: var(--admin-danger);
+  }
+  .admin-portal-shell
+    :is(.admin-metric-card, .dashboard-summary-item).accent-info,
+  .admin-portal-shell
+    :is(.admin-metric-card, .dashboard-summary-item).tone-info {
+    border-left-color: var(--admin-info);
+  }
+  .admin-portal-shell
+    :is(.admin-metric-card, .dashboard-summary-item).accent-archived,
+  .admin-portal-shell
+    :is(.admin-metric-card, .dashboard-summary-item).tone-archived {
+    border-left-color: var(--admin-archived);
   }
   .admin-portal-shell :is(.admin-metric-card, .dashboard-summary-item) > span {
     font-size: 10px;
@@ -469,6 +506,44 @@
     grid-template-columns: minmax(230px, 0.8fr) minmax(0, 1.6fr);
     align-items: start;
     gap: 22px;
+  }
+  .admin-portal-shell .admin-workspace-grid.three-pane {
+    grid-template-columns:
+      minmax(220px, 0.7fr) minmax(0, 1.3fr)
+      minmax(240px, 0.8fr);
+  }
+  .admin-portal-shell .admin-context-panel {
+    min-width: 0;
+    display: grid;
+    gap: 14px;
+    align-content: start;
+    padding: 16px;
+    border: 1px solid var(--admin-line);
+    border-radius: 5px;
+    background: var(--admin-surface);
+  }
+  .admin-portal-shell .admin-context-panel h3 {
+    margin: 0;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-text-soft);
+  }
+  .admin-portal-shell .admin-context-panel .portal-action-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .admin-unread-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .admin-unread-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: var(--admin-info);
+    flex: 0 0 auto;
   }
   .admin-portal-shell .admin-list-panel {
     padding-right: 18px;
@@ -799,7 +874,8 @@
   .admin-portal-shell .dashboard-side-column {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .admin-portal-shell .admin-workspace-grid {
+  .admin-portal-shell .admin-workspace-grid,
+  .admin-portal-shell .admin-workspace-grid.three-pane {
     grid-template-columns: 1fr;
   }
   .admin-portal-shell .admin-list-panel {
@@ -808,6 +884,13 @@
   }
   .admin-portal-shell .has-conversation .admin-list-panel {
     max-height: 260px;
+  }
+  .admin-portal-shell .admin-context-panel {
+    border-left: 0;
+    border-top: 1px solid var(--admin-line);
+    border-radius: 0;
+    background: transparent;
+    padding: 16px 0 0;
   }
   .admin-portal-shell .report-shelf {
     grid-template-columns: 1fr;
@@ -999,7 +1082,10 @@
     justify-self: start;
   }
   .admin-portal-shell .admin-overdue {
-    color: #8b382c;
+    color: var(--admin-attention);
+    background: var(--admin-attention-soft);
+    border-radius: 4px;
+    padding: 4px 8px;
   }
   .admin-portal-shell .admin-overdue small {
     display: block;

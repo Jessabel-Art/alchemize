@@ -29,6 +29,20 @@
   --transition-fast: 160ms ease;
   --transition-base: 240ms ease;
   --transition-slow: 420ms ease;
+
+  /* Admin operational color language (additive; not consumed by public site or client portal) */
+  --admin-positive: #0c6d54;
+  --admin-positive-soft: #e1ebe5;
+  --admin-pending: #9b6200;
+  --admin-pending-soft: #eee7d5;
+  --admin-attention: #b5560f;
+  --admin-attention-soft: #f3e2d1;
+  --admin-danger: var(--color-error);
+  --admin-danger-soft: #f1e2de;
+  --admin-info: #174d72;
+  --admin-info-soft: #e4e9ec;
+  --admin-archived: #415b67;
+  --admin-archived-soft: #eef0ee;
 }
 @media (min-width: 1600px) {
   :root {

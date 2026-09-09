@@ -30,9 +30,9 @@ export function AdminPageHeader({ eyebrow, title, summary, actions = [] }) {
   );
 }
 
-export function AdminMetricCard({ label, value, hint }) {
+export function AdminMetricCard({ label, value, hint, tone }) {
   return (
-    <article className="admin-metric-card">
+    <article className={`admin-metric-card${tone ? ` tone-${tone}` : ""}`}>
       <span>{label}</span>
       <strong>{value}</strong>
       {hint ? <small>{hint}</small> : null}

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   AdminPageHeader,
   AdminStatusBadge,
+  AdminEmptyState,
 } from "../../components/admin/admin-components.jsx";
 import { portalAdmin } from "../../services/admin-api.js";
 import { adminStore } from "../../../js/data/admin-store.js";
@@ -227,7 +228,7 @@ export default function AdminCommunicationsPage() {
         ))}
       </div>
       <div
-        className={`admin-workspace-grid ${opened ? "has-conversation" : ""}`}
+        className={`admin-workspace-grid ${opened ? "has-conversation three-pane" : ""}`}
       >
         <section className="admin-list-panel" aria-label="Client conversations">
           {visible.length ? (
@@ -250,15 +251,16 @@ export default function AdminCommunicationsPage() {
                     status={labels[thread.status] || thread.status}
                   />
                   {Number(thread.unread_count) ? (
-                    <small>{thread.unread_count} unread</small>
+                    <small className="admin-unread-indicator">
+                      <span className="admin-unread-dot" aria-hidden="true" />
+                      {thread.unread_count} unread
+                    </small>
                   ) : null}
                 </span>
               </button>
             ))
           ) : (
-            <p className="admin-empty-state">
-              No conversations match this view.
-            </p>
+            <AdminEmptyState title="No conversations match this view." />
           )}
         </section>
         <section className="admin-conversation-panel" aria-live="polite">
@@ -291,48 +293,6 @@ export default function AdminCommunicationsPage() {
                 />
               </label>
               <div className="portal-action-group">
-                <label>
-                  <span>Related record type</span>
-                  <select
-                    value={relation.type}
-                    onChange={(event) =>
-                      setRelation({ ...relation, type: event.target.value })
-                    }
-                  >
-                    <option value="">Select</option>
-                    {[
-                      "service",
-                      "engagement",
-                      "task",
-                      "document",
-                      "appointment",
-                      "invoice",
-                    ].map((type) => (
-                      <option key={type} value={type}>
-                        {labels[type] || type}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  <span>Related record reference</span>
-                  <input
-                    value={relation.id}
-                    onChange={(event) =>
-                      setRelation({ ...relation, id: event.target.value })
-                    }
-                    placeholder="Record reference"
-                  />
-                </label>
-                <button
-                  type="button"
-                  disabled={busy || !relation.type || !relation.id.trim()}
-                  onClick={linkRecord}
-                >
-                  Link record
-                </button>
-              </div>
-              <div className="portal-action-group">
                 <button
                   type="button"
                   disabled={busy || !reply.trim()}
@@ -340,42 +300,92 @@ export default function AdminCommunicationsPage() {
                 >
                   Send reply
                 </button>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => setStatus("waiting_on_client")}
-                >
-                  Waiting on client
-                </button>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => setStatus("waiting_on_alchemize")}
-                >
-                  Needs Alchemize response
-                </button>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => setStatus("resolved")}
-                >
-                  Mark resolved
-                </button>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => setStatus("archived")}
-                >
-                  Archive
-                </button>
               </div>
             </>
           ) : (
-            <p className="admin-empty-state">
-              Select a conversation to review its history.
-            </p>
+            <AdminEmptyState title="Select a conversation to review its history." />
           )}
         </section>
+        {opened ? (
+          <section
+            className="admin-context-panel"
+            aria-label="Conversation context and actions"
+          >
+            <h3>Conversation actions</h3>
+            <div className="portal-action-group">
+              <label>
+                <span>Related record type</span>
+                <select
+                  value={relation.type}
+                  onChange={(event) =>
+                    setRelation({ ...relation, type: event.target.value })
+                  }
+                >
+                  <option value="">Select</option>
+                  {[
+                    "service",
+                    "engagement",
+                    "task",
+                    "document",
+                    "appointment",
+                    "invoice",
+                  ].map((type) => (
+                    <option key={type} value={type}>
+                      {labels[type] || type}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span>Related record reference</span>
+                <input
+                  value={relation.id}
+                  onChange={(event) =>
+                    setRelation({ ...relation, id: event.target.value })
+                  }
+                  placeholder="Record reference"
+                />
+              </label>
+              <button
+                type="button"
+                disabled={busy || !relation.type || !relation.id.trim()}
+                onClick={linkRecord}
+              >
+                Link record
+              </button>
+            </div>
+            <div className="portal-action-group">
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => setStatus("waiting_on_client")}
+              >
+                Waiting on client
+              </button>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => setStatus("waiting_on_alchemize")}
+              >
+                Needs Alchemize response
+              </button>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => setStatus("resolved")}
+              >
+                Mark resolved
+              </button>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => setStatus("archived")}
+              >
+                Archive
+              </button>
+            </div>
+          </section>
+        ) : null}
       </div>
     </div>
   );

@@ -1377,33 +1377,39 @@ function ClientManagementPage() {
       value: (snapshot.leads || []).filter(
         (lead) => normalizeLeadStatus(lead.status) !== "Converted",
       ).length,
+      tone: "info",
     },
     {
       label: "Needs Follow-Up",
       value: (snapshot.leads || []).filter(
         (lead) => normalizeLeadStatus(lead.status) === "Contacted",
       ).length,
+      tone: "attention",
     },
     {
       label: "Consultations Scheduled",
       value: (snapshot.leads || []).filter(
         (lead) => normalizeLeadStatus(lead.status) === "Consultation Scheduled",
       ).length,
+      tone: "info",
     },
     {
       label: "Active Clients",
       value: snapshot.clients.filter((client) => isActiveClient(client)).length,
+      tone: "positive",
     },
     {
       label: "Inactive Clients",
       value: snapshot.clients.filter((client) => client.status === "Inactive")
         .length,
+      tone: "archived",
     },
     {
       label: "Converted",
       value: (snapshot.leads || []).filter(
         (lead) => normalizeLeadStatus(lead.status) === "Converted",
       ).length,
+      tone: "positive",
     },
   ];
 
@@ -3048,6 +3054,7 @@ function ClientManagementPage() {
           label: item.label,
           value: item.value,
           hint: "Current",
+          tone: item.tone,
         }))}
       />
       <div className="compact-admin-toolbar client-toolbar">
@@ -3204,13 +3211,13 @@ function ClientManagementPage() {
                     <td>
                       {row.recordType === "Client" ? (
                         <Link
-                          className="client-record-link"
+                          className="client-row-link"
                           to={`/admin/clients/${row.id}`}
                         >
                           {row.name}
                         </Link>
                       ) : (
-                        <span>{row.name}</span>
+                        <span className="client-row-name">{row.name}</span>
                       )}
                     </td>
                     <td>
@@ -3811,6 +3818,29 @@ function ServiceManagementPage() {
     });
   }, [catalog, search, audienceFilter, statusFilter, billingFilter]);
 
+  const groupedCatalog = useMemo(() => {
+    const byAudience = new Map();
+    filteredCatalog.forEach((item) => {
+      const audienceKey = item.audience || "Other";
+      if (!byAudience.has(audienceKey)) byAudience.set(audienceKey, new Map());
+      const byCategory = byAudience.get(audienceKey);
+      const categoryKey = item.category || "Uncategorized";
+      if (!byCategory.has(categoryKey)) byCategory.set(categoryKey, []);
+      byCategory.get(categoryKey).push(item);
+    });
+    return Array.from(byAudience.entries()).map(([audience, categories]) => ({
+      audience,
+      count: Array.from(categories.values()).reduce(
+        (total, items) => total + items.length,
+        0,
+      ),
+      categories: Array.from(categories.entries()).map(([category, items]) => ({
+        category,
+        items,
+      })),
+    }));
+  }, [filteredCatalog]);
+
   const openServiceEditor = (service) => {
     setEditingServiceId(service.id);
     setServiceDraft({
@@ -4079,98 +4109,139 @@ function ServiceManagementPage() {
           </div>
         </div>
       ) : null}
-      <div className="admin-table-wrap">
-        <AdminTable className="admin-table">
-          <thead>
-            <tr>
-              <th>Category</th>
-              <th>Service</th>
-              <th>Tier</th>
-              <th>Price</th>
-              <th>Frequency</th>
-              <th>Pricing</th>
-              <th>Status</th>
-              <th>Scope / limits</th>
-              <th>Add-ons</th>
-              <th>Selectable</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredCatalog.flatMap((item) =>
-              (item.tiers?.length ? item.tiers : [null]).map((tier) => (
-                <tr key={`${item.id}:${tier?.id || "service"}`}>
-                  <td>{item.category}</td>
-                  <td>
-                    <strong>{item.serviceName}</strong>
-                  </td>
-                  <td>{tier?.tierName || "—"}</td>
-                  <td>
-                    {tier?.pricingType === "CUSTOM_SOW"
-                      ? "Custom SOW"
-                      : tier?.pricingType === "STARTING_AT"
-                        ? `Starting at ${formatCurrency(tier.minimumPrice || tier.basePrice)}`
-                        : tier?.basePrice == null
-                          ? "Manual Review Required"
-                          : formatCurrency(tier.basePrice)}
-                  </td>
-                  <td>
-                    {tier?.billingFrequency?.replaceAll("_", " ") ||
-                      item.billingType}
-                  </td>
-                  <td>
-                    {tier?.pricingType?.replaceAll("_", " ") ||
-                      item.pricingType}
-                  </td>
-                  <td>
-                    <AdminStatusBadge
-                      status={(tier?.status || item.catalogStatus).replaceAll(
-                        "_",
-                        " ",
-                      )}
-                      tone={
-                        (tier?.status || item.catalogStatus) === "ACTIVE"
-                          ? "success"
-                          : "warning"
-                      }
-                    />
-                  </td>
-                  <td>
-                    <AdminLongText>
-                      {tier?.description || item.shortDescription}
-                      {tier?.limits
-                        ? ` · Limits: ${typeof tier.limits === "string" ? tier.limits : JSON.stringify(tier.limits)}`
-                        : ""}
-                    </AdminLongText>
-                  </td>
-                  <td>{Array.isArray(item.addOns) ? item.addOns.length : 0}</td>
-                  <td>
-                    {item.selectable && tier?.active !== false ? "Yes" : "No"}
-                  </td>
-                  <td>
-                    <div className="table-actions">
-                      <button
-                        type="button"
-                        className="link-button"
-                        onClick={() => openServiceEditor(item)}
-                      >
-                        View
-                      </button>
-                      <button
-                        type="button"
-                        className="link-button"
-                        onClick={() => openServiceEditor(item)}
-                      >
-                        Edit
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              )),
-            )}
-          </tbody>
-        </AdminTable>
-      </div>
+      {groupedCatalog.length ? (
+        <div className="service-catalog-groups">
+          {groupedCatalog.map((audienceGroup) => (
+            <details
+              key={audienceGroup.audience}
+              className="service-catalog-group"
+              open
+            >
+              <summary>
+                <span className="service-catalog-group-title">
+                  {audienceGroup.audience}
+                </span>
+                <span className="panel-count">{audienceGroup.count}</span>
+              </summary>
+              {audienceGroup.categories.map((categoryGroup) => (
+                <div
+                  key={categoryGroup.category}
+                  className="service-catalog-category"
+                >
+                  <h3 className="service-category-heading">
+                    {categoryGroup.category}
+                  </h3>
+                  <div className="admin-table-wrap">
+                    <AdminTable className="admin-table">
+                      <thead>
+                        <tr>
+                          <th>Service</th>
+                          <th>Tier</th>
+                          <th>Price</th>
+                          <th>Frequency</th>
+                          <th>Pricing</th>
+                          <th>Status</th>
+                          <th>Scope / limits</th>
+                          <th>Add-ons</th>
+                          <th>Selectable</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {categoryGroup.items.flatMap((item) =>
+                          (item.tiers?.length ? item.tiers : [null]).map(
+                            (tier) => (
+                              <tr key={`${item.id}:${tier?.id || "service"}`}>
+                                <td>
+                                  <strong>{item.serviceName}</strong>
+                                </td>
+                                <td>{tier?.tierName || "—"}</td>
+                                <td>
+                                  {tier?.pricingType === "CUSTOM_SOW"
+                                    ? "Custom SOW"
+                                    : tier?.pricingType === "STARTING_AT"
+                                      ? `Starting at ${formatCurrency(tier.minimumPrice || tier.basePrice)}`
+                                      : tier?.basePrice == null
+                                        ? "Manual Review Required"
+                                        : formatCurrency(tier.basePrice)}
+                                </td>
+                                <td>
+                                  {tier?.billingFrequency?.replaceAll(
+                                    "_",
+                                    " ",
+                                  ) || item.billingType}
+                                </td>
+                                <td>
+                                  {tier?.pricingType?.replaceAll("_", " ") ||
+                                    item.pricingType}
+                                </td>
+                                <td>
+                                  <AdminStatusBadge
+                                    status={(
+                                      tier?.status || item.catalogStatus
+                                    ).replaceAll("_", " ")}
+                                    tone={
+                                      (tier?.status || item.catalogStatus) ===
+                                      "ACTIVE"
+                                        ? "success"
+                                        : "warning"
+                                    }
+                                  />
+                                </td>
+                                <td>
+                                  <AdminLongText>
+                                    {tier?.description || item.shortDescription}
+                                    {tier?.limits
+                                      ? ` · Limits: ${typeof tier.limits === "string" ? tier.limits : JSON.stringify(tier.limits)}`
+                                      : ""}
+                                  </AdminLongText>
+                                </td>
+                                <td>
+                                  {Array.isArray(item.addOns)
+                                    ? item.addOns.length
+                                    : 0}
+                                </td>
+                                <td>
+                                  {item.selectable && tier?.active !== false
+                                    ? "Yes"
+                                    : "No"}
+                                </td>
+                                <td>
+                                  <div className="table-actions">
+                                    <button
+                                      type="button"
+                                      className="link-button"
+                                      onClick={() => openServiceEditor(item)}
+                                    >
+                                      View
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="link-button"
+                                      onClick={() => openServiceEditor(item)}
+                                    >
+                                      Edit
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ),
+                          ),
+                        )}
+                      </tbody>
+                    </AdminTable>
+                  </div>
+                </div>
+              ))}
+            </details>
+          ))}
+        </div>
+      ) : (
+        <AdminEmptyState
+          title="No services match the selected filters."
+          description="Try a broader search or clear the active filters."
+        />
+      )}
       {serviceSavedMessage ? (
         <div className="admin-toast success">{serviceSavedMessage}</div>
       ) : null}
@@ -4404,7 +4475,7 @@ function ServiceManagementPage() {
           onClick={() => setIsNewServiceOpen(false)}
         >
           <aside
-            className="admin-detail-drawer"
+            className="admin-detail-drawer service-editor-drawer"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="admin-detail-header">
@@ -4418,244 +4489,266 @@ function ServiceManagementPage() {
               </button>
             </div>
             <div className="admin-detail-body">
-              <div className="client-detail-editor-grid">
-                <label>
-                  <span>Service code</span>
-                  <input
-                    type="text"
-                    value={serviceForm.serviceCode}
-                    onChange={(event) =>
-                      setServiceForm((current) => ({
-                        ...current,
-                        serviceCode: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-                <label>
-                  <span>Service name</span>
-                  <input
-                    type="text"
-                    value={serviceForm.serviceName}
-                    onChange={(event) =>
-                      setServiceForm((current) => ({
-                        ...current,
-                        serviceName: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-                <label>
-                  <span>Audience</span>
-                  <select
-                    value={serviceForm.audience}
-                    onChange={(event) =>
-                      setServiceForm((current) => ({
-                        ...current,
-                        audience: event.target.value,
-                      }))
-                    }
-                  >
-                    <option value="Individual">Individual</option>
-                    <option value="Business">Business</option>
-                    <option value="Both">Both</option>
-                  </select>
-                </label>
-                <label>
-                  <span>Status</span>
-                  <select
-                    value={serviceForm.status}
-                    onChange={(event) =>
-                      setServiceForm((current) => ({
-                        ...current,
-                        status: event.target.value,
-                      }))
-                    }
-                  >
-                    {["Active", "Inactive", "Planned", "Archived"].map(
-                      (option) => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      ),
-                    )}
-                  </select>
-                </label>
-                <label>
-                  <span>Category</span>
-                  <input
-                    type="text"
-                    value={serviceForm.category}
-                    onChange={(event) =>
-                      setServiceForm((current) => ({
-                        ...current,
-                        category: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-                <label>
-                  <span>Default duration (minutes)</span>
-                  <input
-                    type="number"
-                    min="15"
-                    step="15"
-                    value={serviceForm.defaultDuration}
-                    onChange={(event) =>
-                      setServiceForm((current) => ({
-                        ...current,
-                        defaultDuration: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-                <label>
-                  <span>Billing type</span>
-                  <select
-                    value={serviceForm.billingType}
-                    onChange={(event) =>
-                      setServiceForm((current) => ({
-                        ...current,
-                        billingType: event.target.value,
-                      }))
-                    }
-                  >
-                    {[
-                      "Fixed Fee",
-                      "Hourly",
-                      "Per Appointment",
-                      "Per Filing / Per Return",
-                      "Project-Based",
-                      "Retainer",
-                      "Recurring Monthly",
-                      "Recurring Quarterly",
-                      "Recurring Annual",
-                      "Custom / Scope of Work",
-                    ].map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  <span>Default price</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="1"
-                    value={serviceForm.defaultPrice}
-                    disabled={
-                      serviceForm.billingType === "Custom / Scope of Work"
-                    }
-                    onChange={(event) =>
-                      setServiceForm((current) => ({
-                        ...current,
-                        defaultPrice: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-                <label>
-                  <span>Currency</span>
-                  <input
-                    type="text"
-                    value={serviceForm.currency}
-                    onChange={(event) =>
-                      setServiceForm((current) => ({
-                        ...current,
-                        currency: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-                <label>
-                  <span>Deposit required</span>
-                  <select
-                    value={serviceForm.depositRequired ? "Yes" : "No"}
-                    onChange={(event) =>
-                      setServiceForm((current) => ({
-                        ...current,
-                        depositRequired: event.target.value === "Yes",
-                      }))
-                    }
-                  >
-                    <option value="No">No</option>
-                    <option value="Yes">Yes</option>
-                  </select>
-                </label>
-                <label>
-                  <span>Default deposit amount</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="1"
-                    value={serviceForm.defaultDepositAmount}
-                    onChange={(event) =>
-                      setServiceForm((current) => ({
-                        ...current,
-                        defaultDepositAmount: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-                <label className="full-span">
-                  <span>Short internal description</span>
-                  <textarea
-                    rows="3"
-                    value={serviceForm.shortDescription}
-                    onChange={(event) =>
-                      setServiceForm((current) => ({
-                        ...current,
-                        shortDescription: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-                <label className="full-span">
-                  <span>Default billing description</span>
-                  <textarea
-                    rows="2"
-                    value={serviceForm.defaultBillingDescription}
-                    onChange={(event) =>
-                      setServiceForm((current) => ({
-                        ...current,
-                        defaultBillingDescription: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-                <label className="full-span">
-                  <span>Internal pricing notes</span>
-                  <textarea
-                    rows="2"
-                    value={serviceForm.internalPricingNotes}
-                    onChange={(event) =>
-                      setServiceForm((current) => ({
-                        ...current,
-                        internalPricingNotes: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-                <label className="full-span">
-                  <span>Add-ons (one per line: code|name|price|notes)</span>
-                  <textarea
-                    rows="4"
-                    value={serviceForm.addOns}
-                    onChange={(event) =>
-                      setServiceForm((current) => ({
-                        ...current,
-                        addOns: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
+              <div className="admin-detail-scroll">
+                <section className="admin-form-section">
+                  <h3 className="admin-form-section-heading">
+                    Service Identity
+                  </h3>
+                  <div className="client-detail-editor-grid">
+                    <label>
+                      <span>Service code</span>
+                      <input
+                        type="text"
+                        value={serviceForm.serviceCode}
+                        onChange={(event) =>
+                          setServiceForm((current) => ({
+                            ...current,
+                            serviceCode: event.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                    <label>
+                      <span>Service name</span>
+                      <input
+                        type="text"
+                        value={serviceForm.serviceName}
+                        onChange={(event) =>
+                          setServiceForm((current) => ({
+                            ...current,
+                            serviceName: event.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                    <label>
+                      <span>Audience</span>
+                      <select
+                        value={serviceForm.audience}
+                        onChange={(event) =>
+                          setServiceForm((current) => ({
+                            ...current,
+                            audience: event.target.value,
+                          }))
+                        }
+                      >
+                        <option value="Individual">Individual</option>
+                        <option value="Business">Business</option>
+                        <option value="Both">Both</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>Category</span>
+                      <input
+                        type="text"
+                        value={serviceForm.category}
+                        onChange={(event) =>
+                          setServiceForm((current) => ({
+                            ...current,
+                            category: event.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                    <label>
+                      <span>Status</span>
+                      <select
+                        value={serviceForm.status}
+                        onChange={(event) =>
+                          setServiceForm((current) => ({
+                            ...current,
+                            status: event.target.value,
+                          }))
+                        }
+                      >
+                        {["Active", "Inactive", "Planned", "Archived"].map(
+                          (option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ),
+                        )}
+                      </select>
+                    </label>
+                  </div>
+                </section>
+                <section className="admin-form-section">
+                  <h3 className="admin-form-section-heading">Delivery</h3>
+                  <div className="client-detail-editor-grid">
+                    <label>
+                      <span>Default duration (minutes)</span>
+                      <input
+                        type="number"
+                        min="15"
+                        step="15"
+                        value={serviceForm.defaultDuration}
+                        onChange={(event) =>
+                          setServiceForm((current) => ({
+                            ...current,
+                            defaultDuration: event.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                  </div>
+                </section>
+                <section className="admin-form-section">
+                  <h3 className="admin-form-section-heading">Billing</h3>
+                  <div className="client-detail-editor-grid">
+                    <label>
+                      <span>Billing type</span>
+                      <select
+                        value={serviceForm.billingType}
+                        onChange={(event) =>
+                          setServiceForm((current) => ({
+                            ...current,
+                            billingType: event.target.value,
+                          }))
+                        }
+                      >
+                        {[
+                          "Fixed Fee",
+                          "Hourly",
+                          "Per Appointment",
+                          "Per Filing / Per Return",
+                          "Project-Based",
+                          "Retainer",
+                          "Recurring Monthly",
+                          "Recurring Quarterly",
+                          "Recurring Annual",
+                          "Custom / Scope of Work",
+                        ].map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      <span>Default price</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={serviceForm.defaultPrice}
+                        disabled={
+                          serviceForm.billingType === "Custom / Scope of Work"
+                        }
+                        onChange={(event) =>
+                          setServiceForm((current) => ({
+                            ...current,
+                            defaultPrice: event.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                    <label>
+                      <span>Currency</span>
+                      <input
+                        type="text"
+                        value={serviceForm.currency}
+                        onChange={(event) =>
+                          setServiceForm((current) => ({
+                            ...current,
+                            currency: event.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                    <label>
+                      <span>Deposit required</span>
+                      <select
+                        value={serviceForm.depositRequired ? "Yes" : "No"}
+                        onChange={(event) =>
+                          setServiceForm((current) => ({
+                            ...current,
+                            depositRequired: event.target.value === "Yes",
+                          }))
+                        }
+                      >
+                        <option value="No">No</option>
+                        <option value="Yes">Yes</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>Default deposit amount</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={serviceForm.defaultDepositAmount}
+                        onChange={(event) =>
+                          setServiceForm((current) => ({
+                            ...current,
+                            defaultDepositAmount: event.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                  </div>
+                </section>
+                <section className="admin-form-section">
+                  <h3 className="admin-form-section-heading">Descriptions</h3>
+                  <div className="client-detail-editor-grid">
+                    <label className="full-span">
+                      <span>Short internal description</span>
+                      <textarea
+                        rows="3"
+                        value={serviceForm.shortDescription}
+                        onChange={(event) =>
+                          setServiceForm((current) => ({
+                            ...current,
+                            shortDescription: event.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                    <label className="full-span">
+                      <span>Default billing description</span>
+                      <textarea
+                        rows="2"
+                        value={serviceForm.defaultBillingDescription}
+                        onChange={(event) =>
+                          setServiceForm((current) => ({
+                            ...current,
+                            defaultBillingDescription: event.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                    <label className="full-span">
+                      <span>Internal pricing notes</span>
+                      <textarea
+                        rows="2"
+                        value={serviceForm.internalPricingNotes}
+                        onChange={(event) =>
+                          setServiceForm((current) => ({
+                            ...current,
+                            internalPricingNotes: event.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                    <label className="full-span">
+                      <span>Add-ons (one per line: code|name|price|notes)</span>
+                      <textarea
+                        rows="4"
+                        value={serviceForm.addOns}
+                        onChange={(event) =>
+                          setServiceForm((current) => ({
+                            ...current,
+                            addOns: event.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                  </div>
+                </section>
+                {serviceError ? (
+                  <div className="admin-toast error">{serviceError}</div>
+                ) : null}
               </div>
-              {serviceError ? (
-                <div className="admin-toast error">{serviceError}</div>
-              ) : null}
-              <div className="admin-header-actions">
+              <div className="admin-header-actions admin-detail-sticky-footer">
                 <button
                   type="button"
                   className="secondary-button"
@@ -4685,7 +4778,7 @@ function ServiceManagementPage() {
           }}
         >
           <aside
-            className="admin-detail-drawer"
+            className="admin-detail-drawer service-editor-drawer"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="admin-detail-header">
@@ -4702,198 +4795,220 @@ function ServiceManagementPage() {
               </button>
             </div>
             <div className="admin-detail-body">
-              <div className="client-detail-editor-grid">
-                <label>
-                  <span>Service code</span>
-                  <input
-                    type="text"
-                    value={serviceDraft.serviceCode}
-                    readOnly
-                  />
-                </label>
-                <label>
-                  <span>Service name</span>
-                  <input
-                    type="text"
-                    value={serviceDraft.serviceName}
-                    onChange={(event) =>
-                      setServiceDraft((current) => ({
-                        ...current,
-                        serviceName: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-                <label>
-                  <span>Audience</span>
-                  <select
-                    value={serviceDraft.audience}
-                    onChange={(event) =>
-                      setServiceDraft((current) => ({
-                        ...current,
-                        audience: event.target.value,
-                      }))
-                    }
-                  >
-                    <option value="Individual">Individual</option>
-                    <option value="Business">Business</option>
-                    <option value="Both">Both</option>
-                  </select>
-                </label>
-                <label>
-                  <span>Status</span>
-                  <select
-                    value={serviceDraft.status}
-                    onChange={(event) =>
-                      setServiceDraft((current) => ({
-                        ...current,
-                        status: event.target.value,
-                      }))
-                    }
-                  >
-                    {["Active", "Inactive", "Planned", "Archived"].map(
-                      (option) => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      ),
-                    )}
-                  </select>
-                </label>
-                <label>
-                  <span>Duration</span>
-                  <input
-                    type="number"
-                    min="15"
-                    step="15"
-                    value={serviceDraft.defaultDuration}
-                    onChange={(event) =>
-                      setServiceDraft((current) => ({
-                        ...current,
-                        defaultDuration: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-                <label>
-                  <span>Billing type</span>
-                  <select
-                    value={serviceDraft.billingType}
-                    onChange={(event) =>
-                      setServiceDraft((current) => ({
-                        ...current,
-                        billingType: event.target.value,
-                      }))
-                    }
-                  >
-                    {[
-                      "Fixed Fee",
-                      "Hourly",
-                      "Per Appointment",
-                      "Per Filing / Per Return",
-                      "Project-Based",
-                      "Retainer",
-                      "Recurring Monthly",
-                      "Recurring Quarterly",
-                      "Recurring Annual",
-                      "Custom / Scope of Work",
-                    ].map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  <span>Default price</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="1"
-                    value={serviceDraft.defaultPrice}
-                    disabled={
-                      serviceDraft.billingType === "Custom / Scope of Work"
-                    }
-                    onChange={(event) =>
-                      setServiceDraft((current) => ({
-                        ...current,
-                        defaultPrice: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-                <label>
-                  <span>Currency</span>
-                  <input
-                    type="text"
-                    value={serviceDraft.currency || "USD"}
-                    onChange={(event) =>
-                      setServiceDraft((current) => ({
-                        ...current,
-                        currency: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-                <label className="full-span">
-                  <span>Description</span>
-                  <textarea
-                    rows="3"
-                    value={serviceDraft.shortDescription || ""}
-                    onChange={(event) =>
-                      setServiceDraft((current) => ({
-                        ...current,
-                        shortDescription: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-                <label className="full-span">
-                  <span>Billing description</span>
-                  <textarea
-                    rows="2"
-                    value={serviceDraft.defaultBillingDescription || ""}
-                    onChange={(event) =>
-                      setServiceDraft((current) => ({
-                        ...current,
-                        defaultBillingDescription: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-                <label className="full-span">
-                  <span>Internal notes</span>
-                  <textarea
-                    rows="2"
-                    value={serviceDraft.internalPricingNotes || ""}
-                    onChange={(event) =>
-                      setServiceDraft((current) => ({
-                        ...current,
-                        internalPricingNotes: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-                <label className="full-span">
-                  <span>Add-ons</span>
-                  <textarea
-                    rows="4"
-                    value={(serviceDraft.addOns || [])
-                      .map(
-                        (addOn) =>
-                          `${addOn.addOnCode || addOn.addOnName}|${addOn.addOnName || addOn.addOnCode}|${addOn.defaultPrice ?? ""}|${addOn.internalNotes || ""}`,
-                      )
-                      .join("\n")}
-                    onChange={(event) =>
-                      setServiceDraft((current) => ({
-                        ...current,
-                        addOns: parseAddOnInput(event.target.value),
-                      }))
-                    }
-                  />
-                </label>
+              <div className="admin-detail-scroll">
+                <section className="admin-form-section">
+                  <h3 className="admin-form-section-heading">
+                    Service Identity
+                  </h3>
+                  <div className="client-detail-editor-grid">
+                    <label>
+                      <span>Service code</span>
+                      <input
+                        type="text"
+                        value={serviceDraft.serviceCode}
+                        readOnly
+                      />
+                    </label>
+                    <label>
+                      <span>Service name</span>
+                      <input
+                        type="text"
+                        value={serviceDraft.serviceName}
+                        onChange={(event) =>
+                          setServiceDraft((current) => ({
+                            ...current,
+                            serviceName: event.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                    <label>
+                      <span>Audience</span>
+                      <select
+                        value={serviceDraft.audience}
+                        onChange={(event) =>
+                          setServiceDraft((current) => ({
+                            ...current,
+                            audience: event.target.value,
+                          }))
+                        }
+                      >
+                        <option value="Individual">Individual</option>
+                        <option value="Business">Business</option>
+                        <option value="Both">Both</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>Status</span>
+                      <select
+                        value={serviceDraft.status}
+                        onChange={(event) =>
+                          setServiceDraft((current) => ({
+                            ...current,
+                            status: event.target.value,
+                          }))
+                        }
+                      >
+                        {["Active", "Inactive", "Planned", "Archived"].map(
+                          (option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ),
+                        )}
+                      </select>
+                    </label>
+                  </div>
+                </section>
+                <section className="admin-form-section">
+                  <h3 className="admin-form-section-heading">Delivery</h3>
+                  <div className="client-detail-editor-grid">
+                    <label>
+                      <span>Duration</span>
+                      <input
+                        type="number"
+                        min="15"
+                        step="15"
+                        value={serviceDraft.defaultDuration}
+                        onChange={(event) =>
+                          setServiceDraft((current) => ({
+                            ...current,
+                            defaultDuration: event.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                  </div>
+                </section>
+                <section className="admin-form-section">
+                  <h3 className="admin-form-section-heading">Billing</h3>
+                  <div className="client-detail-editor-grid">
+                    <label>
+                      <span>Billing type</span>
+                      <select
+                        value={serviceDraft.billingType}
+                        onChange={(event) =>
+                          setServiceDraft((current) => ({
+                            ...current,
+                            billingType: event.target.value,
+                          }))
+                        }
+                      >
+                        {[
+                          "Fixed Fee",
+                          "Hourly",
+                          "Per Appointment",
+                          "Per Filing / Per Return",
+                          "Project-Based",
+                          "Retainer",
+                          "Recurring Monthly",
+                          "Recurring Quarterly",
+                          "Recurring Annual",
+                          "Custom / Scope of Work",
+                        ].map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      <span>Default price</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={serviceDraft.defaultPrice}
+                        disabled={
+                          serviceDraft.billingType === "Custom / Scope of Work"
+                        }
+                        onChange={(event) =>
+                          setServiceDraft((current) => ({
+                            ...current,
+                            defaultPrice: event.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                    <label>
+                      <span>Currency</span>
+                      <input
+                        type="text"
+                        value={serviceDraft.currency || "USD"}
+                        onChange={(event) =>
+                          setServiceDraft((current) => ({
+                            ...current,
+                            currency: event.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                  </div>
+                </section>
+                <section className="admin-form-section">
+                  <h3 className="admin-form-section-heading">Descriptions</h3>
+                  <div className="client-detail-editor-grid">
+                    <label className="full-span">
+                      <span>Description</span>
+                      <textarea
+                        rows="3"
+                        value={serviceDraft.shortDescription || ""}
+                        onChange={(event) =>
+                          setServiceDraft((current) => ({
+                            ...current,
+                            shortDescription: event.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                    <label className="full-span">
+                      <span>Billing description</span>
+                      <textarea
+                        rows="2"
+                        value={serviceDraft.defaultBillingDescription || ""}
+                        onChange={(event) =>
+                          setServiceDraft((current) => ({
+                            ...current,
+                            defaultBillingDescription: event.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                    <label className="full-span">
+                      <span>Internal notes</span>
+                      <textarea
+                        rows="2"
+                        value={serviceDraft.internalPricingNotes || ""}
+                        onChange={(event) =>
+                          setServiceDraft((current) => ({
+                            ...current,
+                            internalPricingNotes: event.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                    <label className="full-span">
+                      <span>Add-ons</span>
+                      <textarea
+                        rows="4"
+                        value={(serviceDraft.addOns || [])
+                          .map(
+                            (addOn) =>
+                              `${addOn.addOnCode || addOn.addOnName}|${addOn.addOnName || addOn.addOnCode}|${addOn.defaultPrice ?? ""}|${addOn.internalNotes || ""}`,
+                          )
+                          .join("\n")}
+                        onChange={(event) =>
+                          setServiceDraft((current) => ({
+                            ...current,
+                            addOns: parseAddOnInput(event.target.value),
+                          }))
+                        }
+                      />
+                    </label>
+                  </div>
+                </section>
               </div>
-              <div className="admin-header-actions">
+              <div className="admin-header-actions admin-detail-sticky-footer">
                 <button
                   type="button"
                   className="secondary-button"
@@ -5294,11 +5409,19 @@ function ClientRequestsPage() {
       />
       <AdminMetrics
         items={[
-          { label: "Open Requests", value: summary.open },
-          { label: "Waiting on Client", value: summary.waiting },
-          { label: "Ready for Review", value: summary.ready },
-          { label: "Overdue", value: summary.overdue },
-          { label: "Completed", value: summary.completed },
+          { label: "Open Requests", value: summary.open, tone: "info" },
+          {
+            label: "Waiting on Client",
+            value: summary.waiting,
+            tone: "pending",
+          },
+          { label: "Ready for Review", value: summary.ready, tone: "info" },
+          { label: "Overdue", value: summary.overdue, tone: "danger" },
+          {
+            label: "Completed",
+            value: summary.completed,
+            tone: "positive",
+          },
         ]}
       />
       <div className="compact-admin-toolbar client-request-toolbar">
@@ -5419,66 +5542,88 @@ function ClientRequestsPage() {
         </div>
       ) : null}
       <AdminSection title="Unified work queue">
-        <div className="admin-table-wrap">
-          <AdminTable className="admin-table">
-            <thead>
-              <tr>
-                <th>Request</th>
-                <th>Type</th>
-                <th>Client</th>
-                <th>Engagement / Service</th>
-                <th>Due Date</th>
-                <th>Status</th>
-                <th>Next Action</th>
-                <th>Owner</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredRows.map((row) => (
-                <tr key={`${row.type}-${row.id}`}>
-                  <td>{row.request}</td>
-                  <td>{row.type}</td>
-                  <td>{row.clientName}</td>
-                  <td>{row.engagementName || row.serviceName}</td>
-                  <td
-                    className={
-                      row.dueDate &&
+        {filteredRows.length ? (
+          <div className="admin-table-wrap">
+            <AdminTable className="admin-table">
+              <thead>
+                <tr>
+                  <th>Request</th>
+                  <th>Type</th>
+                  <th>Client</th>
+                  <th>Engagement / Service</th>
+                  <th>Due Date</th>
+                  <th>Status</th>
+                  <th>Next Action</th>
+                  <th>Owner</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredRows.map((row) => (
+                  <tr key={`${row.type}-${row.id}`}>
+                    <td>
+                      <strong>{row.request}</strong>
+                    </td>
+                    <td>
+                      <AdminStatusBadge
+                        status={row.type}
+                        tone={row.type === "Document" ? "info" : "status"}
+                      />
+                    </td>
+                    <td>{row.clientName}</td>
+                    <td>{row.engagementName || row.serviceName}</td>
+                    <td
+                      className={
+                        row.dueDate &&
+                        new Date(row.dueDate) < new Date() &&
+                        !["Completed", "Received", "Approved"].includes(
+                          row.status,
+                        )
+                          ? "admin-overdue"
+                          : ""
+                      }
+                    >
+                      {formatDate(row.dueDate)}
+                      {row.dueDate &&
                       new Date(row.dueDate) < new Date() &&
                       !["Completed", "Received", "Approved"].includes(
                         row.status,
-                      )
-                        ? "admin-overdue"
-                        : ""
-                    }
-                  >
-                    {formatDate(row.dueDate)}
-                    {row.dueDate &&
-                    new Date(row.dueDate) < new Date() &&
-                    !["Completed", "Received", "Approved"].includes(
-                      row.status,
-                    ) ? (
-                      <small>Overdue</small>
-                    ) : null}
-                  </td>
-                  <td>
-                    <AdminStatusBadge
-                      status={row.status}
-                      tone={statusTone[row.status] || "neutral"}
-                    />
-                  </td>
-                  <td>{row.nextAction}</td>
-                  <td>{row.owner}</td>
-                  <td>
-                    <button type="button" className="link-button">
-                      Review
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </AdminTable>
-        </div>
+                      ) ? (
+                        <small>Overdue</small>
+                      ) : null}
+                    </td>
+                    <td>
+                      <AdminStatusBadge
+                        status={row.status}
+                        tone={statusTone[row.status] || "neutral"}
+                      />
+                    </td>
+                    <td>{row.nextAction}</td>
+                    <td>{row.owner}</td>
+                    <td>
+                      <button type="button" className="link-button">
+                        Review
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </AdminTable>
+          </div>
+        ) : (
+          <AdminEmptyState
+            title="No requests match the selected filters."
+            description="Try a broader search or clear the active filters."
+            actionLabel="Clear Filters"
+            onAction={() => {
+              setRequestTypeFilter("All");
+              setClientFilter("All");
+              setStatusFilter("All");
+              setPriorityFilter("All");
+              setOwnerFilter("All");
+            }}
+          />
+        )}
       </AdminSection>
 
       {newRequestOpen ? (
