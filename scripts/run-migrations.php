@@ -86,6 +86,23 @@ function alchemize_expected_legacy_schema_present(PDO $database): bool
     return $coreMatches === count($required) && $secondaryMatches >= 2;
 }
 
+function alchemize_extract_created_table_name(string $sql): ?string
+{
+    if (preg_match('/CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?`?([A-Za-z0-9_]+)`?/i', $sql, $matches) !== 1) {
+        return null;
+    }
+
+    return strtolower($matches[1]);
+}
+
+function alchemize_is_duplicate_table_error(Throwable $error): bool
+{
+    $message = strtolower($error->getMessage());
+
+    return str_contains($message, 'base table or view already exists')
+        || str_contains($message, 'table already exists');
+}
+
 $scriptDir = __DIR__;
 $projectRoot = dirname($scriptDir);
 
@@ -216,6 +233,24 @@ foreach ($validFiles as $file) {
         if ($database->inTransaction()) {
             $database->rollBack();
         }
+
+        $createdTableName = alchemize_extract_created_table_name($sql);
+        $duplicateTableExists = $createdTableName !== null && alchemize_is_duplicate_table_error($error);
+
+        if ($duplicateTableExists) {
+            $statement = $database->query("SHOW TABLES LIKE '" . str_replace("'", "''", $createdTableName) . "'");
+            $tableExists = $statement !== false && $statement->fetchColumn() !== false;
+
+            if ($tableExists) {
+                $insert = $database->prepare('INSERT INTO alchemize_schema_migrations (migration, applied_at) VALUES (:migration, CURRENT_TIMESTAMP(6))');
+                $insert->execute(['migration' => $name]);
+                echo "MIGRATION_RECOVERED={$name}\n";
+                $appliedCount++;
+                echo "MIGRATION_APPLIED={$name}\n";
+                continue;
+            }
+        }
+
         fwrite(STDERR, "MIGRATION_FAILED={$name}\n");
         fwrite(STDERR, $error->getMessage() . "\n");
         exit(1);

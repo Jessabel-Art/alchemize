@@ -1,4 +1,4 @@
-CREATE TABLE saved_reports (
+CREATE TABLE IF NOT EXISTS saved_reports (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     public_id CHAR(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
     name VARCHAR(120) NOT NULL,
