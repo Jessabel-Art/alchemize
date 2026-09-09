@@ -106,7 +106,7 @@ test("Reports presets, results and reset have explicit states", async ({
   await expect(page.getByText("Your report starts here")).toBeVisible();
   await expect(page.getByRole("button", { name: "Save report" })).toBeEnabled();
   await page.getByRole("button", { name: "Save report" }).click();
-  await expect(page.locator('.report-feedback')).toContainText('Saved report');
+  await expect(page.locator(".report-feedback")).toContainText("Saved report");
 });
 
 for (const width of [1440, 1024, 768]) {
