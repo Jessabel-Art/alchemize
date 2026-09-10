@@ -101,7 +101,10 @@ final class AlchemizeStripePaymentService
             return ['checkout_url' => $checkoutUrl, 'status' => 'ready'];
         } catch (AlchemizeRequestException $error) { throw $error; }
         catch (Throwable $error) {
-            error_log(sprintf('Stripe checkout creation failed [%s].', get_class($error)));
+            // Temporary diagnostic instrumentation: without this, the real
+            // Throwable (Stripe/provider/DB) is discarded the moment it is
+            // converted into the sanitized INTEGRATION_UNAVAILABLE response.
+            alchemize_runtime_error_log('portal/billing/{id}/checkout (stripe)', $error, ['invoice_id' => (int) $invoice['id']]);
             $this->repository->setInvoiceStripeFailure((int) $invoice['id'], 'failed', 'provider_error');
             throw new AlchemizeRequestException(503, 'INTEGRATION_UNAVAILABLE', 'Online payment is temporarily unavailable.');
         }

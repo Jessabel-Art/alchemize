@@ -165,10 +165,7 @@ const translations = {
       ],
     ],
     resources: [
-      [
-        "Cómo prepararse para una cita notarial",
-        "/resources/preparing-for-a-notary-appointment",
-      ],
+      ["Cómo prepararse para una cita notarial", null],
       ["Consultation Preparation Workbook", null],
     ],
     cta: "¿Necesita organizar una cita notarial o un paquete documental no legal?",
@@ -246,10 +243,7 @@ const translations = {
     ],
     resources: [
       ["Consultation Preparation Workbook", null],
-      [
-        "Cómo prepararse para una cita notarial",
-        "/resources/preparing-for-a-notary-appointment",
-      ],
+      ["Cómo prepararse para una cita notarial", null],
     ],
     cta: "¿Necesita materiales traducidos con claridad y consistencia?",
     checklist: ["Consultation Preparation Workbook", null],
@@ -326,10 +320,7 @@ const translations = {
     ],
     resources: [
       ["Consultation Preparation Workbook", null],
-      [
-        "Cómo prepararse para una cita notarial",
-        "/resources/preparing-for-a-notary-appointment",
-      ],
+      ["Cómo prepararse para una cita notarial", null],
     ],
     cta: "¿Necesita organizar un paquete documental para autenticación o uso en el extranjero?",
     checklist: ["Consultation Preparation Workbook", null],

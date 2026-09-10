@@ -70,7 +70,12 @@ final class AlchemizeExternalIntegrationService
             $this->repository->setCalendarState($appointmentId, 'synchronized', $calendarResult['event_id'], null, $calendarResult['meeting_url']);
             return ['status' => 'synchronized', 'meeting_url' => $calendarResult['meeting_url']];
         } catch (Throwable $error) {
-            error_log(sprintf('Google Calendar appointment sync failed [%s].', get_class($error)));
+            // Temporary diagnostic instrumentation: the real Throwable is
+            // otherwise swallowed here and only a generic ['status' =>
+            // 'failed'] (or a sanitized CALENDAR_UNAVAILABLE, for the
+            // strict availability path below) reaches the client and the
+            // outer request-level logger never sees it.
+            alchemize_runtime_error_log('portal/appointments/{id}/confirm (calendar sync)', $error, ['appointment_id' => $appointmentId]);
             $this->repository->setCalendarState($appointmentId, 'failed', null, 'provider_error');
             return ['status' => 'failed'];
         }
@@ -84,7 +89,10 @@ final class AlchemizeExternalIntegrationService
             $start = new DateTimeImmutable($date . ' 00:00:00', $zone);
             return $this->calendar->busyPeriods($start, $start->modify('+1 day'), $timezone);
         } catch (Throwable $error) {
-            error_log(sprintf('Google Calendar busy-period lookup failed [%s].', get_class($error)));
+            // Temporary diagnostic instrumentation: without this, the real
+            // exception (TLS/auth/provider) is discarded the moment it is
+            // converted into the sanitized CALENDAR_UNAVAILABLE response.
+            alchemize_runtime_error_log('portal/appointments/availability', $error, ['date' => $date, 'timezone' => $timezone, 'strict' => $strict]);
             if ($strict) throw new AlchemizeRequestException(503, 'CALENDAR_UNAVAILABLE', 'Calendar availability is temporarily unavailable. Please try again or request another time.');
             return [];
         }

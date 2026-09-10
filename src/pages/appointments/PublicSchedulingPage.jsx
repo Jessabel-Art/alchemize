@@ -2,12 +2,27 @@ import { useEffect, useState } from "react";
 import { CalendarDays, Clock, MapPin } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { publicSchedulingApi } from "../../services/public-scheduling-api.js";
+import { ensureMeta } from "../../seo/siteSchema.js";
 import "./public-scheduling.css";
 
 const today = new Date().toISOString().slice(0, 10);
 
+function useNoindexMetadata() {
+  useEffect(() => {
+    document.title = "Schedule an Appointment | Alchemize Business Services";
+    ensureMeta('meta[name="robots"]', {
+      name: "robots",
+      content: "noindex, nofollow",
+    });
+    return () => {
+      document.head.querySelector('meta[name="robots"]')?.remove();
+    };
+  }, []);
+}
+
 export default function PublicSchedulingPage() {
   const { token } = useParams();
+  useNoindexMetadata();
   const [context, setContext] = useState(null);
   const [date, setDate] = useState("");
   const [slots, setSlots] = useState([]);

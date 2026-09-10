@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { SITE_URL } from "../seo/siteSchema.js";
 
 const LanguageContext = createContext(null);
 const STORAGE_KEY = "alchemize-language";
@@ -73,7 +74,7 @@ export function LanguageProvider({ children }) {
 
     const englishPath = localizePath(location.pathname, "en");
     const spanishPath = localizePath(location.pathname, "es");
-    const origin = "https://getalchemize.com";
+    const origin = SITE_URL;
     const legalEnglishOnly = ["/privacy", "/terms"].includes(englishPath);
     ensureAlternate("en", `${origin}${englishPath}`);
     if (legalEnglishOnly) removeAlternate("es");

@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { discoverRoutes } from "./lib/routes.js";
+import { SITE_URL } from "../src/seo/siteSchema.js";
 
 const rootDir = process.cwd();
 const routes = discoverRoutes(rootDir).filter(
@@ -75,7 +76,7 @@ for (const route of routes) {
   );
   if (canonicalMatch) {
     const canonicalUrl = canonicalMatch[1];
-    if (canonicalUrl !== `https://getalchemize.com${route.path}`) {
+    if (canonicalUrl !== `${SITE_URL}${route.path}`) {
       issues.push(`${route.path} canonical mismatch: ${canonicalUrl}`);
     }
   }

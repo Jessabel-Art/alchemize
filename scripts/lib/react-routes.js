@@ -22,10 +22,13 @@ const ENGLISH_ONLY_RESOURCE_SLUGS = [
 const SERVICE_DETAIL_PATHS = [
   "/services/individuals/tax-preparation",
   "/services/individuals/notary-document-services",
+  "/services/individuals/translation-services",
+  "/services/individuals/apostille-services",
   "/services/businesses/advisory-optimization",
   "/services/businesses/operations-implementation",
-  "/services/businesses/digital-business-technology",
   "/services/businesses/readiness-growth",
+  "/services/businesses/bookkeeping-financial-reporting",
+  "/services/businesses/payroll-processing",
   "/services/businesses/business-tax-support",
 ];
 

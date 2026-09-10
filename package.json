@@ -29,6 +29,7 @@
     "check:security": "node scripts/security-scan.js",
     "check:dist": "node scripts/check-dist.js",
     "generate:sitemap": "node scripts/generate-sitemap.js",
+    "sitemap:check": "npm run generate:sitemap && node scripts/check-sitemap.js",
     "generate:resource-pdfs": "node scripts/run-downloadable-resource-generator.js",
     "routes:list": "node scripts/discover-routes.js",
     "routes:check": "node scripts/routes-check.js",
@@ -49,7 +50,7 @@
     "schema:check": "php scripts/verify-production-schema.php",
     "deploy:verify": "php scripts/verify-deployment-runtime.php",
     "predeploy": "node scripts/predeploy.js",
-    "check": "npm run lint && npm run format:check && npm run validate:html && npm run routes:check && npm run metadata:check && npm run check:links && npm run check:assets && npm run check:security && npm run build"
+    "check": "npm run lint && npm run format:check && npm run validate:html && npm run routes:check && npm run metadata:check && npm run sitemap:check && npm run check:links && npm run check:assets && npm run check:security && npm run build"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.2",

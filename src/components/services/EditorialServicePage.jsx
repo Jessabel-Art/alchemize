@@ -788,10 +788,12 @@ export default function EditorialServicePage({ service, ui, language }) {
                 <h3>{labels.related}</h3>
                 <LinkRows items={service.related} />
               </section>
-              <section>
-                <h3>{labels.resources}</h3>
-                <LinkRows items={service.resources} />
-              </section>
+              {service.resources.some(([, to]) => Boolean(to)) ? (
+                <section>
+                  <h3>{labels.resources}</h3>
+                  <LinkRows items={service.resources} />
+                </section>
+              ) : null}
             </div>
           </div>
         </div>

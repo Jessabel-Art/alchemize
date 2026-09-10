@@ -1,9 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import { getSitemapRoutes } from "./lib/react-routes.js";
+import { SITE_URL } from "../src/seo/siteSchema.js";
 
 const rootDir = process.cwd();
-const baseUrl = "https://getalchemize.com";
+const baseUrl = SITE_URL;
 const routes = getSitemapRoutes();
 
 function renderRoute(route) {

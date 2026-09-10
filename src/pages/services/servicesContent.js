@@ -1,7 +1,7 @@
 export const servicesContent = {
   en: {
     metadata: {
-      title: "Services | Alchemize Business Services",
+      title: "Business & Individual Services | Alchemize",
       description:
         "Explore practical services for individuals and businesses, including tax support, notary and document services, advisory, operations, technology, readiness, and financial guidance.",
     },
@@ -50,7 +50,7 @@ export const servicesContent = {
   },
   es: {
     metadata: {
-      title: "Servicios | Alchemize Business Services",
+      title: "Servicios para Negocios y Personas | Alchemize",
       description:
         "Explore servicios prácticos para personas y empresas, incluidos apoyo tributario, notaría y documentos, asesoría, operaciones, tecnología, preparación y orientación financiera.",
     },

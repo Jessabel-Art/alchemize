@@ -1,6 +1,9 @@
 import { test, expect } from "@playwright/test";
 
-async function setup(page, { calendarFail = false, occupied = false } = {}) {
+async function setup(
+  page,
+  { calendarFail = false, occupied = false, services = null } = {},
+) {
   const requests = [];
   let attempts = 0;
   const types = [
@@ -18,7 +21,7 @@ async function setup(page, { calendarFail = false, occupied = false } = {}) {
     },
   ];
   const config = {
-    services: [{ id: "own", title: "Business Consulting" }],
+    services: services ?? [{ id: "own", title: "Business Consulting" }],
     types,
     methods: [
       { key: "phone", label: "Phone" },
@@ -65,6 +68,8 @@ async function setup(page, { calendarFail = false, occupied = false } = {}) {
         path,
         date: url.searchParams.get("date"),
         type: url.searchParams.get("type"),
+        engagement_id: url.searchParams.get("engagement_id"),
+        meeting_method: url.searchParams.get("meeting_method"),
       });
       const date = url.searchParams.get("date");
       data = {
@@ -214,6 +219,49 @@ test("active service, server duration, slots, booking, upcoming and history", as
   ).toBeVisible();
 });
 
+test("general (non-service-specific) availability sends an empty engagement_id and still returns slots", async ({
+  page,
+}) => {
+  const { requests } = await setup(page, {
+    services: [
+      { id: "own", title: "Business Consulting" },
+      { id: "other", title: "Website Maintenance" },
+    ],
+  });
+  await page.goto("/client-portal/appointments");
+  // With more than one service, nothing is auto-selected — "General /
+  // Not service-specific" is the real default a client sees.
+  await expect(page.getByLabel("Related service")).toHaveValue("");
+  await choose(page);
+  const availabilityRequests = requests.filter((item) =>
+    item.path.endsWith("/availability"),
+  );
+  expect(availabilityRequests.length).toBeGreaterThan(0);
+  for (const request of availabilityRequests) {
+    expect(request.engagement_id).toBe("");
+  }
+  await expect(
+    page.getByRole("button", { name: "Review appointment" }),
+  ).toBeEnabled();
+});
+
+test("selecting a meeting method is reflected in the availability request", async ({
+  page,
+}) => {
+  const { requests } = await setup(page);
+  await page.goto("/client-portal/appointments?engagement=own");
+  await expect(page.getByLabel("Related service")).toHaveValue("own");
+  await page.getByLabel("Meeting method").selectOption("google_meet");
+  await choose(page);
+  const availabilityRequests = requests.filter((item) =>
+    item.path.endsWith("/availability"),
+  );
+  expect(availabilityRequests.length).toBeGreaterThan(0);
+  expect(
+    availabilityRequests[availabilityRequests.length - 1].meeting_method,
+  ).toBe("google_meet");
+});
+
 test("calendar retry reuses booking key and does not claim success", async ({
   page,
 }) => {
@@ -307,6 +355,45 @@ test("details, reschedule availability, and cancellation request confirmation", 
       requests.some((item) => item.path.endsWith("request-cancellation")),
     )
     .toBe(true);
+});
+
+test("appointment-specific availability for another client's appointment is rejected, not silently treated as success", async ({
+  page,
+}) => {
+  const { items } = await setup(page);
+  items.push({
+    id: "not-mine",
+    appointment_type: "Follow-up appointment",
+    engagement_id: "own",
+    engagement_title: "Business Consulting",
+    scheduled_start: "2030-09-09T10:00:00-04:00",
+    timezone: "America/New_York",
+    status: "confirmed",
+    duration_minutes: 30,
+    meeting_method: "phone",
+  });
+  await page.route(
+    (url) =>
+      url.searchParams.get("route") ===
+      "portal/appointments/not-mine/availability",
+    (route) =>
+      route.fulfill({
+        status: 404,
+        json: {
+          error: { code: "NOT_FOUND", message: "Appointment was not found." },
+        },
+      }),
+  );
+  await page.goto("/client-portal/appointments?appointment=not-mine");
+  const row = page
+    .locator("article.appointment-row")
+    .filter({ hasText: "Follow-up appointment" });
+  await row.getByRole("button", { name: "Reschedule", exact: true }).click();
+  const details = row.locator(".appointment-details");
+  await expect(
+    details.getByText("Appointment was not found.", { exact: true }),
+  ).toBeVisible();
+  await expect(details.locator(".appointment-slots")).toHaveCount(0);
 });
 
 test("client can confirm an admin-requested pending appointment", async ({

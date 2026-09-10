@@ -178,7 +178,7 @@ function HomePage() {
               <div className="home-business-image">
                 <img
                   src="/assets/images/home/home-services-highlight.png"
-                  alt=""
+                  alt={content.paths.businessTitle}
                   loading="lazy"
                 />
               </div>

@@ -1,6 +1,11 @@
 import { useEffect } from "react";
 import PageShell from "../../components/ui/PageShell.jsx";
 import { businessContact, contactRouting } from "../../data/contactInfo.js";
+import {
+  ensureMeta,
+  injectSiteEntitySchema,
+  SITE_URL,
+} from "../../seo/siteSchema.js";
 import "./legal.css";
 
 const privacySections = [
@@ -544,13 +549,48 @@ function LegalPage({ title, summary }) {
       ? "How Alchemize Business Services collects, uses, shares, and protects information."
       : "Terms governing use of the Alchemize Business Services website and public materials.";
 
-    let meta = document.head.querySelector('meta[name="description"]');
-    if (!meta) {
-      meta = document.createElement("meta");
-      meta.name = "description";
-      document.head.append(meta);
-    }
-    meta.content = description;
+    const canonicalUrl = `${SITE_URL}/${isPrivacy ? "privacy" : "terms"}`;
+
+    ensureMeta('meta[name="description"]', {
+      name: "description",
+      content: description,
+    });
+    ensureMeta('meta[property="og:title"]', {
+      property: "og:title",
+      content: pageTitle,
+    });
+    ensureMeta('meta[property="og:description"]', {
+      property: "og:description",
+      content: description,
+    });
+    ensureMeta('meta[property="og:url"]', {
+      property: "og:url",
+      content: canonicalUrl,
+    });
+    ensureMeta('meta[property="og:type"]', {
+      property: "og:type",
+      content: "website",
+    });
+    ensureMeta('meta[property="og:site_name"]', {
+      property: "og:site_name",
+      content: "Alchemize Business Services",
+    });
+    ensureMeta('meta[property="og:locale"]', {
+      property: "og:locale",
+      content: "en_US",
+    });
+    ensureMeta('meta[name="twitter:card"]', {
+      name: "twitter:card",
+      content: "summary_large_image",
+    });
+    ensureMeta('meta[name="twitter:title"]', {
+      name: "twitter:title",
+      content: pageTitle,
+    });
+    ensureMeta('meta[name="twitter:description"]', {
+      name: "twitter:description",
+      content: description,
+    });
 
     let canonical = document.head.querySelector('link[rel="canonical"]');
     if (!canonical) {
@@ -558,7 +598,9 @@ function LegalPage({ title, summary }) {
       canonical.rel = "canonical";
       document.head.append(canonical);
     }
-    canonical.href = `https://getalchemize.com/${isPrivacy ? "privacy" : "terms"}`;
+    canonical.href = canonicalUrl;
+
+    injectSiteEntitySchema();
   }, [isPrivacy]);
 
   const calloutHeading = isPrivacy

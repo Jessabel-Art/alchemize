@@ -4,7 +4,9 @@ Disallow: /client-portal/
 Disallow: /client-portal/*
 Disallow: /admin/
 Disallow: /admin/*
-Disallow: /login/
-Disallow: /register/
+Disallow: /login
+Disallow: /register
+Disallow: /set-password
+Disallow: /appointment/schedule/
 
 Sitemap: https://getalchemize.com/sitemap.xml

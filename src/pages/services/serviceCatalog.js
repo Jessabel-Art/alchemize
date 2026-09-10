@@ -181,10 +181,7 @@ const individual = [
       "Alchemize does not determine whether a document is legally sufficient, select legal forms, draft legal language, interpret legal consequences, or provide legal advice. Requirements depend on the document, receiving party, applicable law, and commission authority.",
     checklist: ["Consultation Preparation Workbook", null],
     resources: [
-      [
-        "Preparing for a Notary Appointment",
-        "/resources/preparing-for-a-notary-appointment",
-      ],
+      ["Preparing for a Notary Appointment", null],
       ["Consultation Preparation Workbook", null],
     ],
     related: [
@@ -265,10 +262,7 @@ const individual = [
     checklist: ["Consultation Preparation Workbook", null],
     resources: [
       ["Consultation Preparation Workbook", null],
-      [
-        "Preparing for a Notary Appointment",
-        "/resources/preparing-for-a-notary-appointment",
-      ],
+      ["Preparing for a Notary Appointment", null],
     ],
     related: [
       [
@@ -350,10 +344,7 @@ const individual = [
     checklist: ["Consultation Preparation Workbook", null],
     resources: [
       ["Consultation Preparation Workbook", null],
-      [
-        "Preparing for a Notary Appointment",
-        "/resources/preparing-for-a-notary-appointment",
-      ],
+      ["Preparing for a Notary Appointment", null],
     ],
     related: [
       ["Translation Services", "/services/individuals/translation-services"],
