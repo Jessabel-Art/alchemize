@@ -8,6 +8,12 @@ import {
   ChevronLeft,
   ChevronRight,
   ArrowRight,
+  UserCheck,
+  FileCheck,
+  FileSearch,
+  MessageCircle,
+  CalendarDays,
+  Check,
 } from "lucide-react";
 import { portalApi } from "../../services/portal-api.js";
 import "./client-appointments.css";
@@ -89,87 +95,93 @@ export default function ClientAppointments({ initialItems }) {
     .filter(historical)
     .sort((a, b) => new Date(startOf(b)) - new Date(startOf(a)));
   return (
-    <div className="portal-workspace-grid appointments-workspace-grid">
-      <div className="portal-workspace-primary">
-        <div className="appointments-workspace">
-          {success ? (
-            <p role="status" className="portal-feedback success">
-              <CheckCircle size={18} aria-hidden="true" />
-              {success}
-            </p>
-          ) : null}
-          <section aria-labelledby="upcoming-title">
-            <h2 id="upcoming-title">Upcoming appointments</h2>
-            {upcoming.length ? (
-              <div className="appointment-rows">
-                {upcoming.map((item) => (
-                  <AppointmentRow key={item.id} item={item} refresh={refresh} />
-                ))}
-              </div>
-            ) : (
-              <div className="appointment-empty">
-                <Calendar aria-hidden="true" />
-                <div>
-                  <strong>No upcoming appointments.</strong>
-                  <p>Ready to schedule something?</p>
-                  <a href="#book-appointment" className="appt-rail-link">
-                    Book an appointment
-                    <ArrowRight aria-hidden="true" size={14} />
-                  </a>
+    <div className="appointments-page">
+      <div className="portal-workspace-grid appointments-workspace-grid">
+        <div className="portal-workspace-primary">
+          <div className="appointments-workspace">
+            {success ? (
+              <p role="status" className="portal-feedback success">
+                <CheckCircle size={18} aria-hidden="true" />
+                {success}
+              </p>
+            ) : null}
+            <section aria-labelledby="upcoming-title">
+              <h2 id="upcoming-title">Upcoming appointments</h2>
+              {upcoming.length ? (
+                <div className="appointment-rows">
+                  {upcoming.map((item) => (
+                    <AppointmentRow
+                      key={item.id}
+                      item={item}
+                      refresh={refresh}
+                    />
+                  ))}
                 </div>
-              </div>
-            )}
-          </section>
-          <section
-            id="book-appointment"
-            className="appointment-booking"
-            aria-labelledby="booking-title"
-          >
-            <span className="section-kicker">Time with Alchemize</span>
-            <h2 id="booking-title">Book an appointment</h2>
-            {error ? (
-              <p role="alert">{error}</p>
-            ) : !config ? (
-              <p role="status">Loading booking options...</p>
-            ) : config.can_book === false ? (
-              <p>
-                Your account can view appointments. Contact your primary account
-                holder or <a href="/client-portal/messages">send a message</a>{" "}
-                to arrange a meeting.
-              </p>
-            ) : config.types?.length ? (
-              <BookingForm
-                config={config}
-                onBooked={async () => {
-                  setSuccess("Your appointment is confirmed.");
-                  await refresh();
-                }}
-              />
-            ) : (
-              <p>
-                Booking options are temporarily unavailable. Please{" "}
-                <a href="/client-portal/messages">message Alchemize</a>.
-              </p>
-            )}
-          </section>
-          {past.length ? (
-            <section
-              aria-labelledby="past-title"
-              className="appointment-history"
-            >
-              <h2 id="past-title">Past appointments</h2>
-              <div className="appointment-rows">
-                {past.map((item) => (
-                  <AppointmentRow key={item.id} item={item} refresh={refresh} />
-                ))}
-              </div>
+              ) : (
+                <div className="appointment-empty">
+                  <Calendar aria-hidden="true" />
+                  <div>
+                    <strong>No upcoming appointments.</strong>
+                    <p>Book a time below whenever you need us.</p>
+                  </div>
+                </div>
+              )}
             </section>
-          ) : null}
+            <section
+              id="book-appointment"
+              className="appointment-booking"
+              aria-labelledby="booking-title"
+            >
+              <span className="section-kicker">Time with Alchemize</span>
+              <h2 id="booking-title">Book an appointment</h2>
+              <p className="appt-booking-lede">
+                Choose the type of appointment you need and find a time that
+                works for you.
+              </p>
+              {error ? (
+                <p role="alert">{error}</p>
+              ) : !config ? (
+                <p role="status">Loading booking options...</p>
+              ) : config.can_book === false ? (
+                <p>
+                  Your account can view appointments. Contact your primary
+                  account holder or{" "}
+                  <a href="/client-portal/messages">send a message</a> to
+                  arrange a meeting.
+                </p>
+              ) : config.types?.length ? (
+                <BookingForm
+                  config={config}
+                  onBooked={async () => {
+                    setSuccess("Your appointment is confirmed.");
+                    await refresh();
+                  }}
+                />
+              ) : (
+                <p>
+                  Booking options are temporarily unavailable. Please{" "}
+                  <a href="/client-portal/messages">message Alchemize</a>.
+                </p>
+              )}
+            </section>
+          </div>
         </div>
+        <aside className="portal-workspace-utility">
+          <AppointmentsRail config={config} />
+        </aside>
       </div>
-      <aside className="portal-workspace-utility">
-        <AppointmentsRail config={config} />
-      </aside>
+      <section aria-labelledby="past-title" className="appointment-history">
+        <h2 id="past-title">Past appointments</h2>
+        {past.length ? (
+          <div className="appointment-rows">
+            {past.map((item) => (
+              <AppointmentRow key={item.id} item={item} refresh={refresh} />
+            ))}
+          </div>
+        ) : (
+          <p className="appt-history-empty">No previous appointments yet.</p>
+        )}
+      </section>
     </div>
   );
 }
@@ -183,8 +195,12 @@ function AppointmentsRail({ config }) {
     : "";
   return (
     <>
-      <section className="appt-glance">
-        <span className="section-kicker">Scheduling at a glance</span>
+      <section className="appt-rail-card appt-glance">
+        <Clock className="appt-rail-watermark" aria-hidden="true" />
+        <h2>
+          <Calendar aria-hidden="true" />
+          Scheduling at a glance
+        </h2>
         <dl>
           <div>
             <dt>Timezone</dt>
@@ -202,7 +218,8 @@ function AppointmentsRail({ config }) {
           </div>
         </dl>
       </section>
-      <section className="appt-help">
+      <section className="appt-rail-card appt-help">
+        <MessageCircle className="appt-rail-watermark" aria-hidden="true" />
         <h2>
           <MessageSquare aria-hidden="true" />
           Need help scheduling?
@@ -216,12 +233,20 @@ function AppointmentsRail({ config }) {
           <ArrowRight aria-hidden="true" size={14} />
         </a>
       </section>
-      <section className="appt-before">
+      <section className="appt-rail-card appt-before">
+        <FileCheck className="appt-rail-watermark" aria-hidden="true" />
         <h2>Before your appointment</h2>
         <ul>
-          <li>Confirmation details are available after booking.</li>
-          <li>Virtual meeting information appears with the appointment.</li>
           <li>
+            <Check aria-hidden="true" />
+            Confirmation details are available after booking.
+          </li>
+          <li>
+            <Check aria-hidden="true" />
+            Virtual meeting information appears with the appointment.
+          </li>
+          <li>
+            <Check aria-hidden="true" />
             Requested documents can be submitted through{" "}
             <a href="/client-portal/tasks-and-documents">
               Tasks &amp; Documents
@@ -370,13 +395,21 @@ function SlotPicker({
         </p>
         {state.error ? (
           <div role="alert" className="appt-slot-error">
-            {state.error}
+            <p>{state.error}</p>
             <button
               type="button"
+              className="appt-retry-button"
               onClick={() => setRevision((value) => value + 1)}
             >
               Retry availability
             </button>
+            <p className="appt-slot-error-help">
+              Need help finding a time?{" "}
+              <a href="/client-portal/messages">
+                Send us a message
+                <ArrowRight aria-hidden="true" size={13} />
+              </a>
+            </p>
           </div>
         ) : state.loading ? (
           <p role="status">Checking availability...</p>
@@ -395,9 +428,8 @@ function SlotPicker({
             ))}
           </div>
         ) : (
-          <p>
-            No available times on this date. Choose another date, or{" "}
-            <a href="/client-portal/messages">message us</a> for help.
+          <p className="appt-times-empty">
+            No available times for this date. Choose another day.
           </p>
         )}
       </div>
@@ -405,31 +437,46 @@ function SlotPicker({
   );
 }
 
+const typeIcons = {
+  follow_up: UserCheck,
+  service_review: FileCheck,
+  document_review: FileSearch,
+  consultation: MessageCircle,
+};
+
 function TypeCards({ types, value, onChange }) {
   return (
     <div className="appt-types" role="radiogroup" aria-label="Appointment type">
-      {types.map((item) => (
-        <label
-          key={item.key}
-          className={`appt-type-card${value === item.key ? " is-selected" : ""}`}
-        >
-          <input
-            type="radio"
-            name="appointment-type"
-            value={item.key}
-            checked={value === item.key}
-            onChange={() => onChange(item.key)}
-          />
-          <span className="appt-type-name">{item.label}</span>
-          {item.price != null ? (
-            <span className="appt-type-tag">
-              ${Number(item.price).toFixed(2)}
+      {types.map((item) => {
+        const Icon = typeIcons[item.key] || CalendarDays;
+        return (
+          <label
+            key={item.key}
+            className={`appt-type-card${value === item.key ? " is-selected" : ""}`}
+          >
+            <input
+              type="radio"
+              className="sr-only"
+              name="appointment-type"
+              value={item.key}
+              checked={value === item.key}
+              onChange={() => onChange(item.key)}
+            />
+            <Icon className="appt-type-icon" aria-hidden="true" />
+            <span className="appt-type-name">{item.label}</span>
+            <span className="appt-type-duration">
+              {item.duration_minutes} minutes
             </span>
-          ) : item.included ? (
-            <span className="appt-type-tag">Included with your service</span>
-          ) : null}
-        </label>
-      ))}
+            {item.price != null ? (
+              <span className="appt-type-tag">
+                ${Number(item.price).toFixed(2)}
+              </span>
+            ) : item.included ? (
+              <span className="appt-type-tag">Included with your service</span>
+            ) : null}
+          </label>
+        );
+      })}
     </div>
   );
 }
@@ -560,10 +607,6 @@ function BookingForm({ config, onBooked }) {
           <div className="appt-step">
             <span className="appt-step-label">1. Select appointment type</span>
             <TypeCards types={config.types} value={type} onChange={setType} />
-            <p className="appointment-duration">
-              <Clock aria-hidden="true" />
-              {selectedType.duration_minutes} minutes
-            </p>
             <div className="appt-step-fields">
               {config.services.length ? (
                 <label>

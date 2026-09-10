@@ -163,10 +163,26 @@ test("active service, server duration, slots, booking, upcoming and history", as
   await expect(
     page.getByRole("radio", { name: "Follow-up appointment" }),
   ).toBeChecked();
-  await expect(page.getByText("30 minutes", { exact: true })).toBeVisible();
-  await page.getByRole("radio", { name: "General consultation" }).check();
-  await expect(page.getByText("75 minutes", { exact: true })).toBeVisible();
-  await page.getByRole("radio", { name: "Follow-up appointment" }).check();
+  await expect(
+    page
+      .locator(".appt-type-card")
+      .filter({ hasText: "Follow-up appointment" })
+      .getByText("30 minutes", { exact: true }),
+  ).toBeVisible();
+  await page
+    .locator(".appt-type-card")
+    .filter({ hasText: "General consultation" })
+    .click();
+  await expect(
+    page
+      .locator(".appt-type-card")
+      .filter({ hasText: "General consultation" })
+      .getByText("75 minutes", { exact: true }),
+  ).toBeVisible();
+  await page
+    .locator(".appt-type-card")
+    .filter({ hasText: "Follow-up appointment" })
+    .click();
   await expect(
     page.getByText("No upcoming appointments.", { exact: true }),
   ).toBeVisible();
