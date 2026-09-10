@@ -204,6 +204,9 @@ final class AlchemizePaypalPaymentService
             );
         }
 
+        // The authoritative amount charged is always the server-computed
+        // remaining balance — never the original invoice total, regardless
+        // of whether items[] below is used.
         $amount = number_format(
             (float) $invoice['outstanding_balance'],
             2,
@@ -220,20 +223,67 @@ final class AlchemizePaypalPaymentService
         }
 
         try {
+            $currency = strtoupper((string) $invoice['currency']);
+            $invoiceNumber = (string) $invoice['invoice_number'];
+            $amountCents = (int) round(((float) $amount) * 100);
+
+            $lineItems = $this->repository->invoiceLineItems((int) $invoice['id']);
+            $lineItemsTotalCents = 0;
+            foreach ($lineItems as $item) {
+                $lineItemsTotalCents += (int) round((float) $item['amount'] * 100);
+            }
+            $itemsReconcile = $lineItems !== [] && $lineItemsTotalCents === $amountCents;
+
+            $serviceSummary = AlchemizeExternalIntegrationRepository::invoiceServiceSummary($invoice, $lineItems);
+
+            $description = $itemsReconcile
+                ? ('Alchemize invoice ' . $invoiceNumber . ($serviceSummary !== '' ? ' — ' . $serviceSummary : ''))
+                : ('Remaining balance for ' . $invoiceNumber . ($serviceSummary !== '' ? ' — ' . $serviceSummary : ''));
+
+            $purchaseUnit = [
+                'reference_id' => $invoicePublicId,
+                'description' => self::truncate($description, 127),
+                'custom_id' => $invoicePublicId,
+                'invoice_id' => $invoiceNumber,
+                'amount' => [
+                    'currency_code' => $currency,
+                    'value' => $amount,
+                ],
+            ];
+
+            if ($itemsReconcile) {
+                // Fully (or exactly-)unpaid invoice: the real line items sum
+                // to the authoritative balance, so send them as-is. The
+                // breakdown must reconcile to amount.value exactly, which is
+                // guaranteed here since $itemsReconcile only true means the
+                // items already sum to $amount.
+                $items = [];
+                foreach ($lineItems as $item) {
+                    $name = trim((string) $item['description']);
+                    if ($name === '') $name = 'Invoice ' . $invoiceNumber;
+                    $items[] = [
+                        'name' => self::truncate($name, 127),
+                        'quantity' => '1',
+                        'unit_amount' => [
+                            'currency_code' => $currency,
+                            'value' => number_format((float) $item['amount'], 2, '.', ''),
+                        ],
+                    ];
+                }
+                $purchaseUnit['items'] = $items;
+                $purchaseUnit['amount']['breakdown'] = [
+                    'item_total' => ['currency_code' => $currency, 'value' => $amount],
+                ];
+            }
+            // Partial payment (or line items that otherwise don't sum to
+            // the remaining balance): never re-send the original full
+            // itemization against a lower charge — the description above
+            // already carries the real invoice/service context without
+            // fabricating a per-item allocation.
+
             $payload = [
                 'intent' => 'CAPTURE',
-                'purchase_units' => [
-                    [
-                        'reference_id' => $invoicePublicId,
-                        'description' => 'Alchemize invoice ' . (string) $invoice['invoice_number'],
-                        'custom_id' => $invoicePublicId,
-                        'invoice_id' => (string) $invoice['invoice_number'],
-                        'amount' => [
-                            'currency_code' => strtoupper((string) $invoice['currency']),
-                            'value' => $amount,
-                        ],
-                    ],
-                ],
+                'purchase_units' => [$purchaseUnit],
             ];
 
             $order = $this->gateway->createOrder($payload);
@@ -379,5 +429,10 @@ final class AlchemizePaypalPaymentService
                 'PayPal payment could not be completed.'
             );
         }
+    }
+
+    private static function truncate(string $value, int $maxLength): string
+    {
+        return mb_strlen($value) > $maxLength ? mb_substr($value, 0, $maxLength) : $value;
     }
 }

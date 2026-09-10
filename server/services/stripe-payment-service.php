@@ -83,18 +83,75 @@ final class AlchemizeStripePaymentService
                 $customerId = (string) $customer['id'];
                 $this->repository->setStripeCustomer($clientId, $customerId);
             }
+            // The amount actually charged is always the authoritative
+            // remaining balance computed server-side — never the original
+            // invoice total, regardless of how line items below are built.
             $amount = (int) round((float) $invoice['outstanding_balance'] * 100);
             $appUrl = rtrim((string) ($this->config['app_url'] ?? ''), '/');
-            $session = $this->gateway->createCheckoutSession([
+            $currency = strtolower((string) $invoice['currency']);
+            $invoiceNumber = (string) $invoice['invoice_number'];
+
+            $lineItems = $this->repository->invoiceLineItems((int) $invoice['id']);
+            $lineItemsTotalCents = 0;
+            foreach ($lineItems as $item) {
+                $lineItemsTotalCents += (int) round((float) $item['amount'] * 100);
+            }
+            $itemsReconcile = $lineItems !== [] && $lineItemsTotalCents === $amount;
+
+            $serviceSummary = AlchemizeExternalIntegrationRepository::invoiceServiceSummary($invoice, $lineItems);
+
+            $parameters = [
                 'mode' => 'payment', 'customer' => $customerId,
-                'line_items[0][price_data][currency]' => strtolower((string) $invoice['currency']),
-                'line_items[0][price_data][product_data][name]' => 'Alchemize invoice ' . (string) $invoice['invoice_number'],
-                'line_items[0][price_data][unit_amount]' => $amount, 'line_items[0][quantity]' => 1,
                 'success_url' => $appUrl . '/client-portal/billing?payment=processing',
                 'cancel_url' => $appUrl . '/client-portal/billing?payment=cancelled',
                 'metadata[alchemize_invoice_id]' => $invoicePublicId,
+                'metadata[alchemize_invoice_number]' => $invoiceNumber,
+                'metadata[alchemize_client_id]' => (string) $clientId,
+                'metadata[payment_type]' => 'invoice',
+                'metadata[alchemize_original_invoice_total]' => number_format(
+                    (float) $invoice['subtotal'] + (float) $invoice['adjustment_total'] - (float) $invoice['credit_deposit_total'],
+                    2, '.', ''
+                ),
+                'metadata[alchemize_amount_previously_paid]' => number_format((float) $invoice['paid_total'], 2, '.', ''),
+                'metadata[alchemize_remaining_balance]' => number_format((float) $invoice['outstanding_balance'], 2, '.', ''),
                 'payment_intent_data[metadata][alchemize_invoice_id]' => $invoicePublicId,
-            ], 'invoice-' . $invoicePublicId . '-' . $amount);
+                'payment_intent_data[metadata][alchemize_invoice_number]' => $invoiceNumber,
+            ];
+            if (!empty($invoice['engagement_public_id'])) {
+                $parameters['metadata[alchemize_engagement_id]'] = (string) $invoice['engagement_public_id'];
+            }
+            if ($serviceSummary !== '') {
+                $parameters['payment_intent_data[metadata][alchemize_service_summary]'] = self::truncate($serviceSummary, 500);
+            }
+
+            if ($itemsReconcile) {
+                // Fully (or exactly-)unpaid invoice: the real line items sum
+                // to the authoritative balance, so send them as-is.
+                foreach (array_values($lineItems) as $index => $item) {
+                    $name = trim((string) $item['description']);
+                    if ($name === '') $name = 'Invoice ' . $invoiceNumber;
+                    $parameters["line_items[{$index}][price_data][currency]"] = $currency;
+                    $parameters["line_items[{$index}][price_data][product_data][name]"] = self::truncate($name, 250);
+                    $parameters["line_items[{$index}][price_data][unit_amount]"] = (int) round((float) $item['amount'] * 100);
+                    $parameters["line_items[{$index}][quantity]"] = 1;
+                }
+            } else {
+                // Partial payment (or line items that otherwise don't sum to
+                // the remaining balance): never re-send the original full
+                // itemization against a lower charge. Send one honest
+                // "remaining balance" line instead of fabricating an
+                // allocation across the original lines.
+                $parameters['line_items[0][price_data][currency]'] = $currency;
+                $parameters['line_items[0][price_data][product_data][name]'] =
+                    self::truncate('Remaining balance — ' . $invoiceNumber, 250);
+                if ($serviceSummary !== '') {
+                    $parameters['line_items[0][price_data][product_data][description]'] = self::truncate($serviceSummary, 500);
+                }
+                $parameters['line_items[0][price_data][unit_amount]'] = $amount;
+                $parameters['line_items[0][quantity]'] = 1;
+            }
+
+            $session = $this->gateway->createCheckoutSession($parameters, 'invoice-' . $invoicePublicId . '-' . $amount);
             $this->repository->setInvoiceCheckout((int) $invoice['id'], (string) $session['id'], isset($session['payment_intent']) ? (string) $session['payment_intent'] : null);
             $checkoutUrl = (string) ($session['url'] ?? '');
             if (!str_starts_with($checkoutUrl, 'https://checkout.stripe.com/')) throw new RuntimeException('Stripe returned an invalid checkout URL.');
@@ -108,5 +165,10 @@ final class AlchemizeStripePaymentService
             $this->repository->setInvoiceStripeFailure((int) $invoice['id'], 'failed', 'provider_error');
             throw new AlchemizeRequestException(503, 'INTEGRATION_UNAVAILABLE', 'Online payment is temporarily unavailable.');
         }
+    }
+
+    private static function truncate(string $value, int $maxLength): string
+    {
+        return mb_strlen($value) > $maxLength ? mb_substr($value, 0, $maxLength) : $value;
     }
 }

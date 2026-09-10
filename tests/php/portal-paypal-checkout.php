@@ -25,6 +25,7 @@ function rejectsPaypal(callable $operation, string $code): void {
 final class PaypalTestPDO extends PDO {
     public array $invoices = [];
     public array $payments = [];
+    public array $lineItems = []; // invoice_id => [ [description, quantity, unit_price, amount], ... ]
     public function __construct() {}
     public function prepare(string $query, array $options = []): PDOStatement|false {
         return new PaypalTestStatement($this, $query);
@@ -58,6 +59,11 @@ final class PaypalTestStatement extends PDOStatement {
                 }
             }
             unset($row);
+            return true;
+        }
+
+        if (str_contains($sql, 'FROM invoice_line_items')) {
+            $this->rows = $this->db->lineItems[$params['invoice_id']] ?? [];
             return true;
         }
 
@@ -150,7 +156,14 @@ function paypalInvoiceRow(array $overrides): array {
         'status' => 'open',
         'issued_at' => '2026-09-01 00:00:00',
         'paypal_order_id' => null,
+        'engagement_public_id' => null,
+        'engagement_title' => null,
+        'internal_notes' => 'Staff-only collections memo — never send to a provider',
     ], $overrides);
+}
+
+function lineItemRow(string $description, string $amount): array {
+    return ['id' => 'li-' . $description, 'description' => $description, 'quantity' => '1.00', 'unit_price' => $amount, 'amount' => $amount];
 }
 
 function captureResponse(string $captureId, string $value, string $currency = 'USD'): array {
@@ -247,4 +260,55 @@ $second = $repoIdem->reconcilePaypalCapture('ORDER-4', 'CAPTURE-4', 7500);
 verifyPaypal($first === true && $second === true, 'Both calls should report success');
 verifyPaypal(count($dbIdem->payments) === 1, 'reconcilePaypalCapture must not insert a second payment for the same capture id');
 
-echo "Portal PayPal checkout: order creation uses the authoritative remaining balance, cross-client access is rejected, capture records the same invoice/payment records as elsewhere, partial-then-full payment status transitions are correct, and duplicate captures/webhooks never double-record.\n";
+// 9. A fully unpaid invoice whose real line items sum exactly to the
+// outstanding balance sends those items to PayPal, with a breakdown that
+// reconciles to the purchase-unit amount, plus meaningful invoice/
+// reference metadata and a description that carries real service context
+// (not a hardcoded label).
+$dbItemized = new PaypalTestPDO();
+$dbItemized->invoices = [paypalInvoiceRow([
+    'id' => 5, 'public_id' => 'inv-5', 'client_id' => 1,
+    'subtotal' => '150.00', 'outstanding_balance' => '150.00',
+    'engagement_title' => 'Business Consulting', 'engagement_public_id' => 'eng-5',
+])];
+$dbItemized->lineItems[5] = [
+    lineItemRow('Advisory session', '100.00'),
+    lineItemRow('Document review', '50.00'),
+];
+$gatewayItemized = new RecordingPaypalGateway();
+$gatewayItemized->createOrderResponse = ['id' => 'ORDER-5', 'status' => 'CREATED'];
+$serviceItemized = new AlchemizePaypalPaymentService(new AlchemizeExternalIntegrationRepository($dbItemized), $gatewayItemized);
+$serviceItemized->createOrder(1, 'inv-5');
+$unit = $gatewayItemized->createOrderCalls[0]['purchase_units'][0];
+verifyPaypal($unit['reference_id'] === 'inv-5', 'reference_id should be the invoice public id');
+verifyPaypal($unit['custom_id'] === 'inv-5', 'custom_id should be the invoice public id');
+verifyPaypal($unit['invoice_id'] === 'INV-0001', 'invoice_id should be the human invoice number');
+verifyPaypal(str_contains($unit['description'], 'Business Consulting'), 'Description should carry the real engagement title, not a hardcoded label');
+verifyPaypal(isset($unit['items']) && count($unit['items']) === 2, 'Reconciling line items should be sent as PayPal items[]');
+$itemTotal = array_sum(array_map(static fn (array $item): float => (float) $item['unit_amount']['value'], $unit['items']));
+verifyPaypal(number_format($itemTotal, 2, '.', '') === $unit['amount']['value'], 'Item totals must equal the purchase-unit amount');
+verifyPaypal($unit['amount']['breakdown']['item_total']['value'] === $unit['amount']['value'], 'breakdown.item_total must reconcile to amount.value');
+verifyPaypal(!str_contains(json_encode($unit), 'Staff-only'), 'Internal-only invoice notes must never reach PayPal');
+
+// 10. A partially paid invoice never re-sends the original full
+// itemization once it no longer sums to the (lower) remaining balance —
+// a single honest "remaining balance" description is used instead, and no
+// items[] is attached.
+$dbPartialItems = new PaypalTestPDO();
+$dbPartialItems->invoices = [paypalInvoiceRow([
+    'id' => 6, 'public_id' => 'inv-6', 'client_id' => 1,
+    'subtotal' => '199.00', 'paid_total' => '20.00', 'outstanding_balance' => '179.00', 'status' => 'partially_paid',
+])];
+$dbPartialItems->lineItems[6] = [lineItemRow('Business Consulting retainer', '199.00')];
+$gatewayPartial = new RecordingPaypalGateway();
+$gatewayPartial->createOrderResponse = ['id' => 'ORDER-6', 'status' => 'CREATED'];
+$servicePartial = new AlchemizePaypalPaymentService(new AlchemizeExternalIntegrationRepository($dbPartialItems), $gatewayPartial);
+$servicePartial->createOrder(1, 'inv-6');
+$partialUnit = $gatewayPartial->createOrderCalls[0]['purchase_units'][0];
+verifyPaypal(!isset($partialUnit['items']), 'A partially paid invoice must not send the original full itemization');
+verifyPaypal($partialUnit['amount']['value'] === '179.00', 'Amount must still equal the authoritative remaining balance');
+verifyPaypal(str_starts_with($partialUnit['description'], 'Remaining balance for inv-6') === false, 'Description uses the human invoice number, not the internal public id');
+verifyPaypal(str_contains($partialUnit['description'], 'Remaining balance for INV-0001'), 'Description should clearly state this is a remaining balance for the real invoice number');
+verifyPaypal(str_contains($partialUnit['description'], 'Business Consulting retainer'), 'Description should still carry real service context from the original line items');
+
+echo "Portal PayPal checkout: order creation uses the authoritative remaining balance, cross-client access is rejected, capture records the same invoice/payment records as elsewhere, partial-then-full payment status transitions are correct, duplicate captures/webhooks never double-record, reconciling line items are itemized with a matching breakdown, and a non-reconciling (partial) invoice sends a single honest remaining-balance description instead of the original itemization.\n";

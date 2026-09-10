@@ -65,12 +65,46 @@ final class AlchemizeExternalIntegrationRepository
     public function invoiceForClient(string $publicId, int $clientId): ?array
     {
         return $this->one(
-            "SELECT i.*, c.display_name, c.primary_email, c.stripe_customer_id
+            "SELECT i.*, c.display_name, c.primary_email, c.stripe_customer_id,
+                    e.public_id AS engagement_public_id, e.title AS engagement_title
              FROM invoices i INNER JOIN clients c ON c.id = i.client_id
+             LEFT JOIN engagements e ON e.id = i.engagement_id AND e.client_id = i.client_id
              WHERE i.public_id = :public_id AND i.client_id = :client_id AND i.issued_at IS NOT NULL
                AND i.status IN ('open','partially_paid','past_due') AND i.outstanding_balance > 0 LIMIT 1",
             ['public_id' => $publicId, 'client_id' => $clientId],
         );
+    }
+
+    // Read-only projection reused from the same line-item source Client
+    // Billing's invoice detail view already renders (AlchemizePortalRepository
+    // ::getInvoiceDetail()) — no invoice math happens here, only a fetch.
+    public function invoiceLineItems(int $invoiceId): array
+    {
+        $statement = $this->database->prepare(
+            'SELECT public_id AS id, description_snapshot AS description, quantity, unit_price, amount
+             FROM invoice_line_items
+             WHERE invoice_id = :invoice_id
+             ORDER BY id ASC'
+        );
+        $statement->execute(['invoice_id' => $invoiceId]);
+        return $statement->fetchAll();
+    }
+
+    // Real, non-fabricated service context for provider-side payment
+    // descriptions (Stripe Checkout and PayPal orders both call this):
+    // the linked engagement's title when one exists, otherwise the
+    // invoice's own real line-item descriptions — never a hardcoded label.
+    public static function invoiceServiceSummary(array $invoice, array $lineItems): string
+    {
+        $engagementTitle = trim((string) ($invoice['engagement_title'] ?? ''));
+        if ($engagementTitle !== '') return $engagementTitle;
+
+        $descriptions = array_unique(array_filter(array_map(
+            static fn (array $item): string => trim((string) ($item['description'] ?? '')),
+            $lineItems
+        )));
+
+        return implode(', ', $descriptions);
     }
 
     public function setStripeCustomer(int $clientId, string $customerId): void
