@@ -2,16 +2,20 @@
 
 declare(strict_types=1);
 
-final class AlchemizePaypalPaymentService
+interface AlchemizePaypalGateway
+{
+    public function createOrder(array $payload): array;
+    public function captureOrder(string $orderId): array;
+}
+
+final class AlchemizePaypalHttpGateway implements AlchemizePaypalGateway
 {
     private string $clientId;
     private string $clientSecret;
     private string $mode;
 
-    public function __construct(
-        private readonly AlchemizeExternalIntegrationRepository $repository,
-        array $config,
-    ) {
+    public function __construct(array $config)
+    {
         $this->clientId = trim((string) ($config['client_id'] ?? ''));
         $this->clientSecret = trim((string) ($config['client_secret'] ?? ''));
         $this->mode = strtolower(trim((string) ($config['mode'] ?? 'sandbox')));
@@ -25,210 +29,19 @@ final class AlchemizePaypalPaymentService
         }
     }
 
-    public function createOrder(int $clientId, string $invoicePublicId): array
+    public function createOrder(array $payload): array
     {
-        $invoice = $this->repository->invoiceForClient($invoicePublicId, $clientId);
-
-        if ($invoice === null) {
-            throw new AlchemizeRequestException(
-                404,
-                'NOT_FOUND',
-                'The payable invoice was not found.'
-            );
-        }
-
-        $amount = number_format(
-            (float) $invoice['outstanding_balance'],
-            2,
-            '.',
-            ''
-        );
-
-        if ((float) $amount <= 0) {
-            throw new AlchemizeRequestException(
-                409,
-                'INVOICE_NOT_PAYABLE',
-                'This invoice does not have an outstanding balance.'
-            );
-        }
-
-        try {
-            $accessToken = $this->getAccessToken();
-
-            $payload = [
-                'intent' => 'CAPTURE',
-                'purchase_units' => [
-                    [
-                        'reference_id' => $invoicePublicId,
-                        'description' => 'Alchemize invoice ' . (string) $invoice['invoice_number'],
-                        'custom_id' => $invoicePublicId,
-                        'invoice_id' => (string) $invoice['invoice_number'],
-                        'amount' => [
-                            'currency_code' => strtoupper((string) $invoice['currency']),
-                            'value' => $amount,
-                        ],
-                    ],
-                ],
-            ];
-
-            $order = $this->request(
-                'POST',
-                '/v2/checkout/orders',
-                $payload,
-                $accessToken
-            );
-
-            $orderId = trim((string) ($order['id'] ?? ''));
-
-            if ($orderId === '') {
-                throw new RuntimeException('PayPal did not return an order ID.');
-            }
-
-            $this->repository->setInvoicePaypalOrder(
-                (int) $invoice['id'],
-                $orderId
-            );
-
-            return [
-                'order_id' => $orderId,
-                'status' => strtolower((string) ($order['status'] ?? 'created')),
-            ];
-        } catch (AlchemizeRequestException $error) {
-            throw $error;
-        } catch (Throwable $error) {
-            error_log(
-                sprintf(
-                    'PayPal order creation failed [%s]: %s',
-                    get_class($error),
-                    $error->getMessage()
-                )
-            );
-
-            throw new AlchemizeRequestException(
-                503,
-                'INTEGRATION_UNAVAILABLE',
-                'PayPal payment is temporarily unavailable.'
-            );
-        }
+        return $this->request('POST', '/v2/checkout/orders', $payload, $this->getAccessToken());
     }
 
-    public function captureOrder(
-        int $clientId,
-        string $invoicePublicId,
-        string $orderId
-    ): array {
-        $invoice = $this->repository->invoiceForClient(
-            $invoicePublicId,
-            $clientId
+    public function captureOrder(string $orderId): array
+    {
+        return $this->request(
+            'POST',
+            '/v2/checkout/orders/' . rawurlencode($orderId) . '/capture',
+            null,
+            $this->getAccessToken()
         );
-
-        if ($invoice === null) {
-            throw new AlchemizeRequestException(
-                404,
-                'NOT_FOUND',
-                'The payable invoice was not found.'
-            );
-        }
-
-        if (
-            trim((string) ($invoice['paypal_order_id'] ?? '')) === ''
-            || !hash_equals(
-                (string) $invoice['paypal_order_id'],
-                trim($orderId)
-            )
-        ) {
-            throw new AlchemizeRequestException(
-                409,
-                'PAYPAL_ORDER_MISMATCH',
-                'The PayPal order does not match this invoice.'
-            );
-        }
-
-        try {
-            $accessToken = $this->getAccessToken();
-
-            $response = $this->request(
-                'POST',
-                '/v2/checkout/orders/' . rawurlencode($orderId) . '/capture',
-                null,
-                $accessToken
-            );
-
-            $capture = $response['purchase_units'][0]['payments']['captures'][0] ?? null;
-
-            if (!is_array($capture)) {
-                throw new RuntimeException(
-                    'PayPal did not return a payment capture.'
-                );
-            }
-
-            $captureId = trim((string) ($capture['id'] ?? ''));
-            $captureStatus = strtoupper(
-                trim((string) ($capture['status'] ?? ''))
-            );
-
-            if ($captureId === '' || $captureStatus !== 'COMPLETED') {
-                throw new RuntimeException(
-                    'PayPal payment capture was not completed.'
-                );
-            }
-            $capturedValue = (string) ($capture['amount']['value'] ?? '0');
-                $capturedCurrency = strtoupper(
-                    trim((string) ($capture['amount']['currency_code'] ?? ''))
-                );
-
-                $amountCents = (int) round(((float) $capturedValue) * 100);
-                $expectedAmountCents = (int) round(
-                    ((float) $invoice['outstanding_balance']) * 100
-                );
-                $expectedCurrency = strtoupper(
-                    trim((string) ($invoice['currency'] ?? ''))
-                );
-
-                if (
-                    $amountCents !== $expectedAmountCents
-                    || $capturedCurrency === ''
-                    || $capturedCurrency !== $expectedCurrency
-                ) {
-                    throw new RuntimeException(
-                        'PayPal capture amount or currency does not match the invoice.'
-                    );
-                }
-
-                $reconciled = $this->repository->reconcilePaypalCapture(
-                    $orderId,
-                    $captureId,
-                    $amountCents
-                );
-
-            if (!$reconciled) {
-                throw new RuntimeException(
-                    'The PayPal payment could not be matched to an invoice.'
-                );
-            }
-
-            return [
-                'order_id' => $orderId,
-                'capture_id' => $captureId,
-                'status' => 'completed',
-            ];
-        } catch (AlchemizeRequestException $error) {
-            throw $error;
-        } catch (Throwable $error) {
-            error_log(
-                sprintf(
-                    'PayPal capture failed [%s]: %s',
-                    get_class($error),
-                    $error->getMessage()
-                )
-            );
-
-            throw new AlchemizeRequestException(
-                503,
-                'INTEGRATION_UNAVAILABLE',
-                'PayPal payment could not be completed.'
-            );
-        }
     }
 
     private function getAccessToken(): string
@@ -369,5 +182,202 @@ final class AlchemizePaypalPaymentService
         return $this->mode === 'live'
             ? 'https://api-m.paypal.com'
             : 'https://api-m.sandbox.paypal.com';
+    }
+}
+
+final class AlchemizePaypalPaymentService
+{
+    public function __construct(
+        private readonly AlchemizeExternalIntegrationRepository $repository,
+        private readonly AlchemizePaypalGateway $gateway,
+    ) {}
+
+    public function createOrder(int $clientId, string $invoicePublicId): array
+    {
+        $invoice = $this->repository->invoiceForClient($invoicePublicId, $clientId);
+
+        if ($invoice === null) {
+            throw new AlchemizeRequestException(
+                404,
+                'NOT_FOUND',
+                'The payable invoice was not found.'
+            );
+        }
+
+        $amount = number_format(
+            (float) $invoice['outstanding_balance'],
+            2,
+            '.',
+            ''
+        );
+
+        if ((float) $amount <= 0) {
+            throw new AlchemizeRequestException(
+                409,
+                'INVOICE_NOT_PAYABLE',
+                'This invoice does not have an outstanding balance.'
+            );
+        }
+
+        try {
+            $payload = [
+                'intent' => 'CAPTURE',
+                'purchase_units' => [
+                    [
+                        'reference_id' => $invoicePublicId,
+                        'description' => 'Alchemize invoice ' . (string) $invoice['invoice_number'],
+                        'custom_id' => $invoicePublicId,
+                        'invoice_id' => (string) $invoice['invoice_number'],
+                        'amount' => [
+                            'currency_code' => strtoupper((string) $invoice['currency']),
+                            'value' => $amount,
+                        ],
+                    ],
+                ],
+            ];
+
+            $order = $this->gateway->createOrder($payload);
+
+            $orderId = trim((string) ($order['id'] ?? ''));
+
+            if ($orderId === '') {
+                throw new RuntimeException('PayPal did not return an order ID.');
+            }
+
+            $this->repository->setInvoicePaypalOrder(
+                (int) $invoice['id'],
+                $orderId
+            );
+
+            return [
+                'order_id' => $orderId,
+                'status' => strtolower((string) ($order['status'] ?? 'created')),
+            ];
+        } catch (AlchemizeRequestException $error) {
+            throw $error;
+        } catch (Throwable $error) {
+            alchemize_runtime_error_log(
+                'portal/billing/{id}/paypal/order',
+                $error,
+                ['client_id' => $clientId, 'invoice_id' => (int) $invoice['id']]
+            );
+
+            throw new AlchemizeRequestException(
+                503,
+                'INTEGRATION_UNAVAILABLE',
+                'PayPal payment is temporarily unavailable.'
+            );
+        }
+    }
+
+    public function captureOrder(
+        int $clientId,
+        string $invoicePublicId,
+        string $orderId
+    ): array {
+        $invoice = $this->repository->invoiceForClient(
+            $invoicePublicId,
+            $clientId
+        );
+
+        if ($invoice === null) {
+            throw new AlchemizeRequestException(
+                404,
+                'NOT_FOUND',
+                'The payable invoice was not found.'
+            );
+        }
+
+        if (
+            trim((string) ($invoice['paypal_order_id'] ?? '')) === ''
+            || !hash_equals(
+                (string) $invoice['paypal_order_id'],
+                trim($orderId)
+            )
+        ) {
+            throw new AlchemizeRequestException(
+                409,
+                'PAYPAL_ORDER_MISMATCH',
+                'The PayPal order does not match this invoice.'
+            );
+        }
+
+        try {
+            $response = $this->gateway->captureOrder($orderId);
+
+            $capture = $response['purchase_units'][0]['payments']['captures'][0] ?? null;
+
+            if (!is_array($capture)) {
+                throw new RuntimeException(
+                    'PayPal did not return a payment capture.'
+                );
+            }
+
+            $captureId = trim((string) ($capture['id'] ?? ''));
+            $captureStatus = strtoupper(
+                trim((string) ($capture['status'] ?? ''))
+            );
+
+            if ($captureId === '' || $captureStatus !== 'COMPLETED') {
+                throw new RuntimeException(
+                    'PayPal payment capture was not completed.'
+                );
+            }
+
+            $capturedValue = (string) ($capture['amount']['value'] ?? '0');
+            $capturedCurrency = strtoupper(
+                trim((string) ($capture['amount']['currency_code'] ?? ''))
+            );
+
+            $amountCents = (int) round(((float) $capturedValue) * 100);
+            $expectedAmountCents = (int) round(
+                ((float) $invoice['outstanding_balance']) * 100
+            );
+            $expectedCurrency = strtoupper(
+                trim((string) ($invoice['currency'] ?? ''))
+            );
+
+            if (
+                $amountCents !== $expectedAmountCents
+                || $capturedCurrency === ''
+                || $capturedCurrency !== $expectedCurrency
+            ) {
+                throw new RuntimeException(
+                    'PayPal capture amount or currency does not match the invoice.'
+                );
+            }
+
+            $reconciled = $this->repository->reconcilePaypalCapture(
+                $orderId,
+                $captureId,
+                $amountCents
+            );
+
+            if (!$reconciled) {
+                throw new RuntimeException(
+                    'The PayPal payment could not be matched to an invoice.'
+                );
+            }
+
+            return [
+                'order_id' => $orderId,
+                'capture_id' => $captureId,
+                'status' => 'completed',
+            ];
+        } catch (AlchemizeRequestException $error) {
+            throw $error;
+        } catch (Throwable $error) {
+            alchemize_runtime_error_log(
+                'portal/billing/{id}/paypal/capture',
+                $error,
+                ['client_id' => $clientId, 'invoice_id' => (int) $invoice['id']]
+            );
+
+            throw new AlchemizeRequestException(
+                503,
+                'INTEGRATION_UNAVAILABLE',
+                'PayPal payment could not be completed.'
+            );
+        }
     }
 }

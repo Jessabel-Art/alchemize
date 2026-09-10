@@ -124,6 +124,7 @@ export const portalApi = {
   createPaypalOrder: (id) =>
     portalRequest(`billing/${id}/paypal/order`, {
       method: "POST",
+      body: JSON.stringify({}),
     }),
 
   capturePaypalOrder: (id, orderId) =>

@@ -139,6 +139,38 @@ final class AlchemizeExternalIntegrationRepository
         return $this->reconcileStripeInvoice($paymentIntentId, $amountCents, null, null);
     }
 
+    public function setInvoicePaypalOrder(int $invoiceId, string $orderId): void
+    {
+        $this->database->prepare(
+            'UPDATE invoices SET paypal_order_id = :order_id WHERE id = :id'
+        )->execute(['order_id' => $orderId, 'id' => $invoiceId]);
+    }
+
+    public function reconcilePaypalCapture(string $orderId, string $captureId, int $amountCents): bool
+    {
+        $invoice = $this->one('SELECT * FROM invoices WHERE paypal_order_id = :id LIMIT 1 FOR UPDATE', ['id' => $orderId]);
+        if ($invoice === null) return false;
+        $existingPayment = $this->one('SELECT id FROM payments WHERE paypal_capture_id = :id LIMIT 1', ['id' => $captureId]);
+        if ($existingPayment !== null) return true;
+        $amount = number_format($amountCents / 100, 2, '.', '');
+        $this->database->prepare(
+            "INSERT INTO payments (public_id, invoice_id, client_id, payment_date, amount, payment_method,
+                external_reference, paypal_capture_id)
+             VALUES (:public_id, :invoice_id, :client_id, CURRENT_DATE, :amount, 'paypal', :reference, :capture)
+             ON DUPLICATE KEY UPDATE paypal_capture_id = VALUES(paypal_capture_id)"
+        )->execute([
+            'public_id' => alchemize_uuid_v4(), 'invoice_id' => $invoice['id'], 'client_id' => $invoice['client_id'],
+            'amount' => $amount, 'reference' => $captureId, 'capture' => $captureId,
+        ]);
+        $this->database->prepare(
+            "UPDATE invoices SET paid_total = LEAST(subtotal + adjustment_total - credit_deposit_total, paid_total + :amount),
+             outstanding_balance = GREATEST(0, outstanding_balance - :amount2),
+             status = IF(outstanding_balance - :amount3 <= 0, 'paid', 'partially_paid'),
+             paid_at = IF(outstanding_balance - :amount4 <= 0, CURRENT_TIMESTAMP(6), paid_at) WHERE id = :id"
+        )->execute(['amount' => $amount, 'amount2' => $amount, 'amount3' => $amount, 'amount4' => $amount, 'id' => $invoice['id']]);
+        return true;
+    }
+
     public function registerPublicSubmission(string $requestFingerprint, string $payloadFingerprint, int $limit, int $windowSeconds): string
     {
         $duplicate = $this->one('SELECT lead_id FROM public_submission_guards WHERE payload_fingerprint = :payload LIMIT 1', ['payload' => $payloadFingerprint]);

@@ -1,15 +1,72 @@
 import { test, expect } from "@playwright/test";
 
+// Node's global timer, used only to simulate network latency for the
+// "only the clicked button is busy" test.
+// eslint-disable-next-line no-undef
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// A minimal stand-in for the real https://www.paypal.com/sdk/js Smart
+// Buttons SDK: it renders one real, clickable button that, on click, runs
+// the same createOrder -> onApprove/onError contract the real SDK drives,
+// so the app's own PayPal wiring (not PayPal's UI) is what's under test.
+const FAKE_PAYPAL_SDK = `
+window.paypal = {
+  Buttons: function (config) {
+    return {
+      render: function (container) {
+        var button = document.createElement("button");
+        button.type = "button";
+        button.setAttribute("data-testid", "paypal-sdk-button");
+        button.textContent = "PayPal (test)";
+        button.addEventListener("click", function () {
+          Promise.resolve()
+            .then(function () { return config.createOrder(); })
+            .then(function (orderId) {
+              return config.onApprove({ orderID: orderId });
+            })
+            .catch(function (error) {
+              if (config.onError) config.onError(error);
+            });
+        });
+        container.appendChild(button);
+        return Promise.resolve();
+      },
+    };
+  },
+};
+`;
+
+async function mockPaypalSdk(page) {
+  await page.route("https://www.paypal.com/sdk/js**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/javascript",
+      body: FAKE_PAYPAL_SDK,
+    }),
+  );
+}
+
 async function setup(
   page,
-  { invoices = [], payments = [], checkoutResponse = null } = {},
+  {
+    invoices = [],
+    payments = [],
+    checkoutResponse = null,
+    paypalClientId = "",
+    paypalOrderResponse = null,
+    paypalCaptureResponse = null,
+    paypalOrderDelayMs = 0,
+    checkoutDelayMs = 0,
+  } = {},
 ) {
   const requests = [];
+  const paypalRequests = [];
   const openBalance = invoices
     .filter((item) =>
       ["open", "partially_paid", "past_due"].includes(item.status),
     )
     .reduce((sum, item) => sum + Number(item.outstanding_balance || 0), 0);
+  if (paypalClientId) await mockPaypalSdk(page);
   await page.route("**/alchemize-api.php?*", async (route) => {
     const url = new URL(route.request().url());
     const path = url.searchParams.get("route");
@@ -26,7 +83,7 @@ async function setup(
         invoices,
         payments,
         summary: { open_balance: openBalance.toFixed(2) },
-        paypal_client_id: "",
+        paypal_client_id: paypalClientId,
       };
     if (path?.match(/^portal\/billing\/.+\/checkout$/)) {
       const contentType = request.headers()["content-type"] || "";
@@ -52,15 +109,65 @@ async function setup(
         });
         return;
       }
+      if (checkoutDelayMs) await delay(checkoutDelayMs);
       if (checkoutResponse) {
         await route.fulfill(checkoutResponse);
         return;
       }
       data = { checkout_url: "https://checkout.example/session-123" };
     }
+    if (path?.match(/^portal\/billing\/.+\/paypal\/order$/)) {
+      const contentType = request.headers()["content-type"] || "";
+      paypalRequests.push({
+        kind: "order",
+        path,
+        method: request.method(),
+        contentType,
+        csrf: request.headers()["x-csrf-token"],
+        body: request.postData(),
+      });
+      if (!contentType.startsWith("application/json")) {
+        await route.fulfill({
+          status: 415,
+          json: {
+            error: {
+              code: "UNSUPPORTED_MEDIA_TYPE",
+              message: "Content-Type must be application/json.",
+            },
+          },
+        });
+        return;
+      }
+      if (paypalOrderDelayMs) await delay(paypalOrderDelayMs);
+      if (paypalOrderResponse) {
+        await route.fulfill(paypalOrderResponse);
+        return;
+      }
+      data = { order_id: "PAYPAL-ORDER-1", status: "created" };
+    }
+    if (path?.match(/^portal\/billing\/.+\/paypal\/capture$/)) {
+      const contentType = request.headers()["content-type"] || "";
+      paypalRequests.push({
+        kind: "capture",
+        path,
+        method: request.method(),
+        contentType,
+        csrf: request.headers()["x-csrf-token"],
+        body: request.postData(),
+      });
+      if (paypalCaptureResponse) {
+        await route.fulfill(paypalCaptureResponse);
+        return;
+      }
+      data = {
+        order_id: "PAYPAL-ORDER-1",
+        capture_id: "PAYPAL-CAPTURE-1",
+        status: "completed",
+      };
+    }
     await route.fulfill({ json: { data } });
   });
-  return { requests };
+  return { requests, paypalRequests };
 }
 
 function invoiceFixture(overrides = {}) {
@@ -142,7 +249,7 @@ test("open invoice renders real balance, paid, and remaining amounts with a stat
   ).toBeVisible();
 });
 
-test("pay securely sends a well-formed POST + JSON body and redirects to the real checkout URL", async ({
+test("pay with Stripe sends a well-formed POST + JSON body and redirects to the real checkout URL", async ({
   page,
 }) => {
   const { requests } = await setup(page, {
@@ -158,7 +265,7 @@ test("pay securely sends a well-formed POST + JSON body and redirects to the rea
   );
   await page.goto("/client-portal/billing/");
   const payButton = page.getByRole("button", {
-    name: "Pay securely",
+    name: "Pay with Stripe",
     exact: true,
   });
   await expect(payButton).toBeVisible();
@@ -173,7 +280,7 @@ test("pay securely sends a well-formed POST + JSON body and redirects to the rea
   expect(requests[0].csrf).toBe("csrf");
 });
 
-test("a checkout failure (e.g. another client's invoice, or a provider error) is surfaced, not silently swallowed", async ({
+test("a Stripe checkout failure (e.g. another client's invoice, or a provider error) is surfaced, not silently swallowed", async ({
   page,
 }) => {
   await setup(page, {
@@ -191,7 +298,7 @@ test("a checkout failure (e.g. another client's invoice, or a provider error) is
   });
   await page.goto("/client-portal/billing/");
   const payButton = page.getByRole("button", {
-    name: "Pay securely",
+    name: "Pay with Stripe",
     exact: true,
   });
   await payButton.click();
@@ -199,6 +306,127 @@ test("a checkout failure (e.g. another client's invoice, or a provider error) is
     page.getByText("The payable invoice was not found.", { exact: true }),
   ).toBeVisible();
   await expect(page).toHaveURL(/\/client-portal\/billing\/?$/);
+  // The invoice and its other payment option remain usable after a failure.
+  await expect(payButton).toBeEnabled();
+});
+
+test("an unpaid/partially-paid invoice shows both Stripe and PayPal payment options", async ({
+  page,
+}) => {
+  await setup(page, {
+    invoices: [invoiceFixture()],
+    payments: [],
+    paypalClientId: "sb-client-id",
+  });
+  await page.goto("/client-portal/billing/");
+  const card = page
+    .locator(".bill-invoice-card")
+    .filter({ hasText: "INV-1788541713348" });
+  await expect(
+    card.getByRole("button", { name: "Pay with Stripe", exact: true }),
+  ).toBeVisible();
+  await expect(card.getByText("Pay with PayPal")).toBeVisible();
+  await expect(card.getByTestId("paypal-sdk-button")).toBeVisible();
+});
+
+test("a fully-paid invoice shows neither payment button", async ({ page }) => {
+  await setup(page, {
+    invoices: [invoiceFixture({ status: "paid", outstanding_balance: "0.00" })],
+    payments: [],
+    paypalClientId: "sb-client-id",
+  });
+  await page.goto("/client-portal/billing/");
+  await expect(
+    page.getByRole("button", { name: "Pay with Stripe" }),
+  ).toHaveCount(0);
+  await expect(page.getByText("Pay with PayPal")).toHaveCount(0);
+});
+
+test("the PayPal button creates an order at the correct endpoint using the remaining balance, and approval captures the payment", async ({
+  page,
+}) => {
+  const { paypalRequests } = await setup(page, {
+    invoices: [invoiceFixture()],
+    payments: [],
+    paypalClientId: "sb-client-id",
+  });
+  await page.goto("/client-portal/billing/");
+  const card = page
+    .locator(".bill-invoice-card")
+    .filter({ hasText: "INV-1788541713348" });
+  await card.getByTestId("paypal-sdk-button").click();
+  await expect(page.getByText("PayPal payment completed.")).toBeVisible();
+
+  expect(paypalRequests).toHaveLength(2);
+  const [orderRequest, captureRequest] = paypalRequests;
+  expect(orderRequest.kind).toBe("order");
+  expect(orderRequest.path).toBe("portal/billing/inv-1/paypal/order");
+  expect(orderRequest.method).toBe("POST");
+  expect(orderRequest.contentType).toContain("application/json");
+  expect(orderRequest.csrf).toBe("csrf");
+  expect(captureRequest.kind).toBe("capture");
+  expect(captureRequest.path).toBe("portal/billing/inv-1/paypal/capture");
+  expect(JSON.parse(captureRequest.body)).toEqual({
+    order_id: "PAYPAL-ORDER-1",
+  });
+});
+
+test("a PayPal order-creation failure is surfaced without breaking the Billing page, and Stripe remains available", async ({
+  page,
+}) => {
+  await setup(page, {
+    invoices: [invoiceFixture()],
+    payments: [],
+    paypalClientId: "sb-client-id",
+    paypalOrderResponse: {
+      status: 503,
+      json: {
+        error: {
+          code: "INTEGRATION_UNAVAILABLE",
+          message: "PayPal payment is temporarily unavailable.",
+        },
+      },
+    },
+  });
+  await page.goto("/client-portal/billing/");
+  const card = page
+    .locator(".bill-invoice-card")
+    .filter({ hasText: "INV-1788541713348" });
+  await card.getByTestId("paypal-sdk-button").click();
+  await expect(
+    page.getByText("PayPal payment is temporarily unavailable.", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(page).toHaveURL(/\/client-portal\/billing\/?$/);
+  await expect(
+    card.getByRole("button", { name: "Pay with Stripe", exact: true }),
+  ).toBeEnabled();
+});
+
+test("only the clicked payment button enters a loading state", async ({
+  page,
+}) => {
+  await setup(page, {
+    invoices: [invoiceFixture()],
+    payments: [],
+    paypalClientId: "sb-client-id",
+    paypalOrderDelayMs: 600,
+  });
+  await page.goto("/client-portal/billing/");
+  const card = page
+    .locator(".bill-invoice-card")
+    .filter({ hasText: "INV-1788541713348" });
+  const stripeButton = card.getByRole("button", {
+    name: "Pay with Stripe",
+    exact: true,
+  });
+  await card.getByTestId("paypal-sdk-button").click();
+  await expect(card.getByText("Opening PayPal…")).toBeVisible();
+  // The Stripe option is disabled while PayPal checkout is being created,
+  // but PayPal's own busy state doesn't relabel the Stripe button.
+  await expect(stripeButton).toBeDisabled();
+  await expect(stripeButton).toHaveText("Pay with Stripe");
 });
 
 test("payment history table renders real records, a receipt link when present, and a computed total", async ({

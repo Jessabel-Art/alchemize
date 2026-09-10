@@ -185,7 +185,7 @@ try {
 
         $payments = new AlchemizePaypalPaymentService(
             new AlchemizeExternalIntegrationRepository($database),
-            $paypalConfig,
+            new AlchemizePaypalHttpGateway($paypalConfig),
         );
 
         alchemize_json_response([
@@ -219,7 +219,7 @@ try {
 
         $payments = new AlchemizePaypalPaymentService(
             new AlchemizeExternalIntegrationRepository($database),
-            $paypalConfig,
+            new AlchemizePaypalHttpGateway($paypalConfig),
         );
 
         alchemize_json_response([

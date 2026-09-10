@@ -46,4 +46,9 @@ $repository->setInvoiceCheckout(0, 'cs_schema_integrity_test', null);
 // (synchronizeAppointment(), both its success and failure path).
 $repository->setCalendarState(0, 'failed', null, 'provider_error');
 
-echo "Schema integrity: invoiceForClient/setStripeCustomer/setInvoiceCheckout/setCalendarState all ran without an \"Unknown column\" error against the real database.\n";
+// The PayPal equivalents of the checks above (see migrations/030),
+// exercised the same way the Stripe writes are above.
+$repository->setInvoicePaypalOrder(0, 'schema-integrity-order-test');
+$repository->reconcilePaypalCapture('schema-integrity-order-test-nonexistent', 'schema-integrity-capture-test', 100);
+
+echo "Schema integrity: invoiceForClient/setStripeCustomer/setInvoiceCheckout/setCalendarState/setInvoicePaypalOrder/reconcilePaypalCapture all ran without an \"Unknown column\" error against the real database.\n";

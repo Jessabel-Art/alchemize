@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   FileText,
@@ -9,6 +10,9 @@ import {
 } from "lucide-react";
 import { portalApi } from "../../services/portal-api.js";
 import "./client-billing.css";
+
+const PAYPAL_UNAVAILABLE_MESSAGE =
+  "PayPal checkout is temporarily unavailable. Please try again.";
 
 const invoiceDetailPath = (invoiceId) =>
   `/client-portal/billing/invoices/${encodeURIComponent(invoiceId)}`;
@@ -48,7 +52,7 @@ const contactBillingHref = (invoiceNumber) =>
     invoiceNumber ? `Invoice ${invoiceNumber}` : "Billing question",
   )}`;
 
-export default function ClientBilling({ data, busy, run }) {
+export default function ClientBilling({ data, busy, run, notify }) {
   const invoices = data.invoices || [];
   const payments = data.payments || [];
   const openInvoices = invoices.filter(isOpenInvoice);
@@ -96,6 +100,8 @@ export default function ClientBilling({ data, busy, run }) {
                       item={item}
                       busy={busy}
                       run={run}
+                      notify={notify}
+                      paypalClientId={data.paypal_client_id}
                     />
                   ))}
                 </div>
@@ -211,7 +217,12 @@ function BillingRail() {
   );
 }
 
-function InvoiceCard({ item, busy, run }) {
+function InvoiceCard({ item, busy, run, notify, paypalClientId }) {
+  const [paypalCreating, setPaypalCreating] = useState(false);
+  const stripeBusy = busy === `${item.id}-pay`;
+  const paypalCaptureBusy = busy === `${item.id}-paypal`;
+  const paypalBusy = paypalCreating || paypalCaptureBusy;
+
   return (
     <article className="bill-invoice-card">
       <div className="bill-invoice-main">
@@ -226,10 +237,12 @@ function InvoiceCard({ item, busy, run }) {
           Issued {formatDate(item.invoice_date)} · Due{" "}
           {formatDate(item.due_date)}
         </small>
-        <div className="portal-action-group">
+        <div className="bill-payment-options">
           <ActionButton
             className="portal-action-button bill-pay-button"
-            busy={busy === `${item.id}-pay`}
+            busy={stripeBusy}
+            busyLabel="Opening Stripe…"
+            disabled={stripeBusy || paypalBusy}
             onClick={() =>
               run(
                 `${item.id}-pay`,
@@ -245,8 +258,20 @@ function InvoiceCard({ item, busy, run }) {
               )
             }
           >
-            Pay securely
+            Pay with Stripe
           </ActionButton>
+          <PayPalInvoiceButton
+            invoice={item}
+            clientId={paypalClientId}
+            disabled={stripeBusy}
+            creating={paypalCreating}
+            capturing={paypalCaptureBusy}
+            onCreatingChange={setPaypalCreating}
+            run={run}
+            notify={notify}
+          />
+        </div>
+        <div className="portal-action-group">
           <Link
             className="portal-action-button"
             to={invoiceDetailPath(item.id)}
@@ -274,11 +299,160 @@ function InvoiceCard({ item, busy, run }) {
   );
 }
 
-function ActionButton({ children, busy, className, ...props }) {
+function ActionButton({
+  children,
+  busy,
+  busyLabel = "Working…",
+  className,
+  disabled,
+  ...props
+}) {
   return (
-    <button type="button" className={className} disabled={busy} {...props}>
-      {busy ? "Working…" : children}
+    <button
+      type="button"
+      className={className}
+      disabled={Boolean(busy || disabled)}
+      {...props}
+    >
+      {busy ? busyLabel : children}
     </button>
+  );
+}
+
+function PayPalInvoiceButton({
+  invoice,
+  clientId,
+  disabled,
+  creating,
+  capturing,
+  onCreatingChange,
+  run,
+  notify,
+}) {
+  const containerRef = useRef(null);
+  const [loadError, setLoadError] = useState(false);
+  const handledErrorRef = useRef(false);
+
+  useEffect(() => {
+    if (!clientId || !containerRef.current) return undefined;
+
+    let cancelled = false;
+
+    const loadPaypalSdk = async () => {
+      const existingScript = document.querySelector(
+        `script[data-paypal-client-id="${clientId}"]`,
+      );
+
+      if (!existingScript) {
+        await new Promise((resolve, reject) => {
+          const script = document.createElement("script");
+          script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(
+            clientId,
+          )}&currency=${encodeURIComponent(
+            String(invoice.currency || "USD").toUpperCase(),
+          )}`;
+          script.async = true;
+          script.dataset.paypalClientId = clientId;
+          script.onload = resolve;
+          script.onerror = () =>
+            reject(new Error("PayPal could not be loaded."));
+          document.head.appendChild(script);
+        });
+      } else if (!window.paypal) {
+        await new Promise((resolve, reject) => {
+          existingScript.addEventListener("load", resolve, { once: true });
+          existingScript.addEventListener(
+            "error",
+            () => reject(new Error("PayPal could not be loaded.")),
+            { once: true },
+          );
+        });
+      }
+
+      if (cancelled || !containerRef.current || !window.paypal?.Buttons) {
+        throw new Error("PayPal could not be loaded.");
+      }
+
+      containerRef.current.innerHTML = "";
+
+      await window.paypal
+        .Buttons({
+          style: { layout: "horizontal", label: "paypal", height: 40 },
+
+          createOrder: async () => {
+            onCreatingChange(true);
+            handledErrorRef.current = false;
+            try {
+              const order = await portalApi.createPaypalOrder(invoice.id);
+              if (!order.order_id) {
+                throw new Error(PAYPAL_UNAVAILABLE_MESSAGE);
+              }
+              return order.order_id;
+            } catch (error) {
+              handledErrorRef.current = true;
+              notify("error", error.message || PAYPAL_UNAVAILABLE_MESSAGE);
+              throw error;
+            } finally {
+              onCreatingChange(false);
+            }
+          },
+
+          onApprove: async (approval) => {
+            await run(
+              `${invoice.id}-paypal`,
+              () => portalApi.capturePaypalOrder(invoice.id, approval.orderID),
+              "PayPal payment completed.",
+            );
+          },
+
+          onCancel: () => {
+            onCreatingChange(false);
+          },
+
+          // A rejected createOrder() also reaches the SDK's own onError; the
+          // specific backend message was already surfaced above, so only
+          // fall back to a generic message here for a genuinely unhandled
+          // SDK-level failure (nothing else already notified the user).
+          onError: () => {
+            onCreatingChange(false);
+            if (!handledErrorRef.current) {
+              notify("error", PAYPAL_UNAVAILABLE_MESSAGE);
+            }
+          },
+        })
+        .render(containerRef.current);
+    };
+
+    loadPaypalSdk().catch(() => {
+      if (!cancelled) setLoadError(true);
+    });
+
+    return () => {
+      cancelled = true;
+      if (containerRef.current) {
+        containerRef.current.innerHTML = "";
+      }
+    };
+  }, [clientId, invoice.id, invoice.currency, run, notify, onCreatingChange]);
+
+  if (!clientId || loadError) {
+    return (
+      <p className="bill-paypal-unavailable">{PAYPAL_UNAVAILABLE_MESSAGE}</p>
+    );
+  }
+
+  return (
+    <div
+      className={`bill-paypal-option${disabled ? " is-disabled" : ""}`}
+      aria-busy={creating || capturing}
+    >
+      <span className="bill-pay-option-label">Pay with PayPal</span>
+      {creating ? <p className="bill-paypal-status">Opening PayPal…</p> : null}
+      {capturing ? (
+        <p className="bill-paypal-status">Completing PayPal payment…</p>
+      ) : null}
+      <div className="portal-paypal-button" ref={containerRef} />
+    </div>
   );
 }
 

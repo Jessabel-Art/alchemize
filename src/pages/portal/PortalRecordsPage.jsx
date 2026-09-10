@@ -186,19 +186,26 @@ function PortalRecordsPage({ resource, engagementId = null }) {
   useEffect(() => {
     load();
   }, [load]);
-  const run = async (key, operation, success) => {
-    setBusy(key);
-    setFeedback(null);
-    try {
-      await operation();
-      setFeedback({ type: "success", message: success });
-      await load();
-    } catch (error) {
-      setFeedback({ type: "error", message: error.message });
-    } finally {
-      setBusy("");
-    }
-  };
+  const run = useCallback(
+    async (key, operation, success) => {
+      setBusy(key);
+      setFeedback(null);
+      try {
+        await operation();
+        setFeedback({ type: "success", message: success });
+        await load();
+      } catch (error) {
+        setFeedback({ type: "error", message: error.message });
+      } finally {
+        setBusy("");
+      }
+    },
+    [load],
+  );
+  const notify = useCallback(
+    (type, message) => setFeedback({ type, message }),
+    [],
+  );
   const groups = useMemo(() => {
     if (resource === "tasks-and-documents") return [];
     return groupRecords(resource, state.data?.items || []);
@@ -232,6 +239,7 @@ function PortalRecordsPage({ resource, engagementId = null }) {
           empty={content[3]}
           busy={busy}
           run={run}
+          notify={notify}
         />
       ) : null}
     </div>
@@ -268,7 +276,7 @@ function groupRecords(resource, items) {
 }
 
 function ResourceContent(props) {
-  const { resource, data, groups, empty, busy, run } = props;
+  const { resource, data, groups, empty, busy, run, notify } = props;
   if (resource === "services") {
     if (data?.item) {
       return (
@@ -318,7 +326,15 @@ function ResourceContent(props) {
       <Messages items={data.items || []} empty={empty} busy={busy} run={run} />
     );
   if (resource === "billing")
-    return <Billing data={data} empty={empty} busy={busy} run={run} />;
+    return (
+      <Billing
+        data={data}
+        empty={empty}
+        busy={busy}
+        run={run}
+        notify={notify}
+      />
+    );
   if (resource === "profile")
     return <Profile data={data} empty={empty} busy={busy} run={run} />;
   return <EmptyState>{empty}</EmptyState>;
@@ -1191,105 +1207,8 @@ function Messages({ items, empty, busy, run }) {
   );
 }
 
-function PayPalInvoiceButton({ invoice, clientId, run }) {
-  const containerRef = React.useRef(null);
-
-  React.useEffect(() => {
-    if (!clientId || !containerRef.current) return undefined;
-
-    let cancelled = false;
-
-    const renderButtons = async () => {
-      const existingScript = document.querySelector(
-        `script[data-paypal-client-id="${clientId}"]`,
-      );
-
-      if (!existingScript) {
-        await new Promise((resolve, reject) => {
-          const script = document.createElement("script");
-
-          script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(
-            clientId,
-          )}&currency=${encodeURIComponent(
-            String(invoice.currency || "USD").toUpperCase(),
-          )}`;
-
-          script.async = true;
-          script.dataset.paypalClientId = clientId;
-          script.onload = resolve;
-          script.onerror = () =>
-            reject(new Error("PayPal could not be loaded."));
-
-          document.head.appendChild(script);
-        });
-      } else if (!window.paypal) {
-        await new Promise((resolve, reject) => {
-          existingScript.addEventListener("load", resolve, { once: true });
-          existingScript.addEventListener(
-            "error",
-            () => reject(new Error("PayPal could not be loaded.")),
-            { once: true },
-          );
-        });
-      }
-
-      if (cancelled || !containerRef.current || !window.paypal?.Buttons) {
-        return;
-      }
-
-      containerRef.current.innerHTML = "";
-
-      await window.paypal
-        .Buttons({
-          style: {
-            layout: "horizontal",
-            label: "paypal",
-            height: 40,
-          },
-
-          createOrder: async () => {
-            const order = await portalApi.createPaypalOrder(invoice.id);
-
-            if (!order.order_id) {
-              throw new Error("PayPal order could not be created.");
-            }
-
-            return order.order_id;
-          },
-
-          onApprove: async (data) => {
-            await run(
-              `${invoice.id}-paypal`,
-              () => portalApi.capturePaypalOrder(invoice.id, data.orderID),
-              "PayPal payment completed.",
-            );
-          },
-
-          onError: (error) => {
-            console.error("PayPal checkout failed:", error);
-          },
-        })
-        .render(containerRef.current);
-    };
-
-    renderButtons().catch((error) => {
-      console.error("PayPal initialization failed:", error);
-    });
-
-    return () => {
-      cancelled = true;
-
-      if (containerRef.current) {
-        containerRef.current.innerHTML = "";
-      }
-    };
-  }, [clientId, invoice.id, invoice.currency, run]);
-
-  return <div className="portal-paypal-button" ref={containerRef} />;
-}
-
-function Billing({ data, busy, run }) {
-  return <ClientBilling data={data} busy={busy} run={run} />;
+function Billing({ data, busy, run, notify }) {
+  return <ClientBilling data={data} busy={busy} run={run} notify={notify} />;
 }
 
 function Profile({ data, empty, busy, run }) {
