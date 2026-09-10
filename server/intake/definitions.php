@@ -108,6 +108,37 @@ function alchemize_intake_definitions(): array
             $module('operations','Systems and processes involved',[$field('current_workflows','How does the work move today?','textarea',false,['helper'=>'Describe the main steps as they currently happen, even if the process is informal.']),$field('bottlenecks','Where is the friction?','textarea',false,['helper'=>'Include delays, repeated work, unclear handoffs, missed follow-ups, or manual steps.']),$field('tools','What systems are involved?','textarea',false,['helper'=>'Include software, spreadsheets, email workflows, paper processes, vendor platforms, or other tools your team uses.']),$field('manual_processes','Which steps require repeated manual work?','textarea')],[],['intro'=>'Help us understand the practical workflow around the challenge, not just the final symptom.']),
             $module('sop','Process documentation',[$field('process_to_document','Which process needs clearer documentation?','textarea'),$field('current_documentation','What documentation already exists?','textarea'),$field('team_users','Who uses this process?'),$field('responsible_roles','Who is responsible for each part?'),$field('frequency_dependencies','How often does it happen, and what does it depend on?','textarea')],[],['intro'=>'Share how the process works today so the consultation can focus on what needs to become clearer and repeatable.']),
         ]],
+        'translation' => ['label'=>'Translation Services','modules'=>[
+            $module('document_details','Document details',[
+                $field('document_type','Document type','text',true),
+                $field('source_language','Source language','text',true),
+                $field('target_language','Target language','text',true),
+                $field('document_count','Number of documents','number',false),
+                $field('page_count','Estimated pages or word count if known','text',false),
+                $field('certified_translation','Certified translation needed?','select',true,['options'=>$options(['yes','no','unsure'])]),
+                $field('intended_use','Intended use / receiving organization','textarea',true),
+                $field('receiving_organization','Receiving organization or agency','text',false),
+                $field('destination_country','Destination country or jurisdiction','text',false),
+                $field('formatting_requirements','Formatting or layout preservation requirements','textarea'),
+                $field('deadline','Desired turnaround or deadline','date',false),
+                $field('source_document_readability','Are the source documents clear and readable?','select',true,['options'=>$options(['yes','no','partially'])]),
+                $field('special_instructions','Special instructions','textarea'),
+            ], [['key'=>'source_documents','name'=>'Source documents','type'=>'document','necessity'=>'optional']]),
+        ]],
+        'apostille' => ['label'=>'Apostille Services','modules'=>[
+            $module('document_details','Document and filing details',[
+                $field('document_type','Document type','text',true),
+                $field('document_count','Number of documents','number',true),
+                $field('issuing_state','Issuing state or jurisdiction','text',true),
+                $field('destination_country','Destination country','text',true),
+                $field('document_status','Document status','select',true,['options'=>$options(['original','certified_copy','duplicate','other'])]),
+                $field('notarized_before_apostille','Has this document already been notarized or certified?','select',true,['options'=>$options(['yes','no','unsure'])]),
+                $field('translation_also_needed','Is translation also needed for this document?','select',true,['options'=>$options(['yes','no','unsure'])]),
+                $field('filing_deadline','Requested filing or return date','date',false),
+                $field('delivery_requirements','Delivery or return requirements','textarea'),
+                $field('special_instructions','Special instructions','textarea'),
+            ], [['key'=>'apostille_documents','name'=>'Supporting documents','type'=>'document','necessity'=>'optional']]),
+        ]],
         'notary' => ['label'=>'Notary Services','modules'=>[$module('matter','Notary request',[$field('document_type','General document type','text',true),$field('document_count','Number of documents','number',true),$field('signer_count','Number of signers','number',true),$field('signer_location','Signer location','text',true),$field('service_mode','Preferred service mode','select',true,['options'=>$options(['in_person','electronic_or_remote_if_available'])]),$field('witnesses','Witnesses needed / available','textarea'),$field('desired_appointment','Desired appointment date/time','datetime-local'),$field('accessibility','Accessibility or location considerations','textarea')])]],
         'document_admin' => ['label'=>'Document & Administrative Services','modules'=>[$module('project','Administrative project',[$field('assistance_type','Type of assistance','text',true),$field('project_description','Project description','textarea',true),$field('desired_outcome','Desired outcome','textarea',true),$field('document_count','Approximate document count','number'),$field('requested_format','Requested format'),$field('deadline','Deadline','date'),$field('background','Relevant background','textarea'),$field('special_instructions','Special instructions','textarea')],[['key'=>'project_files','name'=>'Existing project files','type'=>'document','necessity'=>'optional']])]],
         'ongoing_support' => ['label'=>'Ongoing Business Support','modules'=>[$module('support_plan','Recurring support onboarding',[$field('support_areas','Agreed areas of support','textarea',true),$field('recurring_responsibilities','Recurring responsibilities','textarea',true),$field('reporting_requirements','Reporting requirements','textarea'),$field('communication_preferences','Communication preferences','textarea'),$field('frequency','Support frequency','text',true),$field('primary_contacts','Primary contacts','person_refs'),$field('systems','Systems Alchemize will interact with','textarea'),$field('access_requirements','Document / delegated access requirements','textarea'),$field('escalation_contacts','Escalation contacts','person_refs'),$field('recurring_deadlines','Recurring deadlines','textarea'),$field('existing_workflows','Existing workflows','textarea')])]],
@@ -160,7 +191,7 @@ function alchemize_intake_definitions(): array
 // Exact catalog codes, never engagement titles or broad category guesses.
 function alchemize_intake_service_families(array $codes): array
 {
-    $map = ['business-consulting'=>'business_consulting','business-startup'=>'business_consulting','business-operations'=>'business_consulting','business-planning'=>'business_consulting','website-design'=>'web_digital','website-maintenance'=>'web_digital','seo'=>'web_digital','google-business-profile'=>'web_digital','digital-automation'=>'business_consulting','administrative-support'=>'ongoing_support','notary'=>'notary','translation'=>'document_admin','apostille'=>'document_admin'];
+    $map = ['business-consulting'=>'business_consulting','business-startup'=>'business_consulting','business-operations'=>'business_consulting','business-planning'=>'business_consulting','website-design'=>'web_digital','website-maintenance'=>'web_digital','seo'=>'web_digital','google-business-profile'=>'web_digital','digital-automation'=>'web_digital','administrative-support'=>'ongoing_support','notary'=>'notary','translation'=>'translation','apostille'=>'apostille'];
     return array_values(array_unique(array_filter(array_map(static fn($code)=>$map[str_replace('_','-',strtolower($code))]??null,$codes))));
 }
 function alchemize_intake_visible(array $item, array $values): bool

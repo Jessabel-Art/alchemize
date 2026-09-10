@@ -1,4 +1,5 @@
 import { contactServiceGroups } from "../src/pages/services/serviceCatalog.js";
+import { trackContactFormSuccess } from "../src/services/analytics.js";
 
 const canonicalServiceKeys = new Set(
   contactServiceGroups.flatMap((group) =>
@@ -220,6 +221,7 @@ export function initContactForm(messages = {}) {
       }
 
       form.reset();
+      trackContactFormSuccess();
       setStatus(
         status,
         messages.success ??

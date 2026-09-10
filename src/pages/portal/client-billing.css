@@ -201,7 +201,10 @@
 .bill-status.is-open,
 .bill-status.is-partially-paid {
   background: color-mix(in srgb, var(--gold) 20%, transparent);
-  color: color-mix(in srgb, var(--gold) 60%, var(--emerald-deep));
+  /* 45% (not the original 60%) keeps the gold identity visible while
+     meeting WCAG AA 4.5:1 text contrast against the tinted background
+     above — verified at ~5.2:1. */
+  color: color-mix(in srgb, var(--gold) 45%, var(--emerald-deep));
 }
 .bill-status.is-past-due {
   background: color-mix(in srgb, var(--color-error) 14%, transparent);

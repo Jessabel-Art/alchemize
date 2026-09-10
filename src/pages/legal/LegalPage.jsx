@@ -119,9 +119,12 @@ const privacySections = [
           preferences, forms, or account functionality.
         </p>
         <p>
-          If analytics or other non-essential technologies are later introduced,
-          this Policy should be updated to describe them and any applicable
-          choices.
+          The production website may also use privacy-conscious aggregate
+          analytics to understand general site usage patterns, page traffic, and
+          conversion activity. These analytics are limited to non-sensitive,
+          de-identified browsing data and are not used to collect protected
+          client information, intake answers, document contents, account
+          credentials, or confidential business details.
         </p>
       </>
     ),

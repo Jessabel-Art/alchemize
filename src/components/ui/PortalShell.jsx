@@ -51,6 +51,9 @@ function PortalShell({ title, navItems, children, sidebarFooter = null }) {
     <div
       className={`${navOpen ? "portal-shell portal-nav-open" : "portal-shell"}${isAdminShell ? " admin-portal-shell" : ""}`}
     >
+      <a className="skip-link" href="#portal-main-content">
+        Skip to content
+      </a>
       {
         <>
           <button
@@ -124,7 +127,7 @@ function PortalShell({ title, navItems, children, sidebarFooter = null }) {
         ) : null}
       </aside>
 
-      <main className="portal-main">
+      <main className="portal-main" id="portal-main-content">
         <div className="portal-topbar">
           <span>Workspace</span>
           <a className="portal-topbar-return" href="/">

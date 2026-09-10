@@ -903,11 +903,13 @@ function GeneralDocumentUpload({ busy, run }) {
         if (file)
           run(
             "general-upload",
-            () =>
-              portalApi.uploadGeneralDocument(file, {
+            async () => {
+              await portalApi.uploadGeneralDocument(file, {
                 document_name: documentName,
                 comment,
-              }),
+              });
+              trackDocumentUploaded();
+            },
             "Document uploaded and visible to Alchemize.",
           );
       }}
@@ -962,7 +964,10 @@ function DocumentUpload({ item, busy, run }) {
         if (file)
           run(
             item.id,
-            () => portalApi.uploadDocument(item.id, file, comment),
+            async () => {
+              await portalApi.uploadDocument(item.id, file, comment);
+              trackDocumentUploaded();
+            },
             "Document received and queued for review.",
           );
       }}

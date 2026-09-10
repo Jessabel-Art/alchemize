@@ -231,6 +231,11 @@ export function SetPasswordPage() {
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
   const [error, setError] = useState("");
+  // Tracks whether the current error belongs to a specific field (so it
+  // can be wired up via aria-describedby/aria-invalid) or is a whole-form
+  // issue (invalid link, server error) that isn't attributable to one
+  // control.
+  const [errorField, setErrorField] = useState(null);
   const [loading, setLoading] = useState(false);
   const token = searchParams.get("token") || "";
   const purpose = searchParams.get("purpose") || "invitation";
@@ -238,12 +243,14 @@ export function SetPasswordPage() {
   const submit = async (event) => {
     event.preventDefault();
     setError("");
+    setErrorField(null);
     if (!token) {
       setError("This setup link is invalid or expired.");
       return;
     }
     if (password !== confirmation) {
       setError("Passwords do not match.");
+      setErrorField("confirmation");
       return;
     }
     setLoading(true);
@@ -283,11 +290,15 @@ export function SetPasswordPage() {
                 type="password"
                 autoComplete="new-password"
                 minLength="12"
+                aria-describedby="set-password-requirements"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 required
               />
             </label>
+            <small id="set-password-requirements">
+              Must be at least 12 characters.
+            </small>
             <label>
               Confirm password
               <input
@@ -296,10 +307,22 @@ export function SetPasswordPage() {
                 minLength="12"
                 value={confirmation}
                 onChange={(event) => setConfirmation(event.target.value)}
+                aria-invalid={
+                  errorField === "confirmation" ? "true" : undefined
+                }
+                aria-describedby={
+                  errorField === "confirmation"
+                    ? "set-password-error"
+                    : undefined
+                }
                 required
               />
             </label>
-            {error ? <p role="alert">{error}</p> : null}
+            {error ? (
+              <p id="set-password-error" role="alert">
+                {error}
+              </p>
+            ) : null}
             <button
               className="button button-primary"
               type="submit"

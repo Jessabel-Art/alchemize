@@ -152,7 +152,11 @@
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--color-accent);
+  /* Pure --color-accent (gold) text measures ~2:1 on this white sheet.
+     Darken toward emerald-deep (same brand tokens, not a new color) to
+     reach WCAG AA 4.5:1 while staying visibly gold-toned; verified at
+     ~5.9:1. */
+  color: color-mix(in srgb, var(--color-accent) 45%, var(--emerald-deep));
 }
 
 .invoice-print-parties p {
@@ -271,7 +275,11 @@
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--color-accent);
+  /* Pure --color-accent (gold) text measures ~2:1 on this white sheet.
+     Darken toward emerald-deep (same brand tokens, not a new color) to
+     reach WCAG AA 4.5:1 while staying visibly gold-toned; verified at
+     ~5.9:1. */
+  color: color-mix(in srgb, var(--color-accent) 45%, var(--emerald-deep));
 }
 
 .invoice-print-lower p {

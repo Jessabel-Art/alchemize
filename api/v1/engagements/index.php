@@ -117,7 +117,9 @@ try {
         $serviceCode = (string)($engagement['service_code'] ?? '');
         $family = match ($serviceCode) {
             'website-design', 'website-maintenance', 'seo', 'digital-automation' => 'web_digital',
-            'administrative-support', 'translation' => 'document_admin',
+            'administrative-support' => 'ongoing_support',
+            'translation' => 'translation',
+            'apostille' => 'apostille',
             default => null,
         };
         $types = [];

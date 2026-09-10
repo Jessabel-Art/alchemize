@@ -46,6 +46,7 @@ import ClientInvoiceDetail from "../pages/portal/ClientInvoiceDetail.jsx";
 import ServiceCategoryPage from "../pages/services/ServiceCategoryPage.jsx";
 import ServiceDetailPage from "../pages/services/ServiceDetailPage.jsx";
 import PublicSchedulingPage from "../pages/appointments/PublicSchedulingPage.jsx";
+import { trackPageView } from "../services/analytics.js";
 
 function ScrollRestoration() {
   const location = useLocation();
@@ -124,6 +125,16 @@ function ProtectedAdminRoute({ children }) {
 }
 
 function App() {
+  const location = useLocation();
+
+  useEffect(() => {
+    trackPageView({
+      pathname: location.pathname + location.search,
+      title: document.title || "Alchemize Business Services",
+      origin: window.location.origin,
+    });
+  }, [location.pathname, location.search]);
+
   return (
     <>
       <ScrollRestoration />

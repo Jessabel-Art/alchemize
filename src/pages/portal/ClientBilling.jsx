@@ -9,6 +9,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { portalApi } from "../../services/portal-api.js";
+import { trackInvoiceCheckoutStarted } from "../../services/analytics.js";
 import "./client-billing.css";
 
 const PAYPAL_UNAVAILABLE_MESSAGE =
@@ -252,6 +253,7 @@ function InvoiceCard({ item, busy, run, notify, paypalClientId }) {
                     throw new Error(
                       "Online payment is temporarily unavailable.",
                     );
+                  trackInvoiceCheckoutStarted("stripe");
                   window.location.assign(checkout.checkout_url);
                 },
                 "Opening secure payment…",
@@ -383,6 +385,7 @@ function PayPalInvoiceButton({
             onCreatingChange(true);
             handledErrorRef.current = false;
             try {
+              trackInvoiceCheckoutStarted("paypal");
               const order = await portalApi.createPaypalOrder(invoice.id);
               if (!order.order_id) {
                 throw new Error(PAYPAL_UNAVAILABLE_MESSAGE);

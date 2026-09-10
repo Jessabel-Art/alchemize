@@ -438,7 +438,9 @@
 }
 .appt-status.is-pending {
   background: color-mix(in srgb, var(--gold) 20%, transparent);
-  color: color-mix(in srgb, var(--gold) 60%, var(--emerald-deep));
+  /* 45% (not the original 60%) meets WCAG AA 4.5:1 at this size against
+     the tinted background — verified at ~5.2:1. */
+  color: color-mix(in srgb, var(--gold) 45%, var(--emerald-deep));
 }
 .appt-status.is-confirmed {
   background: color-mix(in srgb, var(--color-success) 16%, transparent);

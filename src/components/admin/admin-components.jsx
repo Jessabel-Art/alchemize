@@ -1,4 +1,14 @@
-import { Children, cloneElement, isValidElement } from "react";
+import {
+  Children,
+  cloneElement,
+  isValidElement,
+  useEffect,
+  useId,
+  useRef,
+} from "react";
+
+export const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 export function AdminPageHeader({
   eyebrow,
   title,
@@ -178,16 +188,62 @@ export function AdminDetailDrawer({
   onClose,
   className,
 }) {
+  const titleId = useId();
+  const drawerRef = useRef(null);
+  const previouslyFocusedRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+
+    previouslyFocusedRef.current = document.activeElement;
+    const drawer = drawerRef.current;
+    const initialFocusable = drawer?.querySelector(FOCUSABLE_SELECTOR);
+    (initialFocusable || drawer)?.focus();
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose?.();
+        return;
+      }
+      if (event.key !== "Tab" || !drawer) return;
+      const focusables = Array.from(
+        drawer.querySelectorAll(FOCUSABLE_SELECTOR),
+      );
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      previouslyFocusedRef.current?.focus?.();
+    };
+  }, [open, onClose]);
+
   if (!open) return null;
 
   return (
     <div className="admin-detail-overlay" onClick={onClose}>
       <aside
+        ref={drawerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
         className={`admin-detail-drawer${className ? ` ${className}` : ""}`}
         onClick={(event) => event.stopPropagation()}
       >
         <div className="admin-detail-header">
-          <h2>{title}</h2>
+          <h2 id={titleId}>{title}</h2>
           <button type="button" className="secondary-button" onClick={onClose}>
             Close
           </button>

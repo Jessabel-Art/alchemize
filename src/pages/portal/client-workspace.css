@@ -1018,7 +1018,6 @@
 .portal-status-item small {
   font-size: 11px;
   color: var(--color-text-soft);
-  opacity: 0.75;
 }
 
 .portal-action-subhead {

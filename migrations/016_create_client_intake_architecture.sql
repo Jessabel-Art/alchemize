@@ -52,7 +52,7 @@ CREATE TABLE intake_assignments (
     public_id CHAR(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
     client_id BIGINT UNSIGNED NOT NULL,
     engagement_id BIGINT UNSIGNED NOT NULL,
-    family_key ENUM('client_profile','business_formation','business_consulting','web_digital','notary','document_admin','ongoing_support') NOT NULL,
+    family_key ENUM('client_profile','business_formation','business_consulting','web_digital','notary','document_admin','ongoing_support','translation','apostille') NOT NULL,
     module_keys JSON NOT NULL,
     status ENUM('assigned','in_progress','submitted','under_review','changes_requested','approved','archived') NOT NULL DEFAULT 'assigned',
     completion_percentage TINYINT UNSIGNED NOT NULL DEFAULT 0,

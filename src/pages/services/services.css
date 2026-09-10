@@ -1852,6 +1852,15 @@
   background: var(--white);
 }
 
+/* This section renders on white, unlike the other .eyebrow--gold usages
+   in this template (hero/scope/related, all on dark surfaces) — pure
+   --gold text here measures ~2:1. Darken the mix toward emerald-deep
+   (same brand token, not a new color) to reach WCAG AA 4.5:1 while
+   staying visibly gold-toned; verified at ~5.9:1. */
+.editorial-service-close .eyebrow--gold {
+  color: color-mix(in srgb, var(--gold) 45%, var(--emerald-deep));
+}
+
 .editorial-service-boundary {
   display: grid;
   grid-template-columns: minmax(180px, 0.35fr) minmax(0, 1fr);

@@ -26,6 +26,7 @@ import {
   AdminStatusBadge,
   AdminTabs,
   AdminToolbar,
+  FOCUSABLE_SELECTOR,
 } from "../../components/admin/admin-components.jsx";
 import {
   adminStore,
@@ -6998,6 +6999,43 @@ function AppointmentManagementPage() {
   const [isSchedulingLinkOpen, setIsSchedulingLinkOpen] = useState(false);
   const [isAvailabilityOpen, setIsAvailabilityOpen] = useState(false);
   const [availabilityMode, setAvailabilityMode] = useState("weekly");
+  const schedulerModalRef = useRef(null);
+  useEffect(() => {
+    if (!isFormOpen && !isSchedulingLinkOpen && !isAvailabilityOpen) {
+      return undefined;
+    }
+    const previousFocus = document.activeElement;
+    const modal = schedulerModalRef.current;
+    const initialFocusable = modal?.querySelector(FOCUSABLE_SELECTOR);
+    (initialFocusable || modal)?.focus();
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setIsFormOpen(false);
+        setIsSchedulingLinkOpen(false);
+        setIsAvailabilityOpen(false);
+        return;
+      }
+      if (event.key !== "Tab" || !modal) return;
+      const focusables = Array.from(modal.querySelectorAll(FOCUSABLE_SELECTOR));
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      previousFocus?.focus();
+    };
+  }, [isFormOpen, isSchedulingLinkOpen, isAvailabilityOpen]);
   const [appointmentFiltersOpen, setAppointmentFiltersOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState("Client requested");
   const [appointmentError, setAppointmentError] = useState("");
@@ -8739,14 +8777,19 @@ function AppointmentManagementPage() {
       {isFormOpen ? (
         <div
           className="scheduler-modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="appointment-form-modal-title"
           onClick={() => setIsFormOpen(false)}
         >
           <div
+            ref={schedulerModalRef}
             className="scheduler-modal"
+            tabIndex={-1}
             onClick={(event) => event.stopPropagation()}
           >
             <div className="scheduler-modal-header">
-              <h3>
+              <h3 id="appointment-form-modal-title">
                 {formMode === "create"
                   ? "Schedule Appointment"
                   : formMode === "edit"
@@ -9140,14 +9183,19 @@ function AppointmentManagementPage() {
       {isSchedulingLinkOpen ? (
         <div
           className="scheduler-modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="scheduling-link-modal-title"
           onClick={() => setIsSchedulingLinkOpen(false)}
         >
           <div
+            ref={schedulerModalRef}
             className="scheduler-modal"
+            tabIndex={-1}
             onClick={(event) => event.stopPropagation()}
           >
             <div className="scheduler-modal-header">
-              <h3>Send Scheduling Link</h3>
+              <h3 id="scheduling-link-modal-title">Send Scheduling Link</h3>
               <button
                 type="button"
                 className="secondary-button"
@@ -9392,14 +9440,19 @@ function AppointmentManagementPage() {
       {isAvailabilityOpen ? (
         <div
           className="scheduler-modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="availability-modal-title"
           onClick={() => setIsAvailabilityOpen(false)}
         >
           <div
+            ref={schedulerModalRef}
             className="scheduler-modal"
+            tabIndex={-1}
             onClick={(event) => event.stopPropagation()}
           >
             <div className="scheduler-modal-header">
-              <h3>Availability Exceptions</h3>
+              <h3 id="availability-modal-title">Availability Exceptions</h3>
               <button
                 type="button"
                 className="secondary-button"

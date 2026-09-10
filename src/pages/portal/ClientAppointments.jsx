@@ -16,6 +16,7 @@ import {
   Check,
 } from "lucide-react";
 import { portalApi } from "../../services/portal-api.js";
+import { trackAppointmentRequested } from "../../services/analytics.js";
 import "./client-appointments.css";
 
 const label = (value) =>
@@ -533,6 +534,7 @@ function BookingForm({ config, onBooked }) {
         note,
         booking_key: key.current,
       });
+      trackAppointmentRequested();
       if (result.status !== "confirmed")
         throw new Error(
           "This booking has changed. Review your appointments before booking again.",

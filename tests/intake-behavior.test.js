@@ -43,6 +43,86 @@ test("catalog codes resolve consulting and web families independently", () => {
     ),
   );
 });
+
+test("specialized service families resolve to the correct intake definitions", () => {
+  const result = JSON.parse(
+    execFileSync(
+      "php",
+      [
+        "-r",
+        "require 'server/intake/definitions.php'; echo json_encode([alchemize_intake_service_families(['business-consulting']),alchemize_intake_service_families(['digital-automation']),alchemize_intake_service_families(['translation']),alchemize_intake_service_families(['apostille']),alchemize_intake_service_families(['administrative-support'])]);",
+      ],
+      { encoding: "utf8" },
+    ),
+  );
+  assert.deepEqual(result, [
+    ["business_consulting"],
+    ["web_digital"],
+    ["translation"],
+    ["apostille"],
+    ["ongoing_support"],
+  ]);
+  assert.deepEqual(
+    definitions.translation.modules
+      .flatMap((module) => module.fields)
+      .map((field) => field.key)
+      .slice(0, 10),
+    [
+      "document_type",
+      "source_language",
+      "target_language",
+      "document_count",
+      "page_count",
+      "certified_translation",
+      "intended_use",
+      "receiving_organization",
+      "destination_country",
+      "formatting_requirements",
+    ],
+  );
+  assert.deepEqual(
+    definitions.apostille.modules
+      .flatMap((module) => module.fields)
+      .map((field) => field.key)
+      .slice(0, 10),
+    [
+      "document_type",
+      "document_count",
+      "issuing_state",
+      "destination_country",
+      "document_status",
+      "notarized_before_apostille",
+      "translation_also_needed",
+      "filing_deadline",
+      "delivery_requirements",
+      "special_instructions",
+    ],
+  );
+  assert.equal(
+    definitions.translation.modules
+      .flatMap((module) => module.fields)
+      .some((field) => field.key === "source_language"),
+    true,
+  );
+  assert.equal(
+    definitions.apostille.modules
+      .flatMap((module) => module.fields)
+      .some((field) => field.key === "document_status"),
+    true,
+  );
+  assert.equal(
+    definitions.translation.modules
+      .flatMap((module) => module.fields)
+      .some((field) => field.key === "project_goals"),
+    false,
+  );
+  assert.equal(
+    definitions.apostille.modules
+      .flatMap((module) => module.fields)
+      .some((field) => field.key === "project_goals"),
+    false,
+  );
+});
 test("conditional children and documents respond to controlling answers", () => {
   for (const [key, control, value] of [
     ["domain_name", "owns_domain", "yes"],

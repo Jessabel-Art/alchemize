@@ -797,6 +797,7 @@ export default function ClientIntakePage() {
         draftResponses(),
       );
       await portalApi.submitIntake(assignment.public_id || assignment.id);
+      trackIntakeSubmitted();
       setConfirmation({
         id: assignment.public_id || assignment.id,
         title: assignment.engagement_title,

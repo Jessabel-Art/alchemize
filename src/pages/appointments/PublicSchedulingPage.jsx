@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { CalendarDays, Clock, MapPin } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { publicSchedulingApi } from "../../services/public-scheduling-api.js";
+import { trackSchedulingSuccess } from "../../services/analytics.js";
 import { ensureMeta } from "../../seo/siteSchema.js";
 import "./public-scheduling.css";
 
@@ -92,6 +93,7 @@ export default function PublicSchedulingPage() {
         ...form,
         selected_start: selected,
       });
+      trackSchedulingSuccess();
       setStatus({ loading: false, busy: false, error: "", confirmation });
     } catch (error) {
       setStatus((current) => ({
@@ -105,20 +107,20 @@ export default function PublicSchedulingPage() {
 
   if (status.loading)
     return (
-      <main className="public-scheduler">
+      <div className="public-scheduler">
         <p>Loading scheduling invitation…</p>
-      </main>
+      </div>
     );
   if (status.error && !context)
     return (
-      <main className="public-scheduler">
+      <div className="public-scheduler">
         <h1>Scheduling link unavailable</h1>
         <p role="alert">{status.error}</p>
-      </main>
+      </div>
     );
   if (status.confirmation)
     return (
-      <main className="public-scheduler">
+      <div className="public-scheduler">
         <section className="scheduler-card scheduler-confirmation">
           <span className="eyebrow">Appointment confirmed</span>
           <h1>You’re scheduled with Alchemize.</h1>
@@ -135,11 +137,11 @@ export default function PublicSchedulingPage() {
             {status.confirmation.email_delivery}.
           </p>
         </section>
-      </main>
+      </div>
     );
 
   return (
-    <main className="public-scheduler">
+    <div className="public-scheduler">
       <section className="scheduler-card">
         <header>
           <span className="eyebrow">Schedule with Alchemize</span>
@@ -161,6 +163,7 @@ export default function PublicSchedulingPage() {
             <h2>1. Choose a date</h2>
             <input
               type="date"
+              aria-label="Appointment date"
               min={today}
               value={date}
               onChange={(event) => loadDate(event.target.value)}
@@ -168,10 +171,12 @@ export default function PublicSchedulingPage() {
           </div>
           <div className="scheduler-step">
             <h2>2. Choose an available time</h2>
-            <div className="slot-grid">
+            <div className="slot-grid" aria-live="polite">
+              {status.busy ? <p>Loading available times…</p> : null}
               {slots.map((slot) => (
                 <button
                   type="button"
+                  aria-pressed={selected === slot.start}
                   className={selected === slot.start ? "selected" : ""}
                   key={slot.start}
                   onClick={() => setSelected(slot.start)}
@@ -243,6 +248,6 @@ export default function PublicSchedulingPage() {
           </button>
         </form>
       </section>
-    </main>
+    </div>
   );
 }

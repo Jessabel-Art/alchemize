@@ -197,6 +197,18 @@ function AdminDashboardPage() {
   });
   const [portalReplies, setPortalReplies] = useState({});
   const [replacementItem, setReplacementItem] = useState(null);
+
+  useEffect(() => {
+    if (!replacementItem) return undefined;
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setReplacementItem(null);
+        setReplacementNote("");
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [replacementItem]);
   const [replacementNote, setReplacementNote] = useState("");
   const [portalQueueOpen, setPortalQueueOpen] = useState(false);
   const loadPortalAttention = async () => {
@@ -1080,10 +1092,11 @@ function AdminDashboardPage() {
           className="replacement-modal-backdrop"
           role="dialog"
           aria-modal="true"
+          aria-labelledby="replacement-request-title"
         >
           <div className="replacement-modal">
             <div className="panel-heading replacement-header">
-              <h2>Request replacement</h2>
+              <h2 id="replacement-request-title">Request replacement</h2>
             </div>
             <div className="replacement-context">
               <p>

@@ -84,3 +84,69 @@ for (const width of [1440, 1024, 768]) {
     }
   });
 }
+
+test.describe("Scheduler modal keyboard focus trap", () => {
+  const modals = [
+    {
+      trigger: "Send Scheduling Link",
+      heading: "Send Scheduling Link",
+    },
+    {
+      trigger: "Availability Exceptions",
+      heading: "Availability Exceptions",
+    },
+    {
+      trigger: "+ Schedule Appointment",
+      heading: "Schedule Appointment",
+    },
+  ];
+
+  for (const { trigger, heading } of modals) {
+    test(`${heading} modal traps Tab focus and restores it on close`, async ({
+      page,
+    }) => {
+      await page.goto("/admin/appointments/");
+      const triggerButton = page.getByRole("button", {
+        name: trigger,
+        exact: true,
+      });
+      await triggerButton.focus();
+      await triggerButton.click();
+
+      const dialog = page.getByRole("dialog", { name: heading });
+      await expect(dialog).toBeVisible();
+
+      // Focus must move inside the dialog on open.
+      await expect(dialog).toContainText(heading);
+      const focusablesCount = await dialog
+        .locator(
+          'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        )
+        .count();
+      expect(focusablesCount).toBeGreaterThan(0);
+      const activeInDialog = await page.evaluate((dialogHeading) => {
+        const dialogEl = [...document.querySelectorAll('[role="dialog"]')].find(
+          (el) => el.textContent.includes(dialogHeading),
+        );
+        return dialogEl?.contains(document.activeElement) ?? false;
+      }, heading);
+      expect(activeInDialog).toBe(true);
+
+      // Shift+Tab from the first focusable control must wrap to the last
+      // one inside the dialog, never escaping to the page behind it.
+      await page.keyboard.press("Shift+Tab");
+      const wrappedToLastInsideDialog = await page.evaluate((dialogHeading) => {
+        const dialogEl = [...document.querySelectorAll('[role="dialog"]')].find(
+          (el) => el.textContent.includes(dialogHeading),
+        );
+        return dialogEl?.contains(document.activeElement) ?? false;
+      }, heading);
+      expect(wrappedToLastInsideDialog).toBe(true);
+
+      // Escape closes the dialog and restores focus to the trigger.
+      await page.keyboard.press("Escape");
+      await expect(dialog).toHaveCount(0);
+      await expect(triggerButton).toBeFocused();
+    });
+  }
+});
