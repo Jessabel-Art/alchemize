@@ -190,7 +190,7 @@ final class AlchemizePortalRepository
              LEFT JOIN engagements e ON e.id = a.engagement_id AND e.client_id = a.client_id
              LEFT JOIN services s ON s.id = a.service_id
              WHERE a.client_id = :client_id
-               AND a.visibility IN (\'client\', \'both\')
+               AND a.visibility IN (\'admin\', \'client\', \'both\')
              ORDER BY a.scheduled_at ASC'
         );
         $statement->execute(['client_id' => $clientId]);
@@ -235,7 +235,7 @@ final class AlchemizePortalRepository
              LEFT JOIN services s ON s.id = a.service_id
              WHERE a.client_id = :appointment_client_id
                AND e.public_id = :engagement_public_id
-               AND a.visibility IN (\'client\', \'both\')
+               AND a.visibility IN (\'admin\', \'client\', \'both\')
              ORDER BY a.scheduled_at ASC'
         );
         $statement->execute([

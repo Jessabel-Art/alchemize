@@ -59,6 +59,7 @@ async function setup(page, { calendarFail = false, occupied = false } = {}) {
       };
     if (path === "portal/appointments/booking") data = config;
     if (path === "portal/appointments") data = { items };
+    if (path === "portal/services") data = { items: [] };
     if (path?.endsWith("/availability")) {
       requests.push({
         path,
@@ -116,7 +117,8 @@ async function setup(page, { calendarFail = false, occupied = false } = {}) {
     }
     if (
       path?.includes("request-reschedule") ||
-      path?.includes("request-cancellation")
+      path?.includes("request-cancellation") ||
+      path?.endsWith("/confirm")
     ) {
       requests.push({ path, body: route.request().postDataJSON() });
       data = { status: "confirmed" };
@@ -129,10 +131,27 @@ async function setup(page, { calendarFail = false, occupied = false } = {}) {
   });
   return { requests, items };
 }
-async function choose(page) {
-  await page.getByLabel("Select a date").fill("2030-09-09");
-  await page.getByRole("button", { name: "10:00 AM", exact: true }).click();
-  await page.getByRole("button", { name: "Review appointment" }).click();
+
+// The booking calendar always opens on the current month, so tests select a
+// date in the following month (one deterministic "Next month" click) rather
+// than depending on the real-world date to land on a specific visible day.
+function nextMonthDate(day = 10) {
+  const now = new Date();
+  const target = new Date(now.getFullYear(), now.getMonth() + 1, day);
+  return {
+    label: target.toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    }),
+  };
+}
+
+async function choose(page, scope = page) {
+  const { label } = nextMonthDate(10);
+  await scope.getByRole("button", { name: "Next month" }).click();
+  await scope.getByRole("button", { name: label, exact: true }).click();
+  await scope.getByRole("button", { name: "10:00 AM", exact: true }).click();
 }
 
 test("active service, server duration, slots, booking, upcoming and history", async ({
@@ -141,24 +160,29 @@ test("active service, server duration, slots, booking, upcoming and history", as
   const { requests } = await setup(page);
   await page.goto("/client-portal/appointments?engagement=own");
   await expect(page.getByLabel("Related service")).toHaveValue("own");
-  await expect(page.getByLabel("Appointment type")).toHaveValue("follow_up");
-  await expect(page.getByText("30 minutes", { exact: true })).toBeVisible();
-  await page.getByLabel("Appointment type").selectOption("consultation");
-  await expect(page.getByText("75 minutes", { exact: true })).toBeVisible();
-  await page.getByLabel("Appointment type").selectOption("follow_up");
   await expect(
-    page.getByText("No appointments scheduled.", { exact: true }),
+    page.getByRole("radio", { name: "Follow-up appointment" }),
+  ).toBeChecked();
+  await expect(page.getByText("30 minutes", { exact: true })).toBeVisible();
+  await page.getByRole("radio", { name: "General consultation" }).check();
+  await expect(page.getByText("75 minutes", { exact: true })).toBeVisible();
+  await page.getByRole("radio", { name: "Follow-up appointment" }).check();
+  await expect(
+    page.getByText("No upcoming appointments.", { exact: true }),
   ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Past appointments" }),
   ).toBeVisible();
-  await expect(page.locator('input[type="datetime-local"]')).toHaveCount(0);
+  await expect(
+    page.getByRole("group", { name: "Select a date" }),
+  ).toBeVisible();
   await choose(page);
+  await page.getByRole("button", { name: "Review appointment" }).click();
   await expect(
     page.getByText("Confirm your appointment", { exact: true }),
   ).toBeVisible();
   await page
-    .getByRole("button", { name: "Confirm appointment", exact: true })
+    .getByRole("button", { name: "Confirm booking", exact: true })
     .click();
   await expect(
     page.getByText("Your appointment is confirmed.", { exact: true }),
@@ -180,8 +204,9 @@ test("calendar retry reuses booking key and does not claim success", async ({
   const { requests } = await setup(page, { calendarFail: true });
   await page.goto("/client-portal/appointments");
   await choose(page);
+  await page.getByRole("button", { name: "Review appointment" }).click();
   await page
-    .getByRole("button", { name: "Confirm appointment", exact: true })
+    .getByRole("button", { name: "Confirm booking", exact: true })
     .click();
   await expect(page.getByRole("alert")).toContainText(
     "Calendar confirmation failed",
@@ -200,14 +225,17 @@ test("occupied-slot rejection returns to refreshed availability", async ({
   const { requests } = await setup(page, { occupied: true });
   await page.goto("/client-portal/appointments");
   await choose(page);
+  await page.getByRole("button", { name: "Review appointment" }).click();
   const before = requests.filter((item) =>
     item.path.endsWith("availability"),
   ).length;
   await page
-    .getByRole("button", { name: "Confirm appointment", exact: true })
+    .getByRole("button", { name: "Confirm booking", exact: true })
     .click();
   await expect(page.getByRole("alert")).toContainText("just booked");
-  await expect(page.getByLabel("Select a date")).toBeVisible();
+  await expect(
+    page.getByRole("group", { name: "Select a date" }),
+  ).toBeVisible();
   await expect
     .poll(
       () =>
@@ -234,31 +262,30 @@ test("details, reschedule availability, and cancellation request confirmation", 
   });
   await page.goto("/client-portal/appointments?appointment=future");
   await expect(page.getByRole("link", { name: "Join meeting" })).toBeVisible();
-  await page
-    .getByRole("button", { name: "Request reschedule", exact: true })
-    .click();
-  const details = page.locator(".appointment-details");
-  await details.getByLabel("Select a date").fill("2030-09-10");
-  await details.getByRole("button", { name: "10:00 AM", exact: true }).click();
+  const row = page
+    .locator("article.appointment-row")
+    .filter({ hasText: "Follow-up appointment" })
+    .filter({ hasText: "Business Consulting" });
+  await row.getByRole("button", { name: "Reschedule", exact: true }).click();
+  const details = row.locator(".appointment-details");
+  await choose(page, details);
   await details
     .getByRole("button", { name: "Send reschedule request" })
     .click();
-  await expect(details.getByRole("status")).toContainText("remains unchanged");
+  await expect(row.getByRole("status")).toContainText("remains unchanged");
   expect(
     requests.some(
       (item) => item.path === "portal/appointments/future/availability",
     ),
   ).toBe(true);
-  await page
-    .getByRole("button", { name: "Request cancellation", exact: true })
-    .click();
+  await row.getByRole("button", { name: "Cancel", exact: true }).click();
   await expect(
-    page.getByRole("button", { name: "Keep appointment" }),
+    row.getByRole("button", { name: "Keep appointment" }),
   ).toBeVisible();
   expect(
     requests.some((item) => item.path.endsWith("request-cancellation")),
   ).toBe(false);
-  await page.getByRole("button", { name: "Send cancellation request" }).click();
+  await row.getByRole("button", { name: "Send cancellation request" }).click();
   await expect
     .poll(() =>
       requests.some((item) => item.path.endsWith("request-cancellation")),
@@ -266,12 +293,44 @@ test("details, reschedule availability, and cancellation request confirmation", 
     .toBe(true);
 });
 
+test("client can confirm an admin-requested pending appointment", async ({
+  page,
+}) => {
+  const { items, requests } = await setup(page);
+  items.push({
+    id: "pending-one",
+    appointment_type: "Follow-up appointment",
+    engagement_id: "own",
+    engagement_title: "Business Consulting",
+    scheduled_start: "2030-09-09T10:00:00-04:00",
+    timezone: "America/New_York",
+    status: "requested",
+    duration_minutes: 30,
+    meeting_method: "phone",
+  });
+  await page.goto("/client-portal/appointments");
+  const row = page
+    .locator("article.appointment-row")
+    .filter({ hasText: "Follow-up appointment" })
+    .filter({ hasText: "Business Consulting" });
+  await expect(row.getByText("Pending confirmation")).toBeVisible();
+  await row.getByRole("button", { name: "Confirm", exact: true }).click();
+  await expect(row.getByRole("status")).toContainText("Appointment confirmed.");
+  expect(
+    requests.some(
+      (item) => item.path === "portal/appointments/pending-one/confirm",
+    ),
+  ).toBe(true);
+});
+
 for (const width of [1440, 834, 390])
   test(`booking responsive layout at ${width}px`, async ({ page }) => {
     await setup(page);
     await page.setViewportSize({ width, height: 1000 });
     await page.goto("/client-portal/appointments");
-    await expect(page.getByLabel("Appointment type")).toBeVisible();
+    await expect(
+      page.getByRole("radiogroup", { name: "Appointment type" }),
+    ).toBeVisible();
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,

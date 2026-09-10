@@ -128,6 +128,80 @@ test("the dashboard renders authenticated client summaries and intentional empty
   await expect(page.getByText("No open invoices.")).toBeVisible();
 });
 
+test("client portal surfaces a future requested appointment and next-appointment summary", async ({
+  page,
+}) => {
+  const requestedFuture = {
+    id: "appt-requested",
+    appointment_type: "Consultation",
+    engagement_title: "Business Consulting",
+    status: "requested",
+    scheduled_start: "2030-09-14T10:00:00-04:00",
+    scheduled_end: "2030-09-14T11:00:00-04:00",
+    timezone: "America/New_York",
+    duration_minutes: 60,
+    meeting_method: "phone",
+  };
+
+  await page.route("**/alchemize-api.php?route=portal%2Fdashboard", (route) =>
+    route.fulfill({
+      json: {
+        data: {
+          ...portalPayloads.dashboard,
+          summary: {
+            ...portalPayloads.dashboard.summary,
+            upcoming_appointments: 1,
+          },
+          next_appointment: requestedFuture,
+        },
+      },
+    }),
+  );
+  await page.route(
+    "**/alchemize-api.php?route=portal%2Fappointments",
+    (route) =>
+      route.fulfill({
+        json: {
+          data: {
+            items: [
+              requestedFuture,
+              {
+                ...requestedFuture,
+                id: "appt-confirmed",
+                status: "confirmed",
+                scheduled_start: "2030-09-15T12:00:00-04:00",
+                scheduled_end: "2030-09-15T13:00:00-04:00",
+              },
+              {
+                ...requestedFuture,
+                id: "appt-cancelled",
+                status: "cancelled",
+                scheduled_start: "2030-09-16T10:00:00-04:00",
+              },
+              {
+                ...requestedFuture,
+                id: "appt-past",
+                status: "completed",
+                scheduled_start: "2020-09-15T10:00:00-04:00",
+              },
+            ],
+          },
+        },
+      }),
+  );
+
+  await page.goto("/client-portal/dashboard/");
+  await expect(page.getByText("Consultation")).toBeVisible();
+  await expect(page.getByText("No upcoming appointments.")).toHaveCount(0);
+
+  await page.goto("/client-portal/appointments");
+  await expect(
+    page.getByRole("heading", { name: "Upcoming appointments" }),
+  ).toBeVisible();
+  await expect(page.getByText("Consultation").first()).toBeVisible();
+  await expect(page.getByText("No upcoming appointments.")).toHaveCount(0);
+});
+
 test("dashboard redesign renders action required and quick actions without duplicates", async ({
   page,
 }) => {
@@ -409,7 +483,9 @@ test("service and task pages render only API records", async ({ page }) => {
   await expect(
     page.getByRole("heading", { name: "Tasks & Intake" }),
   ).toBeVisible();
-  await expect(page.getByText("Review formation details")).toBeVisible();
+  await expect(
+    page.getByText("Review formation details").first(),
+  ).toBeVisible();
 });
 
 test("billing route loads real invoice data without the generic portal unavailable state", async ({

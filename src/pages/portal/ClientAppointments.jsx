@@ -1,10 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Calendar,
   Clock,
   Video,
   CheckCircle,
   MessageSquare,
+  ChevronLeft,
+  ChevronRight,
+  ArrowRight,
+  Briefcase,
+  Info,
 } from "lucide-react";
 import { portalApi } from "../../services/portal-api.js";
 import "./client-appointments.css";
@@ -17,6 +22,7 @@ const startOf = (item) => item.scheduled_start || item.scheduled_at;
 const historical = (item) =>
   ["completed", "cancelled", "no_show"].includes(item.status) ||
   new Date(startOf(item)).getTime() < Date.now();
+const pending = (item) => ["requested", "scheduled"].includes(item.status);
 const displayDate = (value, timezone, time = false) =>
   new Date(value).toLocaleString(
     undefined,
@@ -37,8 +43,24 @@ const today = (zone) =>
     month: "2-digit",
     day: "2-digit",
   }).format(new Date());
+const pad = (value) => String(value).padStart(2, "0");
+const isoOf = (year, month, day) => `${year}-${pad(month + 1)}-${pad(day)}`;
+const longDate = (iso) => {
+  const [year, month, day] = iso.split("-").map(Number);
+  return new Date(year, month - 1, day).toLocaleDateString(undefined, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+const monthLabel = (year, month) =>
+  new Date(year, month, 1).toLocaleDateString(undefined, {
+    month: "long",
+    year: "numeric",
+  });
 
-export default function ClientAppointments({ initialItems }) {
+export default function ClientAppointments({ initialItems, services = [] }) {
   const [items, setItems] = useState(initialItems);
   const [config, setConfig] = useState(null);
   const [error, setError] = useState("");
@@ -90,22 +112,55 @@ export default function ClientAppointments({ initialItems }) {
               <div className="appointment-empty">
                 <Calendar aria-hidden="true" />
                 <div>
-                  <h3>No appointments scheduled.</h3>
-                  <p>
-                    Choose an available time below whenever you'd like to meet
-                    with us.
-                  </p>
-                  <a href="#book-appointment" className="portal-action-button">
+                  <strong>No upcoming appointments.</strong>
+                  <p>Ready to schedule something?</p>
+                  <a href="#book-appointment" className="appt-rail-link">
                     Book an appointment
+                    <ArrowRight aria-hidden="true" size={14} />
                   </a>
                 </div>
               </div>
             )}
           </section>
+          <section
+            id="book-appointment"
+            className="appointment-booking"
+            aria-labelledby="booking-title"
+          >
+            <span className="section-kicker">Time with Alchemize</span>
+            <h2 id="booking-title">Book an appointment</h2>
+            {error ? (
+              <p role="alert">{error}</p>
+            ) : !config ? (
+              <p role="status">Loading booking options...</p>
+            ) : config.can_book === false ? (
+              <p>
+                Your account can view appointments. Contact your primary account
+                holder or <a href="/client-portal/messages">send a message</a>{" "}
+                to arrange a meeting.
+              </p>
+            ) : config.types?.length ? (
+              <BookingForm
+                config={config}
+                onBooked={async () => {
+                  setSuccess("Your appointment is confirmed.");
+                  await refresh();
+                }}
+              />
+            ) : (
+              <p>
+                Booking options are temporarily unavailable. Please{" "}
+                <a href="/client-portal/messages">message Alchemize</a>.
+              </p>
+            )}
+          </section>
           {past.length ? (
-            <section aria-labelledby="past-title">
+            <section
+              aria-labelledby="past-title"
+              className="appointment-history"
+            >
               <h2 id="past-title">Past appointments</h2>
-              <div className="appointment-rows appointment-history">
+              <div className="appointment-rows">
                 {past.map((item) => (
                   <AppointmentRow key={item.id} item={item} refresh={refresh} />
                 ))}
@@ -115,39 +170,169 @@ export default function ClientAppointments({ initialItems }) {
         </div>
       </div>
       <aside className="portal-workspace-utility">
-        <section
-          id="book-appointment"
-          className="appointment-booking"
-          aria-labelledby="booking-title"
-        >
-          <span className="section-kicker">Time with Alchemize</span>
-          <h2 id="booking-title">Book an appointment</h2>
-          {error ? (
-            <p role="alert">{error}</p>
-          ) : !config ? (
-            <p role="status">Loading booking options...</p>
-          ) : config.can_book === false ? (
-            <p>
-              Your account can view appointments. Contact your primary account
-              holder or <a href="/client-portal/messages">send a message</a> to
-              arrange a meeting.
-            </p>
-          ) : config.types?.length ? (
-            <BookingForm
-              config={config}
-              onBooked={async () => {
-                setSuccess("Your appointment is confirmed.");
-                await refresh();
-              }}
-            />
-          ) : (
-            <p>
-              Booking options are temporarily unavailable. Please{" "}
-              <a href="/client-portal/messages">message Alchemize</a>.
-            </p>
-          )}
-        </section>
+        <AppointmentsRail config={config} services={services} />
       </aside>
+    </div>
+  );
+}
+
+function AppointmentsRail({ config, services }) {
+  const activeServices = services.filter(
+    (item) => !["completed", "archived"].includes(item.status),
+  );
+  const methodsText = config?.methods?.length
+    ? config.methods.length > 1
+      ? `Meetings are typically held by ${config.methods.map((item) => item.label).join(" or ")}.`
+      : `Meetings are typically held by ${config.methods[0].label}.`
+    : "";
+  return (
+    <>
+      <section className="appt-rail-card">
+        <h2>
+          <MessageSquare aria-hidden="true" />
+          Need to schedule something else?
+        </h2>
+        <p>
+          Can't find a time that works? Send us a message and we'll help you
+          find a time.
+        </p>
+        <a className="appt-rail-link" href="/client-portal/messages">
+          Send a message
+          <ArrowRight aria-hidden="true" size={14} />
+        </a>
+      </section>
+      {activeServices.length ? (
+        <section className="appt-rail-card">
+          <h2>
+            <Briefcase aria-hidden="true" />
+            Your services
+          </h2>
+          <ul className="appt-service-list">
+            {activeServices.map((item) => (
+              <li key={item.id}>
+                <div>
+                  <strong>{item.title}</strong>
+                  <span className="appt-status is-confirmed">
+                    {label(item.status)}
+                  </span>
+                </div>
+                <a
+                  href={
+                    "/client-portal/services/" + encodeURIComponent(item.id)
+                  }
+                >
+                  View service
+                  <ArrowRight aria-hidden="true" size={14} />
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+      <section className="appt-rail-card">
+        <h2>
+          <Info aria-hidden="true" />
+          Our meeting details
+        </h2>
+        <p>{methodsText} You'll receive confirmation details after booking.</p>
+        <a className="appt-rail-link" href="/faq">
+          View FAQ
+          <ArrowRight aria-hidden="true" size={14} />
+        </a>
+      </section>
+    </>
+  );
+}
+
+function BookingCalendar({ timezone, selected, onSelect, disabled = false }) {
+  const meta = useMemo(() => {
+    const iso = today(timezone);
+    const [year, month] = iso.split("-").map(Number);
+    return { year, month: month - 1, todayIso: iso };
+  }, [timezone]);
+  const [cursor, setCursor] = useState({ year: meta.year, month: meta.month });
+  const daysInMonth = new Date(cursor.year, cursor.month + 1, 0).getDate();
+  const startWeekday = new Date(cursor.year, cursor.month, 1).getDay();
+  const atEarliestMonth =
+    cursor.year === meta.year && cursor.month === meta.month;
+  const cells = [];
+  for (let blank = 0; blank < startWeekday; blank++) cells.push(null);
+  for (let day = 1; day <= daysInMonth; day++) cells.push(day);
+  return (
+    <div className="appt-calendar" role="group" aria-label="Select a date">
+      <div className="appt-calendar-head">
+        <button
+          type="button"
+          aria-label="Previous month"
+          disabled={disabled || atEarliestMonth}
+          onClick={() =>
+            setCursor((current) =>
+              current.month === 0
+                ? { year: current.year - 1, month: 11 }
+                : { year: current.year, month: current.month - 1 },
+            )
+          }
+        >
+          <ChevronLeft aria-hidden="true" size={16} />
+        </button>
+        <strong>{monthLabel(cursor.year, cursor.month)}</strong>
+        <button
+          type="button"
+          aria-label="Next month"
+          disabled={disabled}
+          onClick={() =>
+            setCursor((current) =>
+              current.month === 11
+                ? { year: current.year + 1, month: 0 }
+                : { year: current.year, month: current.month + 1 },
+            )
+          }
+        >
+          <ChevronRight aria-hidden="true" size={16} />
+        </button>
+      </div>
+      <div className="appt-calendar-weekdays" aria-hidden="true">
+        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+          <span key={day}>{day}</span>
+        ))}
+      </div>
+      <div className="appt-calendar-grid">
+        {cells.map((day, index) => {
+          if (day == null)
+            return (
+              <span
+                key={`blank-${index}`}
+                className="appt-calendar-blank"
+                aria-hidden="true"
+              />
+            );
+          const iso = isoOf(cursor.year, cursor.month, day);
+          const past = iso < meta.todayIso;
+          const isSelected = iso === selected;
+          const dayLabel = new Date(
+            cursor.year,
+            cursor.month,
+            day,
+          ).toLocaleDateString("en-US", {
+            month: "long",
+            day: "numeric",
+            year: "numeric",
+          });
+          return (
+            <button
+              type="button"
+              key={iso}
+              disabled={disabled || past}
+              aria-pressed={isSelected}
+              aria-label={dayLabel}
+              className={isSelected ? "is-selected" : ""}
+              onClick={() => onSelect(iso)}
+            >
+              {day}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -178,54 +363,83 @@ function SlotPicker({
     };
   }, [date, loadSlots, revision]);
   return (
-    <div className="appointment-slot-picker">
-      <label>
-        Select a date
-        <input
-          type="date"
-          min={today(timezone)}
-          value={date}
-          disabled={disabled}
-          onChange={(event) => {
-            setDate(event.target.value);
-            onSelect(null);
-          }}
-        />
-      </label>
-      <p>Times shown in {timezone.replaceAll("_", " ")}.</p>
-      <h3>Available times</h3>
-      {state.error ? (
-        <div role="alert">
-          {state.error}
-          <button
-            type="button"
-            onClick={() => setRevision((value) => value + 1)}
-          >
-            Retry availability
-          </button>
-        </div>
-      ) : state.loading ? (
-        <p role="status">Checking availability...</p>
-      ) : state.slots.length ? (
-        <div className="appointment-slots">
-          {state.slots.map((slot) => (
+    <div className="appt-schedule">
+      <BookingCalendar
+        timezone={timezone}
+        selected={date}
+        disabled={disabled}
+        onSelect={(iso) => {
+          setDate(iso);
+          onSelect(null);
+        }}
+      />
+      <div className="appt-times">
+        <h3>Available times for {longDate(date)}</h3>
+        <p className="appt-timezone">
+          Times shown in {timezone.replaceAll("_", " ")}.
+        </p>
+        {state.error ? (
+          <div role="alert" className="appt-slot-error">
+            {state.error}
             <button
               type="button"
-              key={slot.start}
-              disabled={disabled}
-              aria-pressed={selected?.start === slot.start}
-              onClick={() => onSelect(slot)}
+              onClick={() => setRevision((value) => value + 1)}
             >
-              {slot.label || displayDate(slot.start, timezone, true)}
+              Retry availability
             </button>
-          ))}
-        </div>
-      ) : (
-        <p>
-          No available times on this date. Choose another date or request
-          another time below.
-        </p>
-      )}
+          </div>
+        ) : state.loading ? (
+          <p role="status">Checking availability...</p>
+        ) : state.slots.length ? (
+          <div className="appointment-slots">
+            {state.slots.map((slot) => (
+              <button
+                type="button"
+                key={slot.start}
+                disabled={disabled}
+                aria-pressed={selected?.start === slot.start}
+                onClick={() => onSelect(slot)}
+              >
+                {slot.label || displayDate(slot.start, timezone, true)}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <p>
+            No available times on this date. Choose another date, or{" "}
+            <a href="/client-portal/messages">message us</a> for help.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TypeCards({ types, value, onChange }) {
+  return (
+    <div className="appt-types" role="radiogroup" aria-label="Appointment type">
+      {types.map((item) => (
+        <label
+          key={item.key}
+          className={`appt-type-card${value === item.key ? " is-selected" : ""}`}
+        >
+          <input
+            type="radio"
+            name="appointment-type"
+            value={item.key}
+            checked={value === item.key}
+            onChange={() => onChange(item.key)}
+          />
+          <span className="appt-type-name">{item.label}</span>
+          {item.price != null ? (
+            <span className="appt-type-tag">
+              ${Number(item.price).toFixed(2)}
+            </span>
+          ) : item.included ? (
+            <span className="appt-type-tag">Included with your service</span>
+          ) : null}
+        </label>
+      ))}
     </div>
   );
 }
@@ -306,19 +520,6 @@ function BookingForm({ config, onBooked }) {
   };
   return (
     <>
-      <ol className="appointment-steps" aria-label="Booking progress">
-        {["Service", "Appointment", "Date & time", "Confirm"].map(
-          (step, index) => (
-            <li
-              key={step}
-              aria-current={(confirm ? 3 : 2) === index ? "step" : undefined}
-            >
-              <span>{index + 1}</span>
-              {step}
-            </li>
-          ),
-        )}
-      </ol>
       {error ? (
         <p role="alert" className="portal-feedback error">
           {error}
@@ -328,11 +529,10 @@ function BookingForm({ config, onBooked }) {
         <div className="appointment-confirm">
           <h3>Confirm your appointment</h3>
           <BookingSummary
-            type={selectedType.label}
+            type={selectedType}
             service={config.services.find((item) => item.id === service)?.title}
             slot={slot}
             timezone={config.timezone}
-            duration={selectedType.duration_minutes}
             method={config.methods.find((item) => item.key === method)?.label}
           />
           <div className="portal-action-group">
@@ -355,7 +555,7 @@ function BookingForm({ config, onBooked }) {
                 ? "Confirming..."
                 : uncertain
                   ? "Retry this booking"
-                  : "Confirm appointment"}
+                  : "Confirm booking"}
             </button>
           </div>
           {uncertain ? (
@@ -366,66 +566,52 @@ function BookingForm({ config, onBooked }) {
           ) : null}
         </div>
       ) : (
-        <div className="appointment-booking-grid">
-          <div className="appointment-fields">
-            <label>
-              Related service
-              <select
-                value={service}
-                onChange={(event) => setService(event.target.value)}
-              >
-                <option value="">General / Not service-specific</option>
-                {config.services.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.title}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Appointment type
-              <select
-                value={type}
-                onChange={(event) => setType(event.target.value)}
-              >
-                {config.types.map((item) => (
-                  <option key={item.key} value={item.key}>
-                    {item.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+        <>
+          <div className="appt-step">
+            <span className="appt-step-label">1. Select appointment type</span>
+            <TypeCards types={config.types} value={type} onChange={setType} />
             <p className="appointment-duration">
               <Clock aria-hidden="true" />
               {selectedType.duration_minutes} minutes
             </p>
-            {config.methods.length > 1 ? (
-              <label>
-                Meeting method
-                <select
-                  value={method}
-                  onChange={(event) => setMethod(event.target.value)}
-                >
-                  {config.methods.map((item) => (
-                    <option key={item.key} value={item.key}>
-                      {item.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ) : (
-              <p>Meeting method: {config.methods[0].label}</p>
-            )}
-            <label>
-              Anything you'd like us to know?
-              <textarea
-                maxLength={2000}
-                value={note}
-                onChange={(event) => setNote(event.target.value)}
-              />
-            </label>
+            <div className="appt-step-fields">
+              {config.services.length ? (
+                <label>
+                  Related service
+                  <select
+                    value={service}
+                    onChange={(event) => setService(event.target.value)}
+                  >
+                    <option value="">General / Not service-specific</option>
+                    {config.services.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.title}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
+              {config.methods.length > 1 ? (
+                <label>
+                  Meeting method
+                  <select
+                    value={method}
+                    onChange={(event) => setMethod(event.target.value)}
+                  >
+                    {config.methods.map((item) => (
+                      <option key={item.key} value={item.key}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : (
+                <p>Meeting method: {config.methods[0].label}</p>
+              )}
+            </div>
           </div>
-          <div>
+          <div className="appt-step">
+            <span className="appt-step-label">2. Select a date &amp; time</span>
             <SlotPicker
               key={type + service + method + revision}
               timezone={config.timezone}
@@ -433,7 +619,18 @@ function BookingForm({ config, onBooked }) {
               selected={slot}
               onSelect={setSlot}
             />
-            {slot ? (
+          </div>
+          {slot ? (
+            <div className="appt-step">
+              <span className="appt-step-label">3. Appointment details</span>
+              <label className="appt-note-field">
+                Anything you'd like us to know?
+                <textarea
+                  maxLength={2000}
+                  value={note}
+                  onChange={(event) => setNote(event.target.value)}
+                />
+              </label>
               <button
                 type="button"
                 className="portal-action-button"
@@ -441,42 +638,46 @@ function BookingForm({ config, onBooked }) {
               >
                 Review appointment
               </button>
+            </div>
+          ) : null}
+          <div className="appointment-fallback">
+            <p>Can't find a time that works?</p>
+            <button
+              type="button"
+              aria-expanded={fallback}
+              onClick={() => setFallback(!fallback)}
+            >
+              {fallback ? "Close request" : "Request another time"}
+            </button>
+            {fallback ? (
+              <RequestTime config={config} engagement={service} />
             ) : null}
           </div>
-        </div>
+        </>
       )}
-      {!confirm ? (
-        <div className="appointment-fallback">
-          <p>Can't find a time that works?</p>
-          <button
-            type="button"
-            aria-expanded={fallback}
-            onClick={() => setFallback(!fallback)}
-          >
-            {fallback ? "Close request" : "Request another time"}
-          </button>
-          {fallback ? (
-            <RequestTime config={config} engagement={service} />
-          ) : null}
-        </div>
-      ) : null}
     </>
   );
 }
 
-function BookingSummary({ type, service, slot, timezone, duration, method }) {
+function BookingSummary({ type, service, slot, timezone, method }) {
   return (
     <div className="appointment-summary">
-      <strong>{type}</strong>
+      <strong>{type.label}</strong>
       <p>{service || "General / Not service-specific"}</p>
       <p>{displayDate(slot.start, timezone)}</p>
       <p>
         {displayDate(slot.start, timezone, true)} –{" "}
-        {displayDate(slot.end, timezone, true)} ({duration} minutes)
+        {displayDate(slot.end, timezone, true)} ({type.duration_minutes}{" "}
+        minutes)
       </p>
       <p>
         {method} · {timezone}
       </p>
+      {type.price != null ? (
+        <p>${Number(type.price).toFixed(2)}</p>
+      ) : type.included ? (
+        <p>Included with your service</p>
+      ) : null}
     </div>
   );
 }
@@ -515,40 +716,108 @@ function AppointmentRow({ item, refresh }) {
   const past = historical(item);
   const method = label(item.meeting_method || item.location_type);
   const safeMeeting = /^https:\/\//i.test(item.meeting_url || "");
+  const isPending = pending(item);
+  const start = new Date(startOf(item));
   return (
     <article className="appointment-row">
-      <Calendar className="appointment-icon" aria-hidden="true" />
-      <div>
+      <div className="appt-date-block" aria-hidden="true">
+        <small>
+          {start
+            .toLocaleDateString(undefined, {
+              timeZone: item.timezone,
+              month: "short",
+            })
+            .toUpperCase()}
+        </small>
+        <strong>
+          {start.toLocaleDateString(undefined, {
+            timeZone: item.timezone,
+            day: "numeric",
+          })}
+        </strong>
+      </div>
+      <div className="appt-copy">
         <strong>{item.appointment_type}</strong>
         <p>{item.engagement_title || "General / Not service-specific"}</p>
-        <p>
-          {displayDate(startOf(item), item.timezone)}
-          <br />
+        <small>
           {displayDate(startOf(item), item.timezone, true)}
           {item.scheduled_end
             ? ` – ${displayDate(item.scheduled_end, item.timezone, true)}`
             : ""}
           {item.duration_minutes ? ` · ${item.duration_minutes} minutes` : ""}
-        </p>
+        </small>
         <small>
           {method} · {item.timezone}
         </small>
       </div>
-      <span className="td-status">
-        {item.status === "requested"
-          ? "Awaiting confirmation"
-          : label(item.status)}
-      </span>
-      <button
-        type="button"
-        className="portal-action-button"
-        aria-expanded={open}
-        onClick={() => setOpen(!open)}
-      >
-        {open ? "Close details" : "View details"}
-      </button>
+      <div className="appt-state">
+        <span
+          className={`appt-status ${isPending ? "is-pending" : item.status === "confirmed" ? "is-confirmed" : "is-past"}`}
+        >
+          {isPending ? "Pending confirmation" : label(item.status)}
+        </span>
+      </div>
+      {!past ? (
+        <div className="appt-actions">
+          {!item.pending_request ? (
+            <>
+              {isPending ? (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => run("confirm")}
+                >
+                  Confirm
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => {
+                  setAction("reschedule");
+                  setSlot(null);
+                }}
+              >
+                Reschedule
+              </button>
+              <button type="button" onClick={() => setAction("cancel")}>
+                Cancel
+              </button>
+            </>
+          ) : null}
+          <button
+            type="button"
+            className="appt-details-toggle"
+            aria-expanded={open}
+            onClick={() => setOpen(!open)}
+          >
+            {open ? "Hide details" : "Details"}
+          </button>
+        </div>
+      ) : (
+        <div className="appt-actions">
+          <button
+            type="button"
+            className="appt-details-toggle"
+            aria-expanded={open}
+            onClick={() => setOpen(!open)}
+          >
+            {open ? "Hide details" : "Details"}
+          </button>
+        </div>
+      )}
+      {item.pending_request ? (
+        <p className="appt-pending-note">
+          Your {label(item.pending_request).toLowerCase()} request is awaiting
+          Alchemize review.
+        </p>
+      ) : null}
+      {message ? (
+        <p role="status" className="appt-row-message">
+          {message}
+        </p>
+      ) : null}
       {open ? (
-        <div className="appointment-details">
+        <div className="appt-info">
           {item.client_instructions ? (
             <p>
               <strong>Notes and instructions</strong>
@@ -578,92 +847,57 @@ function AppointmentRow({ item, refresh }) {
               View service
             </a>
           ) : null}
-          {item.pending_request ? (
-            <p>
-              Your {label(item.pending_request).toLowerCase()} request is
-              awaiting Alchemize review.
-            </p>
-          ) : !past ? (
-            <div className="portal-action-group">
-              {item.status === "scheduled" ? (
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => run("confirm")}
-                >
-                  Confirm appointment
-                </button>
-              ) : null}
-              <button
-                type="button"
-                onClick={() => {
-                  setAction("reschedule");
-                  setSlot(null);
-                }}
-              >
-                Request reschedule
-              </button>
-              <button type="button" onClick={() => setAction("cancel")}>
-                Request cancellation
-              </button>
-            </div>
-          ) : null}
-          {message ? <p role="status">{message}</p> : null}
-          {action === "cancel" ? (
-            <div className="appointment-confirm">
-              <h3>Request cancellation of this appointment?</h3>
-              <p>
-                {item.appointment_type} ·{" "}
-                {displayDate(startOf(item), item.timezone)} at{" "}
-                {displayDate(startOf(item), item.timezone, true)}
-              </p>
-              <p>
-                Alchemize will review your request before cancelling the
-                appointment.
-              </p>
-              <div className="portal-action-group">
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => setAction("")}
-                >
-                  Keep appointment
-                </button>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => run("request-cancellation")}
-                >
-                  Send cancellation request
-                </button>
-              </div>
-            </div>
-          ) : null}
-          {action === "reschedule" ? (
-            <div className="appointment-confirm">
-              <h3>Request a new time</h3>
-              <p>
-                Choose an available time. Alchemize must approve this change;
-                this selection does not reserve a slot.
-              </p>
-              <SlotPicker
-                timezone={item.timezone}
-                loadSlots={loader}
-                selected={slot}
-                onSelect={setSlot}
-              />
-              <button
-                type="button"
-                className="portal-action-button"
-                disabled={!slot || busy}
-                onClick={() =>
-                  run("request-reschedule", { requested_at: slot.start })
-                }
-              >
-                Send reschedule request
-              </button>
-            </div>
-          ) : null}
+        </div>
+      ) : null}
+      {action === "cancel" ? (
+        <div className="appointment-details">
+          <h3>Cancel this appointment?</h3>
+          <p>
+            {item.appointment_type} ·{" "}
+            {displayDate(startOf(item), item.timezone)} at{" "}
+            {displayDate(startOf(item), item.timezone, true)}
+          </p>
+          <p>
+            Alchemize will review your request before cancelling the
+            appointment.
+          </p>
+          <div className="portal-action-group">
+            <button type="button" disabled={busy} onClick={() => setAction("")}>
+              Keep appointment
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => run("request-cancellation")}
+            >
+              Send cancellation request
+            </button>
+          </div>
+        </div>
+      ) : null}
+      {action === "reschedule" ? (
+        <div className="appointment-details">
+          <h3>Reschedule this appointment</h3>
+          <p>
+            Choose an available time. Alchemize must approve this change; this
+            selection does not reserve a slot.
+          </p>
+          <SlotPicker
+            timezone={item.timezone}
+            loadSlots={loader}
+            selected={slot}
+            onSelect={setSlot}
+          />
+          <button
+            type="button"
+            className="portal-action-button"
+            disabled={!slot || busy}
+            onClick={() =>
+              run("request-reschedule", { requested_at: slot.start })
+            }
+          >
+            Send reschedule request
+          </button>
         </div>
       ) : null}
     </article>

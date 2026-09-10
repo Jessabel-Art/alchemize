@@ -33,7 +33,7 @@ const pageContent = {
   appointments: [
     "Appointments",
     "Appointments",
-    "Book and manage time with Alchemize.",
+    "Book, manage, and stay on track.",
     "No upcoming appointments.",
   ],
   messages: [
@@ -157,6 +157,22 @@ function PortalRecordsPage({ resource, engagementId = null }) {
             tasks: tasks.items || [],
             documents: documents.items || [],
             intakes: intakes?.items || [],
+            services: services.items || [],
+          },
+          error: "",
+        });
+        return;
+      }
+
+      if (resource === "appointments") {
+        const [appointments, services] = await Promise.all([
+          portalApi.appointments(),
+          portalApi.services().catch(() => ({ items: [] })),
+        ]);
+        setState({
+          status: "ready",
+          data: {
+            items: appointments.items || [],
             services: services.items || [],
           },
           error: "",
@@ -307,6 +323,7 @@ function ResourceContent(props) {
     return (
       <Appointments
         items={data.items || []}
+        services={data.services || []}
         empty={empty}
         busy={busy}
         run={run}
@@ -978,8 +995,8 @@ function DocumentUpload({ item, busy, run }) {
   );
 }
 
-function Appointments({ items }) {
-  return <ClientAppointments initialItems={items} />;
+function Appointments({ items, services }) {
+  return <ClientAppointments initialItems={items} services={services} />;
 }
 
 function Messages({ items, empty, busy, run }) {

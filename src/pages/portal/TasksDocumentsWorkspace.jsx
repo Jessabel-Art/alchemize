@@ -10,6 +10,8 @@ import {
   Calendar,
   MessageSquare,
   Briefcase,
+  ArrowRight,
+  AlertCircle,
 } from "lucide-react";
 import { portalApi } from "../../services/portal-api.js";
 import { intakeLocked } from "./intake-logic.js";
@@ -28,10 +30,28 @@ const done = (item) =>
           item.status,
         )
       : item.status === "completed";
+// A document that is done() but still under Alchemize review isn't
+// something the client needs to act on again, but it also isn't fully
+// "complete" from the client's point of view — kept separate from done()
+// so the progress/count math above (tested exactly) never changes.
+const underReview = (item) =>
+  item.kind === "document" &&
+  ["received", "under_review"].includes(item.status);
 const humanize = (value) =>
   String(value || "")
     .replaceAll("_", " ")
     .replace(/^./, (c) => c.toUpperCase());
+const actionLabel = (item, complete) => {
+  if (item.kind === "intake") {
+    return complete
+      ? "View submission"
+      : item.status === "assigned" && !Number(item.completion_percentage)
+        ? "Start intake"
+        : "Continue";
+  }
+  if (item.kind === "document") return complete ? "View file" : "Upload";
+  return complete ? "View" : "Continue";
+};
 
 export default function TasksDocumentsWorkspace({
   tasks,
@@ -77,31 +97,45 @@ export default function TasksDocumentsWorkspace({
         : (Date.parse(a.due_date) || Infinity) -
           (Date.parse(b.due_date) || Infinity),
     );
+  // A compact preview of outstanding items surfaces at the top in the
+  // default "All items" view; every record still renders exactly once
+  // in its normal Tasks & Intake / Documents group below (the preview
+  // links down to the real row via its existing id) so counts, groups,
+  // and filtering behavior are unchanged.
+  const needsAttention =
+    filter === "all" ? shown.filter((item) => !done(item)) : [];
+  const activeServices = services.filter(
+    (service) => !["completed", "archived"].includes(service.status),
+  );
+
   return (
     <div className="td-layout">
       <section className="td-progress" aria-label="Your progress">
         <div>
-          <h2>Your progress</h2>
-          <progress max="100" value={percent} aria-label="Items complete" />
-          <div className="td-progress-meta">
-            <span>
+          <div className="td-progress-bar-row">
+            <span className="td-progress-count">
               {count} of {records.length} items complete
             </span>
-            <span>{percent}% complete</span>
+            <progress max="100" value={percent} aria-label="Items complete" />
+            <span className="td-progress-percent">{percent}%</span>
           </div>
         </div>
         <div className="td-progress-note">
-          <CheckCircle aria-hidden="true" />
+          {count === records.length ? (
+            <CheckCircle aria-hidden="true" />
+          ) : (
+            <AlertCircle aria-hidden="true" />
+          )}
           <div>
             <strong>
               {count === records.length
                 ? "You're all caught up"
-                : "Keep your service moving"}
+                : `${records.length - count} item${records.length - count === 1 ? "" : "s"} needs your attention`}
             </strong>
             <p>
               {count === records.length
                 ? "Your client actions are complete."
-                : "Complete the items that need your attention."}
+                : "Complete the remaining item to keep your service moving."}
             </p>
           </div>
         </div>
@@ -141,6 +175,35 @@ export default function TasksDocumentsWorkspace({
             <p>No tasks or documents need your attention right now.</p>
           </div>
         ) : null}
+        {needsAttention.length ? (
+          <section
+            className="td-group td-attention"
+            id="needs-attention"
+            aria-label="Needs your attention"
+          >
+            <h2>
+              <AlertCircle aria-hidden="true" />
+              Needs your attention ({needsAttention.length})
+            </h2>
+            <ul className="td-attention-list">
+              {needsAttention.map((item) => (
+                <li key={`preview-${item.kind}-${item.id}`}>
+                  <div>
+                    <strong>{item.title}</strong>
+                    <small>
+                      {item.service_name || humanize(item.kind)}
+                      {item.due_date ? ` · Due ${date(item.due_date)}` : ""}
+                    </small>
+                  </div>
+                  <a className="td-row-link" href={`#${item.kind}-${item.id}`}>
+                    {actionLabel(item, false)}
+                    <ArrowRight aria-hidden="true" size={14} />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
         {[
           ["Tasks & Intake", shown.filter((item) => item.kind !== "document")],
           ["Documents", shown.filter((item) => item.kind === "document")],
@@ -167,35 +230,79 @@ export default function TasksDocumentsWorkspace({
         ) : null}
       </div>
       <aside className="td-context portal-workspace-utility">
-        {services.map((service) => (
-          <section key={service.id} className="td-service">
-            <Briefcase aria-hidden="true" />
-            <h2>{service.title}</h2>
-            <span className="td-status">{humanize(service.status)}</span>
-            {service.start_date ? (
-              <p>
-                <small>Started</small>
-                <br />
-                {date(service.start_date)}
-              </p>
-            ) : null}
-            {service.target_date ? (
-              <p>
-                <small>Target completion</small>
-                <br />
-                {date(service.target_date)}
-              </p>
-            ) : null}
-            <a href="/client-portal/services">View service</a>
+        {needsAttention.length ? (
+          <section className="td-action-panel">
+            <span className="td-action-panel-kicker">
+              <AlertCircle aria-hidden="true" />
+              Action needed
+            </span>
+            {needsAttention.length === 1 ? (
+              <>
+                <strong className="td-action-panel-title">
+                  {needsAttention[0].title}
+                </strong>
+                {needsAttention[0].service_name ? (
+                  <p>{needsAttention[0].service_name}</p>
+                ) : null}
+                {needsAttention[0].due_date ? (
+                  <small>Due {date(needsAttention[0].due_date)}</small>
+                ) : null}
+                <a
+                  className="td-action-panel-link"
+                  href={`#${needsAttention[0].kind}-${needsAttention[0].id}`}
+                >
+                  {actionLabel(needsAttention[0], false)} now
+                  <ArrowRight aria-hidden="true" size={14} />
+                </a>
+              </>
+            ) : (
+              <>
+                <strong className="td-action-panel-title">
+                  {needsAttention.length} items
+                </strong>
+                <a className="td-action-panel-link" href="#needs-attention">
+                  Review items
+                  <ArrowRight aria-hidden="true" size={14} />
+                </a>
+              </>
+            )}
           </section>
-        ))}
+        ) : null}
+        {activeServices.length ? (
+          <section className="td-service">
+            <h2>
+              <Briefcase aria-hidden="true" />
+              Your services
+            </h2>
+            <ul className="td-service-list">
+              {activeServices.map((service) => (
+                <li key={service.id}>
+                  <strong>{service.title}</strong>
+                  <span className="td-status">{humanize(service.status)}</span>
+                  {service.start_date ? (
+                    <small>Started {date(service.start_date)}</small>
+                  ) : null}
+                  {service.target_date ? (
+                    <small>Target {date(service.target_date)}</small>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+            <a href="/client-portal/services">
+              View all services
+              <ArrowRight aria-hidden="true" size={14} />
+            </a>
+          </section>
+        ) : null}
         <section className="td-help">
-          <MessageSquare aria-hidden="true" />
-          <h2>Need help?</h2>
-          <p>If you have any questions, reach out through Messages.</p>
-          <a className="portal-action-button" href="/client-portal/messages">
+          <h2>
             <MessageSquare aria-hidden="true" />
+            Need help?
+          </h2>
+          <p>If you have any questions, reach out through Messages.</p>
+          <a className="td-action-panel-link" href="/client-portal/messages">
             Send a message
+            <ArrowRight aria-hidden="true" size={14} />
           </a>
         </section>
       </aside>
@@ -205,10 +312,10 @@ export default function TasksDocumentsWorkspace({
             <Upload aria-hidden="true" />
           </span>
           <div>
-            <h2>Upload a document</h2>
+            <h2>Need to send us something else?</h2>
             <p>
-              Have a document that wasn't specifically requested? You can upload
-              it here and we'll review it.
+              Upload a document that wasn&apos;t specifically requested.
+              We&apos;ll review it and follow up if needed.
             </p>
           </div>
           <button
@@ -239,15 +346,11 @@ function WorkspaceRow({ item, busy, run, DocumentUpload }) {
   );
   const [response, setResponse] = useState("");
   const complete = done(item);
-  const Icon =
-    item.kind === "intake"
-      ? ClipboardList
-      : item.kind === "document"
-        ? FileText
-        : ClipboardCheck;
-  const review =
-    item.kind === "document" &&
-    ["received", "under_review"].includes(item.status);
+  const review = underReview(item);
+  // The checkbox reflects true client-facing completion: an
+  // under-review document is done() (no longer actionable, excluded
+  // from "needs attention"), but it hasn't been checked off yet either.
+  const checked = complete && !review;
   const due = item.due_date
     ? new Date(`${item.due_date.slice(0, 10)}T23:59:59`).getTime()
     : Infinity;
@@ -266,13 +369,16 @@ function WorkspaceRow({ item, busy, run, DocumentUpload }) {
               : "Action needed";
   return (
     <li className="td-row" id={`${item.kind}-${item.id}`}>
-      <span className={`td-icon ${complete ? "is-complete" : ""}`}>
-        <Icon aria-hidden="true" />
+      <span
+        className={`td-check ${checked ? "is-complete" : ""} ${review ? "is-review" : ""}`}
+        aria-hidden="true"
+      >
+        {checked ? <CheckCircle aria-hidden="true" /> : null}
       </span>
       <div className="td-copy">
         <small>
           {humanize(item.kind)}
-          {item.service_name ? ` / ${item.service_name}` : ""}
+          {item.service_name ? ` · ${item.service_name}` : ""}
         </small>
         <strong>{item.title}</strong>
         <p>
@@ -287,56 +393,45 @@ function WorkspaceRow({ item, busy, run, DocumentUpload }) {
         {item.engagement_title && item.engagement_title !== item.title ? (
           <small>{item.engagement_title}</small>
         ) : null}
+      </div>
+      <div className="td-state">
+        <span
+          className={`td-status ${checked ? "is-complete" : review ? "is-review" : "is-action"}`}
+        >
+          {status}
+        </span>
         {item.due_date ? (
           <small className="td-date">
             <Calendar aria-hidden="true" />
             Due {date(item.due_date)}
           </small>
         ) : null}
-        {item.client_visible_review_note ? (
-          <p>{item.client_visible_review_note}</p>
-        ) : null}
-      </div>
-      <div className="td-state">
-        <span className={`td-status ${complete ? "is-complete" : ""}`}>
-          {complete ? (
-            <CheckCircle aria-hidden="true" />
-          ) : (
-            <Clock aria-hidden="true" />
-          )}
-          {status}
-        </span>
         {item.submitted_at ? (
           <small>Submitted {date(item.submitted_at)}</small>
         ) : null}
         {item.kind === "document" && item.received_date ? (
           <small>Uploaded {date(item.received_date)}</small>
         ) : null}
-        {review ? (
-          <small>Your upload is awaiting Alchemize review.</small>
+        {item.client_visible_review_note ? (
+          <small>{item.client_visible_review_note}</small>
         ) : null}
       </div>
       <div className="td-actions">
         {item.kind === "intake" ? (
           <a
-            className="portal-action-button"
+            className="td-row-link"
             href={`/client-portal/intake?assignment=${encodeURIComponent(item.id)}`}
           >
-            <Eye aria-hidden="true" />
-            {complete
-              ? "View submission"
-              : item.status === "assigned" &&
-                  !Number(item.completion_percentage)
-                ? "Start intake"
-                : "Continue"}
+            {actionLabel(item, complete)}
+            <ArrowRight aria-hidden="true" size={14} />
           </a>
         ) : null}
         {item.kind === "document" && item.current_version ? (
           <a
-            className="portal-action-button"
+            className="td-row-link"
             href={portalApi.documentDownloadUrl(item.id)}
           >
-            <Eye aria-hidden="true" />
+            <Eye aria-hidden="true" size={14} />
             View file
           </a>
         ) : null}
