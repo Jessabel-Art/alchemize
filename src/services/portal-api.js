@@ -117,6 +117,7 @@ export const portalApi = {
   checkoutInvoice: (id) =>
     portalRequest(`billing/${id}/checkout`, {
       method: "POST",
+      body: JSON.stringify({}),
     }),
 
   createPaypalOrder: (id) =>

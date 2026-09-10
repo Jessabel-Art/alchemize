@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import Logo from "../../components/brand/Logo.jsx";
 import { auth } from "../../services/admin-api.js";
@@ -21,6 +21,35 @@ function AuthPage({ title, buttonLabel }) {
     ["client", "business-authorized-user"].includes(user?.role_slug)
       ? "/client-portal/dashboard"
       : "/admin/dashboard";
+
+  useEffect(() => {
+    if (!login) {
+      return;
+    }
+
+    let active = true;
+    auth
+      .session()
+      .then((payload) => {
+        if (!active) {
+          return;
+        }
+        if (payload?.authenticated && payload?.user) {
+          setSession({ authenticated: true, user: payload.user });
+          return;
+        }
+        setSession({ authenticated: false, user: null });
+      })
+      .catch(() => {
+        if (active) {
+          setSession({ authenticated: false, user: null });
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [login]);
 
   if (session?.authenticated) {
     return <Navigate to={authenticatedDestination(session.user)} replace />;

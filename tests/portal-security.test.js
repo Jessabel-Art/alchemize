@@ -5,6 +5,13 @@ import test from "node:test";
 const read = (path) =>
   readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
+test("public footer exposes a single centralized login entry point", () => {
+  const footer = read("src/components/site/Footer.jsx");
+
+  assert.match(footer, /\[\s*"Login"\s*,\s*"\/login"\s*\]/);
+  assert.doesNotMatch(footer, /Client Portal|Admin Access/);
+});
+
 test("portal access is derived from the authenticated user", () => {
   const endpoint = read("api/v1/portal/index.php");
   const service = read("server/services/portal-service.php");

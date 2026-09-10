@@ -1,6 +1,9 @@
 import { test, expect } from "@playwright/test";
 
-async function setup(page, { invoices = [], payments = [] } = {}) {
+async function setup(
+  page,
+  { invoices = [], payments = [], checkoutResponse = null } = {},
+) {
   const requests = [];
   const openBalance = invoices
     .filter((item) =>
@@ -10,6 +13,7 @@ async function setup(page, { invoices = [], payments = [] } = {}) {
   await page.route("**/alchemize-api.php?*", async (route) => {
     const url = new URL(route.request().url());
     const path = url.searchParams.get("route");
+    const request = route.request();
     let data = {};
     if (path === "auth/session")
       data = {
@@ -25,10 +29,33 @@ async function setup(page, { invoices = [], payments = [] } = {}) {
         paypal_client_id: "",
       };
     if (path?.match(/^portal\/billing\/.+\/checkout$/)) {
+      const contentType = request.headers()["content-type"] || "";
       requests.push({
         path,
-        csrf: route.request().headers()["x-csrf-token"],
+        method: request.method(),
+        contentType,
+        csrf: request.headers()["x-csrf-token"],
+        body: request.postData(),
       });
+      // Mirror the real backend's alchemize_decode_json_request() contract:
+      // every non-GET request must carry Content-Type: application/json,
+      // regardless of whether the route itself reads the body.
+      if (!contentType.startsWith("application/json")) {
+        await route.fulfill({
+          status: 415,
+          json: {
+            error: {
+              code: "UNSUPPORTED_MEDIA_TYPE",
+              message: "Content-Type must be application/json.",
+            },
+          },
+        });
+        return;
+      }
+      if (checkoutResponse) {
+        await route.fulfill(checkoutResponse);
+        return;
+      }
       data = { checkout_url: "https://checkout.example/session-123" };
     }
     await route.fulfill({ json: { data } });
@@ -115,7 +142,7 @@ test("open invoice renders real balance, paid, and remaining amounts with a stat
   ).toBeVisible();
 });
 
-test("pay securely uses the existing checkout endpoint and redirects to the real checkout URL", async ({
+test("pay securely sends a well-formed POST + JSON body and redirects to the real checkout URL", async ({
   page,
 }) => {
   const { requests } = await setup(page, {
@@ -140,7 +167,38 @@ test("pay securely uses the existing checkout endpoint and redirects to the real
     payButton.click(),
   ]);
   expect(requests).toHaveLength(1);
+  expect(requests[0].method).toBe("POST");
+  expect(requests[0].contentType).toContain("application/json");
+  expect(requests[0].body).toBe("{}");
   expect(requests[0].csrf).toBe("csrf");
+});
+
+test("a checkout failure (e.g. another client's invoice, or a provider error) is surfaced, not silently swallowed", async ({
+  page,
+}) => {
+  await setup(page, {
+    invoices: [invoiceFixture()],
+    payments: [],
+    checkoutResponse: {
+      status: 404,
+      json: {
+        error: {
+          code: "NOT_FOUND",
+          message: "The payable invoice was not found.",
+        },
+      },
+    },
+  });
+  await page.goto("/client-portal/billing/");
+  const payButton = page.getByRole("button", {
+    name: "Pay securely",
+    exact: true,
+  });
+  await payButton.click();
+  await expect(
+    page.getByText("The payable invoice was not found.", { exact: true }),
+  ).toBeVisible();
+  await expect(page).toHaveURL(/\/client-portal\/billing\/?$/);
 });
 
 test("payment history table renders real records, a receipt link when present, and a computed total", async ({

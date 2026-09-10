@@ -43,8 +43,7 @@ const groups = {
     [
       "Access",
       [
-        ["Client Portal", "/client-portal"],
-        ["Admin Access", "/admin"],
+        ["Login", "/login"],
         ["Privacy Policy", "/privacy"],
         ["Terms of Service", "/terms"],
       ],
@@ -101,8 +100,7 @@ const groups = {
     [
       "Acceso",
       [
-        ["Portal del cliente", "/client-portal"],
-        ["Acceso administrativo", "/admin"],
+        ["Iniciar sesión", "/login"],
         ["Política de privacidad (en inglés)", "/privacy"],
         ["Términos de servicio (en inglés)", "/terms"],
       ],
