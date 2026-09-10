@@ -63,6 +63,14 @@ verifyBooking($service->availability($access,$payload)['slots']===[],'Closed dat
 $db->availability=[['kind'=>'weekday','is_available'=>0]];
 verifyBooking($service->availability($access,$payload)['slots']===[],'Closed weekly hours reopened');
 $db->availability=[];
+// General / no-engagement availability (engagement_id="") with
+// meeting_method=phone — the exact parameter shape of the production
+// request this pass fixed (GET .../availability?...&engagement_id=&
+// meeting_method=phone) — must be accepted and reach a real slot list
+// rather than being rejected as an invalid/missing engagement.
+$generalPayload=array_replace($payload,['engagement_id'=>'','meeting_method'=>'phone']);
+$generalResult=$service->availability($access,$generalPayload);
+verifyBooking(is_array($generalResult['slots']) && count($generalResult['slots'])>0,'General/no-engagement phone availability was rejected or empty');
 $integration->busy=[['start'=>'2030-09-09T09:00:00-04:00','end'=>'2030-09-09T10:00:00-04:00']];
 verifyBooking($service->availability($access,$payload)['slots'][0]['label']==='10:00 AM','Google busy period ignored');
 $integration->busy=[];$db->race=true;

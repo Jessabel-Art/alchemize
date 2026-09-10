@@ -16,6 +16,8 @@ jobs:
     env:
       PUBLIC_WEB_ROOT: public_html
       PRIVATE_BACKEND_ROOT: alchemize-server
+      # GA4 measurement ID: not a secret, it ships in the public client bundle.
+      VITE_ANALYTICS_ID: G-9151VZXWM7
       HOSTINGER_SSH_PORT: 65002
       HOSTINGER_SSH_KEY_B64: ${{ secrets.HOSTINGER_SSH_KEY_B64 }}
       HOSTINGER_HOST: ${{ secrets.HOSTINGER_HOST }}
@@ -34,6 +36,15 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          tools: composer:v2
+
+      - name: Install PHP dependencies (production only)
+        run: composer install --no-dev --optimize-autoloader --no-interaction
 
       - name: Build production frontend
         run: npm run build
@@ -56,6 +67,17 @@ jobs:
           cp scripts/verify-deployment-runtime.php deploy-output/${PRIVATE_BACKEND_ROOT}/verify-deployment-runtime.php
           cp scripts/test-resend-email.php deploy-output/${PRIVATE_BACKEND_ROOT}/test-resend-email.php
 
+          # composer.json/composer.lock live at the repo root (a sibling of
+          # server/), so a plain `cp -R server/. ...` never carries them or
+          # the vendor/ they produce — every prior deploy silently shipped
+          # an alchemize-server/ with no Composer autoloader, which is why
+          # class_exists('Google\Service\Calendar') returned false in
+          # production and every calendar-availability request failed with
+          # a sanitized 503 CALENDAR_UNAVAILABLE. Ship vendor/ explicitly.
+          cp -R vendor deploy-output/${PRIVATE_BACKEND_ROOT}/vendor
+          cp composer.json deploy-output/${PRIVATE_BACKEND_ROOT}/composer.json
+          cp composer.lock deploy-output/${PRIVATE_BACKEND_ROOT}/composer.lock
+
       - name: Verify deployment package
         shell: bash
         run: |
@@ -76,6 +98,11 @@ jobs:
           test -f deploy-output/${PRIVATE_BACKEND_ROOT}/run-migrations.php
           test -f deploy-output/${PRIVATE_BACKEND_ROOT}/verify-deployment-runtime.php
           test -f deploy-output/${PRIVATE_BACKEND_ROOT}/test-resend-email.php
+
+          # Guards against a repeat of the production incident where every
+          # deploy silently shipped a backend with no Composer autoloader.
+          test -f deploy-output/${PRIVATE_BACKEND_ROOT}/vendor/autoload.php
+          php -r "require 'deploy-output/${PRIVATE_BACKEND_ROOT}/vendor/autoload.php'; exit(class_exists('Google\\Service\\Calendar') ? 0 : 1);"
 
           test ! -e deploy-output/${PUBLIC_WEB_ROOT}/server
           test ! -e deploy-output/${PUBLIC_WEB_ROOT}/.env

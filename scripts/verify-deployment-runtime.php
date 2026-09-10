@@ -97,5 +97,20 @@ foreach (['alchemize_external_integrations', 'AlchemizeExternalIntegrationServic
     }
 }
 
+// The checks above only prove this project's own PHP files loaded — they
+// say nothing about whether Composer's vendor/ (and therefore the actual
+// Google API client library) is present. That gap is exactly how a
+// deploy shipped alchemize-server/ with no vendor/ directory for an
+// unknown period: every one of the checks above kept passing while
+// class_exists('Google\Service\Calendar') was false in production,
+// turning every calendar-availability request into a sanitized 503
+// CALENDAR_UNAVAILABLE. Verify the real dependency directly.
+foreach (['Google\\Client', 'Google\\Service\\Calendar'] as $vendorClass) {
+    if (!class_exists($vendorClass)) {
+        echo 'DEPLOYMENT_VENDOR_CLASS_MISSING=' . $vendorClass . PHP_EOL;
+        exit(1);
+    }
+}
+
 echo 'DEPLOYMENT_RUNTIME_OK' . PHP_EOL;
 exit(0);
