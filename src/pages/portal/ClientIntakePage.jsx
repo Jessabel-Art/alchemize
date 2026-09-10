@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LocalizedLink as Link } from "../../i18n/LocalizedLink.jsx";
+import { trackIntakeSubmitted } from "../../services/analytics.js";
 import { portalApi } from "../../services/portal-api.js";
 import "./portal.css";
 import { CheckCircle, Circle } from "lucide-react";
@@ -14,6 +15,23 @@ const humanize = (value) =>
   String(value || "")
     .replaceAll("_", " ")
     .replace(/^./, (character) => character.toUpperCase());
+
+const sanitizeVisibleResponses = (definition, responses = {}) => {
+  if (!definition?.modules?.length) return responses;
+  const fieldMap = definition.modules.flatMap((module) => module.fields);
+  const values = Object.fromEntries(
+    Object.entries(responses).map(([key, entry]) => [key, entry?.value]),
+  );
+  const visibleKeys = new Set(
+    fieldMap
+      .filter((field) => isVisible(field, values))
+      .map((field) => field.key),
+  );
+
+  return Object.fromEntries(
+    Object.entries(responses).filter(([key]) => visibleKeys.has(key)),
+  );
+};
 
 const formatDate = (value) => {
   if (!value) return "";
@@ -649,7 +667,7 @@ export default function ClientIntakePage() {
             applicability: field.required ? "required" : "optional",
           };
       });
-    setResponses(draft);
+    setResponses(sanitizeVisibleResponses(data.definition, draft));
     setSection(0);
     setAttempted([]);
     setConfirmation(null);
@@ -1009,9 +1027,13 @@ export default function ClientIntakePage() {
               key={field.key}
               field={field}
               response={responses[field.key]}
-              onChange={(value) =>
-                setResponses({ ...responses, [field.key]: value })
-              }
+              onChange={(value) => {
+                const nextResponses = sanitizeVisibleResponses(current?.definition, {
+                  ...responses,
+                  [field.key]: value,
+                });
+                setResponses(nextResponses);
+              }}
               profile={current.profile}
               snapshots={current.reference_snapshots}
               onProfileChanged={refreshCurrent}

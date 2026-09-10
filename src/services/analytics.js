@@ -51,11 +51,16 @@ export function resolveAnalyticsRuntime(overrides = {}) {
   const runtimeMeasurementId = String(
     overrides.measurementId ?? import.meta.env?.VITE_ANALYTICS_ID ?? "",
   ).trim();
+  const runtimePathname = String(
+    overrides.pathname ??
+      (typeof window !== "undefined" ? window.location.pathname : "/"),
+  ).trim();
 
   return {
     mode: runtimeMode,
     hostname: runtimeHostname,
     measurementId: runtimeMeasurementId,
+    pathname: runtimePathname,
     enabled:
       overrides.enabled ??
       isAnalyticsAllowed({
@@ -189,6 +194,7 @@ export function trackPageView(
 export function trackEvent(eventName = "", eventParams = {}, runtime = {}) {
   const config = resolveAnalyticsRuntime(runtime);
   if (!config.enabled || !eventName) return null;
+  if (!shouldTrackRoute(config.pathname)) return null;
 
   try {
     installAnalytics(config);
@@ -212,6 +218,19 @@ export function trackSchedulingSuccess(runtime = {}) {
   return trackEvent(
     "appointment_scheduled",
     { booking_type: "public_scheduling" },
+    runtime,
+  );
+}
+
+export function trackResourceDownload(resourceSlug, runtime = {}) {
+  const normalizedSlug = String(resourceSlug || "")
+    .trim()
+    .toLowerCase();
+  if (!normalizedSlug) return null;
+
+  return trackEvent(
+    "resource_download",
+    { resource_slug: normalizedSlug, resource_type: "workbook" },
     runtime,
   );
 }

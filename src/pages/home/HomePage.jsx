@@ -18,6 +18,7 @@ import usePageMetadata from "../../i18n/usePageMetadata.js";
 import { resourceBySlug } from "../resources/resourcesData.js";
 import { resourceBySlugEs } from "../resources/resourcesData.es.js";
 import { getDownloadableResource } from "../resources/downloadableResources.js";
+import { trackResourceDownload } from "../../services/analytics.js";
 import { homeContent } from "./homeContent.js";
 import "./home.css";
 
@@ -47,6 +48,7 @@ function resolveResourceCard(item, language) {
     return {
       to: download.download,
       external: true,
+      resourceSlug: item.id,
       title: item.title,
       category: item.category,
       type: item.type,
@@ -292,7 +294,10 @@ function HomePage() {
             {resourceCards.map((card, index) => {
               const CardTag = card.external ? "a" : Link;
               const linkProps = card.external
-                ? { href: card.to }
+                ? {
+                    href: card.to,
+                    onClick: () => trackResourceDownload(card.resourceSlug),
+                  }
                 : { to: card.to };
               const Icon = card.icon;
               return (

@@ -34,6 +34,7 @@ import {
   staffOptions,
 } from "../../../js/data/admin-store.js";
 import { getDocumentTypeOptionsForEngagement } from "../../data/documentTypeCatalog.js";
+import { contactServiceGroups } from "../services/serviceCatalog.js";
 import { businessContact, contactRouting } from "../../data/contactInfo.js";
 import InvoiceDocument from "../../components/invoices/InvoiceDocument.jsx";
 import {
@@ -1231,7 +1232,7 @@ function ClientManagementPage() {
     phone: "",
     audience: "Individual",
     businessName: "",
-    serviceInterest: "Business Advisory",
+    serviceInterest: "business-advisory",
     source: "Manual entry",
     message: "",
   });
@@ -1602,7 +1603,11 @@ function ClientManagementPage() {
         ? selectedClient.authorizedUsers.join(", ")
         : selectedClient.authorizedUsers || "",
     });
-  }, [selectedClient, recordVersion]);
+    // adminStore.getSnapshot() deep-clones on every call, so selectedClient
+    // is a new object reference each render; depending on it directly loops
+    // this effect forever. Depend on the stable client id instead.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedClient?.id, recordVersion]);
 
   const handleAddNote = () => {
     if (!selectedClient) return;
@@ -1838,7 +1843,7 @@ function ClientManagementPage() {
         phone: "",
         audience: "Individual",
         businessName: "",
-        serviceInterest: "Business Advisory",
+        serviceInterest: "business-advisory",
         source: "Manual entry",
         message: "",
       });
@@ -3443,10 +3448,14 @@ function ClientManagementPage() {
                           }))
                         }
                       >
-                        {Object.keys(serviceStageCatalog).map((service) => (
-                          <option key={service} value={service}>
-                            {service}
-                          </option>
+                        {contactServiceGroups.map((group) => (
+                          <optgroup key={group.audience} label={group.label}>
+                            {group.items.map((item) => (
+                              <option key={item.value} value={item.value}>
+                                {item.label}
+                              </option>
+                            ))}
+                          </optgroup>
                         ))}
                       </select>
                     </label>
