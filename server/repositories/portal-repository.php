@@ -280,6 +280,52 @@ final class AlchemizePortalRepository
         return $statement->fetchAll();
     }
 
+    public function getInvoiceDetail(int $clientId, string $invoicePublicId): ?array
+    {
+        $statement = $this->database->prepare(
+            'SELECT i.id AS internal_id, i.public_id AS id, i.invoice_number, i.invoice_date, i.due_date,
+                    i.status, i.currency, i.subtotal, i.adjustment_total,
+                    i.credit_deposit_total, i.paid_total, i.outstanding_balance,
+                    i.client_facing_notes, i.issued_at,
+                    e.public_id AS engagement_id, e.title AS engagement_title,
+                    c.display_name AS client_display_name, c.primary_email AS client_email,
+                    c.primary_phone AS client_phone
+             FROM invoices i
+             LEFT JOIN engagements e ON e.id = i.engagement_id AND e.client_id = i.client_id
+             LEFT JOIN clients c ON c.id = i.client_id
+             WHERE i.client_id = :client_id
+               AND i.public_id = :invoice_id
+               AND i.issued_at IS NOT NULL
+               AND i.status NOT IN (\'draft\', \'cancelled\', \'voided\')
+             LIMIT 1'
+        );
+        $statement->execute(['client_id' => $clientId, 'invoice_id' => $invoicePublicId]);
+        $invoice = $statement->fetch();
+        if ($invoice === false) return null;
+        $invoiceInternalId = (int) $invoice['internal_id'];
+        unset($invoice['internal_id']);
+
+        $lineItemsStatement = $this->database->prepare(
+            'SELECT public_id AS id, description_snapshot AS description, quantity, unit_price, amount
+             FROM invoice_line_items
+             WHERE invoice_id = :invoice_id
+             ORDER BY id ASC'
+        );
+        $lineItemsStatement->execute(['invoice_id' => $invoiceInternalId]);
+        $invoice['line_items'] = $lineItemsStatement->fetchAll();
+
+        $paymentsStatement = $this->database->prepare(
+            'SELECT public_id AS id, payment_date, amount, payment_method, receipt_url
+             FROM payments
+             WHERE invoice_id = :invoice_id AND client_id = :client_id
+             ORDER BY payment_date DESC, created_at DESC'
+        );
+        $paymentsStatement->execute(['invoice_id' => $invoiceInternalId, 'client_id' => $clientId]);
+        $invoice['payments'] = $paymentsStatement->fetchAll();
+
+        return $invoice;
+    }
+
     public function getProfile(int $clientId): ?array
     {
         $statement = $this->database->prepare(

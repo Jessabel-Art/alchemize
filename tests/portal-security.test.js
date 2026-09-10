@@ -204,7 +204,10 @@ test("all portal record families are scoped by the resolved client", () => {
   }
   assert.match(repository, /t\.visibility IN \(\\'client\\', \\'both\\'\)/);
   assert.match(repository, /d\.visibility IN \(\\'client\\', \\'shared\\'\)/);
-  assert.match(repository, /a\.visibility IN \(\\'client\\', \\'both\\'\)/);
+  assert.match(
+    repository,
+    /a\.visibility IN \(\\'admin\\', \\'client\\', \\'both\\'\)/,
+  );
   assert.match(repository, /visibility IN \(\\'client\\', \\'both\\'\)/);
 });
 

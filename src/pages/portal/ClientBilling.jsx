@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import {
   FileText,
   Receipt,
@@ -8,6 +9,9 @@ import {
 } from "lucide-react";
 import { portalApi } from "../../services/portal-api.js";
 import "./client-billing.css";
+
+const invoiceDetailPath = (invoiceId) =>
+  `/client-portal/billing/invoices/${encodeURIComponent(invoiceId)}`;
 
 const label = (value) =>
   String(value || "")
@@ -243,13 +247,12 @@ function InvoiceCard({ item, busy, run }) {
           >
             Pay securely
           </ActionButton>
-          <button
-            type="button"
+          <Link
             className="portal-action-button"
-            onClick={() => window.print()}
+            to={invoiceDetailPath(item.id)}
           >
             View invoice
-          </button>
+          </Link>
           <a
             className="portal-action-button"
             href={contactBillingHref(item.invoice_number)}
@@ -297,13 +300,12 @@ function PaymentHistory({ payments, total }) {
             <tr key={item.id}>
               <td data-label="Date">{formatDate(item.payment_date)}</td>
               <td data-label="Invoice">
-                <button
-                  type="button"
+                <Link
                   className="bill-invoice-link"
-                  onClick={() => window.print()}
+                  to={invoiceDetailPath(item.invoice_id)}
                 >
                   {item.invoice_number}
-                </button>
+                </Link>
               </td>
               <td data-label="Amount">{formatCurrency(item.amount)}</td>
               <td data-label="Method">{label(item.payment_method)}</td>

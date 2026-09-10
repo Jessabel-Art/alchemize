@@ -153,6 +153,15 @@ final class AlchemizePortalService
         ];
     }
 
+    public function invoiceDetail(array $access, string $invoiceId): array
+    {
+        $invoice = $this->repository->getInvoiceDetail((int) $access['client_id'], $invoiceId);
+        if ($invoice === null) {
+            throw new AlchemizeRequestException(404, 'NOT_FOUND', 'The invoice was not found.');
+        }
+        return ['invoice' => $invoice];
+    }
+
     public function profile(array $access): array
     {
         return [

@@ -1,0 +1,21 @@
+/* The invoice document itself (fonts, layout, table, totals, footer) is
+   fully styled by the shared src/components/invoices/invoice-document.css.
+   This file only gives it an on-screen "card" presentation consistent
+   with the rest of the Client Portal; print output resets back to a
+   plain full-bleed page. */
+.client-invoice-detail-page .invoice-print-sheet {
+  margin-top: 4px;
+  padding: 32px 36px;
+  background: var(--white);
+  border: 1px solid var(--client-line);
+  border-radius: var(--radius-lg);
+}
+
+@media print {
+  .client-invoice-detail-page .invoice-print-sheet {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+  }
+}

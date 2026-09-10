@@ -42,6 +42,7 @@ import {
 import AdminSettingsPage from "../pages/admin/AdminSettingsPage.jsx";
 import ClientPortalPage from "../pages/portal/ClientPortalPage.jsx";
 import ClientPortalDashboardPage from "../pages/portal/ClientPortalDashboardPage.jsx";
+import ClientInvoiceDetail from "../pages/portal/ClientInvoiceDetail.jsx";
 import ServiceCategoryPage from "../pages/services/ServiceCategoryPage.jsx";
 import ServiceDetailPage from "../pages/services/ServiceDetailPage.jsx";
 import PublicSchedulingPage from "../pages/appointments/PublicSchedulingPage.jsx";
@@ -325,6 +326,10 @@ function App() {
           <Route path="appointments" element={<ClientPortalPage />} />
           <Route path="messages" element={<ClientPortalPage />} />
           <Route path="billing" element={<ClientPortalPage />} />
+          <Route
+            path="billing/invoices/:invoiceId"
+            element={<ClientInvoiceDetail />}
+          />
           <Route path="profile" element={<ClientPortalPage />} />
           <Route
             path="*"

@@ -34,6 +34,7 @@ import {
 } from "../../../js/data/admin-store.js";
 import { getDocumentTypeOptionsForEngagement } from "../../data/documentTypeCatalog.js";
 import { businessContact, contactRouting } from "../../data/contactInfo.js";
+import InvoiceDocument from "../../components/invoices/InvoiceDocument.jsx";
 import {
   getInvoiceRemainingBalance,
   getOpenInvoiceBalance,
@@ -10961,6 +10962,10 @@ function InvoiceDetailPage() {
     invoiceSnapshot.notes || businessSettings?.invoice_footer || "";
 
   const printInvoice = {
+    invoiceNumber: invoiceSnapshot.invoiceNumber || invoiceSnapshot.id,
+    invoiceDate: invoiceSnapshot.invoiceDate,
+    dueDate: invoiceSnapshot.dueAt,
+    status: effectiveStatus,
     lineItems: invoiceSnapshot.lineItems || [],
     subtotal: totals.subtotal,
     adjustments: totals.adjustments,
@@ -10984,164 +10989,7 @@ function InvoiceDetailPage() {
 
   return (
     <div className="admin-module invoice-print-root billing-module invoice-detail-module">
-      <div className="invoice-print-sheet" aria-label="Invoice print view">
-        <div className="invoice-print-page">
-          <header className="invoice-print-header">
-            <div className="invoice-print-brand">
-              <img
-                src="/assets/logos/alchemize-logo-dark.png"
-                alt="Alchemize Business Services"
-                className="invoice-print-logo"
-              />
-              <p className="invoice-print-tagline">
-                Transforming complexity into opportunity.
-              </p>
-            </div>
-            <div className="invoice-print-title-block">
-              <h2 className="invoice-print-title">Invoice</h2>
-              <dl className="invoice-print-meta">
-                <div>
-                  <dt>Invoice #</dt>
-                  <dd>{invoiceSnapshot.invoiceNumber || invoiceSnapshot.id}</dd>
-                </div>
-                <div>
-                  <dt>Issue date</dt>
-                  <dd>{formatDate(invoiceSnapshot.invoiceDate)}</dd>
-                </div>
-                <div>
-                  <dt>Due date</dt>
-                  <dd>{formatDate(invoiceSnapshot.dueAt)}</dd>
-                </div>
-                {printInvoice.paymentTermsLabel ? (
-                  <div>
-                    <dt>Terms</dt>
-                    <dd>{printInvoice.paymentTermsLabel}</dd>
-                  </div>
-                ) : null}
-                <div>
-                  <dt>Status</dt>
-                  <dd>
-                    <span
-                      className={`invoice-print-status tone-${statusTone[effectiveStatus] || "neutral"}`}
-                    >
-                      {effectiveStatus}
-                    </span>
-                  </dd>
-                </div>
-              </dl>
-            </div>
-          </header>
-
-          <section className="invoice-print-parties">
-            <div>
-              <h3>Bill To</h3>
-              <p className="invoice-print-party-name">
-                {printInvoice.clientName}
-              </p>
-              {printInvoice.billingMeta.map((line) => (
-                <p key={line}>{line}</p>
-              ))}
-            </div>
-            <div>
-              <h3>From</h3>
-              <p className="invoice-print-party-name">
-                {printInvoice.businessName}
-              </p>
-              <p>{printInvoice.businessEmail}</p>
-              <p>{printInvoice.businessWebsite}</p>
-              <p>{printInvoice.businessPhone}</p>
-            </div>
-          </section>
-
-          <table className="invoice-print-table">
-            <thead>
-              <tr>
-                <th>Description</th>
-                <th>Qty</th>
-                <th>Rate</th>
-                <th>Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              {printInvoice.lineItems.map((lineItem) => (
-                <tr key={lineItem.id}>
-                  <td>{lineItem.description || "Custom invoice line"}</td>
-                  <td>{lineItem.quantity || 1}</td>
-                  <td>{formatInvoiceCurrency(lineItem.unitPrice || 0)}</td>
-                  <td>{formatInvoiceCurrency(lineItem.amount || 0)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <div className="invoice-print-summary">
-            <div className="invoice-print-totals">
-              <div>
-                <span>Subtotal</span>
-                <strong>{formatInvoiceCurrency(printInvoice.subtotal)}</strong>
-              </div>
-              <div>
-                <span>Adjustments</span>
-                <strong>
-                  {formatInvoiceCurrency(printInvoice.adjustments)}
-                </strong>
-              </div>
-              <div>
-                <span>Credits / Deposits</span>
-                <strong>
-                  {printInvoice.creditsApplied > 0 ? "-" : ""}
-                  {formatInvoiceCurrency(printInvoice.creditsApplied)}
-                </strong>
-              </div>
-              {printInvoice.total !== printInvoice.subtotal ? (
-                <div>
-                  <span>Invoice Total</span>
-                  <strong>{formatInvoiceCurrency(printInvoice.total)}</strong>
-                </div>
-              ) : null}
-              <div>
-                <span>Payments</span>
-                <strong>
-                  {printInvoice.paidAmount > 0 ? "-" : ""}
-                  {formatInvoiceCurrency(printInvoice.paidAmount)}
-                </strong>
-              </div>
-              <div className="invoice-print-balance">
-                <span>Balance Due</span>
-                <strong>{formatInvoiceCurrency(printInvoice.balance)}</strong>
-              </div>
-            </div>
-          </div>
-
-          <section className="invoice-print-lower">
-            <div>
-              <h3>Payment Information</h3>
-              <p>
-                Please contact {printInvoice.businessName} at{" "}
-                {printInvoice.businessEmail} for available payment options for
-                this invoice.
-              </p>
-            </div>
-            {printInvoice.clientFacingNote ? (
-              <div>
-                <h3>Notes</h3>
-                <p>{printInvoice.clientFacingNote}</p>
-              </div>
-            ) : null}
-          </section>
-
-          <footer className="invoice-print-footer">
-            <div className="invoice-print-footer-contact">
-              <strong>{printInvoice.businessName}</strong>
-              <span>{printInvoice.businessEmail}</span>
-              <span>{printInvoice.businessWebsite}</span>
-            </div>
-            <p className="invoice-print-footer-statement">
-              Transforming complexity into opportunity.
-            </p>
-          </footer>
-        </div>
-      </div>
+      <InvoiceDocument invoice={printInvoice} />
 
       <AdminPageHeader
         eyebrow="Billing / Invoice"
