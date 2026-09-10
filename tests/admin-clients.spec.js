@@ -106,3 +106,187 @@ test("Add Record Requested Service dropdown reflects the full canonical service 
     requestedServiceSelect.locator('optgroup[label="Business Services"]'),
   ).toHaveCount(1);
 });
+
+test("Client Management loads clients and prospects without the API error banner", async ({
+  page,
+}) => {
+  await mockAdmin(page);
+  await page.goto("/admin/clients/");
+  await expect(page.locator(".portal-page-header h1")).toBeVisible();
+  await expect(page.getByText("North Harbor Studio").first()).toBeVisible();
+  await expect(page.getByText(/temporarily unavailable/i)).toHaveCount(0);
+});
+
+test("Prospect -> View/Edit -> Convert to Client lifecycle persists data and creates no duplicate", async ({
+  page,
+}) => {
+  // A stateful mock: creating, editing, and converting a prospect must each
+  // be reflected in subsequent list refetches, exactly like the real API.
+  let nextLeadId = 50;
+  let nextClientId = 90;
+  const leadRows = [];
+  const clientRows = [...records.clients];
+
+  await page.route("**/alchemize-api.php?*", async (route) => {
+    const url = new URL(route.request().url());
+    const key = url.searchParams.get("route");
+    const method = route.request().method();
+
+    if (key === "auth/session") {
+      return route.fulfill({
+        json: {
+          data: {
+            authenticated: true,
+            user: { user_id: 1, role_slug: "owner-admin" },
+            csrf_token: "ui-test-token",
+          },
+        },
+      });
+    }
+    if (key === "portal-admin/attention")
+      return route.fulfill({ json: { data: { items: [] } } });
+    if (key === "portal-admin/messages")
+      return route.fulfill({ json: { data: { items: [] } } });
+    if (key && key.startsWith("portal-admin/access-grants")) {
+      return route.fulfill({ json: { data: { items: [] } } });
+    }
+
+    if (key === "leads" && method === "POST") {
+      const body = route.request().postDataJSON();
+      const id = nextLeadId++;
+      leadRows.push({
+        id,
+        public_id: `lead-public-${id}`,
+        full_name: body.full_name,
+        business_name: body.business_name ?? null,
+        email: body.email,
+        phone: body.phone ?? null,
+        audience: body.audience,
+        service_key: body.service_key ?? null,
+        message: body.message,
+        status: "new",
+        source: "admin_manual_entry",
+        created_at: "2026-09-10 10:00:00",
+        updated_at: "2026-09-10 10:00:00",
+        client_id: null,
+        assigned_owner: null,
+        next_action: null,
+      });
+      return route.fulfill({ json: { data: { id } }, status: 201 });
+    }
+    if (key === "leads" && method === "GET") {
+      return route.fulfill({ json: { data: leadRows } });
+    }
+    const leadIdMatch = /^leads\/(\d+)$/.exec(key || "");
+    if (leadIdMatch && method === "PUT") {
+      const id = Number(leadIdMatch[1]);
+      const body = route.request().postDataJSON();
+      const lead = leadRows.find((row) => row.id === id);
+      Object.assign(lead, body, { updated_at: "2026-09-10 11:00:00" });
+      return route.fulfill({ json: { data: { ...lead } } });
+    }
+    if (leadIdMatch && method === "GET") {
+      const id = Number(leadIdMatch[1]);
+      const lead = leadRows.find((row) => row.id === id);
+      return route.fulfill({
+        json: {
+          data: { ...lead, contact_attempts: [], interests: [], notes: [] },
+        },
+      });
+    }
+    const convertMatch = /^leads\/(\d+)\/convert$/.exec(key || "");
+    if (convertMatch && method === "POST") {
+      const id = Number(convertMatch[1]);
+      const lead = leadRows.find((row) => row.id === id);
+      const body = route.request().postDataJSON();
+      const clientId = nextClientId++;
+      clientRows.push({
+        id: clientId,
+        public_id: `client-public-${clientId}`,
+        display_name: lead.full_name,
+        client_type: body.client_type || "business",
+        legal_name: body.legal_name ?? lead.business_name ?? null,
+        primary_email: lead.email,
+        primary_phone: lead.phone,
+        status: "active",
+        portal_status: "pending",
+        updated_at: "2026-09-10 11:05:00",
+      });
+      lead.status = "converted";
+      lead.client_id = clientId;
+      return route.fulfill({
+        json: {
+          data: {
+            converted_lead_public_id: lead.public_id,
+            new_client_id: clientId,
+            new_client_public_id: `client-public-${clientId}`,
+            status: "converted",
+          },
+        },
+      });
+    }
+    if (key === "clients" && method === "GET") {
+      return route.fulfill({ json: { data: clientRows } });
+    }
+
+    if (records[key]) return route.fulfill({ json: { data: records[key] } });
+    return route.fulfill({ json: { data: [] } });
+  });
+
+  await page.goto("/admin/clients/");
+  await page.waitForFunction(() => Boolean(window.adminStore));
+
+  // Create the prospect with a real requested service and business name.
+  await page
+    .getByRole("button", { name: "+ Client or Prospect", exact: true })
+    .click();
+  await page.getByLabel("Name", { exact: true }).fill("Jordan Rivera");
+  await page.getByLabel("Email", { exact: true }).fill("jordan@example.test");
+  await page
+    .getByLabel("Business name", { exact: true })
+    .fill("Rivera Consulting");
+  await page
+    .locator("label", { hasText: "Requested service" })
+    .locator("select")
+    .selectOption("business-digital");
+  await page.getByRole("button", { name: "Save prospect" }).click();
+  await expect(page.getByText("Prospect saved.")).toBeVisible();
+
+  expect(leadRows).toHaveLength(1);
+  expect(leadRows[0].service_key).toBe("business-digital");
+  expect(leadRows[0].business_name).toBe("Rivera Consulting");
+
+  // Open the prospect (View/Edit Prospect).
+  await page.getByRole("link", { name: "Jordan Rivera" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Jordan Rivera" }),
+  ).toBeVisible();
+
+  // Edit persists.
+  await page
+    .locator("label", { hasText: "Name" })
+    .first()
+    .locator("input")
+    .fill("Jordan A. Rivera");
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect(page.getByText("Prospect updated.")).toBeVisible();
+  expect(leadRows[0].full_name).toBe("Jordan A. Rivera");
+
+  // Convert to Client -> complete client-specific fields -> Client.
+  await page.getByRole("button", { name: "Convert to Client" }).click();
+  await page.getByRole("button", { name: "Confirm conversion" }).click();
+
+  await expect(page).toHaveURL(/\/admin\/clients\/90\/?$/);
+  await expect(
+    page.getByRole("heading", { name: "Jordan A. Rivera" }),
+  ).toBeVisible();
+
+  // No duplicate person: exactly one client exists, linked to the original
+  // prospect, and the prospect itself is marked converted (not deleted).
+  expect(clientRows).toHaveLength(2);
+  expect(leadRows[0].status).toBe("converted");
+  expect(leadRows[0].client_id).toBe(90);
+  const convertedClient = clientRows.find((row) => row.id === 90);
+  expect(convertedClient.primary_email).toBe("jordan@example.test");
+  expect(convertedClient.legal_name).toBe("Rivera Consulting");
+});

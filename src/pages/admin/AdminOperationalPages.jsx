@@ -186,6 +186,40 @@ const toTitleCase = (value) =>
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
 
+const audienceForServiceKey = (serviceKey) => {
+  const group = contactServiceGroups.find((entry) =>
+    entry.items.some((item) => item.value === serviceKey),
+  );
+  return group?.audience === "business" ? "Business" : "Individual";
+};
+
+// Mirrors AdminLayout.jsx's mapClient() field-for-field, so a client
+// created or converted after the initial admin data load lands in
+// adminStore in exactly the same shape as clients loaded at mount.
+const mapClientRow = (row) => ({
+  id: String(row.id),
+  displayName: row.display_name,
+  clientType: toTitleCase((row.client_type || "").replaceAll("_", " ")),
+  businessName: row.legal_name || "",
+  email: row.primary_email || "",
+  phone: row.primary_phone || "",
+  preferredContactMethod: toTitleCase(
+    (row.preferred_contact_method || "email").replaceAll("_", " "),
+  ),
+  status: toTitleCase((row.status || "").replaceAll("_", " ")),
+  portalStatus: toTitleCase((row.portal_status || "").replaceAll("_", " ")),
+  portalUserStatus: row.portal_user_status,
+  portalPasswordSet: Boolean(Number(row.portal_password_set)),
+  driveSyncStatus: toTitleCase(
+    (row.drive_sync_status || "not_configured").replaceAll("_", " "),
+  ),
+  stripeSyncStatus: toTitleCase(
+    (row.stripe_sync_status || "not_configured").replaceAll("_", " "),
+  ),
+  lastActivity: row.updated_at || row.created_at,
+  createdAt: row.created_at,
+});
+
 const normalizeLeadStatus = (value) => {
   if (!value) return "New";
 
@@ -1209,7 +1243,7 @@ function LeadManagementPage() {
 
 function ClientManagementPage() {
   const navigate = useNavigate();
-  const { clientId } = useParams();
+  const { clientId, leadId } = useParams();
   const snapshot = adminStore.getSnapshot();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
@@ -1238,6 +1272,20 @@ function ClientManagementPage() {
   });
   const [clientFormError, setClientFormError] = useState("");
   const [clientSavedMessage, setClientSavedMessage] = useState("");
+  const [prospectDraft, setProspectDraft] = useState(null);
+  const [prospectDetail, setProspectDetail] = useState(null);
+  const [prospectError, setProspectError] = useState("");
+  const [prospectSavedMessage, setProspectSavedMessage] = useState("");
+  const [prospectSaving, setProspectSaving] = useState(false);
+  const [isConvertOpen, setIsConvertOpen] = useState(false);
+  const [convertForm, setConvertForm] = useState({
+    client_type: "individual",
+    legal_name: "",
+    preferred_contact_method: "email",
+    language_preference: "en",
+  });
+  const [convertError, setConvertError] = useState("");
+  const [converting, setConverting] = useState(false);
   const [printMode, setPrintMode] = useState(null);
   const [communicationThreads, setCommunicationThreads] = useState([]);
   const [portalActionMessage, setPortalActionMessage] = useState("");
@@ -1330,6 +1378,10 @@ function ClientManagementPage() {
 
   const selectedClient = clientId
     ? snapshot.clients.find((client) => client.id === clientId) || null
+    : null;
+
+  const selectedLead = leadId
+    ? snapshot.leads.find((lead) => lead.id === leadId) || null
     : null;
 
   const serviceOptions = useMemo(
@@ -1609,6 +1661,57 @@ function ClientManagementPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedClient?.id, recordVersion]);
 
+  useEffect(() => {
+    if (!selectedLead) {
+      setProspectDraft(null);
+      return;
+    }
+
+    setProspectDraft({
+      full_name: selectedLead.name || "",
+      business_name: selectedLead.businessName || "",
+      email: selectedLead.email || "",
+      phone: selectedLead.phone || "",
+      audience: (selectedLead.audience || "Individual").toLowerCase(),
+      service_key:
+        selectedLead.rawServiceKey ||
+        ((selectedLead.audience || "").toLowerCase() === "business"
+          ? "business-advisory"
+          : "individual-tax"),
+      message: selectedLead.message || "",
+    });
+    setConvertForm((current) => ({
+      ...current,
+      client_type:
+        (selectedLead.audience || "").toLowerCase() === "business"
+          ? "business"
+          : "individual",
+      legal_name: selectedLead.businessName || "",
+    }));
+    // See the selectedClient effect above: selectedLead is a fresh object
+    // reference on every render, so depend on its stable id instead.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedLead?.id, recordVersion]);
+
+  useEffect(() => {
+    if (!leadId) {
+      setProspectDetail(null);
+      return;
+    }
+    let active = true;
+    leadApi
+      .get(leadId)
+      .then((data) => {
+        if (active) setProspectDetail(data);
+      })
+      .catch(() => {
+        if (active) setProspectDetail(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [leadId, recordVersion]);
+
   const handleAddNote = () => {
     if (!selectedClient) return;
     const content = noteDraft.trim();
@@ -1824,10 +1927,11 @@ function ClientManagementPage() {
     try {
       await leadApi.create({
         full_name: trimmedName,
+        business_name: draftLead.businessName.trim() || null,
         email: draftLead.email.trim(),
         phone: draftLead.phone.trim() || null,
         audience: (draftLead.audience || "Individual").toLowerCase(),
-        service_key: null,
+        service_key: draftLead.serviceInterest || null,
         message:
           draftLead.message.trim() ||
           `Manual prospect created from admin entry for ${trimmedName}.`,
@@ -1835,6 +1939,7 @@ function ClientManagementPage() {
         language_preference: "en",
         website: "",
       });
+      await refreshClientsAndLeads();
       setClientFormError("");
       setClientSavedMessage("Prospect saved.");
       setDraftLead({
@@ -1852,6 +1957,89 @@ function ClientManagementPage() {
       setRecordVersion((current) => current + 1);
     } catch (error) {
       setClientFormError(error.message || "Unable to save the prospect.");
+    }
+  };
+
+  const refreshClientsAndLeads = async () => {
+    const [clientRows, leadRows] = await Promise.all([
+      clientApi.list(),
+      leadApi.list(),
+    ]);
+    adminStore.replaceCollections({
+      clients: (clientRows || []).map(mapClientRow),
+      leads: (leadRows || []).map((row) => ({
+        id: String(row.id),
+        clientId: row.client_id ? String(row.client_id) : null,
+        name: row.full_name,
+        businessName: row.business_name || "",
+        email: row.email || "",
+        phone: row.phone || "",
+        audience: toTitleCase((row.audience || "").replaceAll("_", " ")),
+        rawServiceKey: row.service_key || "",
+        serviceInterest: row.service_key
+          ? toTitleCase(row.service_key.replaceAll("_", " "))
+          : "General consultation",
+        source: toTitleCase(
+          (row.source || "website_contact").replaceAll("_", " "),
+        ),
+        status: toTitleCase((row.status || "").replaceAll("_", " ")),
+        message: row.message || "",
+        receivedAt: row.created_at,
+        lastContact: row.updated_at,
+        assignedTo: row.assigned_owner || "Owner / Administrator",
+        nextAction: row.next_action || "Review inquiry",
+      })),
+    });
+  };
+
+  const handleSaveProspect = async () => {
+    if (!selectedLead || !prospectDraft) return;
+    const trimmedName = prospectDraft.full_name.trim();
+    if (!trimmedName || !prospectDraft.email.trim()) {
+      setProspectError("Name and email are required.");
+      return;
+    }
+
+    setProspectSaving(true);
+    setProspectError("");
+    try {
+      await leadApi.update(selectedLead.id, {
+        full_name: trimmedName,
+        business_name: prospectDraft.business_name.trim() || null,
+        email: prospectDraft.email.trim(),
+        phone: prospectDraft.phone.trim() || null,
+        audience: prospectDraft.audience,
+        service_key: prospectDraft.service_key || null,
+        message: prospectDraft.message.trim(),
+      });
+      await refreshClientsAndLeads();
+      setProspectSavedMessage("Prospect updated.");
+      setRecordVersion((current) => current + 1);
+    } catch (error) {
+      setProspectError(error.message || "Unable to save this prospect.");
+    } finally {
+      setProspectSaving(false);
+    }
+  };
+
+  const handleConvertProspect = async () => {
+    if (!selectedLead) return;
+    setConverting(true);
+    setConvertError("");
+    try {
+      const result = await leadApi.convert(selectedLead.id, {
+        client_type: convertForm.client_type,
+        legal_name: convertForm.legal_name.trim() || null,
+        preferred_contact_method: convertForm.preferred_contact_method,
+        language_preference: convertForm.language_preference,
+      });
+      await refreshClientsAndLeads();
+      setIsConvertOpen(false);
+      navigate(`/admin/clients/${result.new_client_id}`);
+    } catch (error) {
+      setConvertError(error.message || "Unable to convert this prospect.");
+    } finally {
+      setConverting(false);
     }
   };
 
@@ -3050,6 +3238,364 @@ function ClientManagementPage() {
     );
   };
 
+  const renderProspectDetail = () => {
+    if (!selectedLead || !prospectDraft) return null;
+
+    const isConverted = selectedLead.status === "Converted";
+
+    return (
+      <div className="record-shell-core admin-module">
+        <header className="client-workspace-header">
+          <div className="client-workspace-back">
+            <Link to="/admin/clients">← Back to client roster</Link>
+          </div>
+          <div className="client-workspace-title-wrap">
+            <span className="section-kicker">Prospect workspace</span>
+            <h1>{selectedLead.name}</h1>
+          </div>
+          <div className="admin-header-actions">
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => navigate("/admin/clients")}
+            >
+              Roster
+            </button>
+            {isConverted && selectedLead.clientId ? (
+              <Link
+                className="primary-button"
+                to={`/admin/clients/${selectedLead.clientId}`}
+              >
+                View converted client
+              </Link>
+            ) : !isConverted ? (
+              <button
+                type="button"
+                className="primary-button"
+                onClick={() => {
+                  setConvertError("");
+                  setIsConvertOpen(true);
+                }}
+              >
+                Convert to Client
+              </button>
+            ) : null}
+          </div>
+        </header>
+
+        {prospectSavedMessage ? (
+          <div className="admin-toast success">{prospectSavedMessage}</div>
+        ) : null}
+        {prospectError ? (
+          <div className="admin-toast error">{prospectError}</div>
+        ) : null}
+        {isConverted ? (
+          <p className="admin-note">
+            This prospect has already been converted to a client. Fields below
+            are read-only.
+          </p>
+        ) : null}
+
+        <div className="detail-block client-detail-editor">
+          <h3>Prospect details</h3>
+          <div className="client-detail-editor-grid">
+            <label>
+              <span>Name</span>
+              <input
+                type="text"
+                value={prospectDraft.full_name}
+                disabled={isConverted}
+                onChange={(event) =>
+                  setProspectDraft((current) => ({
+                    ...current,
+                    full_name: event.target.value,
+                  }))
+                }
+              />
+            </label>
+            <label>
+              <span>Business name</span>
+              <input
+                type="text"
+                value={prospectDraft.business_name}
+                disabled={isConverted}
+                onChange={(event) =>
+                  setProspectDraft((current) => ({
+                    ...current,
+                    business_name: event.target.value,
+                  }))
+                }
+              />
+            </label>
+            <label>
+              <span>Email</span>
+              <input
+                type="email"
+                value={prospectDraft.email}
+                disabled={isConverted}
+                onChange={(event) =>
+                  setProspectDraft((current) => ({
+                    ...current,
+                    email: event.target.value,
+                  }))
+                }
+              />
+            </label>
+            <label>
+              <span>Phone</span>
+              <input
+                type="tel"
+                value={prospectDraft.phone}
+                disabled={isConverted}
+                onChange={(event) =>
+                  setProspectDraft((current) => ({
+                    ...current,
+                    phone: event.target.value,
+                  }))
+                }
+              />
+            </label>
+            <label>
+              <span>Type</span>
+              <select
+                value={prospectDraft.audience}
+                disabled={isConverted}
+                onChange={(event) =>
+                  setProspectDraft((current) => ({
+                    ...current,
+                    audience: event.target.value,
+                  }))
+                }
+              >
+                <option value="individual">Individual</option>
+                <option value="business">Business</option>
+              </select>
+            </label>
+            <label>
+              <span>Requested service</span>
+              <select
+                value={prospectDraft.service_key}
+                disabled={isConverted}
+                onChange={(event) =>
+                  setProspectDraft((current) => ({
+                    ...current,
+                    service_key: event.target.value,
+                    audience: audienceForServiceKey(
+                      event.target.value,
+                    ).toLowerCase(),
+                  }))
+                }
+              >
+                {contactServiceGroups.map((group) => (
+                  <optgroup key={group.audience} label={group.label}>
+                    {group.items.map((item) => (
+                      <option key={item.value} value={item.value}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            </label>
+            <label className="full-span">
+              <span>Inquiry</span>
+              <textarea
+                rows="4"
+                value={prospectDraft.message}
+                disabled={isConverted}
+                onChange={(event) =>
+                  setProspectDraft((current) => ({
+                    ...current,
+                    message: event.target.value,
+                  }))
+                }
+              />
+            </label>
+          </div>
+          {!isConverted ? (
+            <div className="admin-header-actions">
+              <button
+                type="button"
+                className="primary-button"
+                onClick={handleSaveProspect}
+                disabled={prospectSaving}
+              >
+                {prospectSaving ? "Saving…" : "Save changes"}
+              </button>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="detail-block">
+          <h3>History &amp; relationship</h3>
+          <dl>
+            <div>
+              <dt>Source</dt>
+              <dd>{selectedLead.source || "—"}</dd>
+            </div>
+            <div>
+              <dt>Received</dt>
+              <dd>
+                {selectedLead.receivedAt
+                  ? formatDate(selectedLead.receivedAt)
+                  : "—"}
+              </dd>
+            </div>
+          </dl>
+          {prospectDetail?.contact_attempts?.length ? (
+            <>
+              <h4>Contact attempts</h4>
+              <ul className="detail-list">
+                {prospectDetail.contact_attempts.map((attempt) => (
+                  <li key={attempt.id}>
+                    <div className="note-header">
+                      <strong>{attempt.method}</strong>
+                      <span>{formatDate(attempt.contacted_at)}</span>
+                    </div>
+                    <p>{attempt.outcome}</p>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <p>No contact attempts recorded for this prospect.</p>
+          )}
+          {prospectDetail?.notes?.length ? (
+            <>
+              <h4>Notes</h4>
+              <ul className="detail-list">
+                {prospectDetail.notes.map((note) => (
+                  <li key={note.id}>
+                    <div className="note-header">
+                      <span>{formatDate(note.created_at)}</span>
+                    </div>
+                    <p>{note.note_body}</p>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : null}
+        </div>
+
+        {isConvertOpen ? (
+          <div
+            className="admin-detail-overlay"
+            onClick={() => setIsConvertOpen(false)}
+          >
+            <aside
+              className="admin-detail-drawer"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="admin-detail-header">
+                <h2>Convert to Client</h2>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => setIsConvertOpen(false)}
+                >
+                  Close
+                </button>
+              </div>
+              <div className="admin-detail-body">
+                <p>
+                  Name, email, phone, requested service, and inquiry history
+                  carry over automatically. Complete the remaining
+                  client-specific fields below.
+                </p>
+                <div className="client-detail-editor-grid">
+                  <label>
+                    <span>Client type</span>
+                    <select
+                      value={convertForm.client_type}
+                      onChange={(event) =>
+                        setConvertForm((current) => ({
+                          ...current,
+                          client_type: event.target.value,
+                        }))
+                      }
+                    >
+                      <option value="individual">Individual</option>
+                      <option value="business">Business</option>
+                      <option value="organization">Organization</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>Business / legal name</span>
+                    <input
+                      type="text"
+                      value={convertForm.legal_name}
+                      onChange={(event) =>
+                        setConvertForm((current) => ({
+                          ...current,
+                          legal_name: event.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                  <label>
+                    <span>Preferred contact method</span>
+                    <select
+                      value={convertForm.preferred_contact_method}
+                      onChange={(event) =>
+                        setConvertForm((current) => ({
+                          ...current,
+                          preferred_contact_method: event.target.value,
+                        }))
+                      }
+                    >
+                      <option value="email">Email</option>
+                      <option value="phone">Phone</option>
+                      <option value="either">Either</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>Language preference</span>
+                    <select
+                      value={convertForm.language_preference}
+                      onChange={(event) =>
+                        setConvertForm((current) => ({
+                          ...current,
+                          language_preference: event.target.value,
+                        }))
+                      }
+                    >
+                      <option value="en">English</option>
+                      <option value="es">Spanish</option>
+                    </select>
+                  </label>
+                </div>
+                {convertError ? (
+                  <div className="admin-toast error">{convertError}</div>
+                ) : null}
+                <div className="admin-header-actions">
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => setIsConvertOpen(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="primary-button"
+                    onClick={handleConvertProspect}
+                    disabled={converting}
+                  >
+                    {converting ? "Converting…" : "Confirm conversion"}
+                  </button>
+                </div>
+              </div>
+            </aside>
+          </div>
+        ) : null}
+      </div>
+    );
+  };
+
+  if (selectedLead) {
+    return renderProspectDetail();
+  }
+
   if (selectedClient) {
     return renderClientDetail();
   }
@@ -3242,7 +3788,12 @@ function ClientManagementPage() {
                           {row.name}
                         </Link>
                       ) : (
-                        <span className="client-row-name">{row.name}</span>
+                        <Link
+                          className="client-row-link"
+                          to={`/admin/clients/prospects/${row.id}`}
+                        >
+                          {row.name}
+                        </Link>
                       )}
                     </td>
                     <td>
@@ -3290,31 +3841,18 @@ function ClientManagementPage() {
                           </>
                         ) : (
                           <>
-                            <button
-                              type="button"
+                            <Link
                               className="link-button"
-                              onClick={() => {
-                                const leadRecord = snapshot.leads.find(
-                                  (lead) => String(lead.id) === String(row.id),
-                                );
-                                if (leadRecord) {
-                                  navigate(`/admin/leads`);
-                                }
-                              }}
+                              to={`/admin/clients/prospects/${row.id}`}
                             >
                               View
-                            </button>
+                            </Link>
                             <button
                               type="button"
                               className="link-button"
-                              onClick={() => {
-                                const leadRecord = snapshot.leads.find(
-                                  (lead) => String(lead.id) === String(row.id),
-                                );
-                                if (leadRecord) {
-                                  navigate(`/admin/leads`);
-                                }
-                              }}
+                              onClick={() =>
+                                navigate(`/admin/clients/prospects/${row.id}`)
+                              }
                             >
                               Edit
                             </button>
@@ -3445,6 +3983,7 @@ function ClientManagementPage() {
                           setDraftLead((current) => ({
                             ...current,
                             serviceInterest: event.target.value,
+                            audience: audienceForServiceKey(event.target.value),
                           }))
                         }
                       >
@@ -3757,6 +4296,7 @@ function ServiceManagementPage() {
   const [serviceError, setServiceError] = useState("");
   const [serviceSavedMessage, setServiceSavedMessage] = useState("");
   const [editingServiceId, setEditingServiceId] = useState(null);
+  const [deletingService, setDeletingService] = useState(false);
   const [serviceDraft, setServiceDraft] = useState(null);
   const [isNewEngagementOpen, setIsNewEngagementOpen] = useState(false);
   const [engagementForm, setEngagementForm] = useState({
@@ -3963,6 +4503,78 @@ function ServiceManagementPage() {
     } catch (error) {
       setServiceError(error.message || "Unable to create this service.");
       setServiceSavedMessage("");
+    }
+  };
+
+  const deleteEditedService = async () => {
+    if (!editingServiceId || deletingService) return;
+    const service = snapshot.services.find(
+      (row) => row.id === editingServiceId,
+    );
+    if (
+      !service ||
+      !window.confirm(
+        `Delete service “${service.serviceName}”? It will be removed from the catalog. Existing client and business records will be preserved.`,
+      )
+    )
+      return;
+    setDeletingService(true);
+    setServiceError("");
+    setServiceSavedMessage("");
+    try {
+      await serviceApi.delete(editingServiceId);
+    } catch (error) {
+      setServiceError(error.message || "Unable to delete this service.");
+      setDeletingService(false);
+      return;
+    }
+    adminStore.replaceCollections({
+      services: adminStore
+        .getSnapshot()
+        .services.filter((row) => row.id !== editingServiceId),
+    });
+    setEditingServiceId(null);
+    setServiceDraft(null);
+    try {
+      const rows = await serviceApi.list();
+      adminStore.replaceCollections({
+        services: (rows || [])
+          .filter(
+            (row) =>
+              row.catalog_status !== "NOT_OFFERED" &&
+              row.service_code !== "business-financing",
+          )
+          .map((row) => ({
+            id: String(row.id),
+            serviceName: row.service_name,
+            serviceCode: row.service_code,
+            publicName: row.public_name || row.service_name,
+            category: row.category || "General",
+            audience: toTitleCase(row.audience),
+            status: toTitleCase(row.catalog_status || row.status),
+            catalogStatus: row.catalog_status || "ACTIVE",
+            pricingType: row.pricing_type || "FIXED",
+            billingType: toTitleCase(row.billing_type || "custom"),
+            defaultPrice:
+              row.default_price == null ? null : Number(row.default_price),
+            active: Boolean(Number(row.active_flag)),
+            selectable:
+              Boolean(Number(row.active_flag)) &&
+              ["ACTIVE", "CUSTOM_SOW_ONLY", "MANUAL_REVIEW"].includes(
+                row.catalog_status,
+              ),
+            shortDescription: row.description || "",
+            tiers: row.tiers || [],
+            addOns: row.add_ons || [],
+          })),
+      });
+      setServiceSavedMessage(`Service deleted: ${service.serviceName}`);
+    } catch (error) {
+      setServiceError(
+        `Service deleted, but the catalog could not be refreshed: ${error.message}`,
+      );
+    } finally {
+      setDeletingService(false);
     }
   };
 
@@ -4802,6 +5414,7 @@ function ServiceManagementPage() {
         <div
           className="admin-detail-overlay"
           onClick={() => {
+            if (deletingService) return;
             setEditingServiceId(null);
             setServiceDraft(null);
           }}
@@ -4816,6 +5429,7 @@ function ServiceManagementPage() {
                 type="button"
                 className="secondary-button"
                 onClick={() => {
+                  if (deletingService) return;
                   setEditingServiceId(null);
                   setServiceDraft(null);
                 }}
@@ -4825,6 +5439,21 @@ function ServiceManagementPage() {
             </div>
             <div className="admin-detail-body">
               <div className="admin-detail-scroll">
+                {serviceError ? (
+                  <div className="admin-toast error" role="alert">
+                    {serviceError}
+                  </div>
+                ) : null}
+                <section className="admin-form-section">
+                  <button
+                    type="button"
+                    className="secondary-button service-delete-button"
+                    disabled={deletingService}
+                    onClick={deleteEditedService}
+                  >
+                    {deletingService ? "Deleting…" : "Delete service"}
+                  </button>
+                </section>
                 <section className="admin-form-section">
                   <h3 className="admin-form-section-heading">
                     Service Identity
@@ -5042,6 +5671,7 @@ function ServiceManagementPage() {
                   type="button"
                   className="secondary-button"
                   onClick={() => {
+                    if (deletingService) return;
                     setEditingServiceId(null);
                     setServiceDraft(null);
                   }}
@@ -5051,6 +5681,7 @@ function ServiceManagementPage() {
                 <button
                   type="button"
                   className="primary-button"
+                  disabled={deletingService}
                   onClick={saveEditedService}
                 >
                   Save changes

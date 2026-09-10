@@ -44,6 +44,7 @@ function alchemize_validate_lead(array $payload): array
 {
     $errors = [];
     $fullName = alchemize_string_value($payload, 'full_name');
+    $businessName = alchemize_string_value($payload, 'business_name');
     $email = alchemize_string_value($payload, 'email');
     $phone = alchemize_string_value($payload, 'phone');
     $audience = alchemize_string_value($payload, 'audience');
@@ -57,6 +58,10 @@ function alchemize_validate_lead(array $payload): array
         $errors['full_name'] = 'Enter your full name.';
     } elseif (alchemize_text_length($fullName) > 150) {
         $errors['full_name'] = 'Name must be 150 characters or fewer.';
+    }
+
+    if ($businessName !== null && alchemize_text_length($businessName) > 255) {
+        $errors['business_name'] = 'Business name must be 255 characters or fewer.';
     }
 
     if ($email === null || $email === '') {
@@ -109,6 +114,7 @@ function alchemize_validate_lead(array $payload): array
         'errors' => $errors,
         'data' => [
             'full_name' => $fullName,
+            'business_name' => $businessName !== '' ? $businessName : null,
             'email' => $email !== null ? strtolower($email) : null,
             'phone' => $phone !== '' ? $phone : null,
             'audience' => $audience,
@@ -117,5 +123,96 @@ function alchemize_validate_lead(array $payload): array
             'preferred_contact' => $preferredContact !== '' ? $preferredContact : null,
             'language_preference' => $languagePreference,
         ],
+    ];
+}
+
+function alchemize_validate_lead_update(array $payload, array $existingLead): array
+{
+    $errors = [];
+    $data = [];
+
+    if (array_key_exists('full_name', $payload)) {
+        $fullName = alchemize_string_value($payload, 'full_name');
+        if ($fullName === null || $fullName === '') {
+            $errors['full_name'] = "Enter the prospect's full name.";
+        } elseif (alchemize_text_length($fullName) > 150) {
+            $errors['full_name'] = 'Name must be 150 characters or fewer.';
+        } else {
+            $data['full_name'] = $fullName;
+        }
+    }
+
+    if (array_key_exists('business_name', $payload)) {
+        $businessName = alchemize_string_value($payload, 'business_name');
+        if ($businessName !== null && alchemize_text_length($businessName) > 255) {
+            $errors['business_name'] = 'Business name must be 255 characters or fewer.';
+        } else {
+            $data['business_name'] = $businessName !== null && $businessName !== '' ? $businessName : null;
+        }
+    }
+
+    if (array_key_exists('email', $payload)) {
+        $email = alchemize_string_value($payload, 'email');
+        if ($email === null || $email === '' || alchemize_text_length($email) > 254 || filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+            $errors['email'] = 'Enter a valid email address.';
+        } else {
+            $data['email'] = strtolower($email);
+        }
+    }
+
+    if (array_key_exists('phone', $payload)) {
+        $phone = alchemize_string_value($payload, 'phone');
+        if ($phone !== null && $phone !== '' && (alchemize_text_length($phone) > 40 || preg_match('/^[0-9+().\-\sA-Za-z]{5,40}$/', $phone) !== 1)) {
+            $errors['phone'] = 'Enter a valid phone number using 40 characters or fewer.';
+        } else {
+            $data['phone'] = $phone !== null && $phone !== '' ? $phone : null;
+        }
+    }
+
+    $audience = array_key_exists('audience', $payload)
+        ? alchemize_string_value($payload, 'audience')
+        : (string) ($existingLead['audience'] ?? '');
+    if (array_key_exists('audience', $payload)) {
+        if (!in_array($audience, ['individual', 'business'], true)) {
+            $errors['audience'] = 'Select whether the request is for an individual or a business.';
+        } else {
+            $data['audience'] = $audience;
+        }
+    }
+
+    if (array_key_exists('service_key', $payload)) {
+        $serviceKey = alchemize_string_value($payload, 'service_key');
+        if ($serviceKey !== null && $serviceKey !== '') {
+            $serviceKey = ALCHEMIZE_SERVICE_ALIASES[$serviceKey] ?? $serviceKey;
+            if (!in_array($serviceKey, ALCHEMIZE_SERVICE_KEYS, true)) {
+                $errors['service_key'] = 'Select a valid service area or leave it blank.';
+            } elseif (
+                ($audience === 'business' && !str_starts_with($serviceKey, 'business-'))
+                || ($audience === 'individual' && str_starts_with($serviceKey, 'business-'))
+            ) {
+                $errors['service_key'] = 'Select a service that matches the chosen audience.';
+            } else {
+                $data['service_key'] = $serviceKey;
+            }
+        } else {
+            $data['service_key'] = null;
+        }
+    }
+
+    if (array_key_exists('message', $payload)) {
+        $message = alchemize_string_value($payload, 'message');
+        if ($message === null || $message === '') {
+            $errors['message'] = 'Enter a general overview of the inquiry.';
+        } elseif (alchemize_text_length($message) > 5000) {
+            $errors['message'] = 'Message must be 5,000 characters or fewer.';
+        } else {
+            $data['message'] = $message;
+        }
+    }
+
+    return [
+        'valid' => $errors === [],
+        'errors' => $errors,
+        'data' => $data,
     ];
 }

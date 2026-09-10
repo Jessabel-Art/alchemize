@@ -283,6 +283,10 @@ function App() {
           />
           <Route path="clients" element={<ClientManagementPage />} />
           <Route path="clients/:clientId" element={<ClientManagementPage />} />
+          <Route
+            path="clients/prospects/:leadId"
+            element={<ClientManagementPage />}
+          />
           <Route path="services" element={<ServiceManagementPage />} />
           <Route path="client-requests" element={<ClientRequestsPage />} />
           <Route

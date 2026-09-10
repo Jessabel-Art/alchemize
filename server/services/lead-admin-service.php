@@ -48,6 +48,18 @@ final class AlchemizeLeadAdminService
             }
         }
 
+        $editableFields = ['full_name', 'business_name', 'email', 'phone', 'audience', 'service_key', 'message'];
+        if (array_intersect($editableFields, array_keys($payload)) !== []) {
+            $validation = alchemize_validate_lead_update(
+                array_intersect_key($payload, array_flip($editableFields)),
+                $lead,
+            );
+            if (!$validation['valid']) {
+                throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', implode(' ', $validation['errors']));
+            }
+            $values = [...$values, ...$validation['data']];
+        }
+
         if ($values !== []) {
             $this->leads->update($leadId, $values);
         }
@@ -155,11 +167,11 @@ final class AlchemizeLeadAdminService
                 'public_id' => alchemize_uuid_v4(),
                 'client_type' => in_array((string) ($payload['client_type'] ?? 'business'), ['individual', 'business', 'organization'], true) ? (string) $payload['client_type'] : 'business',
                 'display_name' => $displayName,
-                'legal_name' => trim((string) ($payload['legal_name'] ?? '')) !== '' ? trim((string) ($payload['legal_name'] ?? '')) : null,
+                'legal_name' => trim((string) ($payload['legal_name'] ?? $lead['business_name'] ?? '')) !== '' ? trim((string) ($payload['legal_name'] ?? $lead['business_name'])) : null,
                 'preferred_name' => trim((string) ($payload['preferred_name'] ?? '')) !== '' ? trim((string) ($payload['preferred_name'] ?? '')) : null,
                 'primary_email' => trim((string) ($payload['primary_email'] ?? $lead['email'] ?? '')) !== '' ? strtolower(trim((string) ($payload['primary_email'] ?? $lead['email']))) : null,
                 'primary_phone' => trim((string) ($payload['primary_phone'] ?? $lead['phone'] ?? '')) !== '' ? trim((string) ($payload['primary_phone'] ?? $lead['phone'])) : null,
-                'preferred_contact_method' => in_array((string) ($payload['preferred_contact_method'] ?? 'email'), ['email', 'phone', 'either'], true) ? (string) $payload['preferred_contact_method'] : 'email',
+                'preferred_contact_method' => in_array((string) ($payload['preferred_contact_method'] ?? 'email'), ['email', 'phone', 'either'], true) ? (string) ($payload['preferred_contact_method'] ?? 'email') : 'email',
                 'language_preference' => in_array((string) ($payload['language_preference'] ?? $lead['language_preference'] ?? 'en'), ['en', 'es'], true) ? (string) ($payload['language_preference'] ?? $lead['language_preference']) : 'en',
                 'status' => 'active',
                 'portal_status' => 'pending',
@@ -195,7 +207,12 @@ final class AlchemizeLeadAdminService
             ]);
 
             $this->clients->getDatabase()->commit();
-            return ['converted_lead_public_id' => (string) $lead['public_id'], 'new_client_public_id' => (string) $this->clients->findById($clientId)['public_id'], 'status' => 'converted'];
+            return [
+                'converted_lead_public_id' => (string) $lead['public_id'],
+                'new_client_id' => $clientId,
+                'new_client_public_id' => (string) $this->clients->findById($clientId)['public_id'],
+                'status' => 'converted',
+            ];
         } catch (Throwable $error) {
             if ($this->clients->getDatabase()->inTransaction()) {
                 $this->clients->getDatabase()->rollBack();

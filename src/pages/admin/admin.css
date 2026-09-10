@@ -2874,3 +2874,9 @@
     grid-template-columns: 1fr;
   }
 }
+
+.service-editor-drawer .service-delete-button {
+  color: var(--admin-danger);
+  border-color: var(--admin-danger);
+  background: var(--admin-danger-soft);
+}

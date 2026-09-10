@@ -199,6 +199,8 @@ export const clients = {
 };
 
 export const services = {
+  delete: (id) =>
+    apiRequest(buildApiUrl(`services/${id}`), { method: "DELETE" }),
   list: () => apiRequest(buildApiUrl("services")),
   get: (id) => apiRequest(buildApiUrl(`services/${id}`)),
   create: (payload) =>

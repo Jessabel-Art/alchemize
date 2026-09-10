@@ -236,15 +236,19 @@ function AdminLayout() {
             payments: (paymentRows || []).map(mapPayment),
             leads: (leadRows || []).map((row) => ({
               id: String(row.id),
+              clientId: row.client_id ? String(row.client_id) : null,
               name: row.full_name,
+              businessName: row.business_name || "",
               email: row.email || "",
               phone: row.phone || "",
               audience: titleCase(row.audience),
+              rawServiceKey: row.service_key || "",
               serviceInterest: row.service_key
                 ? titleCase(row.service_key)
                 : "General consultation",
               source: titleCase(row.source || "website_contact"),
               status: titleCase(row.status),
+              message: row.message || "",
               receivedAt: row.created_at,
               lastContact: row.updated_at,
               assignedTo: row.assigned_owner || "Owner / Administrator",
