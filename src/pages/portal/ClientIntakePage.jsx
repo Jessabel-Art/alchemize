@@ -1028,10 +1028,13 @@ export default function ClientIntakePage() {
               field={field}
               response={responses[field.key]}
               onChange={(value) => {
-                const nextResponses = sanitizeVisibleResponses(current?.definition, {
-                  ...responses,
-                  [field.key]: value,
-                });
+                const nextResponses = sanitizeVisibleResponses(
+                  current?.definition,
+                  {
+                    ...responses,
+                    [field.key]: value,
+                  },
+                );
                 setResponses(nextResponses);
               }}
               profile={current.profile}
