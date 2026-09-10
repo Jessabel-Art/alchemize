@@ -13,10 +13,18 @@ final class AlchemizeExternalIntegrationRepository
 
     public function setClientDriveState(int $clientId, string $status, ?string $folderId = null, ?string $error = null): void
     {
+        // drive_synced_at is resolved in PHP instead of
+        // IF(:status = 'synchronized', ...) in SQL: with
+        // PDO::ATTR_EMULATE_PREPARES disabled, MySQL sends bound string
+        // parameters with utf8mb4_general_ci while inline literals use the
+        // connection's utf8mb4_unicode_ci, so comparing a bound parameter
+        // directly against a literal throws "Illegal mix of collations"
+        // (SQLSTATE HY000 1267).
+        $syncedAtExpression = $status === 'synchronized' ? 'CURRENT_TIMESTAMP(6)' : 'drive_synced_at';
         $this->database->prepare(
             'UPDATE clients SET google_drive_folder_id = COALESCE(:folder_id, google_drive_folder_id),
              drive_sync_status = :status, drive_sync_attempted_at = CURRENT_TIMESTAMP(6),
-             drive_synced_at = IF(:status = \'synchronized\', CURRENT_TIMESTAMP(6), drive_synced_at), drive_sync_error = :error
+             drive_synced_at = ' . $syncedAtExpression . ', drive_sync_error = :error
              WHERE id = :id'
         )->execute(['folder_id' => $folderId, 'status' => $status, 'error' => $error, 'id' => $clientId]);
     }
@@ -34,10 +42,13 @@ final class AlchemizeExternalIntegrationRepository
 
     public function setDocumentDriveState(int $submissionId, string $status, ?string $fileId = null, ?string $error = null): void
     {
+        // See setClientDriveState() above for why this is resolved in PHP
+        // rather than IF(:status = 'synchronized', ...) in SQL.
+        $syncedAtExpression = $status === 'synchronized' ? 'CURRENT_TIMESTAMP(6)' : 'drive_synced_at';
         $this->database->prepare(
             'UPDATE document_submissions SET google_drive_file_id = COALESCE(:file_id, google_drive_file_id),
              drive_sync_status = :status, drive_sync_attempted_at = CURRENT_TIMESTAMP(6),
-             drive_synced_at = IF(:status = \'synchronized\', CURRENT_TIMESTAMP(6), drive_synced_at), drive_sync_error = :error
+             drive_synced_at = ' . $syncedAtExpression . ', drive_sync_error = :error
              WHERE id = :id'
         )->execute(['file_id' => $fileId, 'status' => $status, 'error' => $error, 'id' => $submissionId]);
     }
@@ -53,13 +64,16 @@ final class AlchemizeExternalIntegrationRepository
 
     public function setCalendarState(int $appointmentId, string $status, ?string $eventId = null, ?string $error = null, ?string $meetingUrl = null): void
     {
+        // See setClientDriveState() above for why this is resolved in PHP
+        // rather than IF(:synced_status = 'synchronized', ...) in SQL.
+        $syncedAtExpression = $status === 'synchronized' ? 'CURRENT_TIMESTAMP(6)' : 'calendar_synced_at';
         $this->database->prepare(
             'UPDATE appointments SET google_calendar_event_id = COALESCE(:event_id, google_calendar_event_id),
              meeting_url = COALESCE(:meeting_url, meeting_url),
              calendar_sync_status = :status, calendar_sync_attempted_at = CURRENT_TIMESTAMP(6),
-             calendar_synced_at = IF(:synced_status = \'synchronized\', CURRENT_TIMESTAMP(6), calendar_synced_at), calendar_sync_error = :error
+             calendar_synced_at = ' . $syncedAtExpression . ', calendar_sync_error = :error
              WHERE id = :id'
-        )->execute(['event_id' => $eventId, 'meeting_url' => $meetingUrl, 'status' => $status, 'synced_status' => $status, 'error' => $error, 'id' => $appointmentId]);
+        )->execute(['event_id' => $eventId, 'meeting_url' => $meetingUrl, 'status' => $status, 'error' => $error, 'id' => $appointmentId]);
     }
 
     public function invoiceForClient(string $publicId, int $clientId): ?array

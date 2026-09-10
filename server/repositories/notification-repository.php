@@ -88,8 +88,13 @@ final class AlchemizeNotificationRepository
         ];
 
         if ($this->columnExists('notifications', 'delivered_at')) {
-            $fields[] = 'delivered_at = IF(:status_sent = \'sent\', CURRENT_TIMESTAMP(6), delivered_at)';
-            $params['status_sent'] = $status;
+            // Resolved in PHP instead of IF(:status_sent = 'sent', ...) in
+            // SQL: with PDO::ATTR_EMULATE_PREPARES disabled, MySQL sends
+            // bound string parameters with utf8mb4_general_ci while inline
+            // literals use the connection's utf8mb4_unicode_ci, so
+            // comparing a bound parameter directly against a literal
+            // throws "Illegal mix of collations" (SQLSTATE HY000 1267).
+            $fields[] = 'delivered_at = ' . ($status === 'sent' ? 'CURRENT_TIMESTAMP(6)' : 'delivered_at');
         }
         if ($this->columnExists('notifications', 'delivery_error')) {
             $fields[] = 'delivery_error = :error';

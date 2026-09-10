@@ -125,12 +125,21 @@ final class AlchemizeAppointmentRepository
     {
         $allowed = ['sent', 'failed', 'unavailable'];
         if (!in_array($status, $allowed, true)) $status = 'failed';
+        // The delivery_error value is resolved in PHP rather than via
+        // IF(:sent = 'sent', ...) in SQL: with PDO::ATTR_EMULATE_PREPARES
+        // disabled, MySQL sends bound string parameters with
+        // utf8mb4_general_ci while inline literals use the connection's
+        // utf8mb4_unicode_ci, so comparing a bound parameter directly
+        // against a literal throws "Illegal mix of collations" (SQLSTATE
+        // HY000 1267) — this was the exact, reproduced cause of
+        // "Appointments API is temporarily unavailable".
+        $error = $status === 'sent' ? null : ($status === 'unavailable' ? 'not_configured' : 'provider_error');
         $this->database->prepare(
             'UPDATE appointment_scheduling_links
              SET delivery_status = :status, delivery_attempted_at = CURRENT_TIMESTAMP(6),
-                 delivery_error = IF(:sent = \'sent\', NULL, :error)
+                 delivery_error = :error
              WHERE id = :id'
-        )->execute(['status' => $status, 'sent' => $status, 'error' => $status === 'unavailable' ? 'not_configured' : 'provider_error', 'id' => $id]);
+        )->execute(['status' => $status, 'error' => $error, 'id' => $id]);
     }
 
     public function schedulingLinkIdByToken(string $token): ?int

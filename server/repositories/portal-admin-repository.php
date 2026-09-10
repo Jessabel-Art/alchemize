@@ -22,11 +22,27 @@ final class AlchemizePortalAdminRepository
 
     public function updateAccessGrant(string $publicId, string $role, string $status, int $actorId): bool
     {
-        $statement = $this->database->prepare(
-            "UPDATE client_access_grants SET access_role = :role, status = :status,
-                    granted_by_user_id = :actor, effective_at = IF(:status = 'active', COALESCE(effective_at, CURRENT_TIMESTAMP(6)), effective_at)
-             WHERE public_id = :id AND is_default = 0"
-        );
+        // effective_at is resolved with two statements instead of
+        // IF(:status = 'active', ...) in SQL: with PDO::ATTR_EMULATE_PREPARES
+        // disabled, MySQL sends bound string parameters with
+        // utf8mb4_general_ci while inline literals use the connection's
+        // utf8mb4_unicode_ci, so comparing a bound parameter directly
+        // against a literal throws "Illegal mix of collations" (SQLSTATE
+        // HY000 1267) — the reproduced cause of recent Client Management
+        // API-unavailable failures when updating authorized portal access.
+        if ($status === 'active') {
+            $statement = $this->database->prepare(
+                'UPDATE client_access_grants SET access_role = :role, status = :status,
+                        granted_by_user_id = :actor, effective_at = COALESCE(effective_at, CURRENT_TIMESTAMP(6))
+                 WHERE public_id = :id AND is_default = 0'
+            );
+        } else {
+            $statement = $this->database->prepare(
+                'UPDATE client_access_grants SET access_role = :role, status = :status,
+                        granted_by_user_id = :actor
+                 WHERE public_id = :id AND is_default = 0'
+            );
+        }
         $statement->execute(['role'=>$role,'status'=>$status,'actor'=>$actorId,'id'=>$publicId]); return $statement->rowCount() > 0;
     }
 
@@ -93,15 +109,26 @@ final class AlchemizePortalAdminRepository
     {
         $thread = $this->one('SELECT id, client_id FROM message_threads WHERE public_id = :id LIMIT 1', ['id' => $publicId]);
         if ($thread === null) return null;
+        // archived_at is resolved in PHP instead of
+        // CASE WHEN :archive_status = 'archived' ... in SQL: with
+        // PDO::ATTR_EMULATE_PREPARES disabled, MySQL sends bound string
+        // parameters with utf8mb4_general_ci while inline literals use the
+        // connection's utf8mb4_unicode_ci, so comparing a bound parameter
+        // directly against a literal throws "Illegal mix of collations"
+        // (SQLSTATE HY000 1267) — the same reproduced bug class fixed in
+        // appointment-repository.php and updateAccessGrant() above.
+        // :required_check = 1 is untouched — 1 is a numeric literal, which
+        // carries no collation, so it is not affected.
+        $archivedAtExpression = $status === 'archived' ? 'CURRENT_TIMESTAMP(6)' : 'NULL';
         $statement = $this->database->prepare(
             'UPDATE message_threads SET status = :status, client_action_required = :required,
                     client_action_required_at = CASE WHEN :required_check = 1 THEN CURRENT_TIMESTAMP(6) ELSE NULL END,
-                    archived_at = CASE WHEN :archive_status = \'archived\' THEN CURRENT_TIMESTAMP(6) ELSE NULL END
+                    archived_at = ' . $archivedAtExpression . '
              WHERE id = :id'
         );
         $statement->execute([
             'status' => $status, 'required' => $clientActionRequired ? 1 : 0,
-            'required_check' => $clientActionRequired ? 1 : 0, 'archive_status' => $status,
+            'required_check' => $clientActionRequired ? 1 : 0,
             'id' => $thread['id'],
         ]);
         return $thread;
