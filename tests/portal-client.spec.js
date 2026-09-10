@@ -534,17 +534,17 @@ test("billing route loads real invoice data without the generic portal unavailab
   await expect(
     page.getByRole("heading", { name: "Billing", exact: true }),
   ).toBeVisible();
-  await expect(page.getByText("Open balance", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("Current balance", { exact: true }),
+  ).toBeVisible();
   await expect(
     page
       .locator("section")
-      .filter({ hasText: "Open balance" })
+      .filter({ hasText: "Current balance" })
       .getByRole("strong")
       .first(),
   ).toHaveText("$1,250.00");
-  await expect(
-    page.getByRole("heading", { name: "INV-1042", exact: true }),
-  ).toBeVisible();
+  await expect(page.getByText("INV-1042", { exact: true })).toBeVisible();
   await expect(
     page.getByText("The client portal is temporarily unavailable.", {
       exact: true,

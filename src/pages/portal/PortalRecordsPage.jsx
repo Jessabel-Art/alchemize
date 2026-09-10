@@ -4,6 +4,7 @@ import { auth } from "../../services/admin-api.js";
 import "./portal.css";
 import ClientAppointments from "./ClientAppointments.jsx";
 import TasksDocumentsWorkspace from "./TasksDocumentsWorkspace.jsx";
+import ClientBilling from "./ClientBilling.jsx";
 
 const pageContent = {
   services: [
@@ -1287,142 +1288,8 @@ function PayPalInvoiceButton({ invoice, clientId, run }) {
   return <div className="portal-paypal-button" ref={containerRef} />;
 }
 
-function Billing({ data, empty, busy, run }) {
-  const nextInvoice = [...(data.invoices || [])]
-    .filter((item) => Number(item.outstanding_balance) > 0)
-    .sort((a, b) =>
-      String(a.due_date || "9999").localeCompare(String(b.due_date || "9999")),
-    )[0];
-  return (
-    <>
-      <div className="portal-financial-overview">
-        <section className="portal-billing-summary">
-          <span>Open balance</span>
-          <strong>{formatCurrency(data.summary?.open_balance)}</strong>
-        </section>
-        <section className="portal-next-invoice">
-          <span className="section-kicker">Next invoice</span>
-          {nextInvoice ? (
-            <>
-              <h2>{nextInvoice.invoice_number}</h2>
-              <p>
-                {formatCurrency(
-                  nextInvoice.outstanding_balance,
-                  nextInvoice.currency,
-                )}{" "}
-                · Due {formatDate(nextInvoice.due_date)}
-              </p>
-              <span>{labelFor(nextInvoice.status)}</span>
-            </>
-          ) : (
-            <p className="portal-empty-state">No open invoices.</p>
-          )}
-        </section>
-      </div>
-      <h2>Invoices</h2>
-      {(data.invoices || []).length ? (
-        <ul className="portal-record-list">
-          {data.invoices.map((item) => (
-            <li key={item.id}>
-              <div>
-                <strong>{item.invoice_number}</strong>
-                <p>
-                  {item.engagement_title ||
-                    item.client_facing_notes ||
-                    "Issued invoice"}
-                </p>
-                <small>
-                  Issued {formatDate(item.invoice_date)} · Due{" "}
-                  {formatDate(item.due_date)}
-                </small>
-                <div className="portal-action-group">
-                  <button
-                    type="button"
-                    className="portal-action-button"
-                    onClick={() => window.print()}
-                  >
-                    Print invoice
-                  </button>
-                  <a
-                    className="portal-action-button"
-                    href={`mailto:billing@getalchemize.com?subject=${encodeURIComponent(`Invoice ${item.invoice_number}`)}`}
-                  >
-                    Contact billing
-                  </a>
-                </div>
-              </div>
-              <div className="portal-record-meta">
-                <span>{labelFor(item.status)}</span>
-                <strong>
-                  {formatCurrency(item.outstanding_balance, item.currency)}
-                </strong>
-                <small>
-                  {formatCurrency(item.paid_total, item.currency)} paid
-                </small>
-                <ActionButton
-                  busy={busy === item.id}
-                  onClick={() =>
-                    run(
-                      item.id,
-                      () => portalApi.acknowledge("invoice", item.id),
-                      "Invoice notice acknowledged.",
-                    )
-                  }
-                >
-                  Acknowledge
-                </ActionButton>
-                {["open", "partially_paid", "past_due"].includes(item.status) &&
-                Number(item.outstanding_balance) > 0 ? (
-                  <ActionButton
-                    busy={busy === `${item.id}-pay`}
-                    onClick={() =>
-                      run(
-                        `${item.id}-pay`,
-                        async () => {
-                          const checkout = await portalApi.checkoutInvoice(
-                            item.id,
-                          );
-                          if (!checkout.checkout_url)
-                            throw new Error(
-                              "Online payment is temporarily unavailable.",
-                            );
-                          window.location.assign(checkout.checkout_url);
-                        },
-                        "Opening secure payment…",
-                      )
-                    }
-                  >
-                    Pay securely
-                  </ActionButton>
-                ) : null}
-              </div>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <EmptyState>{empty}</EmptyState>
-      )}
-      {(data.payments || []).length ? (
-        <>
-          <h2>Payment history</h2>
-          <ul className="portal-record-list">
-            {data.payments.map((item) => (
-              <li key={item.id}>
-                <div>
-                  <strong>{item.invoice_number}</strong>
-                  <small>{formatDate(item.payment_date)}</small>
-                </div>
-                <div className="portal-record-meta">
-                  <strong>{formatCurrency(item.amount)}</strong>
-                  <small>{labelFor(item.payment_method)}</small>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </>
-      ) : null}
-    </>
-  );
+function Billing({ data, busy, run }) {
+  return <ClientBilling data={data} busy={busy} run={run} />;
 }
 
 function Profile({ data, empty, busy, run }) {
