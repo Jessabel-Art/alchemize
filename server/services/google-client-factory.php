@@ -65,6 +65,16 @@ final class AlchemizeGoogleClientFactory
         $client->setAuthConfig((string) $this->config['credentials_path']);
         $client->setScopes($scopes);
         $client->setApplicationName('Alchemize Business Services');
+        // Some PHP hosting environments do not expose a usable CA trust
+        // store to cURL/OpenSSL, which makes every outbound HTTPS call to
+        // Google (including the OAuth token exchange) fail verification
+        // with "unable to get local issuer certificate" before a request
+        // is ever sent. Pinning a current, bundled root CA file removes
+        // that dependency on the host's own certificate configuration.
+        $caBundle = dirname(__DIR__) . '/config/cacert.pem';
+        if (is_file($caBundle)) {
+            $client->setHttpClient(new \GuzzleHttp\Client(['verify' => $caBundle]));
+        }
         return $client;
     }
 }

@@ -8,7 +8,7 @@ import {
   User,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useNavigate } from "react-router-dom";
 import PortalShell from "../components/ui/PortalShell.jsx";
 import { auth } from "../services/admin-api.js";
 import { portalApi } from "../services/portal-api.js";
@@ -32,6 +32,19 @@ const baseNavItems = [
 function ClientPortalLayout() {
   const [access, setAccess] = useState("loading");
   const [counts, setCounts] = useState({});
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await auth.logout();
+    } catch (error) {
+      if (import.meta.env.DEV) {
+        console.error("Client portal logout failed", error);
+      }
+    } finally {
+      navigate("/login", { replace: true });
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -99,6 +112,15 @@ function ClientPortalLayout() {
         ...item,
         count: counts[item.to.split("/").at(-1)] || 0,
       }))}
+      sidebarFooter={
+        <button
+          type="button"
+          className="portal-sidebar-logout"
+          onClick={handleLogout}
+        >
+          Log out
+        </button>
+      }
     >
       <Outlet />
     </PortalShell>

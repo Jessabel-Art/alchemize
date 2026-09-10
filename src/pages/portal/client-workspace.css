@@ -703,6 +703,34 @@
 .portal-shell:not(.admin-portal-shell) .portal-profile-layout > section {
   min-width: 0;
 }
+.portal-shell:not(.admin-portal-shell) .portal-profile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.portal-shell:not(.admin-portal-shell) .portal-profile-summary {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+.portal-shell:not(.admin-portal-shell) .portal-profile-summary > div {
+  display: grid;
+  grid-template-columns: minmax(120px, 140px) minmax(0, 1fr);
+  gap: 16px;
+  padding-top: 10px;
+  border-top: 1px solid var(--client-line);
+}
+.portal-shell:not(.admin-portal-shell) .portal-profile-summary dt {
+  color: var(--color-text-soft);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.portal-shell:not(.admin-portal-shell) .portal-profile-summary dd {
+  margin: 0;
+  font-size: 14px;
+}
 .portal-shell:not(.admin-portal-shell) .portal-profile-layout .portal-composer {
   margin-top: 16px;
 }
@@ -710,6 +738,13 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   margin-top: 16px;
+}
+.portal-shell:not(.admin-portal-shell) .portal-profile-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  grid-column: 1 / -1;
 }
 .portal-shell:not(.admin-portal-shell)
   .portal-profile-form

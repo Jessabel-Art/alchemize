@@ -34,6 +34,9 @@ secrets.php
 *.key
 *.p12
 *.pfx
+# Public Mozilla CA root bundle pinned for outbound Google API TLS
+# verification (server/services/google-client-factory.php) — not a secret.
+!server/config/cacert.pem
 
 # Logs
 *.log

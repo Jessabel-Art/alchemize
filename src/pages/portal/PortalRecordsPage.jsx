@@ -164,22 +164,6 @@ function PortalRecordsPage({ resource, engagementId = null }) {
         return;
       }
 
-      if (resource === "appointments") {
-        const [appointments, services] = await Promise.all([
-          portalApi.appointments(),
-          portalApi.services().catch(() => ({ items: [] })),
-        ]);
-        setState({
-          status: "ready",
-          data: {
-            items: appointments.items || [],
-            services: services.items || [],
-          },
-          error: "",
-        });
-        return;
-      }
-
       if (resource === "services" && engagementId) {
         setState({
           status: "ready",
@@ -323,7 +307,6 @@ function ResourceContent(props) {
     return (
       <Appointments
         items={data.items || []}
-        services={data.services || []}
         empty={empty}
         busy={busy}
         run={run}
@@ -995,8 +978,8 @@ function DocumentUpload({ item, busy, run }) {
   );
 }
 
-function Appointments({ items, services }) {
-  return <ClientAppointments initialItems={items} services={services} />;
+function Appointments({ items }) {
+  return <ClientAppointments initialItems={items} />;
 }
 
 function Messages({ items, empty, busy, run }) {
@@ -1447,6 +1430,9 @@ function Profile({ data, empty, busy, run }) {
     current_password: "",
     new_password: "",
   });
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [showAccessForm, setShowAccessForm] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const client = data.client;
   const [form, setForm] = useState(() =>
     client
@@ -1455,8 +1441,8 @@ function Profile({ data, empty, busy, run }) {
           primary_phone: client.primary_phone || "",
           preferred_contact_method: client.preferred_contact_method || "email",
           language_preference: client.language_preference || "en",
-          legal_name: "",
-          business_legal_name: "",
+          legal_name: client.legal_name || "",
+          business_legal_name: client.business_legal_name || "",
         }
       : {},
   );
@@ -1466,12 +1452,37 @@ function Profile({ data, empty, busy, run }) {
     access_role: "authorized_user",
   });
   if (!client) return <EmptyState>{empty}</EmptyState>;
+
   const change = (event) =>
     setForm({ ...form, [event.target.name]: event.target.value });
+  const summaryValue = (value, fallback = "Not specified") => {
+    if (value === null || value === undefined || value === "") return fallback;
+    return value;
+  };
+
   return (
     <div className="portal-profile-layout">
       <section className="portal-profile-details">
-        <h2>{client.display_name}</h2>
+        <div className="portal-profile-header">
+          <h2>{client.display_name}</h2>
+          {!isEditing ? (
+            <button
+              type="button"
+              className="portal-action-button"
+              onClick={() => setIsEditing(true)}
+            >
+              Edit profile
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="portal-action-button"
+              onClick={() => setIsEditing(false)}
+            >
+              Cancel
+            </button>
+          )}
+        </div>
         {(data.pending_changes || []).length ? (
           <div className="portal-pending-changes" role="status">
             <strong>Pending Alchemize review</strong>
@@ -1483,143 +1494,203 @@ function Profile({ data, empty, busy, run }) {
             ))}
           </div>
         ) : null}
-        <form
-          className="portal-profile-form"
-          onSubmit={(event) => {
-            event.preventDefault();
-            const payload = Object.fromEntries(
-              Object.entries(form).filter(([, value]) => value !== ""),
-            );
-            run(
-              "profile",
-              () => portalApi.updateProfile(payload),
-              "Profile changes saved or submitted for review.",
-            );
-          }}
-        >
-          <label>
-            <span>Email</span>
-            <input
-              name="primary_email"
-              type="email"
-              value={form.primary_email}
-              onChange={change}
-            />
-          </label>
-          <label>
-            <span>Phone</span>
-            <input
-              name="primary_phone"
-              value={form.primary_phone}
-              onChange={change}
-            />
-          </label>
-          <label>
-            <span>Preferred contact</span>
-            <select
-              name="preferred_contact_method"
-              value={form.preferred_contact_method}
-              onChange={change}
-            >
-              <option value="email">Email</option>
-              <option value="phone">Phone</option>
-              <option value="either">Either</option>
-            </select>
-          </label>
-          <label>
-            <span>Language preference</span>
-            <select
-              name="language_preference"
-              value={form.language_preference}
-              onChange={change}
-            >
-              <option value="en">English</option>
-              <option value="es">EspaÃ±ol</option>
-            </select>
-          </label>
-          <fieldset>
-            <legend>Changes requiring Alchemize review</legend>
+
+        {!isEditing ? (
+          <dl className="portal-profile-summary">
+            <div>
+              <dt>Email</dt>
+              <dd>{summaryValue(client.primary_email)}</dd>
+            </div>
+            <div>
+              <dt>Phone</dt>
+              <dd>{summaryValue(client.primary_phone)}</dd>
+            </div>
+            <div>
+              <dt>Preferred contact</dt>
+              <dd>{labelFor(client.preferred_contact_method || "email")}</dd>
+            </div>
+            <div>
+              <dt>Language preference</dt>
+              <dd>{labelFor(client.language_preference || "en")}</dd>
+            </div>
+            <div>
+              <dt>Legal name</dt>
+              <dd>{summaryValue(client.legal_name)}</dd>
+            </div>
+            {client.client_type === "business" ? (
+              <div>
+                <dt>Business legal name</dt>
+                <dd>{summaryValue(client.business_legal_name)}</dd>
+              </div>
+            ) : null}
+          </dl>
+        ) : (
+          <form
+            className="portal-profile-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const payload = Object.fromEntries(
+                Object.entries(form).filter(([, value]) => value !== ""),
+              );
+              run(
+                "profile",
+                () => portalApi.updateProfile(payload),
+                "Profile changes saved or submitted for review.",
+              ).then(() => setIsEditing(false));
+            }}
+          >
             <label>
-              <span>Legal name</span>
+              <span>Email</span>
               <input
-                name="legal_name"
-                value={form.legal_name}
+                name="primary_email"
+                type="email"
+                value={form.primary_email}
                 onChange={change}
-                placeholder={client.legal_name || "Propose a change"}
               />
             </label>
-            {client.client_type === "business" ? (
+            <label>
+              <span>Phone</span>
+              <input
+                name="primary_phone"
+                value={form.primary_phone}
+                onChange={change}
+              />
+            </label>
+            <label>
+              <span>Preferred contact</span>
+              <select
+                name="preferred_contact_method"
+                value={form.preferred_contact_method}
+                onChange={change}
+              >
+                <option value="email">Email</option>
+                <option value="phone">Phone</option>
+                <option value="either">Either</option>
+              </select>
+            </label>
+            <label>
+              <span>Language preference</span>
+              <select
+                name="language_preference"
+                value={form.language_preference}
+                onChange={change}
+              >
+                <option value="en">English</option>
+                <option value="es">EspaÃ±ol</option>
+              </select>
+            </label>
+            <fieldset>
+              <legend>Changes requiring Alchemize review</legend>
               <label>
-                <span>Business legal name</span>
+                <span>Legal name</span>
                 <input
-                  name="business_legal_name"
-                  value={form.business_legal_name}
+                  name="legal_name"
+                  value={form.legal_name}
                   onChange={change}
-                  placeholder={client.business_legal_name || "Propose a change"}
+                  placeholder={client.legal_name || "Propose a change"}
                 />
               </label>
-            ) : null}
-          </fieldset>
-          <button
-            className="portal-action-button"
-            disabled={busy === "profile"}
-          >
-            {busy === "profile" ? "Saving…" : "Save profile changes"}
-          </button>
-        </form>
+              {client.client_type === "business" ? (
+                <label>
+                  <span>Business legal name</span>
+                  <input
+                    name="business_legal_name"
+                    value={form.business_legal_name}
+                    onChange={change}
+                    placeholder={
+                      client.business_legal_name || "Propose a change"
+                    }
+                  />
+                </label>
+              ) : null}
+            </fieldset>
+            <div className="portal-profile-actions-row">
+              <button
+                className="portal-action-button"
+                disabled={busy === "profile"}
+                type="submit"
+              >
+                {busy === "profile" ? "Saving…" : "Save profile changes"}
+              </button>
+            </div>
+          </form>
+        )}
       </section>
-      <section>
+      <section className="portal-profile-access-panel">
         <h2>Portal access and authorized users</h2>
-        <form
-          className="portal-composer"
-          onSubmit={(event) => {
-            event.preventDefault();
-            run(
-              "change-password",
-              () => auth.changePassword(passwordForm),
-              "Password changed successfully.",
-            );
-          }}
-        >
-          <h3>Change password</h3>
-          <label>
-            <span>Current password</span>
-            <input
-              type="password"
-              autoComplete="current-password"
-              required
-              value={passwordForm.current_password}
-              onChange={(event) =>
-                setPasswordForm({
-                  ...passwordForm,
-                  current_password: event.target.value,
-                })
-              }
-            />
-          </label>
-          <label>
-            <span>New password</span>
-            <input
-              type="password"
-              autoComplete="new-password"
-              minLength="12"
-              required
-              value={passwordForm.new_password}
-              onChange={(event) =>
-                setPasswordForm({
-                  ...passwordForm,
-                  new_password: event.target.value,
-                })
-              }
-            />
-          </label>
+
+        {!showPasswordForm ? (
           <button
+            type="button"
             className="portal-action-button"
-            disabled={busy === "change-password"}
+            onClick={() => setShowPasswordForm(true)}
           >
-            Change Password
+            Change password
           </button>
-        </form>
+        ) : (
+          <form
+            className="portal-composer"
+            onSubmit={(event) => {
+              event.preventDefault();
+              run(
+                "change-password",
+                () => auth.changePassword(passwordForm),
+                "Password changed successfully.",
+              );
+              setShowPasswordForm(false);
+            }}
+          >
+            <h3>Change password</h3>
+            <label>
+              <span>Current password</span>
+              <input
+                type="password"
+                autoComplete="current-password"
+                required
+                value={passwordForm.current_password}
+                onChange={(event) =>
+                  setPasswordForm({
+                    ...passwordForm,
+                    current_password: event.target.value,
+                  })
+                }
+              />
+            </label>
+            <label>
+              <span>New password</span>
+              <input
+                type="password"
+                autoComplete="new-password"
+                minLength="12"
+                required
+                value={passwordForm.new_password}
+                onChange={(event) =>
+                  setPasswordForm({
+                    ...passwordForm,
+                    new_password: event.target.value,
+                  })
+                }
+              />
+            </label>
+            <div className="portal-profile-actions-row">
+              <button
+                className="portal-action-button"
+                disabled={busy === "change-password"}
+                type="submit"
+              >
+                Change Password
+              </button>
+              <button
+                type="button"
+                className="portal-quiet-button"
+                onClick={() => setShowPasswordForm(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
+
         {(data.portal_users || []).length ? (
           <ul className="portal-record-list">
             {data.portal_users.map((item) => (
@@ -1645,77 +1716,98 @@ function Profile({ data, empty, busy, run }) {
               .filter((item) => item.status === "pending")
               .map((item) => (
                 <p key={item.id}>
-                  {item.name} ({item.email}) â€”{" "}
+                  {item.name} ({item.email}) —{" "}
                   {labelFor(item.requested_access_role)}
                 </p>
               ))}
           </div>
         ) : null}
         {data.access_role === "primary_contact" ? (
-          <form
-            className="portal-composer"
-            onSubmit={(event) => {
-              event.preventDefault();
-              run(
-                "access-request",
-                () => portalApi.requestAuthorizedUser(accessRequest),
-                "Portal access request sent for Admin review.",
-              );
-            }}
-          >
-            <h3>Request portal access</h3>
-            <p>Alchemize reviews every request before access is activated.</p>
-            <label>
-              <span>Name</span>
-              <input
-                required
-                value={accessRequest.name}
-                onChange={(event) =>
-                  setAccessRequest({
-                    ...accessRequest,
-                    name: event.target.value,
-                  })
-                }
-              />
-            </label>
-            <label>
-              <span>Email</span>
-              <input
-                required
-                type="email"
-                value={accessRequest.email}
-                onChange={(event) =>
-                  setAccessRequest({
-                    ...accessRequest,
-                    email: event.target.value,
-                  })
-                }
-              />
-            </label>
-            <label>
-              <span>Access type</span>
-              <select
-                value={accessRequest.access_role}
-                onChange={(event) =>
-                  setAccessRequest({
-                    ...accessRequest,
-                    access_role: event.target.value,
-                  })
-                }
-              >
-                <option value="authorized_user">Authorized User</option>
-                <option value="billing_contact">Billing Contact</option>
-                <option value="document_contact">Document Contact</option>
-                <option value="read_only">Read-Only Contact</option>
-              </select>
-            </label>
+          !showAccessForm ? (
             <button
+              type="button"
               className="portal-action-button"
-              disabled={busy === "access-request"}
+              onClick={() => setShowAccessForm(true)}
             >
-              Request Admin review
+              Request portal access
             </button>
-          </form>
+          ) : (
+            <form
+              className="portal-composer"
+              onSubmit={(event) => {
+                event.preventDefault();
+                run(
+                  "access-request",
+                  () => portalApi.requestAuthorizedUser(accessRequest),
+                  "Portal access request sent for Admin review.",
+                );
+                setShowAccessForm(false);
+              }}
+            >
+              <h3>Request portal access</h3>
+              <p>Alchemize reviews every request before access is activated.</p>
+              <label>
+                <span>Name</span>
+                <input
+                  required
+                  value={accessRequest.name}
+                  onChange={(event) =>
+                    setAccessRequest({
+                      ...accessRequest,
+                      name: event.target.value,
+                    })
+                  }
+                />
+              </label>
+              <label>
+                <span>Email</span>
+                <input
+                  required
+                  type="email"
+                  value={accessRequest.email}
+                  onChange={(event) =>
+                    setAccessRequest({
+                      ...accessRequest,
+                      email: event.target.value,
+                    })
+                  }
+                />
+              </label>
+              <label>
+                <span>Access type</span>
+                <select
+                  value={accessRequest.access_role}
+                  onChange={(event) =>
+                    setAccessRequest({
+                      ...accessRequest,
+                      access_role: event.target.value,
+                    })
+                  }
+                >
+                  <option value="authorized_user">Authorized User</option>
+                  <option value="billing_contact">Billing Contact</option>
+                  <option value="document_contact">Document Contact</option>
+                  <option value="read_only">Read-Only Contact</option>
+                </select>
+              </label>
+              <div className="portal-profile-actions-row">
+                <button
+                  className="portal-action-button"
+                  disabled={busy === "access-request"}
+                  type="submit"
+                >
+                  Request Admin review
+                </button>
+                <button
+                  type="button"
+                  className="portal-quiet-button"
+                  onClick={() => setShowAccessForm(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          )
         ) : null}
         <h3>Authorized contacts</h3>
         {(data.authorized_contacts || []).length ? (

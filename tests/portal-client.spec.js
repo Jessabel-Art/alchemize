@@ -89,6 +89,16 @@ test.beforeEach(async ({ page }) => {
       });
       return;
     }
+    if (apiRoute === "auth/logout") {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          data: { authenticated: false, csrf_token: "" },
+        }),
+      });
+      return;
+    }
     if (apiRoute?.startsWith("portal/")) {
       const resource = apiRoute.split("/")[1];
       await route.fulfill({
@@ -583,10 +593,50 @@ test("task actions use authenticated CSRF-protected portal mutations", async ({
   expect(request.postDataJSON()).toEqual({ response: "" });
 });
 
+test("profile defaults to a review-first display and requires explicit edit mode", async ({
+  page,
+}) => {
+  await page.goto("/client-portal/profile/");
+
+  await expect(
+    page.getByRole("heading", { name: "North Harbor Studio" }),
+  ).toBeVisible();
+  await expect(page.getByText("client@example.com")).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Edit profile" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Save profile changes" }),
+  ).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Edit profile" }).click();
+  await expect(page.getByLabel("Phone", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Save profile changes" }),
+  ).toBeVisible();
+});
+
+test("client sidebar logout triggers a session logout and redirects to login", async ({
+  page,
+}) => {
+  await page.goto("/client-portal/dashboard/");
+  const logoutRequestPromise = page.waitForRequest((request) =>
+    request.url().includes("route=auth%2Flogout"),
+  );
+
+  await page.getByRole("button", { name: "Log out" }).click();
+  const request = await logoutRequestPromise;
+
+  expect(request.method()).toBe("POST");
+  expect(request.headers()["x-csrf-token"]).toBe("test-token");
+  await expect(page).toHaveURL(/\/login\/?$/);
+});
+
 test("profile updates preserve internal field names and use a PUT mutation", async ({
   page,
 }) => {
   await page.goto("/client-portal/profile/");
+  await page.getByRole("button", { name: "Edit profile" }).click();
   await page.getByLabel("Phone", { exact: true }).fill("(910) 555-0110");
   const requestPromise = page.waitForRequest((request) =>
     request.url().includes("route=portal%2Fprofile"),

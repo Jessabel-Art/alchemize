@@ -8,8 +8,6 @@ import {
   ChevronLeft,
   ChevronRight,
   ArrowRight,
-  Briefcase,
-  Info,
 } from "lucide-react";
 import { portalApi } from "../../services/portal-api.js";
 import "./client-appointments.css";
@@ -60,7 +58,7 @@ const monthLabel = (year, month) =>
     year: "numeric",
   });
 
-export default function ClientAppointments({ initialItems, services = [] }) {
+export default function ClientAppointments({ initialItems }) {
   const [items, setItems] = useState(initialItems);
   const [config, setConfig] = useState(null);
   const [error, setError] = useState("");
@@ -170,75 +168,67 @@ export default function ClientAppointments({ initialItems, services = [] }) {
         </div>
       </div>
       <aside className="portal-workspace-utility">
-        <AppointmentsRail config={config} services={services} />
+        <AppointmentsRail config={config} />
       </aside>
     </div>
   );
 }
 
-function AppointmentsRail({ config, services }) {
-  const activeServices = services.filter(
-    (item) => !["completed", "archived"].includes(item.status),
-  );
-  const methodsText = config?.methods?.length
-    ? config.methods.length > 1
-      ? `Meetings are typically held by ${config.methods.map((item) => item.label).join(" or ")}.`
-      : `Meetings are typically held by ${config.methods[0].label}.`
+const shortMethodLabel = (value) =>
+  String(value || "").replace(/\s*\(.*\)$/, "");
+
+function AppointmentsRail({ config }) {
+  const methodsSummary = config?.methods?.length
+    ? config.methods.map((item) => shortMethodLabel(item.label)).join(" · ")
     : "";
   return (
     <>
-      <section className="appt-rail-card">
+      <section className="appt-glance">
+        <span className="section-kicker">Scheduling at a glance</span>
+        <dl>
+          <div>
+            <dt>Timezone</dt>
+            <dd>
+              {config?.timezone ? config.timezone.replaceAll("_", " ") : "—"}
+            </dd>
+          </div>
+          <div>
+            <dt>Meeting options</dt>
+            <dd>{methodsSummary || "—"}</dd>
+          </div>
+          <div>
+            <dt>Booking</dt>
+            <dd>Choose any available time directly from the calendar.</dd>
+          </div>
+        </dl>
+      </section>
+      <section className="appt-help">
         <h2>
           <MessageSquare aria-hidden="true" />
-          Need to schedule something else?
+          Need help scheduling?
         </h2>
         <p>
-          Can't find a time that works? Send us a message and we'll help you
-          find a time.
+          Can't find a time that works? Send us a message and we'll help
+          coordinate.
         </p>
         <a className="appt-rail-link" href="/client-portal/messages">
           Send a message
           <ArrowRight aria-hidden="true" size={14} />
         </a>
       </section>
-      {activeServices.length ? (
-        <section className="appt-rail-card">
-          <h2>
-            <Briefcase aria-hidden="true" />
-            Your services
-          </h2>
-          <ul className="appt-service-list">
-            {activeServices.map((item) => (
-              <li key={item.id}>
-                <div>
-                  <strong>{item.title}</strong>
-                  <span className="appt-status is-confirmed">
-                    {label(item.status)}
-                  </span>
-                </div>
-                <a
-                  href={
-                    "/client-portal/services/" + encodeURIComponent(item.id)
-                  }
-                >
-                  View service
-                  <ArrowRight aria-hidden="true" size={14} />
-                </a>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-      <section className="appt-rail-card">
-        <h2>
-          <Info aria-hidden="true" />
-          Our meeting details
-        </h2>
-        <p>{methodsText} You'll receive confirmation details after booking.</p>
-        <a className="appt-rail-link" href="/faq">
-          View FAQ
-          <ArrowRight aria-hidden="true" size={14} />
-        </a>
+      <section className="appt-before">
+        <h2>Before your appointment</h2>
+        <ul>
+          <li>Confirmation details are available after booking.</li>
+          <li>Virtual meeting information appears with the appointment.</li>
+          <li>
+            Requested documents can be submitted through{" "}
+            <a href="/client-portal/tasks-and-documents">
+              Tasks &amp; Documents
+            </a>{" "}
+            before the meeting.
+          </li>
+        </ul>
       </section>
     </>
   );

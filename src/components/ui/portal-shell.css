@@ -6,6 +6,8 @@
   position: relative;
 }
 .portal-sidebar {
+  display: flex;
+  flex-direction: column;
   padding: 1.25rem 0.9rem 1rem;
   background: var(--emerald-deep);
   color: var(--white);
@@ -30,6 +32,29 @@
   display: grid;
   gap: 0.25rem;
   margin-top: 1.2rem;
+}
+.portal-sidebar-footer {
+  margin-top: auto;
+  padding-top: 1rem;
+}
+.portal-sidebar-logout {
+  display: inline-flex;
+  width: 100%;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 0.7rem;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--white);
+  font: inherit;
+  cursor: pointer;
+}
+.portal-sidebar-logout:hover,
+.portal-sidebar-logout:focus-visible {
+  border-color: var(--gold);
+  background: rgba(215, 176, 95, 0.12);
 }
 .portal-nav-item {
   padding: 0.68rem 0.75rem;

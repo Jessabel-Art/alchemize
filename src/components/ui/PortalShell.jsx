@@ -26,7 +26,7 @@ const dashboardNavIcons = {
   Settings,
 };
 
-function PortalShell({ title, navItems, children }) {
+function PortalShell({ title, navItems, children, sidebarFooter = null }) {
   const isAdminShell = title === "Alchemize Admin";
   const location = useLocation();
   const isDashboard =
@@ -114,6 +114,9 @@ function PortalShell({ title, navItems, children }) {
             );
           })}
         </nav>
+        {sidebarFooter ? (
+          <div className="portal-sidebar-footer">{sidebarFooter}</div>
+        ) : null}
         {isAdminShell ? (
           <a className="portal-mobile-return" href="/">
             Return to website
