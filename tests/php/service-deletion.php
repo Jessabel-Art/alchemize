@@ -74,7 +74,7 @@ try {
 }
 echo "PASS missing or already deleted service returns 404\n";
 try {
-  new AlchemizeCatalogPricingService()->assertSelectable(
+  (new AlchemizeCatalogPricingService())->assertSelectable(
     ["archived_at" => "2026-09-10", "active_flag" => 0],
     ["active_flag" => 1, "status" => "ACTIVE"],
   );

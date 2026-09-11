@@ -76,8 +76,8 @@ final class AlchemizeServiceRepository
         "Tier does not belong to the selected service.",
       );
     }
-    new AlchemizeCatalogPricingService()->assertSelectable($service, $tier);
-    return new AlchemizeCatalogPricingService()->calculate(
+    (new AlchemizeCatalogPricingService())->assertSelectable($service, $tier);
+    return (new AlchemizeCatalogPricingService())->calculate(
       (string) $service["service_code"],
       (string) ($tier["tier_key"] ?? ($inputs["tier_key"] ?? "")),
       $inputs,
@@ -159,7 +159,7 @@ final class AlchemizeServiceRepository
         "Select a valid catalog service and tier.",
       );
     }
-    new AlchemizeCatalogPricingService()->assertSelectable($service, $tier);
+    (new AlchemizeCatalogPricingService())->assertSelectable($service, $tier);
 
     $baseCatalogPrice =
       $tier["base_price"] ??
