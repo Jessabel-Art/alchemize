@@ -1610,6 +1610,34 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.admin-file-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.admin-file-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid rgba(6, 43, 43, 0.08);
+  border-radius: 0.6rem;
+  background: rgba(7, 86, 75, 0.03);
+}
+
+.admin-file-list a {
+  color: var(--emerald-deep);
+  font-weight: 600;
+}
+
+.admin-file-list small {
+  color: rgba(6, 43, 43, 0.6);
+}
+
 .client-workspace-header {
   display: grid;
   gap: 1rem;

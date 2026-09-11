@@ -6,7 +6,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import "./admin-reports-billing.css";
 import "./admin-appointments.css";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   Receipt,
   Clock,
@@ -47,6 +47,7 @@ import {
   clients as clientApi,
   documents as documentApi,
   engagements as engagementApi,
+  intakeAdmin,
   invoices as invoiceApi,
   payments as paymentApi,
   leads as leadApi,
@@ -185,6 +186,12 @@ const toTitleCase = (value) =>
     .split(" ")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
+
+// Raw backend enum values (task/document status, priority, intake status)
+// are snake_case with multi-word values like "waiting_on_client" -- unlike
+// toTitleCase, this also splits on underscores before capitalizing.
+const humanizeStatus = (value) =>
+  toTitleCase(String(value || "").replaceAll("_", " "));
 
 const audienceForServiceKey = (serviceKey) => {
   const group = contactServiceGroups.find((entry) =>
@@ -5729,6 +5736,7 @@ function ServiceManagementPage() {
 
 function ClientRequestsPage() {
   const snapshot = adminStore.getSnapshot();
+  const location = useLocation();
   const [search, setSearch] = useState("");
   const [requestTypeFilter, setRequestTypeFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
@@ -5762,6 +5770,115 @@ function ClientRequestsPage() {
     visibility: "shared",
     requested_date: new Date().toISOString().slice(0, 10),
   });
+  // Real intake-form assignments/submissions (server/services/intake-admin-service.php)
+  // aren't part of the shared adminStore snapshot, so they're fetched
+  // locally and merged into the unified queue below -- the same real data
+  // AdminIntakePage.jsx already reads, just surfaced through this page's
+  // Review action instead of a separate unrouted screen.
+  const [intakeItems, setIntakeItems] = useState([]);
+  const [reviewState, setReviewState] = useState({
+    open: false,
+    type: null,
+    loading: false,
+    error: "",
+    data: null,
+  });
+
+  useEffect(() => {
+    let active = true;
+    intakeAdmin
+      .list()
+      .then((data) => {
+        if (active) setIntakeItems(data?.items || []);
+      })
+      .catch(() => {
+        if (active) setIntakeItems([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // /admin/intakes, /admin/intake, /admin/tasks and /admin/documents all
+  // redirect here with a legacy ?type= query param that this page never
+  // read, so the redirect silently landed on an unfiltered queue.
+  useEffect(() => {
+    const typeParam = new URLSearchParams(location.search)
+      .get("type")
+      ?.toLowerCase();
+    const typeMap = {
+      intake: "Intake",
+      task: "Task",
+      document: "Document",
+    };
+    if (typeParam && typeMap[typeParam]) {
+      setRequestTypeFilter(typeMap[typeParam]);
+    }
+  }, [location.search]);
+
+  const closeReview = () =>
+    setReviewState({
+      open: false,
+      type: null,
+      loading: false,
+      error: "",
+      data: null,
+    });
+
+  const openReview = async (row) => {
+    setReviewState({
+      open: true,
+      type: row.type,
+      loading: true,
+      error: "",
+      data: null,
+    });
+    try {
+      if (row.type === "Document") {
+        const [document, versions] = await Promise.all([
+          documentApi.get(row.id),
+          row.publicId
+            ? portalAdmin.documentVersions(row.publicId)
+            : Promise.resolve({ items: [] }),
+        ]);
+        setReviewState({
+          open: true,
+          type: "Document",
+          loading: false,
+          error: "",
+          data: { document, submissions: versions?.items || versions || [] },
+        });
+        return;
+      }
+      if (row.type === "Intake") {
+        const detail = await intakeAdmin.get(row.id);
+        setReviewState({
+          open: true,
+          type: "Intake",
+          loading: false,
+          error: "",
+          data: detail,
+        });
+        return;
+      }
+      const task = await taskApi.get(row.id);
+      setReviewState({
+        open: true,
+        type: "Task",
+        loading: false,
+        error: "",
+        data: { task },
+      });
+    } catch (error) {
+      setReviewState({
+        open: true,
+        type: row.type,
+        loading: false,
+        error: error.message || "Unable to load this record.",
+        data: null,
+      });
+    }
+  };
 
   const syncDocumentTypeOptions = (engagementId) => {
     const engagement = snapshot.engagements.find(
@@ -5828,6 +5945,7 @@ function ClientRequestsPage() {
     const merged = [
       ...snapshot.documents.map((item) => ({
         id: item.id,
+        publicId: item.publicId,
         type: "Document",
         requestType: "Document Request",
         request: item.name || "Untitled document request",
@@ -5850,6 +5968,7 @@ function ClientRequestsPage() {
       })),
       ...snapshot.tasks.map((item) => ({
         id: item.id,
+        publicId: item.publicId,
         type: "Task",
         requestType: "Task / Action Item",
         request: item.title || "Untitled task",
@@ -5870,10 +5989,27 @@ function ClientRequestsPage() {
         owner: item.assignedTo || "Owner / Administrator",
         nextAction: item.description || "Client response",
       })),
+      ...intakeItems.map((item) => ({
+        id: item.id,
+        publicId: item.id,
+        type: "Intake",
+        requestType: "Intake Form",
+        request: `${humanizeStatus(item.family_key)} intake`,
+        clientId: item.client_id,
+        clientName: item.client_name || "Unknown client",
+        engagementId: item.engagement_id,
+        engagementName: item.engagement_title || "No engagement",
+        serviceName: item.engagement_title || "General admin support",
+        dueDate: item.due_date,
+        status: humanizeStatus(item.status),
+        priority: "Normal",
+        owner: item.assigned_team_member || "Owner / Administrator",
+        nextAction: "Review",
+      })),
     ];
 
     return merged;
-  }, [snapshot]);
+  }, [snapshot, intakeItems]);
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
@@ -6147,7 +6283,7 @@ function ClientRequestsPage() {
                 value={requestTypeFilter}
                 onChange={(event) => setRequestTypeFilter(event.target.value)}
               >
-                {["All", "Document", "Task"].map((option) => (
+                {["All", "Document", "Task", "Intake"].map((option) => (
                   <option key={option} value={option}>
                     {option}
                   </option>
@@ -6293,7 +6429,11 @@ function ClientRequestsPage() {
                     <td>{row.nextAction}</td>
                     <td>{row.owner}</td>
                     <td>
-                      <button type="button" className="link-button">
+                      <button
+                        type="button"
+                        className="link-button"
+                        onClick={() => openReview(row)}
+                      >
                         Review
                       </button>
                     </td>
@@ -6760,6 +6900,302 @@ function ClientRequestsPage() {
           </aside>
         </div>
       ) : null}
+
+      <AdminDetailDrawer
+        open={reviewState.open}
+        title={
+          reviewState.type === "Document"
+            ? "Document request"
+            : reviewState.type === "Intake"
+              ? "Intake submission"
+              : reviewState.type === "Task"
+                ? "Task detail"
+                : "Review"
+        }
+        onClose={closeReview}
+      >
+        {reviewState.loading ? (
+          <p role="status">Loading…</p>
+        ) : reviewState.error ? (
+          <div className="admin-toast error" role="alert">
+            {reviewState.error}
+          </div>
+        ) : reviewState.type === "Document" && reviewState.data ? (
+          <div className="admin-detail-grid">
+            <div className="detail-block">
+              <h3>Overview</h3>
+              <dl>
+                <div>
+                  <dt>Client</dt>
+                  <dd>
+                    {snapshot.clients.find(
+                      (client) =>
+                        client.id ===
+                        String(reviewState.data.document.client_id),
+                    )?.displayName || "Unknown client"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Request</dt>
+                  <dd>{reviewState.data.document.document_name}</dd>
+                </div>
+                <div>
+                  <dt>Related engagement / service</dt>
+                  <dd>
+                    {snapshot.engagements.find(
+                      (eng) =>
+                        eng.id ===
+                        String(reviewState.data.document.engagement_id),
+                    )?.title ||
+                      reviewState.data.document.document_type ||
+                      "No engagement"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Status</dt>
+                  <dd>
+                    <AdminStatusBadge
+                      status={humanizeStatus(reviewState.data.document.status)}
+                      tone={
+                        statusTone[
+                          humanizeStatus(reviewState.data.document.status)
+                        ] || "neutral"
+                      }
+                    />
+                  </dd>
+                </div>
+                <div>
+                  <dt>Requested</dt>
+                  <dd>
+                    {formatDate(reviewState.data.document.requested_date)}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Received</dt>
+                  <dd>
+                    {reviewState.data.document.received_date
+                      ? formatDate(reviewState.data.document.received_date)
+                      : "Not yet received"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Due</dt>
+                  <dd>{formatDate(reviewState.data.document.due_date)}</dd>
+                </div>
+              </dl>
+            </div>
+            {reviewState.data.document.client_instructions ? (
+              <div className="detail-block">
+                <h3>Instructions for the client</h3>
+                <p>{reviewState.data.document.client_instructions}</p>
+              </div>
+            ) : null}
+            {reviewState.data.document.internal_notes ? (
+              <div className="detail-block">
+                <h3>Internal notes</h3>
+                <p>{reviewState.data.document.internal_notes}</p>
+              </div>
+            ) : null}
+            <div className="detail-block">
+              <h3>Submitted file(s)</h3>
+              {reviewState.data.submissions.length === 0 ? (
+                <p>No file has been uploaded for this request yet.</p>
+              ) : (
+                <ul className="admin-file-list">
+                  {reviewState.data.submissions.map((submission) => (
+                    <li key={submission.id}>
+                      <a
+                        href={portalAdmin.documentDownloadUrl(submission.id)}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {submission.original_filename || "Download file"}
+                      </a>
+                      <small>
+                        {" "}
+                        version {submission.version_number} · uploaded{" "}
+                        {formatDate(submission.submitted_at)}
+                        {submission.uploaded_by
+                          ? ` by ${submission.uploaded_by}`
+                          : ""}
+                      </small>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        ) : reviewState.type === "Intake" && reviewState.data ? (
+          (() => {
+            const { assignment, responses, requirements, definition } =
+              reviewState.data;
+            const fieldLabels = Object.fromEntries(
+              (definition?.modules || []).flatMap((module) =>
+                (module.fields || []).map((field) => [field.key, field.label]),
+              ),
+            );
+            return (
+              <div className="admin-detail-grid">
+                <div className="detail-block">
+                  <h3>Overview</h3>
+                  <dl>
+                    <div>
+                      <dt>Intake form</dt>
+                      <dd>{definition?.label || assignment.family_key}</dd>
+                    </div>
+                    <div>
+                      <dt>Client</dt>
+                      <dd>{assignment.client_name}</dd>
+                    </div>
+                    <div>
+                      <dt>Related engagement / service</dt>
+                      <dd>{assignment.engagement_title}</dd>
+                    </div>
+                    <div>
+                      <dt>Status</dt>
+                      <dd>
+                        <AdminStatusBadge
+                          status={humanizeStatus(assignment.status)}
+                        />
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Submitted</dt>
+                      <dd>
+                        {assignment.submitted_at
+                          ? formatDate(assignment.submitted_at)
+                          : "Not yet submitted"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Completion</dt>
+                      <dd>{assignment.completion_percentage}%</dd>
+                    </div>
+                  </dl>
+                </div>
+                <div className="detail-block">
+                  <h3>Submitted answers</h3>
+                  {Object.keys(responses || {}).length === 0 ? (
+                    <p>No answers have been submitted yet.</p>
+                  ) : (
+                    <dl>
+                      {Object.entries(responses).map(([key, response]) => (
+                        <div key={key}>
+                          <dt>
+                            {fieldLabels[key] || humanizeStatus(key)}
+                            {response.currently_applicable === false ? (
+                              <small>
+                                {" "}
+                                (not applicable to this submission)
+                              </small>
+                            ) : null}
+                          </dt>
+                          <dd>
+                            {Array.isArray(response.value)
+                              ? response.value.join(", ") || "—"
+                              : String(response.value ?? "") || "—"}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                  )}
+                </div>
+                {requirements && requirements.length > 0 ? (
+                  <div className="detail-block">
+                    <h3>Attachments / document requirements</h3>
+                    <ul className="admin-file-list">
+                      {requirements.map((requirement) => (
+                        <li key={requirement.id}>
+                          {requirement.submission_id ? (
+                            <a
+                              href={portalAdmin.documentDownloadUrl(
+                                requirement.submission_id,
+                              )}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              {requirement.requirement_name}
+                              {requirement.filename
+                                ? ` — ${requirement.filename}`
+                                : ""}
+                            </a>
+                          ) : (
+                            <span>{requirement.requirement_name}</span>
+                          )}
+                          <small>
+                            {" "}
+                            {humanizeStatus(requirement.status)}
+                            {requirement.uploaded_at
+                              ? ` · uploaded ${formatDate(requirement.uploaded_at)}`
+                              : ""}
+                          </small>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+              </div>
+            );
+          })()
+        ) : reviewState.type === "Task" && reviewState.data ? (
+          <div className="admin-detail-grid">
+            <div className="detail-block">
+              <h3>Overview</h3>
+              <dl>
+                <div>
+                  <dt>Task</dt>
+                  <dd>{reviewState.data.task.title}</dd>
+                </div>
+                <div>
+                  <dt>Client</dt>
+                  <dd>
+                    {snapshot.clients.find(
+                      (client) =>
+                        client.id === String(reviewState.data.task.client_id),
+                    )?.displayName || "Unknown client"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Related engagement / service</dt>
+                  <dd>
+                    {snapshot.engagements.find(
+                      (eng) =>
+                        eng.id === String(reviewState.data.task.engagement_id),
+                    )?.title || "No engagement"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Status</dt>
+                  <dd>
+                    <AdminStatusBadge
+                      status={humanizeStatus(reviewState.data.task.status)}
+                      tone={
+                        statusTone[
+                          humanizeStatus(reviewState.data.task.status)
+                        ] || "neutral"
+                      }
+                    />
+                  </dd>
+                </div>
+                <div>
+                  <dt>Priority</dt>
+                  <dd>{humanizeStatus(reviewState.data.task.priority)}</dd>
+                </div>
+                <div>
+                  <dt>Due</dt>
+                  <dd>{formatDate(reviewState.data.task.due_date)}</dd>
+                </div>
+              </dl>
+            </div>
+            {reviewState.data.task.description ? (
+              <div className="detail-block">
+                <h3>Description</h3>
+                <p>{reviewState.data.task.description}</p>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+      </AdminDetailDrawer>
     </div>
   );
 }
