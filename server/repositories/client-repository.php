@@ -32,15 +32,24 @@ final class AlchemizeClientRepository
         return is_array($row) ? $row : null;
     }
 
+    public function findByIdempotencyKey(string $idempotencyKey): ?array
+    {
+        $statement = $this->database->prepare('SELECT * FROM clients WHERE idempotency_key = :idempotency_key LIMIT 1');
+        $statement->execute(['idempotency_key' => $idempotencyKey]);
+        $row = $statement->fetch();
+        return is_array($row) ? $row : null;
+    }
+
     public function create(array $row): int
     {
+        $row += ['idempotency_key' => null];
         $statement = $this->database->prepare(
             'INSERT INTO clients (
                 public_id, client_type, display_name, legal_name, preferred_name, primary_email,
-                primary_phone, preferred_contact_method, language_preference, status, portal_status, source, origin_lead_id
+                primary_phone, preferred_contact_method, language_preference, status, portal_status, source, origin_lead_id, idempotency_key
             ) VALUES (
                 :public_id, :client_type, :display_name, :legal_name, :preferred_name, :primary_email,
-                :primary_phone, :preferred_contact_method, :language_preference, :status, :portal_status, :source, :origin_lead_id
+                :primary_phone, :preferred_contact_method, :language_preference, :status, :portal_status, :source, :origin_lead_id, :idempotency_key
             )'
         );
         $statement->execute($row);

@@ -392,6 +392,25 @@ final class AlchemizeServiceRepository
 
   public function delete(int $id): void
   {
+    // A service tied to a still-active engagement stays protected: removing
+    // it from the catalog mid-delivery would pull it out from under work
+    // that references it. Completed/archived engagements don't count, so a
+    // service with only finished history can still be retired.
+    $activeEngagement = $this->database->prepare(
+      "SELECT 1 FROM engagement_service_items esi
+             INNER JOIN engagements e ON e.id = esi.engagement_id
+             WHERE esi.service_id = :id AND e.status NOT IN ('completed', 'archived')
+             LIMIT 1",
+    );
+    $activeEngagement->execute(["id" => $id]);
+    if ($activeEngagement->fetchColumn() !== false) {
+      throw new AlchemizeRequestException(
+        409,
+        "SERVICE_IN_USE",
+        "This service is protected by an active engagement.",
+      );
+    }
+
     // Preserve catalog children and all business-history references.
     $statement = $this->database->prepare(
       "UPDATE services SET archived_at = CURRENT_TIMESTAMP(6), status = 'archived', active_flag = 0

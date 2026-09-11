@@ -337,3 +337,155 @@ test("Prospect -> View/Edit -> Convert to Client lifecycle persists data and cre
   expect(repeatBody.data.new_client_id).toBe(90);
   expect(clientRows).toHaveLength(2);
 });
+
+test("Direct Client creation succeeds, shows no false error, closes the modal, refreshes the list, and cannot be duplicated by a repeated submission", async ({
+  page,
+}) => {
+  let nextClientId = 200;
+  const clientRows = [...records.clients];
+  // Mirrors the real backend: a repeated submission carrying the same
+  // idempotency key returns the client that key already created instead of
+  // inserting a second row.
+  const clientIdByIdempotencyKey = new Map();
+  let createCalls = 0;
+  let capturedIdempotencyKey = null;
+
+  await page.route("**/alchemize-api.php?*", async (route) => {
+    const url = new URL(route.request().url());
+    const key = url.searchParams.get("route");
+    const method = route.request().method();
+
+    if (key === "auth/session") {
+      return route.fulfill({
+        json: {
+          data: {
+            authenticated: true,
+            user: { user_id: 1, role_slug: "owner-admin" },
+            csrf_token: "ui-test-token",
+          },
+        },
+      });
+    }
+    if (key === "portal-admin/attention")
+      return route.fulfill({ json: { data: { items: [] } } });
+    if (key === "portal-admin/messages")
+      return route.fulfill({ json: { data: { items: [] } } });
+    if (key && key.startsWith("portal-admin/access-grants")) {
+      return route.fulfill({ json: { data: { items: [] } } });
+    }
+
+    if (key === "clients" && method === "POST") {
+      createCalls += 1;
+      const body = route.request().postDataJSON();
+      const idempotencyKey = body.idempotency_key || null;
+      if (idempotencyKey) capturedIdempotencyKey = idempotencyKey;
+      if (idempotencyKey && clientIdByIdempotencyKey.has(idempotencyKey)) {
+        const existingId = clientIdByIdempotencyKey.get(idempotencyKey);
+        const existing = clientRows.find((row) => row.id === existingId);
+        return route.fulfill({
+          status: 201,
+          json: {
+            data: {
+              id: existingId,
+              display_name: existing.display_name,
+              client_type: body.client_type,
+              idempotent_replay: true,
+              message: "This client was already created from that submission.",
+            },
+          },
+        });
+      }
+      const id = nextClientId++;
+      clientRows.push({
+        id,
+        display_name: body.display_name,
+        client_type: body.client_type,
+        primary_email: body.primary_email,
+        status: "prospective",
+        portal_status: "pending",
+        updated_at: "2026-09-10",
+      });
+      if (idempotencyKey) clientIdByIdempotencyKey.set(idempotencyKey, id);
+      return route.fulfill({
+        status: 201,
+        json: {
+          data: {
+            id,
+            display_name: body.display_name,
+            client_type: body.client_type,
+            message: "Client created successfully.",
+          },
+        },
+      });
+    }
+    if (key === "clients" && method === "GET") {
+      return route.fulfill({ json: { data: clientRows } });
+    }
+
+    if (records[key]) return route.fulfill({ json: { data: records[key] } });
+    return route.fulfill({ json: { data: [] } });
+  });
+
+  await page.goto("/admin/clients/");
+  await page.waitForFunction(() => Boolean(window.adminStore));
+
+  await page
+    .getByRole("button", { name: "+ Client or Prospect", exact: true })
+    .click();
+  await page
+    .locator("label", { hasText: "Record Type" })
+    .locator("select")
+    .selectOption("Client");
+  await page
+    .locator("label", { hasText: "Client name" })
+    .locator("input")
+    .fill("Alex Morgan");
+  await page
+    .locator("label", { hasText: "Email" })
+    .locator("input")
+    .fill("alex.morgan@example.test");
+
+  await page.getByRole("button", { name: "Create client" }).click();
+
+  // Successful creation: no false API error banner, the "Add record" modal
+  // (with its own "Create client" button) is gone, and the new client is
+  // visible in the refreshed list.
+  await expect(page.getByText(/temporarily unavailable/i)).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Add record" })).toHaveCount(
+    0,
+  );
+  await expect(page.getByRole("button", { name: "Create client" })).toHaveCount(
+    0,
+  );
+  expect(createCalls).toBe(1);
+  expect(clientRows).toHaveLength(records.clients.length + 1);
+  expect(capturedIdempotencyKey).toBeTruthy();
+
+  // A repeated submission of the exact same create operation (a retried
+  // request, a second tab, a double-click that slipped past the frontend
+  // guard) must not create a second client -- the backend recognizes the
+  // idempotency key and returns the original client instead.
+  const repeat = await page.evaluate(async (idempotencyKey) => {
+    const query = new window.URLSearchParams();
+    query.set("route", "clients");
+    const response = await fetch(`/alchemize-api.php?${query.toString()}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": "ui-test-token",
+      },
+      body: JSON.stringify({
+        client_type: "individual",
+        display_name: "Alex Morgan",
+        primary_email: "alex.morgan@example.test",
+        idempotency_key: idempotencyKey,
+      }),
+    });
+    const text = await response.text();
+    return { status: response.status, text };
+  }, capturedIdempotencyKey);
+  expect(repeat.status, repeat.text).toBe(201);
+  const repeatBody = JSON.parse(repeat.text);
+  expect(repeatBody.data.idempotent_replay).toBe(true);
+  expect(clientRows).toHaveLength(records.clients.length + 1);
+});

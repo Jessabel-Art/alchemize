@@ -18,7 +18,26 @@ final class AlchemizeClientService
             throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Client type, display name, and a valid portal email are required.');
         }
 
-        $clientId = $this->clients->create([
+        // An idempotency key identifies one submission attempt from the Add
+        // Client form (generated client-side, reused across retries of the
+        // same click). It protects against an accidental duplicate
+        // submission -- a double-click, a retried request after a slow
+        // response -- without imposing any uniqueness on email or name, so
+        // two genuinely distinct clients may still share either.
+        $idempotencyKey = trim((string) ($payload['idempotency_key'] ?? ''));
+        if ($idempotencyKey !== '') {
+            $existing = $this->clients->findByIdempotencyKey($idempotencyKey);
+            if ($existing !== null) {
+                return [
+                    'id' => (int) $existing['id'],
+                    'display_name' => (string) $existing['display_name'],
+                    'client_type' => (string) $existing['client_type'],
+                    'idempotent_replay' => true,
+                ];
+            }
+        }
+
+        $row = [
             'public_id' => alchemize_uuid_v4(),
             'client_type' => $clientType,
             'display_name' => $displayName,
@@ -32,7 +51,30 @@ final class AlchemizeClientService
             'portal_status' => 'pending',
             'source' => trim((string) ($payload['source'] ?? 'website')) !== '' ? trim((string) ($payload['source'] ?? 'website')) : 'website',
             'origin_lead_id' => isset($payload['origin_lead_id']) && $payload['origin_lead_id'] !== '' ? (int) $payload['origin_lead_id'] : null,
-        ]);
+            'idempotency_key' => $idempotencyKey !== '' ? $idempotencyKey : null,
+        ];
+
+        try {
+            $clientId = $this->clients->create($row);
+        } catch (PDOException $error) {
+            // A concurrent request for the same submission (two tabs, a
+            // double-click landing on the DB before the first insert
+            // commits) collides on the unique idempotency key rather than
+            // creating a second row -- fall back to the row it just lost
+            // the race to.
+            if ($idempotencyKey !== '' && (int) ($error->errorInfo[1] ?? 0) === 1062) {
+                $existing = $this->clients->findByIdempotencyKey($idempotencyKey);
+                if ($existing !== null) {
+                    return [
+                        'id' => (int) $existing['id'],
+                        'display_name' => (string) $existing['display_name'],
+                        'client_type' => (string) $existing['client_type'],
+                        'idempotent_replay' => true,
+                    ];
+                }
+            }
+            throw $error;
+        }
 
         $this->activities->create([
             'public_id' => alchemize_uuid_v4(),

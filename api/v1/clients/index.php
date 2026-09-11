@@ -59,7 +59,11 @@ try {
         try {
             $data = $service->create($payload);
             $email = trim((string) ($payload['primary_email'] ?? ''));
-            if ($email !== '' && ($payload['portal_access_requested'] ?? true) !== false) {
+            // A replay of an already-processed submission (same idempotency
+            // key) already has a portal account from its original request;
+            // re-provisioning here would only mint a redundant access grant
+            // and invitation email for the same client.
+            if (!($data['idempotent_replay'] ?? false) && $email !== '' && ($payload['portal_access_requested'] ?? true) !== false) {
                 $data['portal'] = $accountService->provision(
                     (int) $data['id'], $email, (string) $data['display_name'], (int) ($actor['user_id'] ?? 0) ?: null
                 );
@@ -71,9 +75,11 @@ try {
         }
         $data['drive'] = alchemize_external_integrations($database, $config)->ensureClientFolder((int) $data['id']);
         $delivery = $data['portal']['email_delivery'] ?? null;
-        $data['message'] = $delivery !== null && $delivery !== 'sent'
-            ? 'Client created successfully. The invitation email could not be delivered.'
-            : 'Client created successfully.';
+        $data['message'] = ($data['idempotent_replay'] ?? false)
+            ? 'This client was already created from that submission.'
+            : (($delivery !== null && $delivery !== 'sent')
+                ? 'Client created successfully. The invitation email could not be delivered.'
+                : 'Client created successfully.');
         alchemize_json_response(['data' => $data], 201);
     }
 

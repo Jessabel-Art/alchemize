@@ -1257,6 +1257,8 @@ function ClientManagementPage() {
   const [recordVersion, setRecordVersion] = useState(0);
   const [isClientEditorOpen, setIsClientEditorOpen] = useState(false);
   const [isAddClientOpen, setIsAddClientOpen] = useState(false);
+  const [creatingClient, setCreatingClient] = useState(false);
+  const createClientIdempotencyKeyRef = useRef(null);
   const [createRecordType, setCreateRecordType] = useState("Prospect");
   const [clientDraft, setClientDraft] = useState(null);
   const [newClientForm, setNewClientForm] = useState(createEmptyClientForm());
@@ -1757,6 +1759,18 @@ function ClientManagementPage() {
   };
 
   const handleCreateClient = async () => {
+    // Defense in depth: the button is disabled while creating, but this
+    // guard also blocks re-entry from a rapid double-click landing before
+    // the re-render applies. The real duplicate-prevention lives in the
+    // backend (an idempotency key persisted on the client row), not here.
+    if (creatingClient) return;
+    if (!createClientIdempotencyKeyRef.current) {
+      createClientIdempotencyKeyRef.current =
+        typeof window !== "undefined" && window.crypto?.randomUUID
+          ? window.crypto.randomUUID()
+          : `client-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    }
+    setCreatingClient(true);
     try {
       const payload = {
         client_type: String(
@@ -1778,6 +1792,7 @@ function ClientManagementPage() {
           ? String(newClientForm.status).toLowerCase()
           : "prospective",
         portal_status: "pending",
+        idempotency_key: createClientIdempotencyKeyRef.current,
       };
       const created = await clientApi.create(payload);
       const rows = await clientApi.list();
@@ -1814,11 +1829,17 @@ function ClientManagementPage() {
       setClientFormError("");
       setNewClientForm(createEmptyClientForm());
       setIsAddClientOpen(false);
+      // A fresh key for the next, distinct creation attempt. On failure the
+      // key is left in place so a retry of the same click safely replays
+      // into the idempotency check instead of risking a second insert.
+      createClientIdempotencyKeyRef.current = null;
       refreshClientState();
       navigate(`/admin/clients/${created.id}`);
     } catch (error) {
       setClientFormError(error.message || "Unable to create this client.");
       setClientSavedMessage("");
+    } finally {
+      setCreatingClient(false);
     }
   };
 
@@ -3883,7 +3904,10 @@ function ClientManagementPage() {
       {isAddClientOpen ? (
         <div
           className="admin-detail-overlay"
-          onClick={() => setIsAddClientOpen(false)}
+          onClick={() => {
+            if (creatingClient) return;
+            setIsAddClientOpen(false);
+          }}
         >
           <aside
             className="admin-detail-drawer"
@@ -3894,6 +3918,7 @@ function ClientManagementPage() {
               <button
                 type="button"
                 className="secondary-button"
+                disabled={creatingClient}
                 onClick={() => setIsAddClientOpen(false)}
               >
                 Close
@@ -4265,6 +4290,7 @@ function ClientManagementPage() {
                       <button
                         type="button"
                         className="secondary-button"
+                        disabled={creatingClient}
                         onClick={() => setIsAddClientOpen(false)}
                       >
                         Cancel
@@ -4272,9 +4298,10 @@ function ClientManagementPage() {
                       <button
                         type="button"
                         className="primary-button"
+                        disabled={creatingClient}
                         onClick={handleCreateClient}
                       >
-                        Create client
+                        {creatingClient ? "Creating…" : "Create client"}
                       </button>
                     </div>
                   </>
