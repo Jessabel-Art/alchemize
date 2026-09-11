@@ -423,6 +423,12 @@ test("a loading state is shown while Review data is being fetched", async ({
   const row = page.locator("tr", { hasText: "Logo files" });
   await row.getByRole("button", { name: "Review" }).click();
   await expect(page.getByText("Loading…")).toBeVisible();
+
+  // Let the delayed route finish before the test ends -- otherwise the
+  // in-flight page.waitForTimeout inside the route callback is torn down
+  // mid-flight and Playwright reports that as a failure.
+  const dialog = page.getByRole("dialog", { name: "Document request" });
+  await expect(dialog.getByText("Test Client", { exact: true })).toBeVisible();
 });
 
 for (const [type, label] of [
