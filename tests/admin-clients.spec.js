@@ -199,6 +199,22 @@ test("Prospect -> View/Edit -> Convert to Client lifecycle persists data and cre
       const id = Number(convertMatch[1]);
       const lead = leadRows.find((row) => row.id === id);
       const body = route.request().postDataJSON();
+      // Mirrors the real backend: a lead already carrying a client_id
+      // returns the existing client instead of inserting a second one,
+      // whether this is a genuine retry or a rapid double-click.
+      if (lead.status === "converted" && lead.client_id) {
+        const existing = clientRows.find((row) => row.id === lead.client_id);
+        return route.fulfill({
+          json: {
+            data: {
+              converted_lead_public_id: lead.public_id,
+              new_client_id: lead.client_id,
+              new_client_public_id: existing.public_id,
+              status: "already_converted",
+            },
+          },
+        });
+      }
       const clientId = nextClientId++;
       clientRows.push({
         id: clientId,
@@ -281,6 +297,14 @@ test("Prospect -> View/Edit -> Convert to Client lifecycle persists data and cre
     page.getByRole("heading", { name: "Jordan A. Rivera" }),
   ).toBeVisible();
 
+  // A successful conversion must not leave any API error banner visible,
+  // and the conversion modal (with its own "Confirm conversion" button)
+  // must be gone rather than left open looking failed.
+  await expect(page.getByText(/temporarily unavailable/i)).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Confirm conversion" }),
+  ).toHaveCount(0);
+
   // No duplicate person: exactly one client exists, linked to the original
   // prospect, and the prospect itself is marked converted (not deleted).
   expect(clientRows).toHaveLength(2);
@@ -289,4 +313,27 @@ test("Prospect -> View/Edit -> Convert to Client lifecycle persists data and cre
   const convertedClient = clientRows.find((row) => row.id === 90);
   expect(convertedClient.primary_email).toBe("jordan@example.test");
   expect(convertedClient.legal_name).toBe("Rivera Consulting");
+
+  // Repeating the exact same conversion request (a retried request, a
+  // second tab, a replayed click) must not create a second client — the
+  // backend returns the existing client instead of inserting a new row.
+  const repeat = await page.evaluate(async () => {
+    const query = new window.URLSearchParams();
+    query.set("route", "leads/50/convert");
+    const response = await fetch(`/alchemize-api.php?${query.toString()}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": "ui-test-token",
+      },
+      body: JSON.stringify({ client_type: "individual" }),
+    });
+    const text = await response.text();
+    return { status: response.status, text };
+  });
+  expect(repeat.status, repeat.text).toBe(200);
+  const repeatBody = JSON.parse(repeat.text);
+  expect(repeatBody.data.status).toBe("already_converted");
+  expect(repeatBody.data.new_client_id).toBe(90);
+  expect(clientRows).toHaveLength(2);
 });

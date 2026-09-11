@@ -158,7 +158,24 @@ final class AlchemizeLeadAdminService
         try {
             $lead = $this->leads->findByIdForUpdate($leadId);
             if ($lead === null) throw new AlchemizeRequestException(404, 'NOT_FOUND', 'Lead was not found.');
+            // findByIdForUpdate() takes a row lock, so a second conversion
+            // request submitted while the first is still in flight (a
+            // duplicate click, a retried request after a slow response,
+            // etc.) blocks here until the first transaction commits, then
+            // sees the now-converted lead and returns the existing client
+            // instead of creating a second one. No client row is ever
+            // inserted twice for the same lead.
             if ((string) ($lead['status'] ?? '') === 'converted' || !empty($lead['client_id'])) {
+                $existingClient = !empty($lead['client_id']) ? $this->clients->findById((int) $lead['client_id']) : null;
+                if ($existingClient !== null) {
+                    $this->clients->getDatabase()->commit();
+                    return [
+                        'converted_lead_public_id' => (string) $lead['public_id'],
+                        'new_client_id' => (int) $lead['client_id'],
+                        'new_client_public_id' => (string) $existingClient['public_id'],
+                        'status' => 'already_converted',
+                    ];
+                }
                 throw new AlchemizeRequestException(409, 'LEAD_ALREADY_CONVERTED', 'This lead has already been converted.');
             }
             $displayName = trim((string) ($payload['display_name'] ?? $lead['full_name'] ?? ''));

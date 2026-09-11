@@ -2023,7 +2023,12 @@ function ClientManagementPage() {
   };
 
   const handleConvertProspect = async () => {
-    if (!selectedLead) return;
+    // Defense in depth: the button is disabled while converting, but this
+    // guard also blocks re-entry from a rapid double-click landing before
+    // the re-render applies. The real duplicate-prevention lives in the
+    // backend (a row lock on the lead plus a persisted client_id), not
+    // here.
+    if (!selectedLead || converting) return;
     setConverting(true);
     setConvertError("");
     try {

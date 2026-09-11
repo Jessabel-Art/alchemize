@@ -54,5 +54,12 @@ foreach (['needs_reschedule', 'follow-up_required', 'upcoming'] as $status) {
 echo "PASS unsupported statuses rejected\n";
 $integrationRepo = new AlchemizeExternalIntegrationRepository($db);
 $integrationRepo->setCalendarState($id, 'synchronized', 'existing-event');
-verify($db->rows[$id]['synced_status'] === 'synchronized', 'Calendar SQL binding failed');
+// calendar_synced_at is resolved in PHP and interpolated as a literal SQL
+// expression (CURRENT_TIMESTAMP(6) or the existing column) rather than a
+// bound parameter — see setCalendarState()'s own comment for why binding
+// a status literal there throws "Illegal mix of collations" in production.
+// The mock's placeholder-contract check above (line 21-23) already proves
+// no :synced_status-style placeholder without a bound param remains; this
+// checks the still-bound calendar_sync_status value made it through.
+verify($db->rows[$id]['status'] === 'synchronized', 'Calendar SQL binding failed');
 echo "PASS calendar state SQL uses unique native PDO bindings\n";

@@ -153,8 +153,21 @@ verifyLead($db->leads[$leadId]['status'] === 'converted', 'Prospect was not mark
 verifyLead($db->leads[$leadId]['client_id'] === $newClientId, 'Prospect is not linked to the client it became');
 verifyLead(count($db->clients) === 1, 'Conversion created more than one client record');
 
-// Re-converting the same prospect must fail rather than creating a duplicate person.
-rejectsLead(fn() => $service->convertLead($leadId, [], 42), 'LEAD_ALREADY_CONVERTED');
+// Re-converting the same prospect (a duplicate click, a retried request
+// after a slow response, etc.) must not create a second client. It
+// returns the existing client gracefully rather than a raw error, so the
+// admin UI can treat a repeat submission exactly like the first success.
+$repeat = $service->convertLead($leadId, ['client_type' => 'individual', 'legal_name' => 'Should be ignored'], 42);
+verifyLead($repeat['status'] === 'already_converted', 'Repeat conversion did not report already_converted');
+verifyLead($repeat['new_client_id'] === $newClientId, 'Repeat conversion did not return the original client id');
 verifyLead(count($db->clients) === 1, 'Re-conversion created a duplicate client record');
+verifyLead($db->clients[$newClientId]['client_type'] === 'business', 'Repeat conversion mutated the original client');
 
-echo "Lead conversion: creation, requested-service persistence, prospect edits, audience/service validation, and Convert to Client (no duplicates) passed.\n";
+// A lead that reports converted status but whose linked client cannot be
+// found still fails closed with a clear error rather than creating a
+// second client from scratch.
+$db->leads[$leadId]['client_id'] = 999999;
+rejectsLead(fn() => $service->convertLead($leadId, [], 42), 'LEAD_ALREADY_CONVERTED');
+verifyLead(count($db->clients) === 1, 'Fail-closed path created a duplicate client record');
+
+echo "Lead conversion: creation, requested-service persistence, prospect edits, audience/service validation, Convert to Client (no duplicates), and idempotent repeat conversion passed.\n";
