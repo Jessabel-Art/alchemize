@@ -97,7 +97,18 @@ final class AlchemizeDocumentStorageService
         return '';
     }
 
-    public function sendPrivateFile(string $storageKey, string $downloadName, string $mimeType): never
+    // MIME types safe to render inline in a browser tab/frame (matches the
+    // upload allowlist in store() above minus the two Office formats,
+    // which browsers don't render natively and must always download).
+    private const INLINE_PREVIEWABLE_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+
+    // Resolves a storage key to an absolute on-disk path, enforcing the key
+    // shape and that the result stays inside the storage root. Throws
+    // AlchemizeRequestException(404) for a malformed key, a path escaping
+    // the root, or a key whose file no longer exists on disk (including a
+    // key that is otherwise perfectly valid but was orphaned, e.g. by the
+    // file being deleted after its database row was already committed).
+    public function resolveStorageKeyPath(string $storageKey): string
     {
         $legacyKey = preg_match('#^[0-9]+/[a-f0-9]{48}\.[a-z0-9]+$#', $storageKey) === 1;
         $versionedKey = preg_match('#^[0-9]+/[0-9]+/[0-9]+/v[1-9][0-9]*/[a-f0-9]{48}\.[a-z0-9]+$#', $storageKey) === 1;
@@ -109,10 +120,26 @@ final class AlchemizeDocumentStorageService
         if ($root === false || $path === false || !str_starts_with($path, $root . DIRECTORY_SEPARATOR) || !is_file($path)) {
             throw new AlchemizeRequestException(404, 'NOT_FOUND', 'The requested file was not found.');
         }
+        return $path;
+    }
+
+    // The backend decides inline vs. attachment authoritatively from the
+    // real MIME type -- a caller asking to preview a type that can't be
+    // safely rendered inline (e.g. a .docx) still gets a forced download
+    // rather than the browser guessing what to do with it.
+    public function resolveDisposition(string $mimeType, bool $inline): string
+    {
+        return ($inline && in_array($mimeType, self::INLINE_PREVIEWABLE_TYPES, true)) ? 'inline' : 'attachment';
+    }
+
+    public function sendPrivateFile(string $storageKey, string $downloadName, string $mimeType, bool $inline = false): never
+    {
+        $path = $this->resolveStorageKeyPath($storageKey);
+        $disposition = $this->resolveDisposition($mimeType, $inline);
         $safeName = preg_replace('/[^A-Za-z0-9._ -]/', '_', basename($downloadName)) ?: 'document';
         header('Content-Type: ' . $mimeType);
         header('Content-Length: ' . filesize($path));
-        header('Content-Disposition: attachment; filename="' . addcslashes($safeName, '"\\') . '"');
+        header('Content-Disposition: ' . $disposition . '; filename="' . addcslashes($safeName, '"\\') . '"');
         header('Cache-Control: private, no-store');
         header('X-Content-Type-Options: nosniff');
         readfile($path);

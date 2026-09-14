@@ -38,7 +38,7 @@ try {
     $path = trim($_SERVER['PATH_INFO'] ?? ($_SERVER['REQUEST_URI'] ?? ''), '/');
     $parts = array_values(array_filter(explode('/', $path), static fn (string $value): bool => $value !== ''));
 
-    if ($method === 'GET' && count($parts) === 2 && in_array($parts[0], ['lead','client','engagement'], true)) {
+    if ($method === 'GET' && count($parts) === 2 && in_array($parts[0], ['lead','client','engagement','document','task','intake'], true)) {
         alchemize_require_read_only_or_higher();
         $notes = $repository->listByEntity($parts[0], $parts[1]);
         alchemize_json_response(['data' => $notes], 200);
@@ -51,7 +51,7 @@ try {
         $entityType = trim((string) ($payload['entity_type'] ?? ''));
         $entityId = trim((string) ($payload['entity_id'] ?? ''));
         $noteBody = trim((string) ($payload['note_body'] ?? ''));
-        if (!in_array($entityType, ['lead','client','engagement'], true) || $entityId === '' || $noteBody === '') {
+        if (!in_array($entityType, ['lead','client','engagement','document','task','intake'], true) || $entityId === '' || $noteBody === '') {
             throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Valid entity data and note text are required.');
         }
 

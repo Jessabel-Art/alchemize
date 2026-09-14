@@ -97,7 +97,16 @@ final class AlchemizePortalActionService
             $this->repository->deleteGeneralDocument($documentId, (int) $access['client_id']);
             throw $error;
         }
-        $sync = $this->integrations?->synchronizeDocument($submissionId, (string) $stored['absolute_path']) ?? ['status' => 'not_configured'];
+        // Best-effort, same as uploadDocument() above: the file is already
+        // stored and its row already created, so a Drive-sync failure here
+        // must degrade to a status, never fail the request or touch the
+        // file that was just successfully saved.
+        try {
+            $sync = $this->integrations?->synchronizeDocument($submissionId, (string) $stored['absolute_path']) ?? ['status' => 'not_configured'];
+        } catch (Throwable $error) {
+            error_log(sprintf('Post-commit Drive sync failed for document submission %d [%s].', $submissionId, get_class($error)));
+            $sync = ['status' => 'failed'];
+        }
         $this->activity($access, $user, 'client.document.uploaded_general', 'document', $publicId, 'Client uploaded a general document.', $engagementId);
         return ['id' => $publicId, 'status' => 'received', 'drive_sync_status' => $sync['status']];
     }
@@ -191,13 +200,28 @@ final class AlchemizePortalActionService
                 'document-upload:' . $documentId . ':' . $versionNumber,
             );
             $database->commit();
-            $sync = $this->integrations?->synchronizeDocument($submissionId, (string) $stored['absolute_path']) ?? ['status' => 'not_configured'];
-            return ['id' => $documentId, 'status' => 'received', 'filename' => $stored['original_filename'], 'drive_sync_status' => $sync['status']];
         } catch (Throwable $error) {
             if ($database->inTransaction()) $database->rollBack();
             $this->storage->discard($stored['absolute_path']);
             throw $error;
         }
+        // Drive sync is a best-effort side effect of an upload that has
+        // already committed and whose file is already safely on disk -- a
+        // failure here (a provider outage, an unexpected schema gap) must
+        // never look like the upload itself failed, and must never trigger
+        // storage()->discard() on a file whose database row now permanently
+        // references it. (A version of exactly that bug -- a Drive-sync
+        // exception thrown after commit, caught by this method's own
+        // try/catch, deleting the just-uploaded file while its
+        // document_submissions row survived -- destroyed a real client
+        // upload in production; see synchronizeDocument()'s own hardening.)
+        try {
+            $sync = $this->integrations?->synchronizeDocument($submissionId, (string) $stored['absolute_path']) ?? ['status' => 'not_configured'];
+        } catch (Throwable $error) {
+            error_log(sprintf('Post-commit Drive sync failed for document submission %d [%s].', $submissionId, get_class($error)));
+            $sync = ['status' => 'failed'];
+        }
+        return ['id' => $documentId, 'status' => 'received', 'filename' => $stored['original_filename'], 'drive_sync_status' => $sync['status']];
     }
 
     public function sendClientDownload(array $access, array $user, string $documentId): never

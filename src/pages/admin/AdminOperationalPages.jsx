@@ -38,6 +38,14 @@ import { contactServiceGroups } from "../services/serviceCatalog.js";
 import { businessContact, contactRouting } from "../../data/contactInfo.js";
 import InvoiceDocument from "../../components/invoices/InvoiceDocument.jsx";
 import {
+  DocumentRequestDocument,
+  IntakeSubmissionDocument,
+  ReviewDocumentViewer,
+  formatReviewDate,
+  resolveWorkflowActions,
+  resolveWorkflowStage,
+} from "../../components/admin/review-documents.jsx";
+import {
   getInvoiceRemainingBalance,
   getOpenInvoiceBalance,
 } from "../../utils/admin-metrics.js";
@@ -49,6 +57,7 @@ import {
   engagements as engagementApi,
   intakeAdmin,
   invoices as invoiceApi,
+  notes as notesApi,
   payments as paymentApi,
   leads as leadApi,
   portalAdmin,
@@ -153,6 +162,15 @@ const statusTone = {
   "Waiting on Client": "warning",
   Completed: "success",
   Cancelled: "neutral",
+};
+
+// Client Requests' controlled "Next Action" workflow stage (see
+// resolveWorkflowStage() in src/components/admin/review-documents.jsx).
+const WORKFLOW_STAGE_TONE = {
+  "Client Review": "warning",
+  "Admin Review": "info",
+  Accepted: "success",
+  Completed: "neutral",
 };
 
 const formatDate = (value) => {
@@ -5820,63 +5838,350 @@ function ClientRequestsPage() {
     setReviewState({
       open: false,
       type: null,
+      row: null,
       loading: false,
       error: "",
       data: null,
     });
 
+  const loadReviewData = async (row) => {
+    if (row.type === "Document") {
+      const [document, versions] = await Promise.all([
+        documentApi.get(row.id),
+        row.publicId
+          ? portalAdmin.documentVersions(row.publicId)
+          : Promise.resolve({ items: [] }),
+      ]);
+      const enrichedDocument = {
+        ...document,
+        client_name:
+          snapshot.clients.find(
+            (client) => client.id === String(document.client_id),
+          )?.displayName || "Unknown client",
+        engagement_title:
+          snapshot.engagements.find(
+            (eng) => eng.id === String(document.engagement_id),
+          )?.title || null,
+      };
+      const rawSubmissions = versions?.items || versions || [];
+      const submissions = rawSubmissions.map((submission) => ({
+        ...submission,
+        previewUrl: portalAdmin.documentPreviewUrl(submission.id),
+        downloadUrl: portalAdmin.documentDownloadUrl(submission.id),
+      }));
+      return { document: enrichedDocument, submissions };
+    }
+    if (row.type === "Intake") {
+      const detail = await intakeAdmin.get(row.id);
+      return {
+        ...detail,
+        requirements: (detail.requirements || []).map((requirement) => ({
+          ...requirement,
+          downloadUrl: requirement.submission_id
+            ? portalAdmin.documentDownloadUrl(requirement.submission_id)
+            : null,
+        })),
+      };
+    }
+    const task = await taskApi.get(row.id);
+    return {
+      task: {
+        ...task,
+        client_name:
+          snapshot.clients.find(
+            (client) => client.id === String(task.client_id),
+          )?.displayName || "Unknown client",
+        engagement_title:
+          snapshot.engagements.find(
+            (eng) => eng.id === String(task.engagement_id),
+          )?.title || null,
+      },
+    };
+  };
+
   const openReview = async (row) => {
     setReviewState({
       open: true,
       type: row.type,
+      row,
       loading: true,
       error: "",
       data: null,
     });
     try {
-      if (row.type === "Document") {
-        const [document, versions] = await Promise.all([
-          documentApi.get(row.id),
-          row.publicId
-            ? portalAdmin.documentVersions(row.publicId)
-            : Promise.resolve({ items: [] }),
-        ]);
-        setReviewState({
-          open: true,
-          type: "Document",
-          loading: false,
-          error: "",
-          data: { document, submissions: versions?.items || versions || [] },
-        });
-        return;
-      }
-      if (row.type === "Intake") {
-        const detail = await intakeAdmin.get(row.id);
-        setReviewState({
-          open: true,
-          type: "Intake",
-          loading: false,
-          error: "",
-          data: detail,
-        });
-        return;
-      }
-      const task = await taskApi.get(row.id);
+      const data = await loadReviewData(row);
       setReviewState({
         open: true,
-        type: "Task",
+        type: row.type,
+        row,
         loading: false,
         error: "",
-        data: { task },
+        data,
       });
     } catch (error) {
       setReviewState({
         open: true,
         type: row.type,
+        row,
         loading: false,
         error: error.message || "Unable to load this record.",
         data: null,
       });
+    }
+  };
+
+  const refreshClientRequestsData = async () => {
+    // Mirrors mapDocument()/mapTask() in src/layouts/AdminLayout.jsx (the
+    // shared adminStore loader) field-for-field, since those mappers are
+    // module-private there; humanizeStatus() is the same
+    // underscore-to-Title-Case transform as that file's local titleCase().
+    const [documentRows, taskRows, intakes] = await Promise.all([
+      documentApi.list().catch(() => null),
+      taskApi.list().catch(() => null),
+      intakeAdmin.list().catch(() => null),
+    ]);
+    if (documentRows) {
+      adminStore.replaceCollections({
+        documents: documentRows.map((row) => ({
+          id: String(row.id),
+          publicId: row.public_id,
+          clientId: String(row.client_id),
+          engagementId:
+            row.engagement_id == null ? "" : String(row.engagement_id),
+          name: row.document_name,
+          category: row.document_type || "Document",
+          status: humanizeStatus(row.status),
+          visibility:
+            row.visibility === "internal" ? "Internal Only" : "Client Visible",
+          requestedAt: row.requested_date,
+          receivedAt: row.received_date,
+          instructions: row.client_instructions || "",
+          driveSyncStatus: humanizeStatus(
+            row.drive_sync_status || "not_configured",
+          ),
+        })),
+      });
+    }
+    if (taskRows) {
+      adminStore.replaceCollections({
+        tasks: taskRows.map((row) => ({
+          id: String(row.id),
+          publicId: row.public_id,
+          clientId: row.client_id == null ? "" : String(row.client_id),
+          engagementId:
+            row.engagement_id == null ? "" : String(row.engagement_id),
+          title: row.title,
+          description: row.description || "",
+          priority: humanizeStatus(row.priority),
+          dueDate: row.due_date,
+          status: humanizeStatus(row.status),
+          visibility: row.visibility,
+          assignedTo: "Owner / Administrator",
+        })),
+      });
+    }
+    if (intakes) setIntakeItems(intakes.items || []);
+  };
+
+  const entityTypeForRow = (type) =>
+    type === "Document" ? "document" : type === "Task" ? "task" : "intake";
+
+  const applyWorkflowAction = async (row, action, reason) => {
+    if (row.type === "Document") {
+      if (action === "accept") {
+        await documentApi.update(row.id, { status: "accepted" });
+      } else if (action === "complete") {
+        await documentApi.update(row.id, { status: "archived" });
+      } else if (action === "sendBack") {
+        const current = await documentApi.get(row.id);
+        const instructions = [
+          current.client_instructions,
+          `Sent back: ${reason}`,
+        ]
+          .filter(Boolean)
+          .join("\n\n");
+        await documentApi.update(row.id, {
+          status: "replacement_requested",
+          client_instructions: instructions,
+        });
+      }
+      return;
+    }
+    if (row.type === "Task") {
+      if (action === "complete") {
+        await taskApi.update(row.id, { status: "completed" });
+      } else if (action === "sendBack") {
+        const current = await taskApi.get(row.id);
+        const description = [current.description, `Sent back: ${reason}`]
+          .filter(Boolean)
+          .join("\n\n");
+        await taskApi.update(row.id, {
+          status: "waiting_on_client",
+          description,
+        });
+      }
+      return;
+    }
+    if (action === "accept") {
+      await intakeAdmin.review(row.id, { status: "approved" });
+    } else if (action === "complete") {
+      await intakeAdmin.review(row.id, { status: "archived" });
+    } else if (action === "sendBack") {
+      await intakeAdmin.review(row.id, {
+        status: "changes_requested",
+        client_visible_review_note: reason,
+      });
+    }
+  };
+
+  const [workflowActionError, setWorkflowActionError] = useState("");
+
+  const runWorkflowAction = async (row, action, reason) => {
+    setWorkflowActionError("");
+    try {
+      await applyWorkflowAction(row, action, reason);
+      closeReview();
+      await refreshClientRequestsData();
+    } catch (error) {
+      setWorkflowActionError(
+        error.message || "Unable to update this record right now.",
+      );
+    }
+  };
+
+  const [sendBackState, setSendBackState] = useState({
+    open: false,
+    row: null,
+    reason: "",
+    submitting: false,
+    error: "",
+  });
+
+  const openSendBack = (row) =>
+    setSendBackState({
+      open: true,
+      row,
+      reason: "",
+      submitting: false,
+      error: "",
+    });
+  const closeSendBack = () =>
+    setSendBackState({
+      open: false,
+      row: null,
+      reason: "",
+      submitting: false,
+      error: "",
+    });
+  const submitSendBack = async () => {
+    const reason = sendBackState.reason.trim();
+    if (!reason) {
+      setSendBackState((current) => ({
+        ...current,
+        error: "A short reason is required.",
+      }));
+      return;
+    }
+    setSendBackState((current) => ({
+      ...current,
+      submitting: true,
+      error: "",
+    }));
+    try {
+      await applyWorkflowAction(sendBackState.row, "sendBack", reason);
+      closeSendBack();
+      if (reviewState.open && reviewState.row?.id === sendBackState.row?.id) {
+        closeReview();
+      }
+      await refreshClientRequestsData();
+    } catch (error) {
+      setSendBackState((current) => ({
+        ...current,
+        submitting: false,
+        error: error.message || "Unable to send this back right now.",
+      }));
+    }
+  };
+
+  const [notesState, setNotesState] = useState({
+    open: false,
+    row: null,
+    notes: [],
+    loading: false,
+    error: "",
+    draft: "",
+    submitting: false,
+  });
+
+  const openNotes = async (row) => {
+    setNotesState({
+      open: true,
+      row,
+      notes: [],
+      loading: true,
+      error: "",
+      draft: "",
+      submitting: false,
+    });
+    try {
+      const notes = await notesApi.listByEntity(
+        entityTypeForRow(row.type),
+        row.publicId,
+      );
+      setNotesState((current) => ({
+        ...current,
+        notes: notes || [],
+        loading: false,
+      }));
+    } catch (error) {
+      setNotesState((current) => ({
+        ...current,
+        loading: false,
+        error: error.message || "Unable to load notes right now.",
+      }));
+    }
+  };
+  const closeNotes = () =>
+    setNotesState({
+      open: false,
+      row: null,
+      notes: [],
+      loading: false,
+      error: "",
+      draft: "",
+      submitting: false,
+    });
+  const submitNote = async () => {
+    const body = notesState.draft.trim();
+    if (!body || !notesState.row) return;
+    setNotesState((current) => ({ ...current, submitting: true, error: "" }));
+    try {
+      const row = notesState.row;
+      const numericClientId =
+        row.type === "Intake" ? null : Number(row.clientId) || null;
+      await notesApi.create({
+        entity_type: entityTypeForRow(row.type),
+        entity_id: row.publicId,
+        client_id: numericClientId,
+        note_category: "client-requests",
+        note_body: body,
+      });
+      const notes = await notesApi.listByEntity(
+        entityTypeForRow(row.type),
+        row.publicId,
+      );
+      setNotesState((current) => ({
+        ...current,
+        notes: notes || [],
+        draft: "",
+        submitting: false,
+      }));
+    } catch (error) {
+      setNotesState((current) => ({
+        ...current,
+        submitting: false,
+        error: error.message || "Unable to save this note right now.",
+      }));
     }
   };
 
@@ -5964,7 +6269,10 @@ function ClientRequestsPage() {
         status: item.status || "Requested",
         priority: item.priority || "Normal",
         owner: item.assignedReviewer || "Owner / Administrator",
-        nextAction: item.status === "Requested" ? "Upload required" : "Review",
+        nextAction: resolveWorkflowStage(
+          "Document",
+          item.status || "Requested",
+        ),
       })),
       ...snapshot.tasks.map((item) => ({
         id: item.id,
@@ -5984,10 +6292,14 @@ function ClientRequestsPage() {
           "No engagement",
         serviceName: item.serviceName || "General admin support",
         dueDate: item.dueDate,
-        status: item.status || "Waiting on Client",
+        status: item.status || "Waiting On Client",
         priority: item.priority || "Normal",
         owner: item.assignedTo || "Owner / Administrator",
-        nextAction: item.description || "Client response",
+        nextAction: resolveWorkflowStage(
+          "Task",
+          item.status || "Waiting On Client",
+        ),
+        description: item.description || "",
       })),
       ...intakeItems.map((item) => ({
         id: item.id,
@@ -6004,7 +6316,7 @@ function ClientRequestsPage() {
         status: humanizeStatus(item.status),
         priority: "Normal",
         owner: item.assigned_team_member || "Owner / Administrator",
-        nextAction: "Review",
+        nextAction: resolveWorkflowStage("Intake", humanizeStatus(item.status)),
       })),
     ];
 
@@ -6426,16 +6738,40 @@ function ClientRequestsPage() {
                         tone={statusTone[row.status] || "neutral"}
                       />
                     </td>
-                    <td>{row.nextAction}</td>
+                    <td>
+                      <AdminStatusBadge
+                        status={row.nextAction}
+                        tone={WORKFLOW_STAGE_TONE[row.nextAction] || "neutral"}
+                      />
+                    </td>
                     <td>{row.owner}</td>
                     <td>
-                      <button
-                        type="button"
-                        className="link-button"
-                        onClick={() => openReview(row)}
-                      >
-                        Review
-                      </button>
+                      <div className="client-request-actions">
+                        <button
+                          type="button"
+                          className="link-button"
+                          onClick={() => openReview(row)}
+                        >
+                          View
+                        </button>
+                        <button
+                          type="button"
+                          className="link-button"
+                          onClick={() => openNotes(row)}
+                        >
+                          Notes
+                        </button>
+                        {resolveWorkflowActions(row.type, row.status)
+                          .canSendBack ? (
+                          <button
+                            type="button"
+                            className="link-button"
+                            onClick={() => openSendBack(row)}
+                          >
+                            Send Back
+                          </button>
+                        ) : null}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -6901,17 +7237,217 @@ function ClientRequestsPage() {
         </div>
       ) : null}
 
+      {reviewState.open &&
+      (reviewState.type === "Document" || reviewState.type === "Intake") ? (
+        <ReviewDocumentViewer
+          title={
+            reviewState.type === "Document"
+              ? "Document request"
+              : "Intake submission"
+          }
+          printable={reviewState.type === "Intake"}
+          onClose={closeReview}
+          actions={
+            !reviewState.loading && !reviewState.error && reviewState.row ? (
+              <>
+                {resolveWorkflowActions(
+                  reviewState.row.type,
+                  reviewState.row.status,
+                ).canAccept ? (
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => runWorkflowAction(reviewState.row, "accept")}
+                  >
+                    Accept
+                  </button>
+                ) : null}
+                {resolveWorkflowActions(
+                  reviewState.row.type,
+                  reviewState.row.status,
+                ).canComplete ? (
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() =>
+                      runWorkflowAction(reviewState.row, "complete")
+                    }
+                  >
+                    Mark Completed
+                  </button>
+                ) : null}
+                {resolveWorkflowActions(
+                  reviewState.row.type,
+                  reviewState.row.status,
+                ).canSendBack ? (
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => openSendBack(reviewState.row)}
+                  >
+                    Send Back
+                  </button>
+                ) : null}
+              </>
+            ) : null
+          }
+        >
+          {workflowActionError ? (
+            <div className="admin-toast error review-print-hide" role="alert">
+              {workflowActionError}
+            </div>
+          ) : null}
+          {reviewState.loading ? (
+            <p role="status">Loading…</p>
+          ) : reviewState.error ? (
+            <div className="admin-toast error" role="alert">
+              {reviewState.error}
+            </div>
+          ) : reviewState.type === "Document" && reviewState.data ? (
+            <DocumentRequestDocument
+              document={reviewState.data.document}
+              submissions={reviewState.data.submissions}
+            />
+          ) : reviewState.type === "Intake" && reviewState.data ? (
+            <IntakeSubmissionDocument data={reviewState.data} />
+          ) : null}
+        </ReviewDocumentViewer>
+      ) : null}
+
+      {sendBackState.open ? (
+        <div className="admin-detail-overlay" onClick={closeSendBack}>
+          <aside
+            className="admin-detail-drawer review-send-back-drawer"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="admin-detail-header">
+              <h2>Send back to client</h2>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={closeSendBack}
+              >
+                Close
+              </button>
+            </div>
+            <p>
+              {sendBackState.row?.request} for {sendBackState.row?.clientName}{" "}
+              will move back to Client Review. This does not remove any prior
+              submission or file history.
+            </p>
+            {sendBackState.error ? (
+              <div className="admin-toast error" role="alert">
+                {sendBackState.error}
+              </div>
+            ) : null}
+            <label className="full-span">
+              <span>Reason / instructions for the client</span>
+              <textarea
+                rows="4"
+                value={sendBackState.reason}
+                onChange={(event) =>
+                  setSendBackState((current) => ({
+                    ...current,
+                    reason: event.target.value,
+                  }))
+                }
+              />
+            </label>
+            <div className="admin-header-actions">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={closeSendBack}
+                disabled={sendBackState.submitting}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="primary-button"
+                onClick={submitSendBack}
+                disabled={sendBackState.submitting}
+              >
+                {sendBackState.submitting ? "Sending…" : "Send Back"}
+              </button>
+            </div>
+          </aside>
+        </div>
+      ) : null}
+
+      {notesState.open ? (
+        <div className="admin-detail-overlay" onClick={closeNotes}>
+          <aside
+            className="admin-detail-drawer"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="admin-detail-header">
+              <h2>Notes — {notesState.row?.request}</h2>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={closeNotes}
+              >
+                Close
+              </button>
+            </div>
+            <p className="review-print-hide">
+              Internal / Admin-only. Not visible to the client.
+            </p>
+            {notesState.error ? (
+              <div className="admin-toast error" role="alert">
+                {notesState.error}
+              </div>
+            ) : null}
+            {notesState.loading ? (
+              <p role="status">Loading…</p>
+            ) : (
+              <div className="review-note-list">
+                {notesState.notes.length === 0 ? (
+                  <p>No notes yet.</p>
+                ) : (
+                  notesState.notes.map((note) => (
+                    <div
+                      className="review-note-item"
+                      key={note.public_id || note.id}
+                    >
+                      <small>{formatReviewDate(note.created_at)}</small>
+                      <p>{note.note_body}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+            <label className="full-span">
+              <span>Add a note</span>
+              <textarea
+                rows="3"
+                value={notesState.draft}
+                onChange={(event) =>
+                  setNotesState((current) => ({
+                    ...current,
+                    draft: event.target.value,
+                  }))
+                }
+              />
+            </label>
+            <div className="admin-header-actions">
+              <button
+                type="button"
+                className="primary-button"
+                onClick={submitNote}
+                disabled={notesState.submitting || !notesState.draft.trim()}
+              >
+                {notesState.submitting ? "Saving…" : "Save note"}
+              </button>
+            </div>
+          </aside>
+        </div>
+      ) : null}
+
       <AdminDetailDrawer
-        open={reviewState.open}
-        title={
-          reviewState.type === "Document"
-            ? "Document request"
-            : reviewState.type === "Intake"
-              ? "Intake submission"
-              : reviewState.type === "Task"
-                ? "Task detail"
-                : "Review"
-        }
+        open={reviewState.open && reviewState.type === "Task"}
+        title="Task detail"
         onClose={closeReview}
       >
         {reviewState.loading ? (
@@ -6920,225 +7456,13 @@ function ClientRequestsPage() {
           <div className="admin-toast error" role="alert">
             {reviewState.error}
           </div>
-        ) : reviewState.type === "Document" && reviewState.data ? (
-          <div className="admin-detail-grid">
-            <div className="detail-block">
-              <h3>Overview</h3>
-              <dl>
-                <div>
-                  <dt>Client</dt>
-                  <dd>
-                    {snapshot.clients.find(
-                      (client) =>
-                        client.id ===
-                        String(reviewState.data.document.client_id),
-                    )?.displayName || "Unknown client"}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Request</dt>
-                  <dd>{reviewState.data.document.document_name}</dd>
-                </div>
-                <div>
-                  <dt>Related engagement / service</dt>
-                  <dd>
-                    {snapshot.engagements.find(
-                      (eng) =>
-                        eng.id ===
-                        String(reviewState.data.document.engagement_id),
-                    )?.title ||
-                      reviewState.data.document.document_type ||
-                      "No engagement"}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Status</dt>
-                  <dd>
-                    <AdminStatusBadge
-                      status={humanizeStatus(reviewState.data.document.status)}
-                      tone={
-                        statusTone[
-                          humanizeStatus(reviewState.data.document.status)
-                        ] || "neutral"
-                      }
-                    />
-                  </dd>
-                </div>
-                <div>
-                  <dt>Requested</dt>
-                  <dd>
-                    {formatDate(reviewState.data.document.requested_date)}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Received</dt>
-                  <dd>
-                    {reviewState.data.document.received_date
-                      ? formatDate(reviewState.data.document.received_date)
-                      : "Not yet received"}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Due</dt>
-                  <dd>{formatDate(reviewState.data.document.due_date)}</dd>
-                </div>
-              </dl>
-            </div>
-            {reviewState.data.document.client_instructions ? (
-              <div className="detail-block">
-                <h3>Instructions for the client</h3>
-                <p>{reviewState.data.document.client_instructions}</p>
-              </div>
-            ) : null}
-            {reviewState.data.document.internal_notes ? (
-              <div className="detail-block">
-                <h3>Internal notes</h3>
-                <p>{reviewState.data.document.internal_notes}</p>
-              </div>
-            ) : null}
-            <div className="detail-block">
-              <h3>Submitted file(s)</h3>
-              {reviewState.data.submissions.length === 0 ? (
-                <p>No file has been uploaded for this request yet.</p>
-              ) : (
-                <ul className="admin-file-list">
-                  {reviewState.data.submissions.map((submission) => (
-                    <li key={submission.id}>
-                      <a
-                        href={portalAdmin.documentDownloadUrl(submission.id)}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        {submission.original_filename || "Download file"}
-                      </a>
-                      <small>
-                        {" "}
-                        version {submission.version_number} · uploaded{" "}
-                        {formatDate(submission.submitted_at)}
-                        {submission.uploaded_by
-                          ? ` by ${submission.uploaded_by}`
-                          : ""}
-                      </small>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </div>
-        ) : reviewState.type === "Intake" && reviewState.data ? (
-          (() => {
-            const { assignment, responses, requirements, definition } =
-              reviewState.data;
-            const fieldLabels = Object.fromEntries(
-              (definition?.modules || []).flatMap((module) =>
-                (module.fields || []).map((field) => [field.key, field.label]),
-              ),
-            );
-            return (
-              <div className="admin-detail-grid">
-                <div className="detail-block">
-                  <h3>Overview</h3>
-                  <dl>
-                    <div>
-                      <dt>Intake form</dt>
-                      <dd>{definition?.label || assignment.family_key}</dd>
-                    </div>
-                    <div>
-                      <dt>Client</dt>
-                      <dd>{assignment.client_name}</dd>
-                    </div>
-                    <div>
-                      <dt>Related engagement / service</dt>
-                      <dd>{assignment.engagement_title}</dd>
-                    </div>
-                    <div>
-                      <dt>Status</dt>
-                      <dd>
-                        <AdminStatusBadge
-                          status={humanizeStatus(assignment.status)}
-                        />
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>Submitted</dt>
-                      <dd>
-                        {assignment.submitted_at
-                          ? formatDate(assignment.submitted_at)
-                          : "Not yet submitted"}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>Completion</dt>
-                      <dd>{assignment.completion_percentage}%</dd>
-                    </div>
-                  </dl>
-                </div>
-                <div className="detail-block">
-                  <h3>Submitted answers</h3>
-                  {Object.keys(responses || {}).length === 0 ? (
-                    <p>No answers have been submitted yet.</p>
-                  ) : (
-                    <dl>
-                      {Object.entries(responses).map(([key, response]) => (
-                        <div key={key}>
-                          <dt>
-                            {fieldLabels[key] || humanizeStatus(key)}
-                            {response.currently_applicable === false ? (
-                              <small>
-                                {" "}
-                                (not applicable to this submission)
-                              </small>
-                            ) : null}
-                          </dt>
-                          <dd>
-                            {Array.isArray(response.value)
-                              ? response.value.join(", ") || "—"
-                              : String(response.value ?? "") || "—"}
-                          </dd>
-                        </div>
-                      ))}
-                    </dl>
-                  )}
-                </div>
-                {requirements && requirements.length > 0 ? (
-                  <div className="detail-block">
-                    <h3>Attachments / document requirements</h3>
-                    <ul className="admin-file-list">
-                      {requirements.map((requirement) => (
-                        <li key={requirement.id}>
-                          {requirement.submission_id ? (
-                            <a
-                              href={portalAdmin.documentDownloadUrl(
-                                requirement.submission_id,
-                              )}
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              {requirement.requirement_name}
-                              {requirement.filename
-                                ? ` — ${requirement.filename}`
-                                : ""}
-                            </a>
-                          ) : (
-                            <span>{requirement.requirement_name}</span>
-                          )}
-                          <small>
-                            {" "}
-                            {humanizeStatus(requirement.status)}
-                            {requirement.uploaded_at
-                              ? ` · uploaded ${formatDate(requirement.uploaded_at)}`
-                              : ""}
-                          </small>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : null}
-              </div>
-            );
-          })()
         ) : reviewState.type === "Task" && reviewState.data ? (
           <div className="admin-detail-grid">
+            {workflowActionError ? (
+              <div className="admin-toast error full-span" role="alert">
+                {workflowActionError}
+              </div>
+            ) : null}
             <div className="detail-block">
               <h3>Overview</h3>
               <dl>
@@ -7191,6 +7515,26 @@ function ClientRequestsPage() {
               <div className="detail-block">
                 <h3>Description</h3>
                 <p>{reviewState.data.task.description}</p>
+              </div>
+            ) : null}
+            {reviewState.row &&
+            resolveWorkflowActions(reviewState.row.type, reviewState.row.status)
+              .canComplete ? (
+              <div className="full-span admin-header-actions">
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => openSendBack(reviewState.row)}
+                >
+                  Send Back
+                </button>
+                <button
+                  type="button"
+                  className="primary-button"
+                  onClick={() => runWorkflowAction(reviewState.row, "complete")}
+                >
+                  Mark Completed
+                </button>
               </div>
             ) : null}
           </div>

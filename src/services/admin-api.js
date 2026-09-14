@@ -291,6 +291,16 @@ export const tasks = {
     }),
 };
 
+export const notes = {
+  listByEntity: (entityType, entityId) =>
+    apiRequest(buildApiUrl(`notes/${entityType}/${entityId}`)),
+  create: (payload) =>
+    apiRequest(buildApiUrl("notes"), {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+};
+
 export const appointments = {
   list: () => apiRequest(buildApiUrl("appointments")),
   get: (id) => apiRequest(buildApiUrl(`appointments/${id}`)),
@@ -381,6 +391,8 @@ export const portalAdmin = {
     }),
   documentDownloadUrl: (id) =>
     buildApiUrl(`portal-admin/documents/${id}/download`),
+  documentPreviewUrl: (id) =>
+    buildApiUrl(`portal-admin/documents/${id}/preview`),
   documentVersions: (id) =>
     apiRequest(buildApiUrl(`portal-admin/documents/${id}/versions`)),
   resolve: (type, id, decision, payload = {}) =>
@@ -489,4 +501,5 @@ export default {
   payments,
   portalAdmin,
   leads,
+  notes,
 };

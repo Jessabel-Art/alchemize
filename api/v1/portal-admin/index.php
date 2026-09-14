@@ -69,6 +69,16 @@ try {
             (string) $submission['mime_type'],
         );
     }
+    if ($method === 'GET' && count($parts) === 3 && $parts[0] === 'documents' && $parts[2] === 'preview') {
+        $submission = $repository->findSubmission($parts[1], false);
+        if ($submission === null) throw new AlchemizeRequestException(404, 'NOT_FOUND', 'The requested document was not found.');
+        (new AlchemizeDocumentStorageService((string) $config['document_storage_root']))->sendPrivateFile(
+            (string) $submission['storage_key'],
+            (string) $submission['original_filename'],
+            (string) $submission['mime_type'],
+            true,
+        );
+    }
     if ($method === 'GET' && count($parts) === 3 && $parts[0] === 'documents' && $parts[2] === 'versions') {
         alchemize_json_response(['data' => ['items' => $repository->listDocumentVersions($parts[1])]], 200);
     }

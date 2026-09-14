@@ -17,7 +17,15 @@ final class AlchemizeExternalIntegrationService
         if ($client === null) throw new AlchemizeRequestException(404, 'NOT_FOUND', 'Client was not found.');
         if (!empty($client['google_drive_folder_id'])) return ['status' => 'synchronized', 'folder_id' => $client['google_drive_folder_id']];
         if ($this->drive === null || !$this->drive->configured()) {
-            $this->repository->setClientDriveState($clientId, 'not_configured', null, 'not_configured');
+            // Same reasoning as synchronizeDocument()'s early-return below:
+            // recording sync state must never be allowed to turn a routine
+            // "not configured" result into an uncaught exception for a
+            // caller further up the chain.
+            try {
+                $this->repository->setClientDriveState($clientId, 'not_configured', null, 'not_configured');
+            } catch (Throwable $error) {
+                error_log(sprintf('Failed to record Drive folder sync state [%s].', get_class($error)));
+            }
             return ['status' => 'not_configured'];
         }
         try {
@@ -39,7 +47,15 @@ final class AlchemizeExternalIntegrationService
         $folder = $this->ensureClientFolder((int) $submission['client_id']);
         if (($folder['status'] ?? '') !== 'synchronized' || $this->drive === null) {
             $status = ($folder['status'] ?? '') === 'not_configured' ? 'not_configured' : 'failed';
-            $this->repository->setDocumentDriveState($submissionId, $status, null, $status);
+            // Recording sync state is itself a best-effort side note, not a
+            // condition of the sync result -- a failure here (a transient
+            // DB error, a schema gap) must not become an uncaught exception
+            // that a caller could mistake for the underlying upload failing.
+            try {
+                $this->repository->setDocumentDriveState($submissionId, $status, null, $status);
+            } catch (Throwable $error) {
+                error_log(sprintf('Failed to record Drive sync state [%s].', get_class($error)));
+            }
             return ['status' => $status];
         }
         try {

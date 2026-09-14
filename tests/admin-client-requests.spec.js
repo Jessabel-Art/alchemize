@@ -1,13 +1,16 @@
 import { test, expect } from "@playwright/test";
 
-// The "Review" action in Admin -> Client Requests previously had no
-// onClick handler at all (a plain <button className="link-button">Review
-// </button>), so clicking it did nothing for any of the three unified-queue
-// record types (document requests, real intake-form submissions, tasks).
-// These tests drive the fixed handler end to end against a mocked backend
-// shaped exactly like the real API responses (documents/{id},
-// portal-admin/documents/{id}/versions, portal-admin/intakes/{id},
-// tasks/{id}), reflecting real production record shapes captured directly
+// Admin -> Client Requests: the previously-inert "Review" action was fixed
+// in an earlier pass to open a real detail view per record type. This pass
+// replaces that narrow card modal with a full document-viewer experience
+// for intake submissions and document requests (print-ready, inline file
+// preview instead of forced downloads), adds a real controlled workflow
+// (Client Review / Admin Review / Accepted / Completed) driving a
+// View / Notes / Send Back actions row, and fixes the production
+// NOT_FOUND file-serving defect. These tests mock the backend with shapes
+// matching the real API responses (documents/{id}, portal-admin/documents/
+// {id}/versions|preview|download, portal-admin/intakes/{id}, tasks/{id},
+// notes/{entity}/{id}), reflecting real production record shapes captured
 // from the live database (client 9, engagement 2).
 
 const clientRows = [
@@ -79,7 +82,7 @@ const taskRows = [
     description: "Collect a government-issued identity document.",
     priority: "normal",
     due_date: "2026-09-10",
-    status: "completed",
+    status: "in_progress",
     visibility: "shared",
   },
 ];
@@ -87,7 +90,7 @@ const intakeListItems = [
   {
     id: "intake-pub-1",
     family_key: "web_digital",
-    module_keys: ["brand"],
+    module_keys: ["project_overview"],
     status: "submitted",
     completion_percentage: 100,
     due_date: null,
@@ -101,60 +104,67 @@ const intakeListItems = [
     missing_requirements: 0,
   },
 ];
-const intakeDetail = {
-  assignment: { ...intakeListItems[0], id: 1 },
-  responses: {
-    business_name: {
-      value: "Rivera Consulting",
-      section: "brand",
-      applicability: "required",
-      updated_at: "2026-09-05 09:00:00",
-      currently_applicable: true,
-    },
-    brand_colors: {
-      value: ["Teal", "Gold"],
-      section: "brand",
-      applicability: "optional",
-      updated_at: "2026-09-05 09:00:00",
-      currently_applicable: true,
-    },
-  },
-  requirements: [
+const intakeAssignment = { ...intakeListItems[0], id: 1 };
+const intakeDefinition = {
+  key: "web_digital",
+  label: "Web & Digital Solutions",
+  modules: [
     {
-      id: "req-pub-1",
-      requirement_key: "logo",
-      requirement_name: "Logo files",
-      requirement_type: "asset",
-      necessity: "optional",
-      status: "accepted",
-      notes: null,
-      document_id: "doc-pub-1",
-      document_name: "Logo files",
-      document_status: "accepted",
-      submission_id: "sub-pub-1",
-      filename: "logo-files.pdf",
-      uploaded_at: "2026-09-02 08:00:00",
+      key: "project_overview",
+      title: "Project overview",
+      fields: [
+        {
+          key: "project_type",
+          label: "Project type",
+          type: "multiselect",
+          options: [
+            { value: "new_website", label: "New Website" },
+            { value: "website_redesign", label: "Website Redesign" },
+          ],
+        },
+        { key: "project_goals", label: "Project goals", type: "textarea" },
+      ],
     },
   ],
-  definition: {
-    key: "web_digital",
-    label: "Web & Digital Solutions",
-    modules: [
+};
+function buildIntakeDetail(overrides = {}) {
+  return {
+    assignment: { ...intakeAssignment, ...overrides.assignment },
+    responses: {
+      project_type: {
+        value: "new_website",
+        section: "project_overview",
+        applicability: "required",
+        currently_applicable: true,
+      },
+      project_goals: {
+        value: "Launch a new marketing site before Q4.",
+        section: "project_overview",
+        applicability: "required",
+        currently_applicable: true,
+      },
+      ...overrides.responses,
+    },
+    requirements: overrides.requirements || [
       {
-        key: "brand",
-        title: "Brand assets",
-        fields: [
-          { key: "business_name", label: "Business name", type: "text" },
-          {
-            key: "brand_colors",
-            label: "Preferred brand colors",
-            type: "text",
-          },
-        ],
+        id: "req-pub-1",
+        requirement_key: "logo",
+        requirement_name: "Logo files",
+        requirement_type: "asset",
+        necessity: "optional",
+        status: "accepted",
+        notes: null,
+        document_id: "doc-pub-1",
+        document_name: "Logo files",
+        document_status: "accepted",
+        submission_id: "sub-pub-1",
+        filename: "logo-files.pdf",
+        uploaded_at: "2026-09-02 08:00:00",
       },
     ],
-  },
-};
+    definition: intakeDefinition,
+  };
+}
 const documentVersions = {
   items: [
     {
@@ -171,9 +181,31 @@ const documentVersions = {
     },
   ],
 };
+const imageDocumentVersions = {
+  items: [
+    {
+      id: "sub-pub-2",
+      version_number: 1,
+      original_filename: "id-front.png",
+      mime_type: "image/png",
+      file_size_bytes: 20481,
+      status: "received",
+      submitted_at: "2026-09-06 08:00:00",
+      reviewed_at: null,
+      archived_at: null,
+      uploaded_by: "Test Client",
+    },
+  ],
+};
 
-async function mockAdmin(page, { fail } = {}) {
-  const requestedIds = { document: [], task: [], intake: [] };
+async function mockAdmin(page, { fail, docVersions } = {}) {
+  const calls = { document: [], task: [], intake: [], notes: [] };
+  const state = {
+    documents: documentsMeta.map((d) => ({ ...d })),
+    tasks: taskRows.map((t) => ({ ...t })),
+    intake: { ...intakeAssignment },
+    notes: [],
+  };
   await page.route("**/alchemize-api.php?*", async (route) => {
     const url = new URL(route.request().url());
     const key = url.searchParams.get("route");
@@ -207,17 +239,28 @@ async function mockAdmin(page, { fail } = {}) {
     )
       return route.fulfill({ json: { data: [] } });
     if (key === "tasks" && method === "GET")
-      return route.fulfill({ json: { data: taskRows } });
+      return route.fulfill({ json: { data: state.tasks } });
     if (key === "documents" && method === "GET")
-      return route.fulfill({ json: { data: documentsMeta } });
-    if (key === "portal-admin/intakes")
+      return route.fulfill({ json: { data: state.documents } });
+    if (key === "portal-admin/intakes") {
       return route.fulfill({
-        json: { data: { items: intakeListItems, definitions: [] } },
+        json: {
+          data: {
+            items: [
+              {
+                ...intakeListItems[0],
+                status: state.intake.status,
+              },
+            ],
+            definitions: [],
+          },
+        },
       });
+    }
 
     const documentIdMatch = /^documents\/(\d+)$/.exec(key || "");
     if (documentIdMatch && method === "GET") {
-      requestedIds.document.push(Number(documentIdMatch[1]));
+      calls.document.push(Number(documentIdMatch[1]));
       if (fail === "document")
         return route.fulfill({
           status: 500,
@@ -228,15 +271,22 @@ async function mockAdmin(page, { fail } = {}) {
             },
           },
         });
-      const doc = documentsMeta.find(
+      const doc = state.documents.find(
         (d) => d.id === Number(documentIdMatch[1]),
       );
+      return route.fulfill({ json: { data: doc } });
+    }
+    if (documentIdMatch && method === "PUT") {
+      const id = Number(documentIdMatch[1]);
+      const body = route.request().postDataJSON();
+      const doc = state.documents.find((d) => d.id === id);
+      Object.assign(doc, body);
       return route.fulfill({ json: { data: doc } });
     }
 
     const taskIdMatch = /^tasks\/(\d+)$/.exec(key || "");
     if (taskIdMatch && method === "GET") {
-      requestedIds.task.push(Number(taskIdMatch[1]));
+      calls.task.push(Number(taskIdMatch[1]));
       if (fail === "task")
         return route.fulfill({
           status: 500,
@@ -247,13 +297,20 @@ async function mockAdmin(page, { fail } = {}) {
             },
           },
         });
-      const item = taskRows.find((t) => t.id === Number(taskIdMatch[1]));
+      const item = state.tasks.find((t) => t.id === Number(taskIdMatch[1]));
       return route.fulfill({ json: { data: item } });
+    }
+    if (taskIdMatch && method === "PUT") {
+      const id = Number(taskIdMatch[1]);
+      const body = route.request().postDataJSON();
+      const item = state.tasks.find((t) => t.id === id);
+      Object.assign(item, body);
+      return route.fulfill({ json: { data: { id } } });
     }
 
     const intakeIdMatch = /^portal-admin\/intakes\/([^/]+)$/.exec(key || "");
     if (intakeIdMatch && method === "GET") {
-      requestedIds.intake.push(intakeIdMatch[1]);
+      calls.intake.push(intakeIdMatch[1]);
       if (fail === "intake")
         return route.fulfill({
           status: 500,
@@ -264,7 +321,19 @@ async function mockAdmin(page, { fail } = {}) {
             },
           },
         });
-      return route.fulfill({ json: { data: intakeDetail } });
+      return route.fulfill({
+        json: { data: buildIntakeDetail({ assignment: state.intake }) },
+      });
+    }
+    if (intakeIdMatch && method === "PUT") {
+      const body = route.request().postDataJSON();
+      Object.assign(state.intake, {
+        status: body.status,
+        client_visible_review_note: body.client_visible_review_note,
+      });
+      return route.fulfill({
+        json: { data: { id: intakeIdMatch[1], status: body.status } },
+      });
     }
 
     const versionsMatch = /^portal-admin\/documents\/([^/]+)\/versions$/.exec(
@@ -272,7 +341,11 @@ async function mockAdmin(page, { fail } = {}) {
     );
     if (versionsMatch && method === "GET") {
       const items =
-        versionsMatch[1] === "doc-pub-1" ? documentVersions.items : [];
+        versionsMatch[1] === "doc-pub-1"
+          ? (docVersions || documentVersions).items
+          : versionsMatch[1] === "doc-pub-2"
+            ? imageDocumentVersions.items
+            : [];
       return route.fulfill({ json: { data: { items } } });
     }
 
@@ -283,117 +356,238 @@ async function mockAdmin(page, { fail } = {}) {
       return route.fulfill({
         status: 200,
         contentType: "application/pdf",
-        body: "mock-file-bytes",
+        headers: { "Content-Disposition": "attachment; filename=file" },
+        body: "mock-file-bytes-attachment",
+      });
+    }
+    const previewMatch = /^portal-admin\/documents\/([^/]+)\/preview$/.exec(
+      key || "",
+    );
+    if (previewMatch && method === "GET") {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/pdf",
+        headers: { "Content-Disposition": "inline; filename=file" },
+        body: "mock-file-bytes-inline",
+      });
+    }
+
+    const notesGetMatch = /^notes\/([a-z]+)\/([^/]+)$/.exec(key || "");
+    if (notesGetMatch && method === "GET") {
+      return route.fulfill({
+        json: {
+          data: state.notes.filter(
+            (note) =>
+              note.entity_type === notesGetMatch[1] &&
+              note.entity_id === notesGetMatch[2],
+          ),
+        },
+      });
+    }
+    if (key === "notes" && method === "POST") {
+      const body = route.request().postDataJSON();
+      calls.notes.push(body);
+      const note = {
+        public_id: `note-${state.notes.length + 1}`,
+        ...body,
+        created_at: "2026-09-10 12:00:00",
+      };
+      state.notes.push(note);
+      return route.fulfill({
+        status: 201,
+        json: {
+          data: { id: state.notes.length, entity_type: body.entity_type },
+        },
       });
     }
 
     return route.fulfill({ json: { data: [] } });
   });
-  return requestedIds;
+  return { calls, state };
 }
 
-test("document Review opens with the correct record, shows metadata, and the uploaded file is downloadable", async ({
+test("intake View opens the print-ready document with human-readable answers", async ({
   page,
 }) => {
-  const requestedIds = await mockAdmin(page);
+  const { calls } = await mockAdmin(page);
   await page.goto("/admin/client-requests/");
   await page.waitForFunction(() => Boolean(window.adminStore));
 
-  await expect(page.getByText("Logo files").first()).toBeVisible();
-  const row = page.locator("tr", { hasText: "Logo files" });
-  await row.getByRole("button", { name: "Review" }).click();
+  await expect(page.getByText(/Web Digital intake/i)).toBeVisible();
+  const row = page.locator("tr", { hasText: "Web Digital intake" });
+  await row.getByRole("button", { name: "View" }).click();
 
-  // The handler fired with this row's real numeric id (1), not some other
-  // row's, and not a no-op.
-  await expect.poll(() => requestedIds.document).toEqual([1]);
-
-  const dialog = page.getByRole("dialog", { name: "Document request" });
+  await expect.poll(() => calls.intake).toEqual(["intake-pub-1"]);
+  const dialog = page.getByRole("dialog", { name: "Intake submission" });
   await expect(dialog).toBeVisible();
-  await expect(dialog.getByText("Test Client", { exact: true })).toBeVisible();
-  await expect(dialog.getByText("Website Build")).toBeVisible();
+  await expect(dialog.getByText("Client Intake Submission")).toBeVisible();
+  await expect(dialog.getByText("Test Client")).toBeVisible();
+  await expect(dialog.getByText("Project overview")).toBeVisible();
+
+  // Human-readable formatting: the raw stored value "new_website" renders
+  // as its real option label "New Website", not the raw machine value.
+  await expect(dialog.getByText("Project type")).toBeVisible();
+  await expect(dialog.getByText("New Website", { exact: true })).toBeVisible();
+  await expect(dialog.getByText("new_website")).toHaveCount(0);
+
+  // Long-form answers are preserved in full, not truncated into a card.
   await expect(
-    dialog.getByText("Please upload your logo files."),
+    dialog.getByText("Launch a new marketing site before Q4."),
   ).toBeVisible();
-  await expect(dialog.getByText("Looks good, approved.")).toBeVisible();
 
-  const downloadLink = dialog.getByRole("link", { name: /logo-files\.pdf/ });
-  await expect(downloadLink).toBeVisible();
-  const href = await downloadLink.getAttribute("href");
-  expect(href).toContain("route=portal-admin");
-  expect(href).toContain("download");
+  // Attachment summary with a real clickable download link.
+  const attachmentLink = dialog.getByRole("link", { name: /logo-files\.pdf/ });
+  await expect(attachmentLink).toBeVisible();
+  expect(await attachmentLink.getAttribute("href")).toContain("sub-pub-1");
 
-  // The download URL uses the existing document-storage architecture, not
-  // a fabricated path -- confirm it actually resolves through the mocked
-  // backend route.
-  const download = await page.evaluate(async (url) => {
-    const response = await fetch(url);
-    return { status: response.status, text: await response.text() };
-  }, href);
-  expect(download.status).toBe(200);
-  expect(download.text).toBe("mock-file-bytes");
+  // Print control is present for intake; window.print() is wired.
+  await page.exposeFunction("__printCalled", () => {});
+  await page.evaluate(() => {
+    window.__printCallCount = 0;
+    window.print = () => {
+      window.__printCallCount += 1;
+    };
+  });
+  await dialog.getByRole("button", { name: "Print / Save PDF" }).click();
+  await expect.poll(() => page.evaluate(() => window.__printCallCount)).toBe(1);
 
-  // Closing the review view returns to Client Requests correctly.
   await dialog.getByRole("button", { name: "Close" }).click();
   await expect(dialog).toHaveCount(0);
-  await expect(page.getByText("Logo files").first()).toBeVisible();
 });
 
-test("an awaiting-upload document Review shows no submitted file yet", async ({
+test("multiselect answers render every selected option's human-readable label", async ({
+  page,
+}) => {
+  await mockAdmin(page);
+  await page.route("**/alchemize-api.php?*", async (route) => {
+    const url = new URL(route.request().url());
+    if (url.searchParams.get("route") === "portal-admin/intakes/intake-pub-1") {
+      return route.fulfill({
+        json: {
+          data: buildIntakeDetail({
+            responses: {
+              project_type: {
+                value: ["new_website", "website_redesign"],
+                section: "project_overview",
+                applicability: "required",
+                currently_applicable: true,
+              },
+            },
+          }),
+        },
+      });
+    }
+    return route.fallback();
+  });
+  await page.goto("/admin/client-requests/");
+  await page.waitForFunction(() => Boolean(window.adminStore));
+  await page
+    .locator("tr", { hasText: "Web Digital intake" })
+    .getByRole("button", { name: "View" })
+    .click();
+  const dialog = page.getByRole("dialog", { name: "Intake submission" });
+  await expect(dialog.getByText("New Website, Website Redesign")).toBeVisible();
+});
+
+test("document View shows an inline PDF preview plus a separate Download Original action", async ({
   page,
 }) => {
   await mockAdmin(page);
   await page.goto("/admin/client-requests/");
   await page.waitForFunction(() => Boolean(window.adminStore));
 
-  const row = page.locator("tr", { hasText: "ID Verification" });
-  await row.getByRole("button", { name: "Review" }).click();
+  const row = page.locator("tr", { hasText: "Logo files" });
+  await row.getByRole("button", { name: "View" }).click();
   const dialog = page.getByRole("dialog", { name: "Document request" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText("Test Client", { exact: true })).toBeVisible();
   await expect(
-    dialog.getByText("No file has been uploaded for this request yet."),
+    dialog.getByText("Please upload your logo files."),
   ).toBeVisible();
+  await expect(dialog.getByText("Looks good, approved.")).toBeVisible();
+
+  const iframe = dialog.locator("iframe");
+  await expect(iframe).toBeVisible();
+  const previewSrc = await iframe.getAttribute("src");
+  expect(previewSrc).toContain("preview");
+
+  // Inline preview actually resolves through the real preview route.
+  const previewFetch = await page.evaluate(async (url) => {
+    const response = await fetch(url);
+    return {
+      status: response.status,
+      text: await response.text(),
+      disposition: response.headers.get("content-disposition"),
+    };
+  }, previewSrc);
+  expect(previewFetch.status).toBe(200);
+  expect(previewFetch.text).toBe("mock-file-bytes-inline");
+  expect(previewFetch.disposition).toContain("inline");
+
+  const downloadLink = dialog.getByRole("link", { name: "Download Original" });
+  await expect(downloadLink).toBeVisible();
+  const downloadHref = await downloadLink.getAttribute("href");
+  expect(downloadHref).toContain("download");
+  expect(downloadHref).not.toContain("preview");
 });
 
-test("intake Review opens and displays the real submitted answers", async ({
-  page,
-}) => {
-  const requestedIds = await mockAdmin(page);
+test("an image submission previews inline as an <img>", async ({ page }) => {
+  await mockAdmin(page);
   await page.goto("/admin/client-requests/");
   await page.waitForFunction(() => Boolean(window.adminStore));
-
-  await expect(page.getByText(/Web Digital intake/i)).toBeVisible();
-  const row = page.locator("tr", { hasText: "Web Digital intake" });
-  await row.getByRole("button", { name: "Review" }).click();
-
-  await expect.poll(() => requestedIds.intake).toEqual(["intake-pub-1"]);
-  await expect(
-    page.getByRole("heading", { name: "Intake submission" }),
-  ).toBeVisible();
-
-  // Real submitted answers, using the field's actual question label from
-  // the intake schema definition, not just the raw storage key.
-  await expect(page.getByText("Business name")).toBeVisible();
-  await expect(page.getByText("Rivera Consulting")).toBeVisible();
-  await expect(page.getByText("Preferred brand colors")).toBeVisible();
-  await expect(page.getByText("Teal, Gold")).toBeVisible();
-
-  // The intake's own attached document requirement is reachable too.
-  const attachmentLink = page.getByRole("link", { name: /Logo files/ });
-  await expect(attachmentLink).toBeVisible();
-  const href = await attachmentLink.getAttribute("href");
-  expect(href).toContain("sub-pub-1");
+  await page
+    .locator("tr", { hasText: "ID Verification" })
+    .getByRole("button", { name: "View" })
+    .click();
+  const dialog = page.getByRole("dialog", { name: "Document request" });
+  await expect(dialog.locator("img[alt='id-front.png']")).toBeVisible();
 });
 
-test("task Review opens the task detail rather than leaving the button inert", async ({
+test("a non-previewable file type shows the unavailable message and Download Original instead of an inline embed", async ({
   page,
 }) => {
-  const requestedIds = await mockAdmin(page);
+  await mockAdmin(page, {
+    docVersions: {
+      items: [
+        {
+          id: "sub-pub-3",
+          version_number: 1,
+          original_filename: "contract.docx",
+          mime_type:
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          submitted_at: "2026-09-02 08:00:00",
+          uploaded_by: "Test Client",
+        },
+      ],
+    },
+  });
+  await page.goto("/admin/client-requests/");
+  await page.waitForFunction(() => Boolean(window.adminStore));
+  await page
+    .locator("tr", { hasText: "Logo files" })
+    .getByRole("button", { name: "View" })
+    .click();
+  const dialog = page.getByRole("dialog", { name: "Document request" });
+  await expect(
+    dialog.getByText("Preview unavailable for this file type."),
+  ).toBeVisible();
+  await expect(dialog.locator("iframe")).toHaveCount(0);
+  // Only the Alchemize brand mark (not a file preview <img>) should render.
+  await expect(dialog.locator(".review-file-preview img")).toHaveCount(0);
+  await expect(
+    dialog.getByRole("link", { name: "Download Original" }),
+  ).toBeVisible();
+});
+
+test("task View opens the task detail", async ({ page }) => {
+  const { calls } = await mockAdmin(page);
   await page.goto("/admin/client-requests/");
   await page.waitForFunction(() => Boolean(window.adminStore));
 
   const row = page.locator("tr", { hasText: "Verify ID document" });
-  await row.getByRole("button", { name: "Review" }).click();
+  await row.getByRole("button", { name: "View" }).click();
 
-  await expect.poll(() => requestedIds.task).toEqual([1]);
+  await expect.poll(() => calls.task).toEqual([1]);
   const dialog = page.getByRole("dialog", { name: "Task detail" });
   await expect(dialog).toBeVisible();
   await expect(
@@ -401,42 +595,12 @@ test("task Review opens the task detail rather than leaving the button inert", a
   ).toBeVisible();
 });
 
-test("a loading state is shown while Review data is being fetched", async ({
-  page,
-}) => {
-  // Registered after mockAdmin so it runs first (Playwright routes run
-  // most-recently-registered first) and can delay before falling through
-  // to mockAdmin's handler via route.fallback() -- route.continue() would
-  // instead send the request straight to the real network.
-  await mockAdmin(page);
-  await page.route("**/alchemize-api.php?*", async (route) => {
-    const url = new URL(route.request().url());
-    const key = url.searchParams.get("route");
-    if (key === "documents/1") {
-      await page.waitForTimeout(400);
-    }
-    return route.fallback();
-  });
-  await page.goto("/admin/client-requests/");
-  await page.waitForFunction(() => Boolean(window.adminStore));
-
-  const row = page.locator("tr", { hasText: "Logo files" });
-  await row.getByRole("button", { name: "Review" }).click();
-  await expect(page.getByText("Loading…")).toBeVisible();
-
-  // Let the delayed route finish before the test ends -- otherwise the
-  // in-flight page.waitForTimeout inside the route callback is torn down
-  // mid-flight and Playwright reports that as a failure.
-  const dialog = page.getByRole("dialog", { name: "Document request" });
-  await expect(dialog.getByText("Test Client", { exact: true })).toBeVisible();
-});
-
 for (const [type, label] of [
   ["document", "Document request"],
   ["intake", "Intake submission"],
   ["task", "Task detail"],
 ]) {
-  test(`a Review API failure for a ${type} record shows an error instead of doing nothing`, async ({
+  test(`a View API failure for a ${type} record shows an error instead of doing nothing`, async ({
     page,
   }) => {
     await mockAdmin(page, { fail: type });
@@ -449,8 +613,10 @@ for (const [type, label] of [
         : type === "intake"
           ? "Web Digital intake"
           : "Verify ID document";
-    const row = page.locator("tr", { hasText: rowText });
-    await row.getByRole("button", { name: "Review" }).click();
+    await page
+      .locator("tr", { hasText: rowText })
+      .getByRole("button", { name: "View" })
+      .click();
 
     const dialog = page.getByRole("dialog", { name: label });
     await expect(dialog).toBeVisible();
@@ -460,6 +626,109 @@ for (const [type, label] of [
     );
   });
 }
+
+test("Next Action shows the controlled workflow stage, not a generic Review label", async ({
+  page,
+}) => {
+  await mockAdmin(page);
+  await page.goto("/admin/client-requests/");
+  await page.waitForFunction(() => Boolean(window.adminStore));
+
+  // Document "Logo files" is status=received -> Admin Review (client
+  // submitted, Alchemize needs to review).
+  await expect(
+    page.locator("tr", { hasText: "Logo files" }).getByText("Admin Review"),
+  ).toBeVisible();
+  // Document "ID Verification" is status=awaiting_upload -> Client Review.
+  await expect(
+    page
+      .locator("tr", { hasText: "ID Verification" })
+      .getByText("Client Review"),
+  ).toBeVisible();
+  // Intake is status=submitted -> Admin Review.
+  await expect(
+    page
+      .locator("tr", { hasText: "Web Digital intake" })
+      .getByText("Admin Review"),
+  ).toBeVisible();
+});
+
+test("Accept moves a document from Admin Review to Accepted", async ({
+  page,
+}) => {
+  const { state } = await mockAdmin(page);
+  await page.goto("/admin/client-requests/");
+  await page.waitForFunction(() => Boolean(window.adminStore));
+
+  await page
+    .locator("tr", { hasText: "Logo files" })
+    .getByRole("button", { name: "View" })
+    .click();
+  const dialog = page.getByRole("dialog", { name: "Document request" });
+  await dialog.getByRole("button", { name: "Accept" }).click();
+
+  await expect(dialog).toHaveCount(0);
+  await expect.poll(() => state.documents[0].status).toBe("accepted");
+  // Both the Status and Next Action columns legitimately read "Accepted"
+  // at this status -- just confirm the row picked it up on refresh.
+  await expect(
+    page.locator("tr", { hasText: "Logo files" }).getByText("Accepted").first(),
+  ).toBeVisible();
+});
+
+test("Send Back requires a reason, moves the record to Client Review, and preserves prior submission history", async ({
+  page,
+}) => {
+  const { state } = await mockAdmin(page);
+  await page.goto("/admin/client-requests/");
+  await page.waitForFunction(() => Boolean(window.adminStore));
+
+  const row = page.locator("tr", { hasText: "Logo files" });
+  await row.getByRole("button", { name: "Send Back" }).click();
+
+  // Empty reason is rejected.
+  await page.getByRole("button", { name: "Send Back" }).last().click();
+  await expect(page.getByText("A short reason is required.")).toBeVisible();
+
+  await page
+    .getByLabel("Reason / instructions for the client")
+    .fill("The logo file is too low resolution, please resubmit.");
+  await page.getByRole("button", { name: "Send Back" }).last().click();
+
+  await expect
+    .poll(() => state.documents[0].status)
+    .toBe("replacement_requested");
+  // The original instructions are preserved, not overwritten.
+  expect(state.documents[0].client_instructions).toContain(
+    "Please upload your logo files.",
+  );
+  expect(state.documents[0].client_instructions).toContain(
+    "too low resolution",
+  );
+  await expect(
+    page.locator("tr", { hasText: "Logo files" }).getByText("Client Review"),
+  ).toBeVisible();
+});
+
+test("Notes are saved and labeled internal/admin-only", async ({ page }) => {
+  const { calls } = await mockAdmin(page);
+  await page.goto("/admin/client-requests/");
+  await page.waitForFunction(() => Boolean(window.adminStore));
+
+  const row = page.locator("tr", { hasText: "Logo files" });
+  await row.getByRole("button", { name: "Notes" }).click();
+  await expect(
+    page.getByText("Internal / Admin-only. Not visible to the client."),
+  ).toBeVisible();
+
+  await page.getByLabel("Add a note").fill("Called the client to confirm.");
+  await page.getByRole("button", { name: "Save note" }).click();
+
+  await expect(page.getByText("Called the client to confirm.")).toBeVisible();
+  await expect.poll(() => calls.notes).toHaveLength(1);
+  expect(calls.notes[0].entity_type).toBe("document");
+  expect(calls.notes[0].entity_id).toBe("doc-pub-1");
+});
 
 test("Review filters by type via the legacy ?type= redirect query param", async ({
   page,
