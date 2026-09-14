@@ -474,8 +474,9 @@ test("Client Requests shows toned metrics, styled overdue cells, and an empty st
   ).toHaveCount(1);
   const overdueCell = page.locator(".admin-overdue").first();
   await expect(overdueCell).toContainText("Overdue");
-  const reviewButton = page.getByRole("button", { name: "Review" }).first();
-  await expect(reviewButton).toBeVisible();
+  // "Review" was replaced by a View / Notes / Send Back actions row.
+  const viewButton = page.getByRole("button", { name: "View" }).first();
+  await expect(viewButton).toBeVisible();
 
   await mockAdmin(page, true);
   await page.goto("/admin/client-requests/");
