@@ -25,7 +25,7 @@ export const formatReviewDate = (value) => {
 // Mirrors alchemize_intake_visible() (server/intake/definitions.php) so the
 // document shows exactly the questions the client actually saw, in the
 // same conditional order -- not the full field catalog for the family.
-function isFieldVisible(field, values) {
+export function isFieldVisible(field, values) {
   const condition = field.show_when;
   if (!condition) return true;
   if (condition.all) {

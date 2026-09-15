@@ -54,7 +54,7 @@ final class AlchemizePortalRepository
     public function getServiceDetail(int $clientId, string $engagementPublicId): ?array
     {
         $statement = $this->database->prepare(
-            'SELECT e.public_id AS id, e.title, e.description, e.status,
+            'SELECT e.public_id AS id, e.engagement_number, e.title, e.description, e.status,
                     e.start_date, e.target_date, e.completion_date,
                     u.display_name AS assigned_contact,
                     GROUP_CONCAT(DISTINCT COALESCE(esi.service_name_snapshot, s.service_name)
@@ -66,7 +66,7 @@ final class AlchemizePortalRepository
              WHERE e.client_id = :client_id
                AND e.public_id = :engagement_id
                AND e.archived_at IS NULL
-             GROUP BY e.id, e.public_id, e.title, e.description, e.status,
+             GROUP BY e.id, e.public_id, e.engagement_number, e.title, e.description, e.status,
                       e.start_date, e.target_date, e.completion_date, u.display_name
              LIMIT 1'
         );
@@ -236,7 +236,7 @@ final class AlchemizePortalRepository
     {
         $statement = $this->database->prepare(
             'SELECT a.public_id AS id, a.appointment_type, a.scheduled_at, a.end_at,
-                    a.timezone, a.location_type, a.status, a.client_instructions,
+                    a.timezone, a.location_type, a.meeting_method, a.meeting_url, a.status, a.client_instructions,
                     a.preparation_required, a.follow_up_required,
                     e.public_id AS engagement_id, e.title AS engagement_title, s.service_name
              FROM appointments a
@@ -271,6 +271,30 @@ final class AlchemizePortalRepository
              ORDER BY i.invoice_date DESC, i.created_at DESC'
         );
         $statement->execute(['client_id' => $clientId]);
+        return $statement->fetchAll();
+    }
+
+    public function listInvoicesForEngagement(int $clientId, string $engagementPublicId): array
+    {
+        $statement = $this->database->prepare(
+            'SELECT i.public_id AS id, i.invoice_number, i.invoice_date, i.due_date,
+                    i.status, i.currency, i.subtotal, i.adjustment_total,
+                    i.credit_deposit_total, i.paid_total, i.outstanding_balance,
+                    i.client_facing_notes, i.issued_at,
+                    e.public_id AS engagement_id, e.title AS engagement_title
+             FROM invoices i
+             INNER JOIN engagements e ON e.id = i.engagement_id AND e.client_id = :invoice_client_id
+             WHERE i.client_id = :invoice_client_id_where
+               AND e.public_id = :engagement_public_id
+               AND i.issued_at IS NOT NULL
+               AND i.status NOT IN (\'draft\', \'cancelled\', \'voided\')
+             ORDER BY i.invoice_date DESC, i.created_at DESC'
+        );
+        $statement->execute([
+            'invoice_client_id' => $clientId,
+            'invoice_client_id_where' => $clientId,
+            'engagement_public_id' => $engagementPublicId,
+        ]);
         return $statement->fetchAll();
     }
 
@@ -422,6 +446,27 @@ final class AlchemizePortalRepository
              LIMIT ' . $limit
         );
         $statement->execute(['client_id' => $clientId]);
+        return $statement->fetchAll();
+    }
+
+    public function listActivityForEngagement(int $clientId, string $engagementPublicId, int $limit = 30): array
+    {
+        $limit = max(1, min(50, $limit));
+        $statement = $this->database->prepare(
+            'SELECT ae.public_id AS id, ae.event_type, ae.entity_type, ae.entity_id, ae.summary, ae.created_at
+             FROM activity_events ae
+             INNER JOIN engagements e ON e.id = ae.engagement_id AND e.client_id = :activity_client_id
+             WHERE ae.client_id = :activity_client_id_where
+               AND e.public_id = :engagement_public_id
+               AND ae.visibility IN (\'client\', \'both\')
+             ORDER BY ae.created_at DESC
+             LIMIT ' . $limit
+        );
+        $statement->execute([
+            'activity_client_id' => $clientId,
+            'activity_client_id_where' => $clientId,
+            'engagement_public_id' => $engagementPublicId,
+        ]);
         return $statement->fetchAll();
     }
 

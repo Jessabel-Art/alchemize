@@ -3,9 +3,12 @@ import { portalApi } from "../../services/portal-api.js";
 import { auth } from "../../services/admin-api.js";
 import "./portal.css";
 import "./portal-messages.css";
+import "./client-engagement-dashboard.css";
 import ClientAppointments from "./ClientAppointments.jsx";
 import TasksDocumentsWorkspace from "./TasksDocumentsWorkspace.jsx";
 import ClientBilling from "./ClientBilling.jsx";
+import ServiceFileDocument from "./ServiceFileDocument.jsx";
+import { ReviewDocumentViewer } from "../../components/admin/review-documents.jsx";
 
 const pageContent = {
   services: [
@@ -292,9 +295,12 @@ function ResourceContent(props) {
       return (
         <ServiceDetail
           item={data.item}
+          client={data.client || {}}
           tasks={data.tasks || []}
           documents={data.documents || []}
           appointments={data.appointments || []}
+          invoices={data.invoices || []}
+          intake={data.intake || []}
           activity={data.activity || []}
           empty={empty}
           busy={busy}
@@ -350,143 +356,698 @@ function ResourceContent(props) {
   return <EmptyState>{empty}</EmptyState>;
 }
 
+// Known operational events get a short, specific, client-facing label.
+// Unmapped event types fall back to humanizing the tail of the event_type
+// (e.g. "client.task.completed" -> "Completed") rather than showing the
+// raw dotted key or an internal summary sentence verbatim.
+const activityEventLabels = {
+  "appointment.admin_created": "Appointment scheduled",
+  "appointment.public_booked": "Appointment booked",
+  "appointment.updated": "Appointment updated",
+  "appointment.cancelled": "Appointment cancelled",
+  "appointment.follow_up_completed": "Follow-up completed",
+  "client.appointment.booked": "Appointment booked",
+  "client.appointment.created": "Appointment requested",
+  "client.appointment.requested": "Appointment requested",
+  "client.appointment.confirmed": "Appointment confirmed",
+  "client.appointment.acknowledged": "Appointment acknowledged",
+  "client.appointment.reschedule_requested": "Reschedule requested",
+  "client.appointment.cancel_requested": "Cancellation requested",
+  "client.task.completed": "Task completed",
+  "client.task.responded": "Response sent to Alchemize",
+  "client.document.uploaded": "Document submitted",
+  "client.document.uploaded_general": "Document shared with Alchemize",
+  "client.document.downloaded": "Document downloaded",
+  "client.intake.submitted": "Intake submitted",
+  "client.message.sent": "Message sent to Alchemize",
+  "client.message.archived": "Conversation archived",
+  "client.profile.updated": "Profile updated",
+  "client.profile.change_requested": "Profile change requested",
+  "client.service.requested": "Service requested",
+  "client.acknowledged": "Acknowledged",
+  "admin.message.sent": "Alchemize started a conversation",
+  "admin.message.resolved": "Alchemize resolved a conversation",
+  "admin.message.status_changed": "Alchemize updated a conversation",
+};
+
+// Presentation-only normalization: maps raw event_type/summary values to
+// short client-facing language and collapses consecutive entries that
+// represent the same meaningful event on the same record (e.g. several
+// "appointment.cancelled" writes for one appointment) into one. The
+// underlying activity_events history itself is never modified.
+function normalizeActivity(activity) {
+  const seen = [];
+  let lastKey = null;
+  activity.forEach((entry) => {
+    const label =
+      activityEventLabels[entry.event_type] ||
+      labelFor(
+        entry.event_type ? entry.event_type.split(".").pop() : entry.summary,
+      );
+    const key = `${entry.event_type}:${entry.entity_id || ""}:${label}`;
+    if (key === lastKey) return;
+    lastKey = key;
+    seen.push({ id: entry.id, label, createdAt: entry.created_at });
+  });
+  return seen;
+}
+
+function nextUpcomingAppointment(appointments) {
+  const now = Date.now();
+  const upcoming = appointments
+    .filter((appointment) => appointment.status !== "cancelled")
+    .map((appointment) => ({
+      ...appointment,
+      _start: new Date(
+        appointment.scheduled_start || appointment.scheduled_at,
+      ).getTime(),
+    }))
+    .filter(
+      (appointment) =>
+        !Number.isNaN(appointment._start) && appointment._start >= now,
+    )
+    .sort((a, b) => a._start - b._start);
+  return upcoming[0] || null;
+}
+
+function buildActionItems({ tasks, documents, intake, invoices }) {
+  const items = [];
+  documents
+    .filter((document) =>
+      ["requested", "awaiting_upload", "replacement_requested"].includes(
+        document.status,
+      ),
+    )
+    .forEach((document) =>
+      items.push({
+        key: `document-${document.id}`,
+        title: document.document_name,
+        detail:
+          document.client_instructions ||
+          (document.status === "replacement_requested"
+            ? "A replacement file is needed."
+            : "Please submit this document."),
+        due: document.due_date,
+        actionLabel: "Upload document",
+        actionHref: `/client-portal/tasks-and-documents?upload=${encodeURIComponent(document.id)}`,
+      }),
+    );
+  tasks
+    .filter((task) => !["completed", "archived"].includes(task.status))
+    .forEach((task) =>
+      items.push({
+        key: `task-${task.id}`,
+        title: task.title,
+        detail: task.description || "Action requested.",
+        due: task.due_date,
+        actionLabel: "View task",
+        actionHref: "/client-portal/tasks-and-documents",
+      }),
+    );
+  intake
+    .filter((assignment) =>
+      ["assigned", "in_progress", "changes_requested"].includes(
+        assignment.status,
+      ),
+    )
+    .forEach((assignment) =>
+      items.push({
+        key: `intake-${assignment.id}`,
+        title: `Complete ${labelFor(assignment.family_key)}`,
+        detail:
+          assignment.status === "changes_requested"
+            ? assignment.client_visible_review_note ||
+              "Alchemize requested changes to this intake."
+            : `${Math.max(0, 100 - (assignment.completion_percentage || 0))}% remaining`,
+        actionLabel: "Continue intake",
+        actionHref: `/client-portal/intake?assignment=${encodeURIComponent(assignment.id)}`,
+      }),
+    );
+  invoices
+    .filter(
+      (invoice) =>
+        ["open", "partially_paid", "past_due"].includes(invoice.status) &&
+        Number(invoice.outstanding_balance) > 0,
+    )
+    .forEach((invoice) =>
+      items.push({
+        key: `invoice-${invoice.id}`,
+        title: `Invoice ${invoice.invoice_number}`,
+        detail: `${formatCurrency(invoice.outstanding_balance, invoice.currency)} due ${formatDate(invoice.due_date)}`,
+        actionLabel: "View invoice",
+        actionHref: `/client-portal/billing/invoices/${encodeURIComponent(invoice.id)}`,
+      }),
+    );
+  return items;
+}
+
+// completed -> current -> upcoming, chronological within each group, so
+// the list reads as the real progression of the engagement rather than a
+// fixed, invented workflow.
+function orderMilestones(tasks) {
+  const rank = (task) =>
+    task.status === "completed" ? 0 : task.status === "not_started" ? 2 : 1;
+  return [...tasks].sort((a, b) => {
+    const diff = rank(a) - rank(b);
+    if (diff !== 0) return diff;
+    const aTime = new Date(a.completed_at || a.due_date || 0).getTime() || 0;
+    const bTime = new Date(b.completed_at || b.due_date || 0).getTime() || 0;
+    return aTime - bTime;
+  });
+}
+
+function ServiceFilePreview({ data, onClose }) {
+  return (
+    <ReviewDocumentViewer title="Service File" onClose={onClose} printable>
+      <ServiceFileDocument data={data} />
+    </ReviewDocumentViewer>
+  );
+}
+
+function MessageComposer({ engagement, onClose, onSent }) {
+  const [subject, setSubject] = useState(`${engagement.title} engagement`);
+  const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const submit = async (event) => {
+    event.preventDefault();
+    if (!message.trim()) {
+      setError("Enter a message before sending.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      await portalApi.createThread({
+        subject,
+        message,
+        related_entity_type: "engagement",
+        related_entity_id: engagement.id,
+      });
+      onSent();
+    } catch (sendError) {
+      setError(sendError.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="engagement-modal-overlay" onClick={onClose}>
+      <form
+        className="engagement-modal-panel pm-compose"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Message Alchemize"
+        onClick={(event) => event.stopPropagation()}
+        onSubmit={submit}
+      >
+        <h2>Message Alchemize</h2>
+        <p>
+          About your {engagement.title} engagement. Alchemize will see which
+          engagement this refers to.
+        </p>
+        <label>
+          <span>Subject</span>
+          <input
+            value={subject}
+            maxLength={180}
+            onChange={(event) => setSubject(event.target.value)}
+          />
+        </label>
+        <label>
+          <span>Message</span>
+          <textarea
+            required
+            maxLength={5000}
+            value={message}
+            onChange={(event) => setMessage(event.target.value)}
+          />
+        </label>
+        {error ? (
+          <p role="alert" className="portal-feedback error">
+            {error}
+          </p>
+        ) : null}
+        <div className="portal-action-group">
+          <button
+            type="submit"
+            className="portal-action-button"
+            disabled={busy}
+          >
+            {busy ? "Sending…" : "Send message"}
+          </button>
+          <button
+            type="button"
+            className="portal-quiet-button"
+            onClick={onClose}
+            disabled={busy}
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 function ServiceDetail({
   item,
+  client = {},
   tasks = [],
   documents = [],
   appointments = [],
+  invoices = [],
+  intake = [],
   activity = [],
   empty,
+  busy,
+  run,
 }) {
+  const [composerOpen, setComposerOpen] = useState(false);
+  const [composerMessage, setComposerMessage] = useState("");
+  const [serviceFileOpen, setServiceFileOpen] = useState(false);
+
+  const actionItems = buildActionItems({ tasks, documents, intake, invoices });
+  const nextAppointment = nextUpcomingAppointment(appointments);
+  const activityFeed = normalizeActivity(activity);
+  const milestones = orderMilestones(tasks);
+  const completedCount = tasks.filter(
+    (task) => task.status === "completed",
+  ).length;
+  const progressPct = tasks.length
+    ? Math.round((completedCount / tasks.length) * 100)
+    : null;
+  const openInvoices = invoices.filter(
+    (invoice) =>
+      ["open", "partially_paid", "past_due"].includes(invoice.status) &&
+      Number(invoice.outstanding_balance) > 0,
+  );
+  const isCompleted = ["completed", "archived"].includes(item.status);
+  const bookHref = `/client-portal/appointments?engagement=${encodeURIComponent(item.id)}`;
+  const meetUrl = nextAppointment?.meeting_url || "";
+  const hasSafeMeetUrl =
+    nextAppointment?.meeting_method === "google_meet" &&
+    /^https:\/\//i.test(meetUrl);
+
   return (
-    <div className="portal-workspace-grid">
-      <div className="portal-workspace-primary">
-        <section className="portal-service-detail" aria-label="Service detail">
-          <div className="portal-services-header">
-            <div>
-              <span className="section-kicker">Active service</span>
-              <h2>{item.title}</h2>
-            </div>
-            <a className="portal-action-button" href="/client-portal/services">
-              Back to services
-            </a>
+    <div className="engagement-dashboard">
+      {composerMessage ? (
+        <p role="status" className="portal-feedback success">
+          {composerMessage}
+        </p>
+      ) : null}
+      <header className="engagement-header">
+        <div className="engagement-header-title">
+          <a className="engagement-back-link" href="/client-portal/services">
+            ← All services
+          </a>
+          <div className="engagement-header-heading">
+            <h1>{item.title}</h1>
+            <span
+              className={`portal-status-pill engagement-status-${item.status}`}
+            >
+              {labelFor(item.status)}
+            </span>
           </div>
           <p>{item.description || "Service in progress."}</p>
-          <div className="portal-service-meta">
-            <small>Status: {labelFor(item.status)}</small>
+          <div className="engagement-header-meta">
             {item.start_date ? (
-              <small>Started: {formatDate(item.start_date)}</small>
+              <span>Started {formatDate(item.start_date)}</span>
             ) : null}
-            {item.target_date ? (
-              <small>Target date: {formatDate(item.target_date)}</small>
+            {item.completion_date ? (
+              <span>Completed {formatDate(item.completion_date)}</span>
+            ) : null}
+            {item.engagement_number ? (
+              <span>Engagement #{item.engagement_number}</span>
             ) : null}
           </div>
-        </section>
+        </div>
+        <div className="portal-action-group engagement-header-actions">
+          <a className="portal-action-button" href={bookHref}>
+            Book appointment
+          </a>
+          <button
+            type="button"
+            className="portal-quiet-button"
+            onClick={() => setComposerOpen(true)}
+          >
+            Message Alchemize
+          </button>
+          <button
+            type="button"
+            className="portal-quiet-button"
+            onClick={() => setServiceFileOpen(true)}
+          >
+            Download service file
+          </button>
+        </div>
+      </header>
 
-        {tasks.length ? (
-          <section className="portal-group-stack">
-            <h2>Tasks</h2>
-            <ul className="portal-record-list">
-              {tasks.map((task) => (
-                <li key={task.id}>
-                  <div>
-                    <strong>{task.title}</strong>
-                    <p>
-                      {task.description ||
-                        task.engagement_title ||
-                        "Client-visible task"}
-                    </p>
-                  </div>
-                  <div className="portal-record-meta">
-                    <span>{labelFor(task.status)}</span>
-                    {task.due_date ? (
-                      <small>Due {formatDate(task.due_date)}</small>
-                    ) : null}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ) : null}
-
-        {documents.length ? (
-          <section className="portal-group-stack">
-            <h2>Documents</h2>
-            <ul className="portal-record-list">
-              {documents.map((document) => (
-                <li key={document.id}>
-                  <div>
-                    <strong>{document.document_name}</strong>
-                    <p>
-                      {document.client_instructions || "Requested document"}
-                    </p>
-                  </div>
-                  <div className="portal-record-meta">
-                    <span>{labelFor(document.status)}</span>
-                    {document.due_date ? (
-                      <small>Due {formatDate(document.due_date)}</small>
-                    ) : null}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ) : null}
-
-        {!tasks.length &&
-        !documents.length &&
-        !appointments.length &&
-        !activity.length ? (
-          <EmptyState>{empty}</EmptyState>
-        ) : null}
+      <div className="engagement-snapshot">
+        <div className="engagement-snapshot-item">
+          <span>Status</span>
+          <strong>{labelFor(item.status)}</strong>
+        </div>
+        <div className="engagement-snapshot-item">
+          <span>Open actions</span>
+          <strong>
+            {actionItems.length ? `${actionItems.length} remaining` : "None"}
+          </strong>
+        </div>
+        <div className="engagement-snapshot-item">
+          <span>Documents</span>
+          <strong>{documents.length}</strong>
+        </div>
+        <div className="engagement-snapshot-item">
+          <span>Next appointment</span>
+          <strong>
+            {nextAppointment
+              ? formatDate(
+                  nextAppointment.scheduled_start ||
+                    nextAppointment.scheduled_at,
+                  true,
+                )
+              : "None scheduled"}
+          </strong>
+        </div>
+        <div className="engagement-snapshot-item">
+          <span>Balance</span>
+          <strong>
+            {openInvoices.length
+              ? formatCurrency(
+                  openInvoices.reduce(
+                    (sum, invoice) =>
+                      sum + Number(invoice.outstanding_balance || 0),
+                    0,
+                  ),
+                )
+              : "$0 due"}
+          </strong>
+        </div>
       </div>
-      <aside className="portal-workspace-utility">
-        <a
-          className="portal-action-button"
-          href={
-            "/client-portal/appointments?engagement=" +
-            encodeURIComponent(item.id)
-          }
-        >
-          Book an appointment
-        </a>
-        {appointments.length ? (
-          <section className="portal-service-support">
-            <span className="section-kicker">Appointments</span>
-            <h3>Appointments</h3>
-            <ul>
-              {appointments.map((appointment) => (
-                <li key={appointment.id}>
-                  {appointment.appointment_type || "Consultation"} ·{" "}
+
+      <div className="portal-workspace-grid">
+        <div className="portal-workspace-primary">
+          {actionItems.length ? (
+            <section
+              className="engagement-action-required"
+              aria-label="Action required"
+            >
+              <h2>Action required</h2>
+              <ul className="portal-record-list">
+                {actionItems.map((entry) => (
+                  <li key={entry.key}>
+                    <div>
+                      <strong>{entry.title}</strong>
+                      <p>{entry.detail}</p>
+                    </div>
+                    <div className="portal-record-meta">
+                      {entry.due ? (
+                        <small>Due {formatDate(entry.due)}</small>
+                      ) : null}
+                      <a
+                        className="portal-action-button"
+                        href={entry.actionHref}
+                      >
+                        {entry.actionLabel}
+                      </a>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : !isCompleted ? (
+            <p className="engagement-action-clear" role="status">
+              No action needed right now.
+            </p>
+          ) : null}
+
+          {tasks.length ? (
+            <section
+              className="engagement-milestones"
+              aria-label="Tasks and milestones"
+            >
+              <h2>Tasks &amp; milestones</h2>
+              {progressPct !== null ? (
+                <div className="engagement-progress">
+                  <small>
+                    Engagement progress · {completedCount} of {tasks.length}{" "}
+                    milestones completed
+                  </small>
+                  <div
+                    className="engagement-progress-track"
+                    role="progressbar"
+                    aria-valuenow={progressPct}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label="Engagement progress"
+                  >
+                    <div
+                      className="engagement-progress-fill"
+                      style={{ width: `${progressPct}%` }}
+                    />
+                  </div>
+                </div>
+              ) : null}
+              <ol className="engagement-milestone-list">
+                {milestones.map((task) => {
+                  const state =
+                    task.status === "completed"
+                      ? "done"
+                      : task.status === "not_started"
+                        ? "upcoming"
+                        : "current";
+                  return (
+                    <li key={task.id} className={`milestone-${state}`}>
+                      <span className="milestone-marker" aria-hidden="true">
+                        {state === "done"
+                          ? "✓"
+                          : state === "current"
+                            ? "●"
+                            : "○"}
+                      </span>
+                      <div>
+                        <strong>{task.title}</strong>
+                        <small>
+                          {state === "done"
+                            ? `Completed ${formatDate(task.completed_at || task.due_date)}`
+                            : labelFor(task.status)}
+                        </small>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
+            </section>
+          ) : null}
+
+          {documents.length ? (
+            <section
+              className="engagement-documents"
+              aria-label="Documents and deliverables"
+            >
+              <h2>Documents</h2>
+              <ul className="portal-record-list">
+                {documents.map((document) => (
+                  <li key={document.id}>
+                    <div>
+                      <strong>{document.document_name}</strong>
+                      <p>
+                        {document.client_instructions ||
+                          "Client-visible document"}
+                      </p>
+                      {[
+                        "requested",
+                        "awaiting_upload",
+                        "replacement_requested",
+                      ].includes(document.status) ? (
+                        <DocumentUpload item={document} busy={busy} run={run} />
+                      ) : null}
+                    </div>
+                    <div className="portal-record-meta">
+                      <span>{labelFor(document.status)}</span>
+                      {document.due_date ? (
+                        <small>Due {formatDate(document.due_date)}</small>
+                      ) : null}
+                      {document.current_version ? (
+                        <a
+                          className="portal-action-button"
+                          href={portalApi.documentDownloadUrl(document.id)}
+                        >
+                          Download
+                        </a>
+                      ) : null}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+
+          {!actionItems.length &&
+          !tasks.length &&
+          !documents.length &&
+          !appointments.length ? (
+            <EmptyState>{empty}</EmptyState>
+          ) : null}
+        </div>
+
+        <aside className="portal-workspace-utility">
+          <section
+            className="engagement-next-appointment"
+            aria-label="Next appointment"
+          >
+            <span className="section-kicker">Next appointment</span>
+            {nextAppointment ? (
+              <>
+                <strong>
                   {formatDate(
-                    appointment.scheduled_start || appointment.scheduled_at,
+                    nextAppointment.scheduled_start ||
+                      nextAppointment.scheduled_at,
                     true,
-                  )}{" "}
+                  )}
+                </strong>
+                <p>{nextAppointment.appointment_type || "Consultation"}</p>
+                <small>
+                  {labelFor(
+                    nextAppointment.meeting_method ||
+                      nextAppointment.location_type ||
+                      "virtual",
+                  )}
+                </small>
+                <div className="portal-action-group">
                   <a
-                    href={
-                      "/client-portal/appointments?appointment=" +
-                      encodeURIComponent(appointment.id)
-                    }
+                    className="portal-action-button"
+                    href={`/client-portal/appointments?appointment=${encodeURIComponent(nextAppointment.id)}`}
                   >
                     View appointment
                   </a>
-                </li>
-              ))}
-            </ul>
+                  {hasSafeMeetUrl ? (
+                    <a
+                      className="portal-action-button"
+                      href={meetUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Join Google Meet
+                    </a>
+                  ) : null}
+                </div>
+              </>
+            ) : (
+              <>
+                <p>No appointment scheduled</p>
+                <a className="portal-action-button" href={bookHref}>
+                  Book appointment
+                </a>
+              </>
+            )}
           </section>
-        ) : null}
-        {activity.length ? (
-          <section className="portal-service-support muted">
-            <span className="section-kicker">Recent activity</span>
-            <h3>Latest updates</h3>
-            <ul>
-              {activity.slice(0, 5).map((entry) => (
-                <li key={entry.id}>{entry.summary}</li>
-              ))}
-            </ul>
+
+          {openInvoices.length ? (
+            <section className="engagement-billing" aria-label="Billing">
+              <span className="section-kicker">Billing</span>
+              <ul>
+                {openInvoices.map((invoice) => (
+                  <li key={invoice.id}>
+                    <strong>{invoice.invoice_number}</strong>
+                    <small>
+                      {formatCurrency(
+                        invoice.outstanding_balance,
+                        invoice.currency,
+                      )}{" "}
+                      due {formatDate(invoice.due_date)} ·{" "}
+                      {labelFor(invoice.status)}
+                    </small>
+                    <a
+                      className="portal-action-button"
+                      href={`/client-portal/billing/invoices/${encodeURIComponent(invoice.id)}`}
+                    >
+                      View invoice
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : invoices.length ? (
+            <section className="engagement-billing" aria-label="Billing">
+              <span className="section-kicker">Billing</span>
+              <p>Paid in full.</p>
+            </section>
+          ) : null}
+
+          {activityFeed.length ? (
+            <section
+              className="engagement-activity"
+              aria-label="Engagement activity"
+            >
+              <span className="section-kicker">Engagement activity</span>
+              <ol>
+                {activityFeed.slice(0, 8).map((entry) => (
+                  <li key={entry.id}>
+                    <time>{formatDate(entry.createdAt)}</time>
+                    <span>{entry.label}</span>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          ) : null}
+
+          <section
+            className="engagement-details"
+            aria-label="Engagement details"
+          >
+            <span className="section-kicker">Engagement details</span>
+            <dl>
+              {item.service_names?.length ? (
+                <div>
+                  <dt>Service</dt>
+                  <dd>{item.service_names.join(", ")}</dd>
+                </div>
+              ) : null}
+              {item.assigned_contact ? (
+                <div>
+                  <dt>Alchemize contact</dt>
+                  <dd>{item.assigned_contact}</dd>
+                </div>
+              ) : null}
+              {item.engagement_number ? (
+                <div>
+                  <dt>Reference</dt>
+                  <dd>{item.engagement_number}</dd>
+                </div>
+              ) : null}
+            </dl>
           </section>
-        ) : null}
-      </aside>
+        </aside>
+      </div>
+
+      {composerOpen ? (
+        <MessageComposer
+          engagement={item}
+          onClose={() => setComposerOpen(false)}
+          onSent={() => {
+            setComposerOpen(false);
+            setComposerMessage("Message sent to Alchemize.");
+          }}
+        />
+      ) : null}
+
+      {serviceFileOpen ? (
+        <ServiceFilePreview
+          data={{
+            item,
+            client,
+            tasks,
+            documents,
+            appointments,
+            invoices,
+            intake,
+            activity: activityFeed,
+          }}
+          onClose={() => setServiceFileOpen(false)}
+        />
+      ) : null}
     </div>
   );
 }

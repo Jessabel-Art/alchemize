@@ -52,15 +52,24 @@ $cleanupEngagementIds = [];
 $cleanupTaskIds = [];
 $cleanupDocumentIds = [];
 $cleanupAppointmentIds = [];
+$cleanupInvoiceIds = [];
 
-function makeClient(PDO $db, string $suffix, string $tag): int {
+function makeClient(PDO $db, string $suffix, string $tag): array {
+    $publicId = alchemize_uuid_v4();
+    $displayName = "ZZZ Portal Detail {$tag} {$suffix}";
     $db->prepare('INSERT INTO clients (public_id, client_type, display_name, primary_email, preferred_contact_method, language_preference, status, portal_status, source) VALUES (:pid, :type, :name, :email, :contact, :lang, :status, :portal, :source)')
         ->execute([
-            'pid' => alchemize_uuid_v4(), 'type' => 'individual', 'name' => "ZZZ Portal Detail {$tag} {$suffix}",
+            'pid' => $publicId, 'type' => 'individual', 'name' => $displayName,
             'email' => "zzz.portal.detail.{$tag}.{$suffix}@example.test", 'contact' => 'email', 'lang' => 'en',
             'status' => 'active', 'portal' => 'active', 'source' => 'website',
         ]);
-    return (int) $db->lastInsertId();
+    $clientId = (int) $db->lastInsertId();
+    // Shaped like the real AlchemizePortalRepository::findActiveAccessForUser()
+    // result serviceDetail() actually receives in production.
+    return [$clientId, [
+        'client_id' => $clientId, 'client_public_id' => $publicId, 'client_type' => 'individual',
+        'display_name' => $displayName, 'preferred_name' => null,
+    ]];
 }
 
 function makeEngagement(PDO $db, string $suffix, string $tag, int $clientId): array {
@@ -75,7 +84,7 @@ function makeEngagement(PDO $db, string $suffix, string $tag, int $clientId): ar
 
 try {
     echo "=== Fully populated service detail loads without a PDOException ===\n";
-    $clientId = makeClient($db, $suffix, 'owner');
+    [$clientId, $access] = makeClient($db, $suffix, 'owner');
     $cleanupClientIds[] = $clientId;
     [$engagementId, $engagementPublicId] = makeEngagement($db, $suffix, 'populated', $clientId);
     $cleanupEngagementIds[] = $engagementId;
@@ -92,13 +101,37 @@ try {
         ->execute(['pid' => alchemize_uuid_v4(), 'client' => $clientId, 'engagement' => $engagementId, 'type' => "ZZZ Consultation {$suffix}", 'scheduled' => date('Y-m-d H:i:s', strtotime('+2 days'))]);
     $cleanupAppointmentIds[] = (int) $db->lastInsertId();
 
-    $access = ['client_id' => $clientId];
+    $db->prepare("INSERT INTO invoices (public_id, invoice_number, client_id, engagement_id, invoice_date, due_date, status, outstanding_balance, issued_at) VALUES (:pid, :num, :client, :engagement, CURRENT_DATE(), DATE_ADD(CURRENT_DATE(), INTERVAL 14 DAY), 'open', 250.00, CURRENT_TIMESTAMP(6))")
+        ->execute(['pid' => alchemize_uuid_v4(), 'num' => "ZZZ-PD-INV-{$suffix}", 'client' => $clientId, 'engagement' => $engagementId]);
+    $cleanupInvoiceIds[] = (int) $db->lastInsertId();
+
     $detail = $service->serviceDetail($access, $engagementPublicId);
     verifyDetail($detail['item']['id'] === $engagementPublicId, 'The returned detail did not match the requested engagement');
+    verifyDetail(!empty($detail['item']['engagement_number']), 'The public-safe engagement_number was not returned (needed for the engagement header reference, not an internal ID)');
+    verifyDetail($detail['client']['display_name'] === $access['display_name'], 'The client summary was not returned for the engagement header');
     verifyDetail(count($detail['tasks']) === 1, 'The related task did not load (this is exactly the previously-thrown PDOException path)');
     verifyDetail(count($detail['documents']) === 1, 'The related document did not load (this is exactly the previously-thrown PDOException path)');
     verifyDetail(count($detail['appointments']) === 1, 'The related appointment did not load (this is exactly the previously-thrown PDOException path)');
-    echo "PASS Service detail loads with its real task, document, and appointment -- no Invalid parameter number error\n";
+    verifyDetail(count($detail['invoices']) === 1 && $detail['invoices'][0]['outstanding_balance'] === '250.00', 'The engagement-scoped invoice did not load with its real balance');
+    echo "PASS Service detail loads with its real task, document, appointment, and invoice -- no Invalid parameter number error\n";
+
+    echo "\n=== A second engagement's invoice and activity never leak into this one ===\n";
+    [$otherEngagementId, $otherEngagementPublicId] = makeEngagement($db, $suffix, 'sibling', $clientId);
+    $cleanupEngagementIds[] = $otherEngagementId;
+    $db->prepare("INSERT INTO invoices (public_id, invoice_number, client_id, engagement_id, invoice_date, status, outstanding_balance, issued_at) VALUES (:pid, :num, :client, :engagement, CURRENT_DATE(), 'open', 999.00, CURRENT_TIMESTAMP(6))")
+        ->execute(['pid' => alchemize_uuid_v4(), 'num' => "ZZZ-PD-INV-SIB-{$suffix}", 'client' => $clientId, 'engagement' => $otherEngagementId]);
+    $cleanupInvoiceIds[] = (int) $db->lastInsertId();
+    $db->prepare("INSERT INTO activity_events (public_id, event_type, actor_type, entity_type, entity_id, client_id, engagement_id, summary, visibility) VALUES (:pid, 'client.task.completed', 'client', 'task', :entity, :client, :engagement, 'Client completed task: this engagement', 'both')")
+        ->execute(['pid' => alchemize_uuid_v4(), 'entity' => alchemize_uuid_v4(), 'client' => $clientId, 'engagement' => $engagementId]);
+    $db->prepare("INSERT INTO activity_events (public_id, event_type, actor_type, entity_type, entity_id, client_id, engagement_id, summary, visibility) VALUES (:pid, 'client.task.completed', 'client', 'task', :entity, :client, :engagement, 'Client completed task: sibling engagement', 'both')")
+        ->execute(['pid' => alchemize_uuid_v4(), 'entity' => alchemize_uuid_v4(), 'client' => $clientId, 'engagement' => $otherEngagementId]);
+
+    $siblingDetail = $service->serviceDetail($access, $engagementPublicId);
+    verifyDetail(count($siblingDetail['invoices']) === 1, 'An invoice belonging to a sibling engagement of the same client leaked into this engagement\'s billing context');
+    $activitySummaries = array_column($siblingDetail['activity'], 'summary');
+    verifyDetail(in_array('Client completed task: this engagement', $activitySummaries, true), 'This engagement\'s own activity did not appear');
+    verifyDetail(!in_array('Client completed task: sibling engagement', $activitySummaries, true), 'A sibling engagement\'s activity leaked into this engagement\'s activity feed');
+    echo "PASS A sibling engagement's invoice and activity are correctly excluded from this engagement's context\n";
 
     echo "\n=== Missing optional related data never crashes the page ===\n";
     [$emptyEngagementId, $emptyEngagementPublicId] = makeEngagement($db, $suffix, 'empty', $clientId);
@@ -110,9 +143,8 @@ try {
     echo "PASS A service with no related tasks, documents, or appointments loads with valid empty states\n";
 
     echo "\n=== Client ownership isolation ===\n";
-    $otherClientId = makeClient($db, $suffix, 'other');
+    [$otherClientId, $otherAccess] = makeClient($db, $suffix, 'other');
     $cleanupClientIds[] = $otherClientId;
-    $otherAccess = ['client_id' => $otherClientId];
     $crossClientDetail = $repository->getServiceDetail($otherClientId, $engagementPublicId);
     verifyDetail($crossClientDetail === null, 'A different client was able to load another client\'s service detail');
     try {
@@ -141,6 +173,8 @@ try {
     if ($cleanupTaskIds) $db->exec('DELETE FROM tasks WHERE id IN (' . implode(',', array_map('intval', $cleanupTaskIds)) . ')');
     if ($cleanupDocumentIds) $db->exec('DELETE FROM documents_metadata WHERE id IN (' . implode(',', array_map('intval', $cleanupDocumentIds)) . ')');
     if ($cleanupAppointmentIds) $db->exec('DELETE FROM appointments WHERE id IN (' . implode(',', array_map('intval', $cleanupAppointmentIds)) . ')');
+    if ($cleanupInvoiceIds) $db->exec('DELETE FROM invoices WHERE id IN (' . implode(',', array_map('intval', $cleanupInvoiceIds)) . ')');
+    if ($cleanupClientIds) $db->exec('DELETE FROM activity_events WHERE client_id IN (' . implode(',', array_map('intval', $cleanupClientIds)) . ')');
     if ($cleanupEngagementIds) {
         $ids = implode(',', array_map('intval', $cleanupEngagementIds));
         $db->exec("DELETE FROM engagement_service_items WHERE engagement_id IN ({$ids})");

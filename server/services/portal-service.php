@@ -106,10 +106,12 @@ final class AlchemizePortalService
         $normalized = $this->normalizeServices([$detail]);
         return [
             'item' => $normalized[0],
+            'client' => $this->clientSummary($access),
             'tasks' => $this->repository->listTasksForEngagement($clientId, $engagementPublicId),
             'documents' => $this->repository->listDocumentsForEngagement($clientId, $engagementPublicId),
             'appointments' => $this->repository->listAppointmentsForEngagement($clientId, $engagementPublicId),
-            'activity' => $this->repository->listActivity($clientId, 10),
+            'invoices' => $this->repository->listInvoicesForEngagement($clientId, $engagementPublicId),
+            'activity' => $this->repository->listActivityForEngagement($clientId, $engagementPublicId, 30),
         ];
     }
 

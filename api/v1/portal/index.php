@@ -83,7 +83,24 @@ try {
         alchemize_json_response(['data' => $data], 200);
     }
     if ($method === 'GET' && $resource === 'services' && count($parts) === 2) {
-        alchemize_json_response(['data' => $service->serviceDetail($access, $parts[1])], 200);
+        $detail = $service->serviceDetail($access, $parts[1]);
+        // The engagement dashboard and the Service File export both need
+        // this engagement's intake -- reusing intakes->list()/get() (the
+        // same already-authorized, already-tested assembly the client's
+        // own Intake page uses) rather than adding a parallel query path.
+        $engagementIntake = array_values(array_filter(
+            $intakes->list($access)['items'],
+            static fn (array $item): bool => $item['engagement_id'] === $parts[1],
+        ));
+        $detail['intake'] = array_map(function (array $item) use ($intakes, $access): array {
+            if (in_array($item['status'], ['submitted', 'under_review', 'waiting_on_alchemize', 'approved', 'completed', 'archived'], true)) {
+                $full = $intakes->get($access, (string) $item['id']);
+                $item['definition'] = $full['definition'];
+                $item['responses'] = $full['responses'];
+            }
+            return $item;
+        }, $engagementIntake);
+        alchemize_json_response(['data' => $detail], 200);
     }
 
     if ($method === 'GET' && $resource === 'billing' && count($parts) === 2) {

@@ -421,7 +421,9 @@ test("service cards route to the engagement detail workspace and scope records t
   await expect(
     page.getByRole("heading", { name: "Business formation" }),
   ).toBeVisible();
-  await expect(page.getByText("Review formation details")).toBeVisible();
+  await expect(
+    page.getByText("Review formation details").first(),
+  ).toBeVisible();
   await expect(page.getByText("Annual tax review")).toHaveCount(0);
 });
 
@@ -474,7 +476,9 @@ test("service detail handles invalid appointment timezones without the generic u
   await expect(
     page.getByRole("heading", { name: "Business formation", exact: true }),
   ).toBeVisible();
-  await expect(page.getByText("Review formation details")).toBeVisible();
+  await expect(
+    page.getByText("Review formation details").first(),
+  ).toBeVisible();
   await expect(
     page.getByText("The client portal is temporarily unavailable.", {
       exact: true,
