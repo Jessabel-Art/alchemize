@@ -1,11 +1,12 @@
 import { mapAdminAppointment as mapAppointment } from "../utils/admin-appointments.js";
 import "../pages/admin/admin-workspace.css";
 import { useEffect, useState } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import PortalShell from "../components/ui/PortalShell.jsx";
 import { adminStore } from "../../js/data/admin-store.js";
 import {
   appointments,
+  auth,
   clients,
   documents,
   engagements,
@@ -187,6 +188,18 @@ const navItems = [
 
 function AdminLayout() {
   const [loadState, setLoadState] = useState({ loading: true, error: "" });
+  const navigate = useNavigate();
+  const handleLogout = async () => {
+    try {
+      await auth.logout();
+    } catch (error) {
+      if (import.meta.env.DEV) {
+        console.error("Admin portal logout failed", error);
+      }
+    } finally {
+      navigate("/login", { replace: true });
+    }
+  };
   useEffect(() => {
     window.adminStore = adminStore;
     return () => {
@@ -271,7 +284,19 @@ function AdminLayout() {
     };
   }, []);
   return (
-    <PortalShell title="Alchemize Admin" navItems={navItems}>
+    <PortalShell
+      title="Alchemize Admin"
+      navItems={navItems}
+      sidebarFooter={
+        <button
+          type="button"
+          className="portal-sidebar-logout"
+          onClick={handleLogout}
+        >
+          Log out
+        </button>
+      }
+    >
       {loadState.loading ? (
         <div className="admin-feedback">Loading admin records…</div>
       ) : null}
