@@ -65,6 +65,7 @@ final class NoopStripeGateway implements AlchemizeStripeGateway {
         return ['id' => 'cs_shared', 'url' => 'https://checkout.stripe.com/c/pay/cs_shared'];
     }
     public function retrieveCheckoutSession(string $sessionId): array { return ['status' => 'expired']; }
+    public function verifyConnection(): array { return ['connected' => true, 'livemode' => false]; }
 }
 
 final class NoopPaypalGateway implements AlchemizePaypalGateway {

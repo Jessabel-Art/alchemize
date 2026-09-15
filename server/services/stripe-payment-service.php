@@ -2,11 +2,21 @@
 
 declare(strict_types=1);
 
+// Thrown only by verifyConnection() to distinguish "the key itself is
+// wrong" from a generic/transient provider failure, so the Admin sees a
+// more specific, still-safe status message.
+final class AlchemizeStripeAuthenticationError extends RuntimeException
+{
+}
+
 interface AlchemizeStripeGateway
 {
     public function createCustomer(array $parameters, string $idempotencyKey): array;
     public function createCheckoutSession(array $parameters, string $idempotencyKey): array;
     public function retrieveCheckoutSession(string $sessionId): array;
+    // A harmless, read-only credential check -- must never create, charge,
+    // or mutate anything in Stripe.
+    public function verifyConnection(): array;
 }
 
 final class AlchemizeStripeHttpGateway implements AlchemizeStripeGateway
@@ -27,6 +37,33 @@ final class AlchemizeStripeHttpGateway implements AlchemizeStripeGateway
     {
         if (!preg_match('/^cs_[A-Za-z0-9_]+$/', $sessionId)) throw new RuntimeException('Invalid Stripe session identifier.');
         return $this->request('GET', '/v1/checkout/sessions/' . rawurlencode($sessionId), []);
+    }
+
+    // GET /v1/balance is Stripe's standard read-only "is this key valid"
+    // check: it creates, charges, or mutates nothing. It is called
+    // separately from request() below because the Balance resource has no
+    // "id" field, which request()'s shared response validation requires.
+    public function verifyConnection(): array
+    {
+        if ($this->secretKey === '' || !function_exists('curl_init')) throw new RuntimeException('Stripe is not configured.');
+        $handle = curl_init('https://api.stripe.com/v1/balance');
+        curl_setopt_array($handle, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 15,
+            CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . $this->secretKey],
+        ]);
+        $body = curl_exec($handle);
+        $status = (int) curl_getinfo($handle, CURLINFO_RESPONSE_CODE);
+        curl_close($handle);
+        if ($status === 401) throw new AlchemizeStripeAuthenticationError('Stripe rejected the configured API key.');
+        if (!is_string($body) || $status < 200 || $status >= 300) {
+            throw new RuntimeException($status === 0 ? 'Stripe was unreachable.' : 'Stripe API request failed.');
+        }
+        $decoded = json_decode($body, true);
+        if (!is_array($decoded) || ($decoded['object'] ?? null) !== 'balance') {
+            throw new RuntimeException('Stripe returned an unexpected response.');
+        }
+        return ['connected' => true, 'livemode' => (bool) ($decoded['livemode'] ?? false)];
     }
 
     private function request(string $method, string $path, array $parameters, ?string $idempotencyKey = null): array

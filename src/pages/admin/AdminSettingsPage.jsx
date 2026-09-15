@@ -17,6 +17,12 @@ const sections = [
   ["data-maintenance", "Data Maintenance"],
   ["integrations", "System & Integrations"],
 ];
+const formatIntegrationTimestamp = (value) => {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return `${date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })} · ${date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`;
+};
 const groups = [
   [
     "Business Identity",
@@ -133,6 +139,8 @@ export default function AdminSettingsPage() {
     error: "",
     data: null,
   });
+  const [checking, setChecking] = useState({});
+  const [checkResults, setCheckResults] = useState({});
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     let active = true;
@@ -206,6 +214,41 @@ export default function AdminSettingsPage() {
       active = false;
     };
   }, [section]);
+  const runIntegrationCheck = async (slug) => {
+    if (checking[slug]) return;
+    setChecking((current) => ({ ...current, [slug]: true }));
+    setCheckResults((current) => ({ ...current, [slug]: null }));
+    try {
+      const result = await settings.checkIntegration(slug);
+      setIntegrationStatus((current) => ({
+        ...current,
+        data: {
+          ...current.data,
+          integrations: { ...current.data?.integrations, [slug]: result },
+        },
+      }));
+      setCheckResults((current) => ({
+        ...current,
+        [slug]:
+          result?.status === "Connected"
+            ? { type: "success", message: "Connection successful." }
+            : {
+                type: "error",
+                message: result?.last_error || "Connection check failed.",
+              },
+      }));
+    } catch (error) {
+      setCheckResults((current) => ({
+        ...current,
+        [slug]: {
+          type: "error",
+          message: error.message || "Connection check failed.",
+        },
+      }));
+    } finally {
+      setChecking((current) => ({ ...current, [slug]: false }));
+    }
+  };
   const change = (key, value) =>
     setValues((current) => ({ ...current, [key]: value }));
   const save = async (event, successMessage = "Settings saved.") => {
@@ -480,18 +523,21 @@ export default function AdminSettingsPage() {
                     ["google_drive", "Google Drive"],
                   ].map(([slug, label]) => {
                     const item = integrationStatus.data?.integrations?.[slug];
+                    const isChecking = Boolean(checking[slug]);
+                    const result = checkResults[slug];
+                    const status = isChecking
+                      ? "Checking"
+                      : item?.status || "Unknown";
                     return (
                       <div key={slug} className="integration-card">
                         <div className="integration-card-header">
                           <h3>{label}</h3>
                           <span
-                            className={`status-pill status-${String(
-                              item?.status || "Unknown",
-                            )
+                            className={`status-pill status-${status
                               .toLowerCase()
                               .replace(/\s+/g, "-")}`}
                           >
-                            {item?.status || "Unknown"}
+                            {isChecking ? "Checking…" : status}
                           </span>
                         </div>
                         <dl>
@@ -499,21 +545,68 @@ export default function AdminSettingsPage() {
                             <dt>Configured</dt>
                             <dd>{item?.configured ? "Yes" : "No"}</dd>
                           </div>
+                          {slug === "google_calendar" ? (
+                            <>
+                              <div>
+                                <dt>Calendar access</dt>
+                                <dd>
+                                  {item?.calendar_accessible === true
+                                    ? "Available"
+                                    : item?.calendar_accessible === false
+                                      ? "Not available"
+                                      : "Not yet checked"}
+                                </dd>
+                              </div>
+                              <div>
+                                <dt>Google Meet</dt>
+                                <dd>
+                                  {item?.meet_capable === true
+                                    ? "Available"
+                                    : item?.meet_capable === false
+                                      ? "Not available"
+                                      : "Not yet checked"}
+                                </dd>
+                              </div>
+                            </>
+                          ) : null}
+                          <div>
+                            <dt>Last check</dt>
+                            <dd>
+                              {formatIntegrationTimestamp(item?.last_check) ||
+                                "Not available"}
+                            </dd>
+                          </div>
                           <div>
                             <dt>Last success</dt>
-                            <dd>{item?.last_success || "Not available"}</dd>
+                            <dd>
+                              {formatIntegrationTimestamp(item?.last_success) ||
+                                "Not available"}
+                            </dd>
                           </div>
                           <div>
                             <dt>Last error</dt>
                             <dd>{item?.last_error || "None recorded"}</dd>
                           </div>
                         </dl>
+                        {result ? (
+                          <p
+                            role={result.type === "error" ? "alert" : "status"}
+                            className={
+                              result.type === "error"
+                                ? "admin-feedback"
+                                : "admin-feedback success"
+                            }
+                          >
+                            {result.message}
+                          </p>
+                        ) : null}
                         <button
                           type="button"
                           className="secondary-button"
-                          onClick={() => settings.checkIntegration(slug)}
+                          disabled={isChecking}
+                          onClick={() => runIntegrationCheck(slug)}
                         >
-                          Check Connection
+                          {isChecking ? "Checking…" : "Check Connection"}
                         </button>
                       </div>
                     );
@@ -521,9 +614,16 @@ export default function AdminSettingsPage() {
                   <div className="integration-card system-card">
                     <div className="integration-card-header">
                       <h3>System</h3>
-                      <span className="status-pill status-connected">
+                      <span
+                        className={`status-pill status-${(
+                          integrationStatus.data?.system?.database?.status ||
+                          "unknown"
+                        )
+                          .toLowerCase()
+                          .replace(/\s+/g, "-")}`}
+                      >
                         {integrationStatus.data?.system?.database?.status ||
-                          "Unknown"}
+                          "Not available"}
                       </span>
                     </div>
                     <dl>
@@ -531,21 +631,28 @@ export default function AdminSettingsPage() {
                         <dt>Database</dt>
                         <dd>
                           {integrationStatus.data?.system?.database?.status ||
-                            "Unknown"}
+                            "Not available"}
                         </dd>
                       </div>
                       <div>
                         <dt>Application version</dt>
                         <dd>
                           {integrationStatus.data?.system?.application
-                            ?.version || "Unknown"}
+                            ?.version || "Not available"}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Build</dt>
+                        <dd>
+                          {integrationStatus.data?.system?.application?.build ||
+                            "Not available"}
                         </dd>
                       </div>
                       <div>
                         <dt>Runtime</dt>
                         <dd>
                           {integrationStatus.data?.system?.application
-                            ?.runtime || "Unknown"}
+                            ?.runtime || "Not available"}
                         </dd>
                       </div>
                     </dl>

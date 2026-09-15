@@ -62,18 +62,32 @@ final class AlchemizeExternalIntegrationRepository
         );
     }
 
-    public function setCalendarState(int $appointmentId, string $status, ?string $eventId = null, ?string $error = null, ?string $meetingUrl = null): void
+    public function setCalendarState(int $appointmentId, string $status, ?string $eventId = null, ?string $error = null, ?string $meetingUrl = null, bool $clearMeetingUrl = false): void
     {
         // See setClientDriveState() above for why this is resolved in PHP
         // rather than IF(:synced_status = 'synchronized', ...) in SQL.
+        //
+        // meeting_url intentionally does NOT always fall back to COALESCE:
+        // when the appointment's location moves away from Google Meet,
+        // AlchemizeGoogleCalendarService signals $clearMeetingUrl so the
+        // stale join link is actually removed rather than surviving every
+        // sync forever. A failed/undetermined sync (meetingUrl null,
+        // clearMeetingUrl false) still preserves whatever was last known.
         $syncedAtExpression = $status === 'synchronized' ? 'CURRENT_TIMESTAMP(6)' : 'calendar_synced_at';
         $this->database->prepare(
             'UPDATE appointments SET google_calendar_event_id = COALESCE(:event_id, google_calendar_event_id),
-             meeting_url = COALESCE(:meeting_url, meeting_url),
+             meeting_url = CASE WHEN :clear_meeting_url = 1 THEN NULL ELSE COALESCE(:meeting_url, meeting_url) END,
              calendar_sync_status = :status, calendar_sync_attempted_at = CURRENT_TIMESTAMP(6),
              calendar_synced_at = ' . $syncedAtExpression . ', calendar_sync_error = :error
              WHERE id = :id'
-        )->execute(['event_id' => $eventId, 'meeting_url' => $meetingUrl, 'status' => $status, 'error' => $error, 'id' => $appointmentId]);
+        )->execute([
+            'event_id' => $eventId,
+            'meeting_url' => $meetingUrl,
+            'clear_meeting_url' => $clearMeetingUrl ? 1 : 0,
+            'status' => $status,
+            'error' => $error,
+            'id' => $appointmentId,
+        ]);
     }
 
     public function invoiceForClient(string $publicId, int $clientId): ?array

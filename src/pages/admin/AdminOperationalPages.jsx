@@ -10225,6 +10225,31 @@ function AppointmentManagementPage() {
                   <dd>{detailAppointment.deliveryMethod || "Virtual"}</dd>
                 </div>
                 <div>
+                  <dt>Meeting method</dt>
+                  <dd>{detailAppointment.meetingMethod || "Phone Call"}</dd>
+                </div>
+                {detailAppointment.meetingMethod === "Google Meet" ? (
+                  <div>
+                    <dt>Join Google Meet</dt>
+                    <dd>
+                      {/^https:\/\//i.test(
+                        detailAppointment.meetingUrl || "",
+                      ) ? (
+                        <a
+                          href={detailAppointment.meetingUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="secondary-button"
+                        >
+                          Join Google Meet
+                        </a>
+                      ) : (
+                        "Meeting link pending"
+                      )}
+                    </dd>
+                  </div>
+                ) : null}
+                <div>
                   <dt>Owner</dt>
                   <dd>
                     {detailAppointment.assignedTo || "Owner / Administrator"}

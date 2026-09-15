@@ -129,6 +129,40 @@ final class AlchemizeResendEmailProvider implements AlchemizeEmailProvider
     {
         return $this->deliverDetailed($notification)['status'];
     }
+
+    // GET /domains is a safe, authenticated, read-only Resend endpoint --
+    // it proves the API key itself is valid without sending a real email
+    // just to test connectivity.
+    public function verifyConnection(): array
+    {
+        if (in_array(false, $this->configurationStatus(), true)) {
+            throw new RuntimeException('Resend is not configured.');
+        }
+        $apiKey = (string) ($this->config['api_key'] ?? '');
+        $context = stream_context_create([
+            'http' => [
+                'method' => 'GET',
+                'header' => ['Authorization: Bearer ' . $apiKey, 'Accept: application/json'],
+                'ignore_errors' => true,
+                'timeout' => 15,
+            ],
+        ]);
+        $response = @file_get_contents('https://api.resend.com/domains', false, $context);
+        $status = 0;
+        foreach ($http_response_header ?? [] as $header) {
+            if (preg_match('#^HTTP/\S+\s+(\d{3})#', $header, $matches)) {
+                $status = (int) $matches[1];
+                break;
+            }
+        }
+        if ($status === 401 || $status === 403) {
+            throw new RuntimeException('Resend rejected the configured API key.');
+        }
+        if ($response === false || !is_string($response) || $status < 200 || $status >= 300) {
+            throw new RuntimeException($status === 0 ? 'Resend was unreachable.' : 'Resend API request failed.');
+        }
+        return ['connected' => true];
+    }
 }
 
 function alchemize_email_provider(array $config): AlchemizeEmailProvider

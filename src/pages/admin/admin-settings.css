@@ -228,11 +228,15 @@
   border: 1px solid transparent;
   white-space: nowrap;
 }
-.admin-portal-shell .status-connected,
-.admin-portal-shell .status-configured {
+.admin-portal-shell .status-connected {
   background: rgba(36, 161, 72, 0.12);
   border-color: rgba(36, 161, 72, 0.25);
   color: #1e7d47;
+}
+.admin-portal-shell .status-configured {
+  background: rgba(29, 120, 176, 0.12);
+  border-color: rgba(29, 120, 176, 0.25);
+  color: #1d5f8c;
 }
 .admin-portal-shell .status-degraded,
 .admin-portal-shell .status-error {
@@ -245,6 +249,21 @@
   background: rgba(123, 128, 140, 0.12);
   border-color: rgba(123, 128, 140, 0.25);
   color: #4a5363;
+}
+.admin-portal-shell .status-checking {
+  background: rgba(123, 128, 140, 0.12);
+  border-color: rgba(123, 128, 140, 0.25);
+  color: #4a5363;
+  animation: admin-integration-checking-pulse 1.2s ease-in-out infinite;
+}
+@keyframes admin-integration-checking-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
 }
 @media (max-width: 760px) {
   .admin-portal-shell .settings-layout {

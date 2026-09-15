@@ -57,13 +57,13 @@ try {
         alchemize_json_response(['data' => $service->execute($payload)], 200);
     }
     if ($parts === ['integrations'] && $method === 'GET') {
-        $statusService = new AlchemizeSystemIntegrationsService($database, $config);
+        $statusService = new AlchemizeSystemIntegrationsService($database, $config, (int) ($user['user_id'] ?? 0) ?: null);
         alchemize_json_response(['data' => $statusService->summary()], 200);
     }
     if ($parts === ['integrations', 'check'] && $method === 'POST') {
         alchemize_require_csrf();
         $payload = alchemize_read_json_request('POST');
-        $statusService = new AlchemizeSystemIntegrationsService($database, $config);
+        $statusService = new AlchemizeSystemIntegrationsService($database, $config, (int) ($user['user_id'] ?? 0) ?: null);
         alchemize_json_response(['data' => $statusService->healthCheck((string) ($payload['slug'] ?? ''))], 200);
     }
     throw new AlchemizeRequestException(404, 'NOT_FOUND', 'The requested settings route was not found.');

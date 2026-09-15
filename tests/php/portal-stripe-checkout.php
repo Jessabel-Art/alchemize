@@ -114,6 +114,9 @@ final class RecordingStripeGateway implements AlchemizeStripeGateway {
     public function retrieveCheckoutSession(string $sessionId): array {
         return ['status' => 'expired'];
     }
+    public function verifyConnection(): array {
+        return ['connected' => true, 'livemode' => false];
+    }
 }
 
 function stripeInvoiceRow(array $overrides): array {

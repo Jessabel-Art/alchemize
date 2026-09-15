@@ -95,10 +95,17 @@ try {
         }
         $sync = $integrations->synchronizeAppointment($id);
         $recipientEmail = trim((string) ($payload['email'] ?? $link['recipient_email']));
+        // Only a real Meet URL Google actually returned is ever linked --
+        // conference creation can still be pending immediately after sync,
+        // in which case this stays empty and the email says nothing about
+        // a link rather than sending a broken/null one.
+        $meetingUrl = (string) ($link['meeting_method'] ?? '') === 'google_meet' ? (string) ($sync['meeting_url'] ?? '') : '';
         $emailResult = $notifications->notifyExternalDetailed(
             $recipientEmail,
             'Appointment confirmed',
-            sprintf('%s is confirmed for %s (%s, %d minutes) via %s.', $link['appointment_type'], (new DateTimeImmutable($slot['start']))->format('F j, Y g:i A'), $link['timezone'], $link['duration_minutes'], $link['meeting_method'])
+            sprintf('%s is confirmed for %s (%s, %d minutes) via %s.', $link['appointment_type'], (new DateTimeImmutable($slot['start']))->format('F j, Y g:i A'), $link['timezone'], $link['duration_minutes'], $link['meeting_method']),
+            $meetingUrl,
+            $meetingUrl !== '' ? 'Join Google Meet' : ''
         );
         $delivery = $emailResult['status'] ?? 'unavailable';
         alchemize_json_response(['data' => [
@@ -183,11 +190,16 @@ try {
         $notificationEmail = trim((string) ($payload['notification_email'] ?? $payload['recipient_email'] ?? ''));
         $sendConfirmationEmail = !empty($payload['send_confirmation_email']) || $notificationEmail !== '';
         $emailResult = [];
+        // Only a real Meet URL Google actually returned is ever linked --
+        // conference creation can still be pending immediately after sync.
+        $meetingUrl = $appointment['meeting_method'] === 'google_meet' ? (string) ($sync['meeting_url'] ?? '') : '';
         if ($sendConfirmationEmail && $notificationEmail !== '') {
             $emailResult = $notifications->notifyExternalDetailed(
                 $notificationEmail,
                 'Appointment scheduled',
-                'Your appointment with Alchemize has been scheduled.'
+                'Your appointment with Alchemize has been scheduled.',
+                $meetingUrl,
+                $meetingUrl !== '' ? 'Join Google Meet' : ''
             );
         } elseif (!empty($payload['client_id']) && $sendConfirmationEmail) {
             $delivery = $notifications->notifyClient((int) $payload['client_id'], 'admin.appointment.created', 'appointment', (string) $id, 'Appointment scheduled', 'An appointment was added to your client portal.', 'appointment-created:' . $id);

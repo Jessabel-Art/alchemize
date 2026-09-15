@@ -83,7 +83,14 @@ final class AlchemizeExternalIntegrationService
         }
         try {
             $calendarResult = $this->calendar->synchronizeAppointment($appointment);
-            $this->repository->setCalendarState($appointmentId, 'synchronized', $calendarResult['event_id'], null, $calendarResult['meeting_url']);
+            $this->repository->setCalendarState(
+                $appointmentId,
+                'synchronized',
+                $calendarResult['event_id'],
+                null,
+                $calendarResult['meeting_url'],
+                (bool) ($calendarResult['clear_meeting_url'] ?? false),
+            );
             return ['status' => 'synchronized', 'meeting_url' => $calendarResult['meeting_url']];
         } catch (Throwable $error) {
             // Temporary diagnostic instrumentation: the real Throwable is
