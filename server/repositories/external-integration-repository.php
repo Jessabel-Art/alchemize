@@ -8,7 +8,7 @@ final class AlchemizeExternalIntegrationRepository
 
     public function client(int $clientId): ?array
     {
-        return $this->one('SELECT * FROM clients WHERE id = :id LIMIT 1', ['id' => $clientId]);
+        return $this->one('SELECT * FROM clients WHERE id = :id LIMIT 1' . ($this->database->inTransaction() ? ' FOR UPDATE' : ''), ['id' => $clientId]);
     }
 
     public function setClientDriveState(int $clientId, string $status, ?string $folderId = null, ?string $error = null): void
@@ -51,6 +51,12 @@ final class AlchemizeExternalIntegrationRepository
              drive_synced_at = ' . $syncedAtExpression . ', drive_sync_error = :error
              WHERE id = :id'
         )->execute(['file_id' => $fileId, 'status' => $status, 'error' => $error, 'id' => $submissionId]);
+    }
+
+    public function setCanonicalDocumentStorage(int $submissionId, string $key): void
+    {
+        $this->database->prepare('UPDATE document_submissions SET storage_key=:storage_key WHERE id=:id')->execute(['storage_key' => $key, 'id' => $submissionId]);
+        $this->database->prepare('UPDATE documents_metadata d JOIN document_submissions ds ON ds.document_id=d.id SET d.storage_key=:storage_key, d.mime_type=ds.mime_type WHERE ds.id=:id')->execute(['storage_key' => $key, 'id' => $submissionId]);
     }
 
     public function appointment(int $appointmentId): ?array

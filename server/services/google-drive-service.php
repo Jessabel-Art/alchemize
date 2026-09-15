@@ -7,22 +7,18 @@ final class AlchemizeGoogleDriveService
     public function __construct(
         private readonly AlchemizeGoogleClientFactory $clients,
         private readonly array $config,
+        private readonly ?Google\Service\Drive $gateway = null,
     ) {}
 
     public function verifyConnection(): array
     {
-        $client = $this->clients->create(['https://www.googleapis.com/auth/drive']);
-        if (!class_exists('Google\\Service\\Drive')) {
-            throw new RuntimeException('The Google Drive service library is not installed.');
-        }
-
-        $drive = new Google\Service\Drive($client);
+        $drive = $this->drive();
         $folder = $drive->files->get((string) $this->config['client_root_folder_id'], [
-            'fields' => 'id,mimeType',
+            'fields' => 'id,mimeType,trashed,capabilities(canAddChildren)',
             'supportsAllDrives' => true,
         ]);
-        if ($folder->getMimeType() !== 'application/vnd.google-apps.folder') {
-            throw new RuntimeException('The configured Google Drive root is not a folder.');
+        if ($folder->getMimeType() !== 'application/vnd.google-apps.folder' || $folder->getTrashed() || !$folder->getCapabilities()?->getCanAddChildren()) {
+            throw new RuntimeException('The configured Google Drive root is not an accessible writable folder.');
         }
 
         return ['connected' => true, 'root_folder_accessible' => true];
@@ -74,8 +70,21 @@ final class AlchemizeGoogleDriveService
 
     private function drive(): Google\Service\Drive
     {
+        if ($this->gateway !== null) return $this->gateway;
         if (!$this->configured()) throw new RuntimeException('Google Drive is not configured.');
         if (!class_exists('Google\\Service\\Drive')) throw new RuntimeException('The Google Drive service library is not installed.');
         return new Google\Service\Drive($this->clients->create(['https://www.googleapis.com/auth/drive']));
+    }
+
+    public function readFile(string $fileId): string
+    {
+        $response = $this->drive()->files->get($fileId, ['alt' => 'media', 'supportsAllDrives' => true]);
+        return (string) $response->getBody();
+    }
+
+    // Compensate only a file created for an upload whose database transaction failed.
+    public function trashFile(string $fileId): void
+    {
+        $this->drive()->files->update($fileId, new Google\Service\Drive\DriveFile(['trashed' => true]), ['supportsAllDrives' => true]);
     }
 }

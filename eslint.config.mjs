@@ -27,6 +27,9 @@ export default defineConfig([
         URL: "readonly",
         fetch: "readonly",
         process: "readonly",
+        setTimeout: "readonly",
+        FormData: "readonly",
+        Blob: "readonly",
       },
     },
     rules: {

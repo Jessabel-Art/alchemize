@@ -14,7 +14,7 @@ final class AlchemizeDocumentStorageService
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => 'xlsx',
     ];
 
-    public function __construct(private readonly string $root) {}
+    public function __construct(private readonly string $root, private readonly ?AlchemizeGoogleDriveService $drive = null) {}
 
     public function store(array $file, int $clientId, int $documentId, int $versionNumber, ?int $engagementId = null): array
     {
@@ -134,15 +134,32 @@ final class AlchemizeDocumentStorageService
 
     public function sendPrivateFile(string $storageKey, string $downloadName, string $mimeType, bool $inline = false): never
     {
-        $path = $this->resolveStorageKeyPath($storageKey);
+        $bytes = $this->readPrivateFile($storageKey);
         $disposition = $this->resolveDisposition($mimeType, $inline);
         $safeName = preg_replace('/[^A-Za-z0-9._ -]/', '_', basename($downloadName)) ?: 'document';
         header('Content-Type: ' . $mimeType);
-        header('Content-Length: ' . filesize($path));
+        header('Content-Length: ' . strlen($bytes));
         header('Content-Disposition: ' . $disposition . '; filename="' . addcslashes($safeName, '"\\') . '"');
         header('Cache-Control: private, no-store');
         header('X-Content-Type-Options: nosniff');
-        readfile($path);
+        echo $bytes;
         exit;
+    }
+
+    // Call only after authorization resolves a storage key from application records.
+    public function readPrivateFile(string $storageKey): string
+    {
+        if (preg_match('#^drive/([A-Za-z0-9_-]+)$#', $storageKey, $match)) {
+            try {
+                if ($this->drive === null) throw new RuntimeException('Drive storage is unavailable.');
+                return $this->drive->readFile($match[1]);
+            } catch (Throwable $error) {
+                error_log(sprintf('Drive document read failed [%s, code %s].', get_class($error), $error->getCode()));
+                throw new AlchemizeRequestException(503, 'DOCUMENT_UNAVAILABLE', 'This document could not be retrieved. Please try again.');
+            }
+        }
+        $bytes = file_get_contents($this->resolveStorageKeyPath($storageKey));
+        if ($bytes === false) throw new AlchemizeRequestException(404, 'NOT_FOUND', 'The requested file was not found.');
+        return $bytes;
     }
 }

@@ -63,7 +63,7 @@ try {
     if ($method === 'GET' && count($parts) === 3 && $parts[0] === 'documents' && $parts[2] === 'download') {
         $submission = $repository->findSubmission($parts[1], false);
         if ($submission === null) throw new AlchemizeRequestException(404, 'NOT_FOUND', 'The requested document was not found.');
-        (new AlchemizeDocumentStorageService((string) $config['document_storage_root']))->sendPrivateFile(
+        (new AlchemizeDocumentStorageService((string) $config['document_storage_root'], new AlchemizeGoogleDriveService(new AlchemizeGoogleClientFactory($config['google'] ?? []), $config['google'] ?? [])))->sendPrivateFile(
             (string) $submission['storage_key'],
             (string) $submission['original_filename'],
             (string) $submission['mime_type'],
@@ -72,7 +72,7 @@ try {
     if ($method === 'GET' && count($parts) === 3 && $parts[0] === 'documents' && $parts[2] === 'preview') {
         $submission = $repository->findSubmission($parts[1], false);
         if ($submission === null) throw new AlchemizeRequestException(404, 'NOT_FOUND', 'The requested document was not found.');
-        (new AlchemizeDocumentStorageService((string) $config['document_storage_root']))->sendPrivateFile(
+        (new AlchemizeDocumentStorageService((string) $config['document_storage_root'], new AlchemizeGoogleDriveService(new AlchemizeGoogleClientFactory($config['google'] ?? []), $config['google'] ?? [])))->sendPrivateFile(
             (string) $submission['storage_key'],
             (string) $submission['original_filename'],
             (string) $submission['mime_type'],

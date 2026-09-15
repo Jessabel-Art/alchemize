@@ -49,7 +49,7 @@ try {
         new AlchemizePortalActionRepository($database),
         new AlchemizeActivityRepository($database),
         new AlchemizeAuditEventRepository($database),
-        new AlchemizeDocumentStorageService((string) $config['document_storage_root']),
+        new AlchemizeDocumentStorageService((string) $config['document_storage_root'], new AlchemizeGoogleDriveService(new AlchemizeGoogleClientFactory($config['google'] ?? []), $config['google'] ?? [])),
         new AlchemizeNotificationService(new AlchemizeNotificationRepository($database), alchemize_email_provider($config)),
         alchemize_external_integrations($database, $config),
     );
