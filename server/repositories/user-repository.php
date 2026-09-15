@@ -68,7 +68,7 @@ final class AlchemizeUserRepository
 
     public function updatePasswordHash(int $userId, string $passwordHash): void
     {
-        $statement = $this->database->prepare('UPDATE users SET password_hash = :hash, password_changed_at = COALESCE(password_changed_at, CURRENT_TIMESTAMP(6)) WHERE id = :id AND status = \'active\'');
+        $statement = $this->database->prepare('UPDATE users SET password_hash = :hash, password_changed_at = CURRENT_TIMESTAMP(6) WHERE id = :id AND status = \'active\'');
         $statement->execute(['hash' => $passwordHash, 'id' => $userId]);
         if ($statement->rowCount() !== 1) throw new AlchemizeRequestException(409, 'ACCOUNT_NOT_ACTIVE', 'This account is not active.');
     }
@@ -83,7 +83,7 @@ final class AlchemizeUserRepository
             'email' => strtolower(trim($email)),
             'id' => $userId,
         ]);
-        if ($statement->rowCount() !== 1) {
+        if ($statement->rowCount() !== 1 && ($this->findById($userId)['status'] ?? '') !== 'active') {
             throw new AlchemizeRequestException(409, 'ACCOUNT_NOT_ACTIVE', 'This account is not active.');
         }
     }

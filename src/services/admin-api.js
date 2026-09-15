@@ -181,6 +181,12 @@ export const clients = {
   enablePortal: (id) =>
     apiRequest(buildApiUrl(`clients/${id}/enable-portal`), { method: "POST" }),
   team: () => apiRequest(buildApiUrl("clients/team")),
+  teamInvitations: () => apiRequest(buildApiUrl("clients/team/invitations")),
+  teamInvitationAction: (payload) =>
+    apiRequest(buildApiUrl("clients/team/invitations"), {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
   createTeamMember: (payload) =>
     apiRequest(buildApiUrl("clients/team"), {
       method: "POST",
@@ -232,6 +238,8 @@ export const settings = {
       method: "POST",
       body: JSON.stringify(payload),
     }),
+  maintenanceHistory: () =>
+    apiRequest(buildApiUrl("settings/maintenance/history")),
   integrations: () => apiRequest(buildApiUrl("settings/integrations")),
   checkIntegration: (slug, payload = {}) =>
     apiRequest(buildApiUrl("settings/integrations/check"), {

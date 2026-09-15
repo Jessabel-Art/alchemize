@@ -1,0 +1,225 @@
+.admin-portal-shell .maintenance-workspace {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.admin-portal-shell .maintenance-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.admin-portal-shell .maintenance-card {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  padding: 16px 18px;
+  border: 1px solid var(--admin-border, #d9d9d9);
+  border-radius: 10px;
+  background: var(--admin-surface, #fff);
+}
+
+.admin-portal-shell .maintenance-card h3 {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.admin-portal-shell .maintenance-card-count {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  font-family: var(--font-serif, serif);
+}
+
+.admin-portal-shell .maintenance-card-description {
+  margin: 0 0 8px;
+  color: var(--color-text-soft);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.admin-portal-shell .maintenance-card button {
+  justify-self: start;
+}
+
+.admin-portal-shell .maintenance-secondary-section {
+  display: grid;
+  gap: 10px;
+  padding-top: 4px;
+  border-top: 1px solid var(--admin-line, rgba(6, 43, 43, 0.1));
+}
+
+.admin-portal-shell .maintenance-secondary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+}
+
+.admin-portal-shell .maintenance-secondary-row h3 {
+  margin: 0 0 2px;
+  font-size: 0.86rem;
+}
+
+.admin-portal-shell .maintenance-secondary-row p {
+  margin: 0;
+  max-width: 52ch;
+  color: var(--color-text-soft);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.admin-portal-shell .maintenance-secondary-row button {
+  flex: 0 0 auto;
+}
+
+.admin-portal-shell .maintenance-static-count {
+  flex: 0 0 auto;
+  color: var(--color-text-soft);
+  font-size: 0.82rem;
+}
+
+.admin-portal-shell .maintenance-history-section {
+  display: grid;
+  gap: 6px;
+  padding-top: 4px;
+  border-top: 1px solid var(--admin-line, rgba(6, 43, 43, 0.1));
+}
+
+.admin-portal-shell .maintenance-history-section h3 {
+  margin: 0;
+  font-size: 0.86rem;
+}
+
+.admin-portal-shell .maintenance-history-empty {
+  margin: 4px 0 0;
+  color: var(--color-text-soft);
+  font-size: 0.85rem;
+}
+
+.admin-portal-shell .maintenance-history-list {
+  display: grid;
+  gap: 10px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-portal-shell .maintenance-history-list li {
+  display: grid;
+  gap: 1px;
+  padding: 8px 0 0;
+  border-top: 1px solid var(--admin-line, rgba(6, 43, 43, 0.06));
+}
+
+.admin-portal-shell .maintenance-history-list li:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.admin-portal-shell .maintenance-history-list time {
+  color: var(--color-text-soft);
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.admin-portal-shell .maintenance-history-list p {
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+/* Review drawer */
+.admin-portal-shell .maintenance-review-drawer {
+  width: min(920px, 100%);
+}
+
+.admin-portal-shell .maintenance-review-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.admin-portal-shell .maintenance-review-toolbar p {
+  margin: 0;
+  color: var(--color-text-soft);
+  font-size: 0.85rem;
+}
+
+.admin-portal-shell .maintenance-table-wrap {
+  overflow-x: auto;
+}
+
+.admin-portal-shell .maintenance-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.admin-portal-shell .maintenance-row-actions .link-button {
+  border: 0;
+  background: none;
+  color: var(--color-text-soft);
+  font-size: 0.82rem;
+  cursor: pointer;
+  padding: 0;
+}
+
+.admin-portal-shell .maintenance-row-actions .link-button:hover {
+  color: var(--emerald-forest, inherit);
+}
+
+/* Confirmation panel, shown in place of the review table */
+.admin-portal-shell .maintenance-confirm {
+  display: grid;
+  gap: 10px;
+  max-width: 48ch;
+}
+
+.admin-portal-shell .maintenance-confirm h3 {
+  margin: 0;
+}
+
+.admin-portal-shell .maintenance-confirm p {
+  margin: 0;
+  color: var(--color-text-soft);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.admin-portal-shell .maintenance-confirm-count {
+  color: var(--color-text) !important;
+  font-weight: 600;
+}
+
+.admin-portal-shell .maintenance-typed-confirm {
+  display: grid;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.admin-portal-shell .maintenance-typed-confirm span {
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.admin-portal-shell .maintenance-confirm-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+@media (max-width: 640px) {
+  .admin-portal-shell .maintenance-secondary-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .admin-portal-shell .maintenance-review-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

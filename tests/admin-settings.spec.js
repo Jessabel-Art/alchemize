@@ -33,6 +33,26 @@ test("Business persistence contract, navigation, validation and responsive shell
       data = saved;
     }
     if (path === "portal-admin/attention") data = { items: [] };
+    if (path === "auth/account")
+      data = {
+        user: {
+          user_id: 1,
+          public_id: "user-1",
+          display_name: "Alex Rivera",
+          email: "alex@alchemize.co",
+          role_slug: "owner-admin",
+          role_name: "Owner / Administrator",
+          status: "active",
+          last_login_at: null,
+          password_changed_at: null,
+        },
+        recent_activity: [],
+        security: {
+          mfa_available: false,
+          session_note: "Current browser session is managed by secure cookies.",
+        },
+      };
+    if (path === "clients/team/invitations") data = [];
     await route.fulfill({ json: { data } });
   });
   await page.goto("/admin/settings");
@@ -73,7 +93,7 @@ test("Business persistence contract, navigation, validation and responsive shell
   await expect(
     page.getByRole("heading", { name: "Account & Security", exact: true }),
   ).toBeVisible();
-  await expect(page.getByLabel("Display name")).toHaveValue("Alex Rivera");
+  await expect(page.getByText("Alex Rivera")).toBeVisible();
   await page
     .getByRole("button", { name: "Notifications", exact: true })
     .click();
@@ -90,7 +110,7 @@ test("Business persistence contract, navigation, validation and responsive shell
     page.getByRole("heading", { name: "Team & Access", exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: /Save team access/i }),
+    page.getByRole("button", { name: "+ Add administrator", exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Business", exact: true }).click();
   await expect(
@@ -238,8 +258,10 @@ test("Account & Security loads personal details and supports self-service passwo
     page.getByRole("heading", { name: "Account & Security", exact: true }),
   ).toBeVisible();
   await expect(page.getByText("Display name")).toBeVisible();
-  await expect(page.getByLabel("Display name")).toHaveValue("Alex Rivera");
-  await expect(page.getByLabel("Login email")).toHaveValue("alex@alchemize.co");
+  await expect(page.getByText("Alex Rivera", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("alex@alchemize.co", { exact: true }),
+  ).toBeVisible();
   await expect(
     page.getByText("Current browser session is managed by secure cookies"),
   ).toBeVisible();
@@ -255,12 +277,12 @@ test("Account & Security loads personal details and supports self-service passwo
     )
       profileWrites.push(request);
   });
-  await page.getByRole("button", { name: /Edit account profile/i }).click();
+  await page.getByRole("button", { name: "Edit profile", exact: true }).click();
   await expect(page.getByLabel("Display name", { exact: true })).toBeEditable();
   expect(profileWrites).toHaveLength(0);
   await expect(page.getByLabel("Login email", { exact: true })).toBeEditable();
   await expect(
-    page.getByRole("button", { name: "Save account profile", exact: true }),
+    page.getByRole("button", { name: "Save changes", exact: true }),
   ).toBeVisible();
   await page.getByLabel("Display name", { exact: true }).fill("Alex R. Rivera");
   const profileRequest = page.waitForRequest(
@@ -268,9 +290,7 @@ test("Account & Security loads personal details and supports self-service passwo
       new URL(request.url()).searchParams.get("route") === "auth/account" &&
       request.method() === "PUT",
   );
-  await page
-    .getByRole("button", { name: "Save account profile", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Save changes", exact: true }).click();
   const request = await profileRequest;
   expect(new URL(request.url()).pathname).toBe("/alchemize-api.php");
   expect(new URL(request.url()).origin).toBe(new URL(page.url()).origin);
@@ -279,18 +299,29 @@ test("Account & Security loads personal details and supports self-service passwo
   expect(request.postDataJSON()).toEqual({
     display_name: "Alex R. Rivera",
     email: "alex@alchemize.co",
+    current_password: "",
   });
   await expect(
-    page.getByRole("button", { name: "Edit account profile", exact: true }),
+    page.getByRole("button", { name: "Edit profile", exact: true }),
   ).toBeVisible();
-  await expect(
-    page.getByLabel("Display name", { exact: true }),
-  ).toHaveAttribute("readonly", "");
-  await expect(page.getByText("Account profile saved.")).toBeVisible();
+  await expect(page.getByText("Alex R. Rivera", { exact: true })).toBeVisible();
+  await expect(page.getByText("Profile saved.")).toBeVisible();
 
-  await page.getByLabel("Current password").fill("old-password");
-  await page.getByLabel("New password").fill("new-password-123");
-  await page.getByRole("button", { name: "Change password" }).click();
+  await page
+    .getByRole("button", { name: "Change password", exact: true })
+    .click();
+  await page
+    .getByLabel("Current password", { exact: true })
+    .fill("old-password");
+  await page
+    .getByLabel("New password", { exact: true })
+    .fill("new-password-123");
+  await page
+    .getByLabel("Confirm new password", { exact: true })
+    .fill("new-password-123");
+  await page
+    .getByRole("button", { name: "Update password", exact: true })
+    .click();
   await expect(page.getByText("Password updated.")).toBeVisible();
 });
 
@@ -372,12 +403,15 @@ test("Account profile stays read-only until an explicit edit action is chosen", 
 
   await page.goto("/admin/settings?section=account-security");
   await expect(page.getByText("Display name")).toBeVisible();
-  await expect(page.getByLabel("Display name")).toHaveValue("Alex Rivera");
-  await expect(page.getByLabel("Login email")).toHaveValue("alex@alchemize.co");
+  await expect(page.getByText("Alex Rivera", { exact: true })).toBeVisible();
   await expect(
-    page.getByRole("button", { name: /Edit account profile/i }),
+    page.getByText("alex@alchemize.co", { exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: /Edit account profile/i }).click();
+  await expect(
+    page.getByRole("button", { name: "Edit profile", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Display name")).toHaveCount(0);
+  await page.getByRole("button", { name: "Edit profile", exact: true }).click();
   await expect(page.getByLabel("Display name")).toHaveValue("Alex Rivera");
   await expect(page.getByLabel("Login email")).toHaveValue("alex@alchemize.co");
 });
@@ -440,8 +474,8 @@ test("Team & Access loads real internal users and restricts role changes to owne
 }) => {
   let teamUsers = [
     {
-      id: 1,
-      public_id: "user-1",
+      user_id: 1,
+      id: "user-1",
       display_name: "Alex Rivera",
       email: "alex@alchemize.co",
       status: "active",
@@ -449,8 +483,8 @@ test("Team & Access loads real internal users and restricts role changes to owne
       role_slug: "owner-admin",
     },
     {
-      id: 2,
-      public_id: "user-2",
+      user_id: 2,
+      id: "user-2",
       display_name: "Morgan Lee",
       email: "morgan@alchemize.co",
       status: "active",
@@ -458,8 +492,8 @@ test("Team & Access loads real internal users and restricts role changes to owne
       role_slug: "administrator",
     },
     {
-      id: 3,
-      public_id: "user-3",
+      user_id: 3,
+      id: "user-3",
       display_name: "Sam Chen",
       email: "sam@alchemize.co",
       status: "inactive",
@@ -488,7 +522,7 @@ test("Team & Access loads real internal users and restricts role changes to owne
       if (route.request().method() === "PUT") {
         const payload = route.request().postDataJSON();
         teamUsers = teamUsers.map((user) =>
-          user.id === payload.user_id
+          user.user_id === payload.user_id
             ? {
                 ...user,
                 role_slug: payload.role_slug,
@@ -500,12 +534,15 @@ test("Team & Access loads real internal users and restricts role changes to owne
           json: {
             data: {
               updated: true,
-              user: teamUsers.find((user) => user.id === payload.user_id),
+              user: teamUsers.find((user) => user.user_id === payload.user_id),
             },
           },
         });
       }
       return route.fulfill({ json: { data: teamUsers } });
+    }
+    if (path === "clients/team/invitations") {
+      return route.fulfill({ json: { data: [] } });
     }
     if (path === "portal-admin/attention") {
       return route.fulfill({ json: { data: { items: [] } } });
@@ -518,45 +555,46 @@ test("Team & Access loads real internal users and restricts role changes to owne
     page.getByRole("heading", { name: "Team & Access", exact: true }),
   ).toBeVisible();
   await expect(
-    page.locator(".team-member-meta strong", { hasText: "Alex Rivera" }),
+    page.locator(".access-member strong", { hasText: "Alex Rivera" }),
   ).toBeVisible();
   await expect(
-    page.locator(".team-member-meta strong", { hasText: "Morgan Lee" }),
+    page.locator(".access-member strong", { hasText: "Morgan Lee" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: /Save team access/i }),
+    page.getByRole("button", { name: "+ Add administrator", exact: true }),
   ).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "Role" })).toHaveCount(0);
   await expect(
-    page.getByRole("combobox", { name: /Role for Morgan Lee/i }),
-  ).toHaveCount(0);
-  await expect(
-    page.getByRole("combobox", { name: /Status for Morgan Lee/i }),
+    page.getByRole("combobox", { name: "Access status" }),
   ).toHaveCount(0);
 
   await page
-    .locator(".team-access-row", { hasText: "Morgan Lee" })
-    .getByRole("button", { name: /Manage|Edit/i })
+    .locator(".access-member", { hasText: "Morgan Lee" })
+    .getByRole("button", { name: "Manage", exact: true })
     .click();
-  await page.getByLabel("Role for Morgan Lee").selectOption("staff");
-  await page.getByLabel("Status for Morgan Lee").selectOption("inactive");
-  await page.getByRole("button", { name: /Save team access/i }).click();
+  // Not exact: a <label> wrapping a <select> computes its accessible name
+  // as the label text plus the selected option's own text (e.g.
+  // "RoleAdministrator"), so an exact match against "Role" never resolves.
+  await page.getByLabel("Role").selectOption("staff");
+  await page.getByLabel("Access status").selectOption("inactive");
+  await page.getByRole("button", { name: "Save changes", exact: true }).click();
 
-  await expect(page.getByText("Team access updated.")).toBeVisible();
+  await expect(page.getByText("Access updated.")).toBeVisible();
   await expect(
-    page.locator(".team-member-meta strong", { hasText: "Morgan Lee" }),
+    page.locator(".access-member strong", { hasText: "Morgan Lee" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("combobox", { name: /Status for Morgan Lee/i }),
-  ).toHaveValue("inactive");
+    page.locator(".access-member", { hasText: "Morgan Lee" }),
+  ).toContainText("Inactive");
 });
 
 test("Team access supports adding an authorized administrator with a unique email", async ({
   page,
 }) => {
-  let teamUsers = [
+  const teamUsers = [
     {
-      id: 1,
-      public_id: "user-1",
+      user_id: 1,
+      id: "user-1",
       display_name: "Alex Rivera",
       email: "alex@alchemize.co",
       status: "active",
@@ -564,8 +602,8 @@ test("Team access supports adding an authorized administrator with a unique emai
       role_slug: "owner-admin",
     },
     {
-      id: 2,
-      public_id: "user-2",
+      user_id: 2,
+      id: "user-2",
       display_name: "Morgan Lee",
       email: "morgan@alchemize.co",
       status: "active",
@@ -573,6 +611,7 @@ test("Team access supports adding an authorized administrator with a unique emai
       role_slug: "administrator",
     },
   ];
+  let invitations = [];
 
   await page.route("**/alchemize-api.php?*", async (route) => {
     const path = new URL(route.request().url()).searchParams.get("route");
@@ -593,29 +632,32 @@ test("Team access supports adding an authorized administrator with a unique emai
     if (path === "clients/team") {
       if (route.request().method() === "POST") {
         const payload = route.request().postDataJSON();
-        teamUsers = [
-          ...teamUsers,
+        invitations = [
+          ...invitations,
           {
-            id: 3,
-            public_id: "user-3",
+            user_id: 3,
             display_name: payload.display_name,
             email: payload.email,
-            status: payload.status || "active",
-            role_name: "Administrator",
             role_slug: payload.role_slug || "administrator",
+            role_name: "Administrator",
+            invited_at: "2026-09-14T20:00:00.000000Z",
+            expires_at: "2026-09-17T20:00:00.000000Z",
+            invitation_status: "pending",
           },
         ];
         return route.fulfill({
           json: {
             data: {
-              created: true,
-              user: teamUsers[teamUsers.length - 1],
-              team: teamUsers,
+              expires_at: "2026-09-17T20:00:00.000000Z",
+              email_delivery: "sent",
             },
           },
         });
       }
       return route.fulfill({ json: { data: teamUsers } });
+    }
+    if (path === "clients/team/invitations") {
+      return route.fulfill({ json: { data: invitations } });
     }
     if (path === "portal-admin/attention") {
       return route.fulfill({ json: { data: { items: [] } } });
@@ -624,13 +666,24 @@ test("Team access supports adding an authorized administrator with a unique emai
   });
 
   await page.goto("/admin/settings?section=team-access");
-  await page.getByRole("button", { name: /\+ Add administrator/i }).click();
-  await page.getByLabel("Display name").fill("Nina Patel");
-  await page.getByLabel("Login email").fill("nina@alchemize.co");
+  await page
+    .getByRole("button", { name: "+ Add administrator", exact: true })
+    .click();
+  await page.getByLabel("Name", { exact: true }).fill("Nina Patel");
+  await page.getByLabel("Email", { exact: true }).fill("nina@alchemize.co");
   await page.getByLabel("Role").selectOption("administrator");
-  await page.getByRole("button", { name: /Create administrator/i }).click();
-  await expect(page.getByText("Nina Patel")).toBeVisible();
-  await expect(page.getByText("nina@alchemize.co")).toBeVisible();
+  await page
+    .getByRole("button", { name: "Send invitation", exact: true })
+    .click();
+  await expect(
+    page.getByText("Invitation sent. Access begins after password setup."),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Pending invitations" }),
+  ).toBeVisible();
+  const invitationRow = page.locator("tr", { hasText: "Nina Patel" });
+  await expect(invitationRow).toBeVisible();
+  await expect(invitationRow).toContainText("nina@alchemize.co");
 });
 
 test("Load failure never presents fallback settings to save", async ({

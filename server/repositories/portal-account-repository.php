@@ -94,14 +94,14 @@ final class AlchemizePortalAccountRepository
         $statement->execute(['user_id' => $userId, 'purpose' => $purpose]);
     }
 
-    public function createToken(int $userId, int $clientId, string $purpose, string $hash, string $expiresAt, ?int $actorId): void
+    public function createToken(int $userId, ?int $clientId, string $purpose, string $hash, string $expiresAt, ?int $actorId, ?string $pendingEmail = null): void
     {
         $statement = $this->database->prepare(
             'INSERT INTO portal_account_tokens
-                (public_id, user_id, client_id, purpose, token_hash, expires_at, created_by_user_id)
-             VALUES (:public_id, :user_id, :client_id, :purpose, :token_hash, :expires_at, :actor_id)'
+                (public_id, user_id, client_id, purpose, token_hash, expires_at, created_by_user_id, pending_email)
+             VALUES (:public_id, :user_id, :client_id, :purpose, :token_hash, :expires_at, :actor_id, :pending_email)'
         );
-        $statement->execute(['public_id' => alchemize_uuid_v4(), 'user_id' => $userId, 'client_id' => $clientId, 'purpose' => $purpose, 'token_hash' => $hash, 'expires_at' => $expiresAt, 'actor_id' => $actorId]);
+        $statement->execute(['public_id' => alchemize_uuid_v4(), 'user_id' => $userId, 'client_id' => $clientId, 'purpose' => $purpose, 'token_hash' => $hash, 'expires_at' => $expiresAt, 'actor_id' => $actorId, 'pending_email' => $pendingEmail]);
     }
 
     public function findUsableToken(string $rawToken, string $purpose): ?array

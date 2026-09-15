@@ -102,89 +102,28 @@ try {
         alchemize_json_response(['data' => $userRepository->listInternalUsers()], 200);
     }
 
-    if ($method === 'POST' && $parts === ['team']) {
-        $actor = alchemize_require_team_access_manager();
-        alchemize_require_csrf();
-        $payload = alchemize_read_json_request('POST');
-
-        $displayName = trim((string) ($payload['display_name'] ?? ''));
-        $email = strtolower(trim((string) ($payload['email'] ?? '')));
-        $roleSlug = trim((string) ($payload['role_slug'] ?? 'administrator'));
-        $status = trim((string) ($payload['status'] ?? 'active'));
-
-        if ($displayName === '') throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Enter a valid display name.');
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Enter a valid email address.');
-        if (!in_array($roleSlug, ['owner-admin', 'administrator', 'staff', 'read-only'], true)) {
-            throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Select a valid team role.');
-        }
-        if (!in_array($status, ['active', 'inactive', 'suspended', 'archived'], true)) {
-            throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Select a valid team status.');
-        }
-        if ($userRepository->findByEmail($email) !== null) {
-            throw new AlchemizeRequestException(409, 'EMAIL_IN_USE', 'That email is already associated with an account.');
-        }
-
-        $role = $database->prepare('SELECT id FROM roles WHERE slug = :slug AND is_active = 1 LIMIT 1');
-        $role->execute(['slug' => $roleSlug]);
-        $roleId = $role->fetchColumn();
-        if ($roleId === false) throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'The selected role is not available.');
-
-        $newUserId = $userRepository->create([
-            'public_id' => alchemize_uuid_v4(),
-            'email' => $email,
-            'password_hash' => null,
-            'display_name' => $displayName,
-            'status' => $status,
-            'role_id' => (int) $roleId,
-        ]);
-
-        $user = $userRepository->findById((int) $newUserId);
-        alchemize_json_response(['data' => ['created' => true, 'user' => $user, 'team' => $userRepository->listInternalUsers()]], 201);
+    if ($parts === ['team', 'invitations'] && $method === 'GET') {
+        alchemize_require_admin();
+        require_once dirname($bootstrap) . '/services/admin-access-service.php';
+        alchemize_json_response(['data' => (new AlchemizeAdminAccessService($database, $config))->invitations()], 200);
     }
 
-    if ($method === 'PUT' && $parts === ['team']) {
+    if (($parts === ['team'] && in_array($method, ['POST', 'PUT'], true))
+        || ($parts === ['team', 'invitations'] && $method === 'POST')) {
         $actor = alchemize_require_team_access_manager();
         alchemize_require_csrf();
-        $payload = alchemize_read_json_request('PUT');
-
-        $userId = (int) ($payload['user_id'] ?? 0);
-        if ($userId < 1) throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Choose a team member to update.');
-
-        $target = $userRepository->findById($userId);
-        if ($target === null) throw new AlchemizeRequestException(404, 'NOT_FOUND', 'Team member was not found.');
-        if ((int) ($actor['user_id'] ?? 0) === $userId) {
-            throw new AlchemizeRequestException(403, 'FORBIDDEN', 'You cannot change your own team access from this screen.');
+        require_once dirname($bootstrap) . '/services/admin-access-service.php';
+        $access = new AlchemizeAdminAccessService($database, $config);
+        $payload = alchemize_read_json_request($method);
+        if ($parts === ['team', 'invitations']) {
+            $result = $access->invitationAction((int) $actor['user_id'], (int) ($payload['user_id'] ?? 0), (string) ($payload['action'] ?? ''));
+        } elseif ($method === 'POST') {
+            $result = $access->invite((int) $actor['user_id'], $payload);
+        } else {
+            $access->updateMember((int) $actor['user_id'], $payload);
+            $result = ['updated' => true];
         }
-
-        $roleSlug = isset($payload['role_slug']) ? trim((string) $payload['role_slug']) : (string) ($target['role_slug'] ?? '');
-        if ($roleSlug === '') throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Select a valid team role.');
-        if (!in_array($roleSlug, ['owner-admin', 'administrator', 'staff', 'read-only'], true)) {
-            throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Select a valid team role.');
-        }
-
-        $status = isset($payload['status']) ? trim((string) $payload['status']) : (string) ($target['status'] ?? 'active');
-        if (!in_array($status, ['active', 'inactive', 'suspended', 'archived'], true)) {
-            throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Select a valid team status.');
-        }
-
-        if ((string) ($target['role_slug'] ?? '') === 'owner-admin' && (string) ($actor['role_slug'] ?? '') !== 'owner-admin') {
-            throw new AlchemizeRequestException(403, 'FORBIDDEN', 'Only the owner can manage the owner administrator account.');
-        }
-        if ($roleSlug === 'owner-admin' && (string) ($actor['role_slug'] ?? '') !== 'owner-admin') {
-            throw new AlchemizeRequestException(403, 'FORBIDDEN', 'Only the owner can assign ownership access.');
-        }
-
-        $role = $database->prepare('SELECT id FROM roles WHERE slug = :slug AND is_active = 1 LIMIT 1');
-        $role->execute(['slug' => $roleSlug]);
-        $roleId = $role->fetchColumn();
-        if ($roleId === false) throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'The selected role is not available.');
-
-        $update = $database->prepare(
-            'UPDATE users SET role_id = :role_id, status = :status, updated_at = CURRENT_TIMESTAMP(6) WHERE id = :id'
-        );
-        $update->execute(['role_id' => (int) $roleId, 'status' => $status, 'id' => $userId]);
-
-        alchemize_json_response(['data' => ['updated' => true, 'team' => $userRepository->listInternalUsers()]], 200);
+        alchemize_json_response(['data' => $result], $method === 'POST' ? 201 : 200);
     }
 
     if ($method === 'GET' && count($parts) === 2 && ctype_digit((string) $parts[0]) && $parts[1] === 'portal-account') {

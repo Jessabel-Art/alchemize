@@ -48,6 +48,9 @@ try {
         $payload = alchemize_read_json_request('POST');
         alchemize_json_response(['data' => $service->preview($payload)], 200);
     }
+    if ($parts === ['maintenance', 'history'] && $method === 'GET') {
+        alchemize_json_response(['data' => $service->history()], 200);
+    }
     if ($parts === ['maintenance', 'execute'] && $method === 'POST') {
         alchemize_require_csrf();
         $payload = alchemize_read_json_request('POST');

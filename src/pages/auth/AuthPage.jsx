@@ -239,6 +239,7 @@ export function SetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const token = searchParams.get("token") || "";
   const purpose = searchParams.get("purpose") || "invitation";
+  const emailConfirmation = purpose === "email_change";
 
   const submit = async (event) => {
     event.preventDefault();
@@ -248,7 +249,7 @@ export function SetPasswordPage() {
       setError("This setup link is invalid or expired.");
       return;
     }
-    if (password !== confirmation) {
+    if (!emailConfirmation && password !== confirmation) {
       setError("Passwords do not match.");
       setErrorField("confirmation");
       return;
@@ -258,7 +259,11 @@ export function SetPasswordPage() {
       await auth.setPassword({ token, purpose, password });
       navigate("/login", {
         replace: true,
-        state: { message: "Password set. You can now log in." },
+        state: {
+          message: emailConfirmation
+            ? "Email confirmed. Use your new login email."
+            : "Password set. You can now log in.",
+        },
       });
     } catch (caughtError) {
       setError(caughtError.message || "The password could not be set.");
@@ -275,49 +280,57 @@ export function SetPasswordPage() {
         </Link>
         <div>
           <span>Secure access</span>
-          <h1>Set your password.</h1>
+          <h1>
+            {emailConfirmation ? "Confirm your email." : "Set your password."}
+          </h1>
           <p>This one-time link establishes or restores your portal access.</p>
         </div>
       </section>
       <section className="auth-form-panel">
         <div className="auth-card">
           <span className="eyebrow">Account security</span>
-          <h2>Choose a password</h2>
+          <h2>
+            {emailConfirmation ? "Confirm login email" : "Choose a password"}
+          </h2>
           <form onSubmit={submit}>
-            <label>
-              New password
-              <input
-                type="password"
-                autoComplete="new-password"
-                minLength="12"
-                aria-describedby="set-password-requirements"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                required
-              />
-            </label>
-            <small id="set-password-requirements">
-              Must be at least 12 characters.
-            </small>
-            <label>
-              Confirm password
-              <input
-                type="password"
-                autoComplete="new-password"
-                minLength="12"
-                value={confirmation}
-                onChange={(event) => setConfirmation(event.target.value)}
-                aria-invalid={
-                  errorField === "confirmation" ? "true" : undefined
-                }
-                aria-describedby={
-                  errorField === "confirmation"
-                    ? "set-password-error"
-                    : undefined
-                }
-                required
-              />
-            </label>
+            {!emailConfirmation && (
+              <>
+                <label>
+                  New password
+                  <input
+                    type="password"
+                    autoComplete="new-password"
+                    minLength="12"
+                    aria-describedby="set-password-requirements"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    required
+                  />
+                </label>
+                <small id="set-password-requirements">
+                  Must be at least 12 characters.
+                </small>
+                <label>
+                  Confirm password
+                  <input
+                    type="password"
+                    autoComplete="new-password"
+                    minLength="12"
+                    value={confirmation}
+                    onChange={(event) => setConfirmation(event.target.value)}
+                    aria-invalid={
+                      errorField === "confirmation" ? "true" : undefined
+                    }
+                    aria-describedby={
+                      errorField === "confirmation"
+                        ? "set-password-error"
+                        : undefined
+                    }
+                    required
+                  />
+                </label>
+              </>
+            )}
             {error ? (
               <p id="set-password-error" role="alert">
                 {error}
@@ -328,7 +341,11 @@ export function SetPasswordPage() {
               type="submit"
               disabled={loading}
             >
-              {loading ? "Saving…" : "Set password"}
+              {loading
+                ? "Saving…"
+                : emailConfirmation
+                  ? "Confirm email"
+                  : "Set password"}
             </button>
           </form>
         </div>

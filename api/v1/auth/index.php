@@ -48,6 +48,8 @@ try {
     require_once $serverRoot . '/repositories/user-repository.php';
     require_once $serverRoot . '/services/auth-service.php';
 
+    require_once $serverRoot . '/services/admin-access-service.php';
+
     $authStage = 'configuration';
     $appConfig = alchemize_config();
     $authStage = 'database';
@@ -71,7 +73,7 @@ try {
 
     if ($method === 'GET' && $parts === ['session']) {
         $authStage = 'session';
-        $user = alchemize_session_user();
+        $user = alchemize_validated_session_user();
         $csrfToken = alchemize_csrf_token();
         alchemize_json_response([
             'data' => [
@@ -107,11 +109,12 @@ try {
 
     if ($method === 'POST' && $parts === ['set-password']) {
         $payload = alchemize_read_json_request();
-        $accountService->setPassword(
-            (string) ($payload['token'] ?? ''),
-            (string) ($payload['purpose'] ?? 'invitation'),
-            (string) ($payload['password'] ?? '')
-        );
+        $purpose = (string) ($payload['purpose'] ?? 'invitation');
+        if (in_array($purpose, ['admin_invitation', 'email_change'], true)) {
+            (new AlchemizeAdminAccessService($database, $appConfig))->accept((string) ($payload['token'] ?? ''), $purpose, (string) ($payload['password'] ?? ''));
+        } else {
+            $accountService->setPassword((string) ($payload['token'] ?? ''), $purpose, (string) ($payload['password'] ?? ''));
+        }
         alchemize_json_response(['data' => ['completed' => true]], 200);
     }
 
@@ -130,23 +133,29 @@ try {
     if ($method === 'PUT' && $parts === ['account']) {
         $user = alchemize_require_authenticated_user(); alchemize_require_csrf();
         $payload = alchemize_read_json_request('PUT');
-        $updated = $auth->updateProfile(
-            (int) $user['user_id'],
-            (string) ($payload['display_name'] ?? ''),
-            (string) ($payload['email'] ?? ''),
-        );
+        $current = $auth->getAccountSummary((int) $user['user_id'])['user'];
+        $requestedEmail = strtolower(trim((string) ($payload['email'] ?? '')));
+        $name = trim((string) ($payload['display_name'] ?? ''));
+        if ($name === '' || strlen($name) > 150) throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Display name is required and must be at most 150 characters.');
+        $emailChange = null;
+        if ($requestedEmail !== $current['email']) {
+            $emailChange = (new AlchemizeAdminAccessService($database, $appConfig))->requestEmailChange((int) $user['user_id'], $requestedEmail, (string) ($payload['current_password'] ?? ''));
+        }
+        $updated = $auth->updateProfile((int) $user['user_id'], $name, $current['email']);
+        $updated['email_change'] = $emailChange;
         alchemize_json_response(['data' => $updated], 200);
     }
 
     if ($method === 'POST' && $parts === ['change-password']) {
         $user = alchemize_require_authenticated_user(); alchemize_require_csrf();
         $payload = alchemize_read_json_request();
+        if (isset($payload['confirm_password']) && (string) ($payload['new_password'] ?? '') !== (string) $payload['confirm_password']) throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'Passwords do not match.');
         $accountService->changePassword((int) $user['user_id'], (string) ($payload['current_password'] ?? ''), (string) ($payload['new_password'] ?? ''));
         (new AlchemizeAuditEventRepository($database))->create([
             'public_id'=>alchemize_uuid_v4(),'actor_user_id'=>$user['user_id'],'event_type'=>'portal.password.changed',
             'entity_type'=>'user','entity_id'=>(string)$user['public_id'],'action_summary'=>'Portal user changed their password.','request_metadata'=>null,
         ]);
-        alchemize_json_response(['data' => ['changed' => true]], 200);
+        alchemize_json_response(['data' => ['changed' => true, 'password_changed_at' => $auth->getAccountSummary((int) $user['user_id'])['user']['password_changed_at']]], 200);
     }
 
     if ($method === 'POST' && $parts === ['logout']) {

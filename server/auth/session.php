@@ -39,7 +39,6 @@ function alchemize_validated_session_user(): ?array
     }
 
     $role = (string) ($sessionUser['role_slug'] ?? '');
-    $isInternalRole = in_array($role, ['owner-admin', 'administrator', 'staff', 'read-only'], true);
 
     try {
         $config = alchemize_config();
@@ -78,10 +77,6 @@ function alchemize_validated_session_user(): ?array
             $error->getMessage(),
         ));
 
-        if ($isInternalRole) {
-            return $sessionUser;
-        }
-
         throw new RuntimeException('Session validation is unavailable.');
     }
 }
@@ -116,7 +111,7 @@ function alchemize_clear_session_user(): void
 
 function alchemize_require_authenticated_user(): array
 {
-    $user = alchemize_session_user();
+    $user = alchemize_validated_session_user();
     if (!is_array($user) || empty($user['user_id'])) {
         throw new AlchemizeRequestException(401, 'UNAUTHORIZED', 'Authentication required.');
     }
