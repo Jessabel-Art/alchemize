@@ -4,6 +4,17 @@ declare(strict_types=1);
 
 final class AlchemizeExternalIntegrationService
 {
+    // Client documents are canonically stored on Hostinger/local disk.
+    // Google service accounts have no Drive storage quota of their own
+    // (confirmed in production: uploads fail with storageQuotaExceeded
+    // after first creating an orphaned client folder), so until a Shared
+    // Drive or OAuth delegation replaces the service account, skip Drive
+    // document sync entirely rather than repeatedly attempt a known-
+    // impossible upload. Flip this back on once that's solved -- no other
+    // code needs to change, since a Drive failure already degrades to a
+    // non-fatal status here rather than failing the upload.
+    private const DOCUMENT_DRIVE_SYNC_ENABLED = false;
+
     public function __construct(
         private readonly AlchemizeExternalIntegrationRepository $repository,
         private readonly ?AlchemizeGoogleDriveService $drive,
@@ -41,22 +52,53 @@ final class AlchemizeExternalIntegrationService
 
     public function synchronizeDocument(int $submissionId, string $absolutePath): array
     {
+        if (!self::DOCUMENT_DRIVE_SYNC_ENABLED) {
+            // Persist an honest status rather than leaving the row at its
+            // schema default of 'pending', which would misleadingly read
+            // as "about to sync" for a record that will never actually be
+            // attempted while this integration is disabled.
+            try {
+                $submission = $this->repository->submission($submissionId);
+                $this->repository->setDocumentDriveState($submissionId, 'not_configured', null, 'disabled');
+                if ($submission !== null && empty($submission['google_drive_file_id'])) {
+                    $this->repository->setClientDriveState((int) $submission['client_id'], 'not_configured', null, 'disabled');
+                }
+            } catch (Throwable $error) {
+                error_log(sprintf('Failed to record disabled Drive sync state [%s].', get_class($error)));
+            }
+            return ['status' => 'not_configured'];
+        }
+        $submission = $this->repository->submission($submissionId);
+        if ($submission === null) return ['status' => 'failed'];
+        if (!empty($submission['google_drive_file_id'])) return ['status' => 'synchronized', 'file_id' => $submission['google_drive_file_id']];
+        $folder = $this->ensureClientFolder((int) $submission['client_id']);
+        if (($folder['status'] ?? '') !== 'synchronized' || $this->drive === null) {
+            $status = ($folder['status'] ?? '') === 'not_configured' ? 'not_configured' : 'failed';
+            // Recording sync state is itself a best-effort side note, not a
+            // condition of the sync result -- a failure here (a transient
+            // DB error, a schema gap) must not become an uncaught exception
+            // that a caller could mistake for the underlying upload failing.
+            try {
+                $this->repository->setDocumentDriveState($submissionId, $status, null, $status);
+            } catch (Throwable $error) {
+                error_log(sprintf('Failed to record Drive sync state [%s].', get_class($error)));
+            }
+            return ['status' => $status];
+        }
         $fileId = null;
         try {
-            $submission = $this->repository->submission($submissionId);
-            if (!$submission) throw new RuntimeException('Document submission is missing.');
-            if (!empty($submission['google_drive_file_id'])) return ['status' => 'synchronized', 'file_id' => $submission['google_drive_file_id']];
-            $folder = $this->ensureClientFolder((int) $submission['client_id']);
-            if (($folder['status'] ?? '') !== 'synchronized' || $this->drive === null) throw new RuntimeException('Drive storage is unavailable.');
-            $fileId = $this->drive->uploadClientFile((string) $folder['folder_id'], (string) $submission['public_id'], (string) $submission['original_filename'], (string) $submission['mime_type'], $absolutePath);
-            if ($fileId === '') throw new RuntimeException('Drive did not return a file identifier.');
+            $fileId = $this->drive->uploadClientFile(
+                (string) $folder['folder_id'], (string) $submission['public_id'],
+                (string) $submission['original_filename'], (string) $submission['mime_type'], $absolutePath,
+            );
             $this->repository->setDocumentDriveState($submissionId, 'synchronized', $fileId);
             $this->repository->setCanonicalDocumentStorage($submissionId, 'drive/' . $fileId);
             return ['status' => 'synchronized', 'file_id' => $fileId];
         } catch (Throwable $error) {
             if ($fileId) $this->discardDocumentUpload($fileId);
-            error_log(sprintf('Required Drive upload failed for submission %d [%s, code %s].', $submissionId, get_class($error), $error->getCode()));
-            throw new AlchemizeRequestException(503, 'DOCUMENT_STORAGE_UNAVAILABLE', 'Your file could not be saved to secure document storage. Please try again.');
+            error_log(sprintf('Google Drive document sync failed [%s].', get_class($error)));
+            $this->repository->setDocumentDriveState($submissionId, 'failed', null, 'provider_error');
+            return ['status' => 'failed'];
         }
     }
 

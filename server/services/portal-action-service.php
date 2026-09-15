@@ -77,15 +77,12 @@ final class AlchemizePortalActionService
             ? $this->repository->authorizedEngagementId((string) $payload['engagement_id'], (int) $access['client_id']) : null;
         $publicId = alchemize_uuid_v4();
         $name = trim((string) ($payload['document_name'] ?? pathinfo((string) ($file['name'] ?? 'Document'), PATHINFO_FILENAME))) ?: 'Client document';
-        $database = $this->repository->database();
-        $stored = null;
-        $sync = null;
-        $database->beginTransaction();
-        try {
         $documentId = $this->repository->createGeneralDocument([
             'public_id' => $publicId, 'client_id' => $access['client_id'], 'engagement_id' => $engagementId,
             'document_name' => $name, 'client_instructions' => $this->optionalText($payload['comment'] ?? null, 2000),
         ]);
+        $stored = null;
+        try {
             $stored = $this->storage->store($file, (int) $access['client_id'], $documentId, 1, $engagementId);
             $submissionId = $this->repository->createDocumentSubmission([
                 'public_id' => alchemize_uuid_v4(), 'document_id' => $documentId, 'client_id' => $access['client_id'],
@@ -95,17 +92,22 @@ final class AlchemizePortalActionService
                 'file_size_bytes' => $stored['file_size_bytes'], 'sha256' => $stored['sha256'],
                 'client_comment' => $this->optionalText($payload['comment'] ?? null, 2000),
             ]);
-            if ($this->integrations === null) throw new AlchemizeRequestException(503, 'DOCUMENT_STORAGE_UNAVAILABLE', 'Secure document storage is unavailable.');
-            $sync = $this->integrations->synchronizeDocument($submissionId, $stored['absolute_path']);
-            $this->activity($access, $user, 'client.document.uploaded_general', 'document', $publicId, 'Client uploaded a general document.', $engagementId);
-            $database->commit();
         } catch (Throwable $error) {
-            if ($database->inTransaction()) $database->rollBack();
-            if (!empty($sync['file_id'])) $this->integrations?->discardDocumentUpload($sync['file_id']);
-            throw $error;
-        } finally {
             if (is_array($stored)) $this->storage->discard((string) ($stored['absolute_path'] ?? ''));
+            $this->repository->deleteGeneralDocument($documentId, (int) $access['client_id']);
+            throw $error;
         }
+        // Hostinger/local storage is canonical -- the file is already
+        // durably saved and its row already created, so a Drive-sync
+        // failure here must degrade to a status, never fail the request or
+        // touch the file that was just successfully saved.
+        try {
+            $sync = $this->integrations?->synchronizeDocument($submissionId, (string) $stored['absolute_path']) ?? ['status' => 'not_configured'];
+        } catch (Throwable $error) {
+            error_log(sprintf('Post-commit Drive sync failed for document submission %d [%s].', $submissionId, get_class($error)));
+            $sync = ['status' => 'failed'];
+        }
+        $this->activity($access, $user, 'client.document.uploaded_general', 'document', $publicId, 'Client uploaded a general document.', $engagementId);
         return ['id' => $publicId, 'status' => 'received', 'drive_sync_status' => $sync['status']];
     }
 
@@ -172,7 +174,6 @@ final class AlchemizePortalActionService
             isset($document['engagement_id']) ? (int) $document['engagement_id'] : null,
         );
         $database = $this->repository->database();
-        $sync = null;
         $database->beginTransaction();
         try {
             $locked = $this->repository->findDocument($documentId, (int) $access['client_id'], true);
@@ -191,8 +192,6 @@ final class AlchemizePortalActionService
                 'status' => 'received', 'received_date' => date('Y-m-d'),
                 'storage_key' => $stored['storage_key'], 'mime_type' => $stored['mime_type'],
             ]);
-            if ($this->integrations === null) throw new AlchemizeRequestException(503, 'DOCUMENT_STORAGE_UNAVAILABLE', 'Secure document storage is unavailable.');
-            $sync = $this->integrations->synchronizeDocument($submissionId, $stored['absolute_path']);
             $this->activity($access, $user, 'client.document.uploaded', 'document', $documentId, 'Client uploaded requested document: ' . $locked['document_name'], $locked['engagement_id']);
             $this->audit($user, 'client.document.uploaded', 'document', $documentId, 'Client submitted a file through private document storage.');
             $this->notifications->notifyStaff(
@@ -203,10 +202,24 @@ final class AlchemizePortalActionService
             $database->commit();
         } catch (Throwable $error) {
             if ($database->inTransaction()) $database->rollBack();
-            if (!empty($sync['file_id'])) $this->integrations?->discardDocumentUpload($sync['file_id']);
-            throw $error;
-        } finally {
             $this->storage->discard($stored['absolute_path']);
+            throw $error;
+        }
+        // Drive sync is a best-effort side effect of an upload that has
+        // already committed and whose file is already safely on disk -- a
+        // failure here (Drive unavailable, quota, credentials, folder
+        // failure) must never look like the upload itself failed, and must
+        // never trigger storage()->discard() on a file whose database row
+        // now permanently references it. (A version of exactly that bug --
+        // a Drive-sync exception thrown after commit, caught by this
+        // method's own try/catch, deleting the just-uploaded file while its
+        // document_submissions row survived -- destroyed a real client
+        // upload in production; see synchronizeDocument()'s own hardening.)
+        try {
+            $sync = $this->integrations?->synchronizeDocument($submissionId, (string) $stored['absolute_path']) ?? ['status' => 'not_configured'];
+        } catch (Throwable $error) {
+            error_log(sprintf('Post-commit Drive sync failed for document submission %d [%s].', $submissionId, get_class($error)));
+            $sync = ['status' => 'failed'];
         }
         return ['id' => $documentId, 'status' => 'received', 'filename' => $stored['original_filename'], 'drive_sync_status' => $sync['status']];
     }
