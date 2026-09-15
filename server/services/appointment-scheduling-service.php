@@ -78,20 +78,27 @@ final class AlchemizeAppointmentSchedulingService
 
         $rows = $this->repository->availabilityForDate($date);
         $overrides = array_values(array_filter($rows, static fn (array $row): bool => $row['kind'] === 'date_override'));
-        $working = $overrides !== []
-            ? array_values(array_filter($overrides, static fn (array $row): bool => (int) $row['is_available'] === 1))
-            : array_values(array_filter($rows, static fn (array $row): bool => $row['kind'] === 'weekday' && (int) $row['is_available'] === 1));
-        if ($rows === []) {
-            $working = $this->defaultBusinessScheduleForDate($date);
-        }
-        // Blocks may exist without a weekly schedule; only explicit closed hours suppress defaults.
-        if ($working === [] && $overrides === [] && !array_filter($rows, static fn(array $row): bool => $row['kind'] === 'weekday')) {
-            $working = $this->defaultBusinessScheduleForDate($date);
-        }
+        $extendingOverrides = array_values(array_filter($overrides, static fn (array $row): bool => (int) $row['is_available'] === 1));
+        // A date_override explicitly marked unavailable closes the date
+        // entirely (kept for backward compatibility with any existing
+        // "close this date via override" records) and takes precedence
+        // over everything else below.
+        if ($overrides !== [] && $extendingOverrides === []) return [];
+
+        $hasWeekdayRule = array_filter($rows, static fn (array $row): bool => $row['kind'] === 'weekday');
+        $weekdayWorking = $hasWeekdayRule
+            ? array_values(array_filter($rows, static fn (array $row): bool => $row['kind'] === 'weekday' && (int) $row['is_available'] === 1))
+            : $this->defaultBusinessScheduleForDate($date);
+
+        // Extended Availability is additive: its hours supplement the
+        // normal working hours for the date rather than replacing them, so
+        // a client can still book a normal-hours slot on a date that also
+        // has extended hours added to it.
+        $working = array_merge($weekdayWorking, $extendingOverrides);
+        if ($working === []) return [];
 
         $blocks = array_values(array_filter($rows, static fn (array $row): bool => in_array($row['kind'], ['blocked','full_day','time_off'], true)));
         if (array_filter($blocks, static fn (array $row): bool => in_array($row['kind'], ['full_day','time_off'], true))) return [];
-        if ($overrides !== [] && $working === []) return [];
 
         $duration = max(15, (int) ($link['duration_minutes'] ?? 60));
         $slots = [];

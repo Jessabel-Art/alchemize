@@ -273,6 +273,138 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+/* Semantic calendar color system. Overrides the shared (unscoped)
+   .week-event/.day-event/.calendar-event/.agenda-entry status rules in
+   admin.css -- those classes are only used on this page, but the tone
+   values live here so the appointments-specific color language stays in
+   one place. Colors reuse the existing --admin-* design tokens rather
+   than introducing new hardcoded values. */
+.appointments-module :is(.week-event, .day-event, .agenda-entry) {
+  border-left: 3px solid transparent;
+}
+.appointments-module
+  :is(.calendar-event, .week-event, .day-event, .agenda-entry).requested {
+  background: var(--admin-info-soft);
+  border-left-color: var(--admin-info);
+}
+.appointments-module
+  :is(.calendar-event, .week-event, .day-event, .agenda-entry).scheduled,
+.appointments-module
+  :is(.calendar-event, .week-event, .day-event, .agenda-entry).confirmed {
+  background: var(--admin-positive-soft);
+  border-left-color: var(--admin-positive);
+}
+.appointments-module
+  :is(.calendar-event, .week-event, .day-event, .agenda-entry).completed {
+  background: var(--admin-archived-soft);
+  border-left-color: var(--admin-archived);
+}
+.appointments-module
+  :is(.calendar-event, .week-event, .day-event, .agenda-entry).cancelled {
+  background: var(--admin-archived-soft);
+  border-left-color: var(--admin-archived);
+  opacity: 0.65;
+  text-decoration: line-through;
+}
+
+/* Availability-exception events (Blocked Time / Extended Availability) --
+   visually distinct from appointment events so they never read as a
+   client booking. */
+.appointments-module
+  :is(.calendar-event, .week-event, .day-event, .agenda-entry).exception {
+  border-style: dashed;
+  font-style: italic;
+}
+.appointments-module
+  :is(
+    .calendar-event,
+    .week-event,
+    .day-event,
+    .agenda-entry
+  ).exception-blocked {
+  background: var(--admin-attention-soft);
+  border-left-color: var(--admin-attention);
+  color: var(--admin-attention);
+}
+.appointments-module
+  :is(
+    .calendar-event,
+    .week-event,
+    .day-event,
+    .agenda-entry
+  ).exception-extended {
+  background: var(--admin-pending-soft);
+  border-left-color: var(--admin-pending);
+  color: var(--admin-pending);
+}
+.appointments-module .agenda-entry.agenda-availability {
+  font-style: normal;
+}
+.appointments-module .agenda-entry.agenda-availability small {
+  font-style: italic;
+}
+
+.appointments-module .week-day-allday,
+.appointments-module .day-allday-row {
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.3rem;
+  margin-bottom: 0.3rem;
+  border: 1px dashed var(--admin-attention);
+  border-radius: 0.6rem;
+  background: var(--admin-attention-soft);
+}
+.appointments-module .day-allday-row {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+/* Calendar legend: compact, restrained, no card. */
+.appointments-module .calendar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 1rem;
+  padding: 0.4rem 0.1rem;
+  font-size: 0.72rem;
+  color: var(--color-text-soft);
+}
+.appointments-module .calendar-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.appointments-module .calendar-legend-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+.appointments-module .calendar-legend-dot.legend-confirmed {
+  background: var(--admin-positive);
+}
+.appointments-module .calendar-legend-dot.legend-requested {
+  background: var(--admin-info);
+}
+.appointments-module .calendar-legend-dot.legend-extended {
+  background: var(--admin-pending);
+}
+.appointments-module .calendar-legend-dot.legend-blocked {
+  background: var(--admin-attention);
+}
+.appointments-module .calendar-legend-dot.legend-completed {
+  background: var(--admin-archived);
+}
+
+/* All day checkbox in the Availability Exceptions form. */
+.appointments-module .scheduler-modal .checkbox-field.full-span {
+  align-items: center;
+  grid-auto-flow: column;
+  justify-content: start;
+  gap: 0.5rem;
+  text-transform: none;
+  font-size: 0.85rem;
+}
+
 @media (max-width: 760px) {
   .appointments-module .scheduler-toolbar {
     grid-template-columns: 1fr;
@@ -288,5 +420,8 @@
   }
   .appointments-module .admin-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .appointments-module .calendar-legend {
+    gap: 0.3rem 0.7rem;
   }
 }

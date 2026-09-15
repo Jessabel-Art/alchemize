@@ -8439,6 +8439,7 @@ function AppointmentManagementPage() {
     weekday: "1",
     startTime: "09:00",
     endTime: "17:00",
+    allDay: false,
     available: true,
     kind: "weekday",
     notes: "",
@@ -8869,7 +8870,8 @@ function AppointmentManagementPage() {
     setAvailabilityError("");
     setAvailabilityDraft((current) => ({
       ...current,
-      kind: mode === "block" ? "blocked" : "weekday",
+      kind: mode === "block" ? "blocked_time" : "weekday",
+      allDay: false,
       available: mode !== "block",
       dateOverride: mode === "block" ? toDateString(new Date()) : "",
     }));
@@ -8937,10 +8939,21 @@ function AppointmentManagementPage() {
     setAvailabilityDraft((current) => ({ ...current, [field]: value }));
   };
 
+  // "Blocked Time" is the single Admin-facing unavailable-exception type,
+  // consolidating the legacy blocked/time_off/full_day kinds (see
+  // isAllDayBlockedRow below for how All day vs specific hours is
+  // determined from a row already saved under any of them).
+  const isBlockedKind = (kind) =>
+    kind === "blocked" || kind === "time_off" || kind === "full_day";
+  const isAllDayBlockedRow = (row) =>
+    row?.kind === "time_off" ||
+    row?.kind === "full_day" ||
+    (row?.kind === "blocked" && !row?.start_time && !row?.end_time);
+
   const formatAvailabilityTypeLabel = (kind) => {
-    if (kind === "blocked") return "Blocked";
-    if (kind === "time_off") return "Blocked Time";
-    if (kind === "date_override") return "Extended Hours";
+    if (isBlockedKind(kind)) return "Blocked Time";
+    if (kind === "date_override") return "Extended Availability";
+    if (kind === "weekday") return "Weekly Schedule";
     return "Availability";
   };
 
@@ -8972,22 +8985,23 @@ function AppointmentManagementPage() {
   };
 
   const formatAvailabilityTimeValue = (row) => {
+    if (isAllDayBlockedRow(row)) return "All day";
     const start = row?.start_time ? formatDisplayTime(row.start_time) : "";
     const end = row?.end_time ? formatDisplayTime(row.end_time) : "";
-    if (row?.kind === "blocked" && !start && !end) return "All day";
     if (start && end) return `${start}–${end}`;
     if (start) return start;
     if (end) return end;
     return "—";
   };
 
-  const resetAvailabilityDraft = (kind = "blocked") => {
+  const resetAvailabilityDraft = (kind = "blocked_time") => {
     setAvailabilityFormMode("create");
     setAvailabilityDraft({
       id: null,
       weekday: "1",
       startTime: "09:00",
       endTime: "17:00",
+      allDay: false,
       available: true,
       kind,
       notes: "",
@@ -9009,6 +9023,24 @@ function AppointmentManagementPage() {
       return [];
     }
   };
+
+  // Availability exceptions (Blocked Time / Extended Availability) must be
+  // visible directly on the primary calendar, not only inside the
+  // Availability Exceptions modal -- load them once on mount so the
+  // calendar has data even before the modal is ever opened.
+  useEffect(() => {
+    let active = true;
+    appointmentApi
+      .listAvailability()
+      .then((rows) => {
+        if (active) setAvailabilityRows(Array.isArray(rows) ? rows : []);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const saveSchedulingLink = async () => {
     setLinkError("");
@@ -9076,14 +9108,40 @@ function AppointmentManagementPage() {
     }
   };
 
+  // Availability changes must never silently alter an existing appointment
+  // -- find any active (non-cancelled) appointment on the target date that
+  // would overlap a proposed Blocked Time exception, using the same
+  // interval-overlap approach as the scheduling engine rather than only
+  // comparing start times.
+  const findConflictingAppointments = (
+    dateOverride,
+    allDay,
+    startTime,
+    endTime,
+  ) => {
+    if (!dateOverride) return [];
+    const blockStart = allDay ? 0 : parseTimeValue(startTime);
+    const blockEnd = allDay ? 24 * 60 : parseTimeValue(endTime);
+    return appointments.filter((appointment) => {
+      if (appointment.date !== dateOverride) return false;
+      if (appointment.status === "Cancelled") return false;
+      if (allDay) return true;
+      const apptStart = parseTimeValue(appointment.time || "09:00 AM");
+      const apptEnd = apptStart + Number(appointment.duration || 60);
+      return apptStart < blockEnd && apptEnd > blockStart;
+    });
+  };
+
   const saveAvailability = async () => {
     setAvailabilityError("");
 
-    const nextKind = availabilityDraft.kind || "blocked";
-    const needsDate = ["blocked", "time_off", "date_override"].includes(
-      nextKind,
-    );
-    const requiresTimes = !["full_day", "time_off"].includes(nextKind);
+    const uiKind = availabilityDraft.kind || "blocked_time";
+    const isBlockedTimeUi = uiKind === "blocked_time";
+    const isExtendedUi = uiKind === "date_override";
+    const isWeekdayUi = uiKind === "weekday";
+    const allDay = isBlockedTimeUi && Boolean(availabilityDraft.allDay);
+    const needsDate = isBlockedTimeUi || isExtendedUi;
+    const requiresTimes = !allDay;
 
     if (needsDate && !availabilityDraft.dateOverride) {
       setAvailabilityError("Choose the date for this exception.");
@@ -9107,24 +9165,50 @@ function AppointmentManagementPage() {
       return;
     }
 
+    if (isBlockedTimeUi) {
+      const conflicts = findConflictingAppointments(
+        availabilityDraft.dateOverride,
+        allDay,
+        availabilityDraft.startTime,
+        availabilityDraft.endTime,
+      );
+      if (conflicts.length > 0) {
+        const summary = conflicts
+          .map((appointment) => {
+            const client = snapshot.clients.find(
+              (candidate) => candidate.id === appointment.clientId,
+            );
+            return `${appointment.time} — ${client?.displayName || "Client"} (${appointment.status})`;
+          })
+          .join("\n");
+        const noun = conflicts.length === 1 ? "appointment" : "appointments";
+        const proceed = window.confirm(
+          `This Blocked Time overlaps ${conflicts.length} existing ${noun}:\n\n${summary}\n\nThe ${noun} will NOT be changed automatically. Continue creating this Blocked Time exception?`,
+        );
+        if (!proceed) return;
+      }
+    }
+
     setAvailabilitySaving(true);
     try {
+      const persistedKind = isBlockedTimeUi
+        ? allDay
+          ? "time_off"
+          : "blocked"
+        : uiKind;
       const payload = {
-        weekday: !["blocked", "time_off", "date_override"].includes(nextKind)
-          ? Number(availabilityDraft.weekday || 1)
-          : null,
-        date_override: ["blocked", "time_off", "date_override"].includes(
-          nextKind,
-        )
-          ? availabilityDraft.dateOverride || ""
-          : "",
+        weekday: isWeekdayUi ? Number(availabilityDraft.weekday || 1) : null,
+        date_override: needsDate ? availabilityDraft.dateOverride || "" : "",
         start_time: requiresTimes ? availabilityDraft.startTime : "",
         end_time: requiresTimes ? availabilityDraft.endTime : "",
-        is_available: availabilityDraft.available,
-        kind: nextKind,
+        is_available: isBlockedTimeUi
+          ? false
+          : isExtendedUi
+            ? true
+            : availabilityDraft.available,
+        kind: persistedKind,
         notes: availabilityDraft.notes || "",
-        end_date:
-          nextKind === "time_off" ? availabilityDraft.endDate || "" : "",
+        end_date: "",
         timezone: availabilityDraft.timezone,
       };
 
@@ -9161,7 +9245,7 @@ function AppointmentManagementPage() {
       }
 
       resetAvailabilityDraft(
-        availabilityMode === "block" ? "blocked" : "date_override",
+        availabilityMode === "block" ? "blocked_time" : "date_override",
       );
     } catch (error) {
       setAvailabilityError(
@@ -9173,12 +9257,11 @@ function AppointmentManagementPage() {
   };
 
   const handleEditAvailability = (row) => {
-    const kind =
-      row?.kind === "blocked" ||
-      row?.kind === "time_off" ||
-      row?.kind === "date_override"
-        ? row.kind
-        : "blocked";
+    const kind = isBlockedKind(row?.kind)
+      ? "blocked_time"
+      : row?.kind === "date_override"
+        ? "date_override"
+        : "weekday";
     setAvailabilityError("");
     setAvailabilityFormMode("edit");
     setAvailabilityDraft({
@@ -9186,6 +9269,7 @@ function AppointmentManagementPage() {
       weekday: row?.weekday ? String(row.weekday) : "1",
       startTime: row?.start_time || "09:00",
       endTime: row?.end_time || "17:00",
+      allDay: isAllDayBlockedRow(row),
       available: row?.is_available !== false,
       kind,
       notes: row?.notes || "",
@@ -9212,7 +9296,7 @@ function AppointmentManagementPage() {
       );
       if (String(availabilityDraft.id) === String(rowId)) {
         resetAvailabilityDraft(
-          availabilityMode === "block" ? "blocked" : "date_override",
+          availabilityMode === "block" ? "blocked_time" : "date_override",
         );
       }
     } catch (error) {
@@ -9327,17 +9411,52 @@ function AppointmentManagementPage() {
       "Follow-up completed.",
     );
 
+  // Cancelled appointments are intentionally excluded from the visual
+  // Month/Week/Day calendar (they remain in Agenda, which behaves as the
+  // full appointment list, and are never deleted).
   const dailyAppointments = useMemo(() => {
     const map = new Map();
-    filteredAppointments.forEach((appointment) => {
-      const key = appointment.date;
-      if (!map.has(key)) map.set(key, []);
-      map.get(key).push(appointment);
-    });
+    filteredAppointments
+      .filter((appointment) => appointment.status !== "Cancelled")
+      .forEach((appointment) => {
+        const key = appointment.date;
+        if (!map.has(key)) map.set(key, []);
+        map.get(key).push(appointment);
+      });
     return map;
   }, [filteredAppointments]);
 
   const monthDays = useMemo(() => getMonthDays(currentDate), [currentDate]);
+
+  // Availability exceptions (Blocked Time / Extended Availability), the
+  // same records the Availability Exceptions modal manages, normalized for
+  // calendar display. The recurring "weekday" base schedule is not a
+  // date-specific exception and is not shown here.
+  const calendarExceptions = useMemo(
+    () =>
+      availabilityRows
+        .filter((row) => row.kind !== "weekday" && row.date_override)
+        .map((row) => ({
+          id: row.id,
+          raw: row,
+          date: row.date_override,
+          isBlocked: isBlockedKind(row.kind),
+          isAllDay: isAllDayBlockedRow(row),
+          startTime: row.start_time,
+          endTime: row.end_time,
+          notes: row.notes,
+        })),
+    [availabilityRows],
+  );
+
+  const dailyExceptions = useMemo(() => {
+    const map = new Map();
+    calendarExceptions.forEach((exception) => {
+      if (!map.has(exception.date)) map.set(exception.date, []);
+      map.get(exception.date).push(exception);
+    });
+    return map;
+  }, [calendarExceptions]);
 
   const setAppointmentFromCalendar = (date) => {
     setCurrentDate(date);
@@ -9346,12 +9465,42 @@ function AppointmentManagementPage() {
     setIsFormOpen(true);
   };
 
+  // Availability-exception events are a different entity from
+  // appointments -- clicking one opens the existing Availability
+  // Exceptions CRUD (edit mode) instead of the appointment detail panel.
+  const openExceptionFromCalendar = (exception) => {
+    setIsFormOpen(false);
+    setIsSchedulingLinkOpen(false);
+    setAvailabilityMode(exception.isBlocked ? "block" : "extend");
+    setIsAvailabilityOpen(true);
+    handleEditAvailability(exception.raw);
+  };
+
+  const exceptionSummaryLabel = (exception) =>
+    exception.isAllDay
+      ? "All day"
+      : `${formatDisplayTime(exception.startTime)}–${formatDisplayTime(exception.endTime)}`;
+
+  const renderExceptionCard = (exception, compact = false) => (
+    <button
+      key={`exception-${exception.id}`}
+      type="button"
+      className={`calendar-event exception ${exception.isBlocked ? "exception-blocked" : "exception-extended"}${compact ? " compact" : ""}`}
+      onClick={() => openExceptionFromCalendar(exception)}
+      aria-label={`${exception.isBlocked ? "Blocked" : "Extended availability"}, ${exceptionSummaryLabel(exception)}`}
+    >
+      <span>{exceptionSummaryLabel(exception)}</span>
+      <strong>{exception.isBlocked ? "Blocked" : "Extended"}</strong>
+    </button>
+  );
+
   const renderAppointmentCard = (appointment, compact = false) => (
     <button
       key={appointment.id}
       type="button"
       className={`calendar-event ${appointment.status.toLowerCase().replace(/\s+/g, "-")}${compact ? " compact" : ""}`}
       aria-pressed={selectedAppointmentId === appointment.id}
+      aria-label={`${formatDisplayTime(appointment.time)}, ${snapshot.clients.find((client) => client.id === appointment.clientId)?.displayName || "Client"}, ${appointment.status}`}
       onClick={() => {
         setSelectedAppointmentId(appointment.id);
         setCurrentDate(new Date(`${appointment.date}T12:00:00`));
@@ -9662,6 +9811,24 @@ function AppointmentManagementPage() {
         </div>
       ) : null}
 
+      <div className="calendar-legend" aria-label="Calendar legend">
+        {[
+          ["legend-confirmed", "Confirmed"],
+          ["legend-requested", "Requested"],
+          ["legend-extended", "Extended availability"],
+          ["legend-blocked", "Blocked time"],
+          ["legend-completed", "Completed"],
+        ].map(([tone, label]) => (
+          <span className="calendar-legend-item" key={tone}>
+            <span
+              className={`calendar-legend-dot ${tone}`}
+              aria-hidden="true"
+            />
+            {label}
+          </span>
+        ))}
+      </div>
+
       <div className="scheduler-layout">
         <div className="scheduler-main">
           {viewMode === "month" ? (
@@ -9676,6 +9843,9 @@ function AppointmentManagementPage() {
               {monthDays.map((day) => {
                 const dateKey = toDateString(day);
                 const dayAppointments = dailyAppointments.get(dateKey) || [];
+                const dayExceptions = dailyExceptions.get(dateKey) || [];
+                const dayEntryCount =
+                  dayAppointments.length + dayExceptions.length;
                 return (
                   <div
                     key={dateKey}
@@ -9704,12 +9874,17 @@ function AppointmentManagementPage() {
                       ) : null}
                     </div>
                     <div className="calendar-day-events">
-                      {dayAppointments
+                      {dayExceptions
                         .slice(0, 2)
+                        .map((exception) =>
+                          renderExceptionCard(exception, true),
+                        )}
+                      {dayAppointments
+                        .slice(0, Math.max(0, 2 - dayExceptions.length))
                         .map((appointment) =>
                           renderAppointmentCard(appointment, true),
                         )}
-                      {dayAppointments.length > 2 ? (
+                      {dayEntryCount > 2 ? (
                         <button
                           type="button"
                           className="more-events"
@@ -9718,7 +9893,7 @@ function AppointmentManagementPage() {
                             setViewMode("day");
                           }}
                         >
-                          + {dayAppointments.length - 2} more
+                          + {dayEntryCount - 2} more
                         </button>
                       ) : null}
                     </div>
@@ -9756,13 +9931,45 @@ function AppointmentManagementPage() {
                     const rightTime = parseTimeValue(right.time || "09:00 AM");
                     return leftTime - rightTime;
                   });
+                  const dayExceptions = dailyExceptions.get(dateKey) || [];
+                  const allDayExceptions = dayExceptions.filter(
+                    (exception) => exception.isAllDay,
+                  );
+                  const timedExceptions = dayExceptions.filter(
+                    (exception) => !exception.isAllDay,
+                  );
                   return (
                     <div key={label} className="week-day-column">
                       <div className="week-day-header">
                         {label}
                         <small>{weekdayDate.getDate()}</small>
                       </div>
+                      {allDayExceptions.length ? (
+                        <div className="week-day-allday">
+                          {allDayExceptions.map((exception) =>
+                            renderExceptionCard(exception, true),
+                          )}
+                        </div>
+                      ) : null}
                       <div className="week-day-body">
+                        {timedExceptions.map((exception) => (
+                          <button
+                            key={`exception-${exception.id}`}
+                            type="button"
+                            className={`week-event exception ${exception.isBlocked ? "exception-blocked" : "exception-extended"}`}
+                            style={{
+                              top: `${((parseTimeValue(exception.startTime) - 8 * 60) / 60) * 80}px`,
+                              height: `${Math.max(20, ((parseTimeValue(exception.endTime) - parseTimeValue(exception.startTime)) / 60) * 80)}px`,
+                            }}
+                            onClick={() => openExceptionFromCalendar(exception)}
+                            aria-label={`${exception.isBlocked ? "Blocked" : "Extended availability"}, ${exceptionSummaryLabel(exception)}`}
+                          >
+                            <span>{exceptionSummaryLabel(exception)}</span>
+                            <strong>
+                              {exception.isBlocked ? "Blocked" : "Extended"}
+                            </strong>
+                          </button>
+                        ))}
                         {dayAppointments.length ? (
                           dayAppointments.map((appointment) => (
                             <button
@@ -9775,6 +9982,7 @@ function AppointmentManagementPage() {
                               onClick={() =>
                                 setSelectedAppointmentId(appointment.id)
                               }
+                              aria-label={`${appointment.time}, ${snapshot.clients.find((client) => client.id === appointment.clientId)?.displayName || "Client"}, ${appointment.status}`}
                             >
                               <span>{appointment.time}</span>
                               <strong>
@@ -9786,7 +9994,8 @@ function AppointmentManagementPage() {
                               <small>{appointment.type}</small>
                             </button>
                           ))
-                        ) : (
+                        ) : timedExceptions.length ||
+                          allDayExceptions.length ? null : (
                           <button
                             type="button"
                             className="empty-slot"
@@ -9807,42 +10016,87 @@ function AppointmentManagementPage() {
 
           {viewMode === "day" ? (
             <div className="day-schedule">
+              {(() => {
+                const dayExceptions =
+                  dailyExceptions.get(toDateString(currentDate)) || [];
+                const allDayExceptions = dayExceptions.filter(
+                  (exception) => exception.isAllDay,
+                );
+                const timedExceptions = dayExceptions.filter(
+                  (exception) => !exception.isAllDay,
+                );
+                return allDayExceptions.length ? (
+                  <div className="day-allday-row">
+                    {allDayExceptions.map((exception) =>
+                      renderExceptionCard(exception, true),
+                    )}
+                  </div>
+                ) : null;
+              })()}
               {Array.from({ length: 12 }, (_, index) => 8 + index).map(
-                (hour) => (
-                  <div key={hour} className="day-time-row">
-                    <div className="day-time-label">
-                      {new Date(2026, 0, 1, hour).toLocaleTimeString([], {
-                        hour: "numeric",
-                      })}
-                    </div>
-                    <div className="day-slot">
-                      {(dailyAppointments.get(toDateString(currentDate)) || [])
-                        .filter((appointment) => {
-                          const normalized =
-                            parseTimeValue(appointment.time || "09:00 AM") / 60;
-                          return normalized >= hour && normalized < hour + 1;
-                        })
-                        .map((appointment) => (
+                (hour) => {
+                  const timedExceptions = (
+                    dailyExceptions.get(toDateString(currentDate)) || []
+                  ).filter((exception) => {
+                    if (exception.isAllDay) return false;
+                    const normalized = parseTimeValue(exception.startTime) / 60;
+                    return normalized >= hour && normalized < hour + 1;
+                  });
+                  return (
+                    <div key={hour} className="day-time-row">
+                      <div className="day-time-label">
+                        {new Date(2026, 0, 1, hour).toLocaleTimeString([], {
+                          hour: "numeric",
+                        })}
+                      </div>
+                      <div className="day-slot">
+                        {timedExceptions.map((exception) => (
                           <button
-                            key={appointment.id}
+                            key={`exception-${exception.id}`}
                             type="button"
-                            className={`day-event ${appointment.status.toLowerCase().replace(/\s+/g, "-")}`}
-                            onClick={() =>
-                              setSelectedAppointmentId(appointment.id)
-                            }
+                            className={`day-event exception ${exception.isBlocked ? "exception-blocked" : "exception-extended"}`}
+                            onClick={() => openExceptionFromCalendar(exception)}
+                            aria-label={`${exception.isBlocked ? "Blocked" : "Extended availability"}, ${exceptionSummaryLabel(exception)}`}
                           >
-                            <span>{appointment.time}</span>
-                            <strong>{appointment.type}</strong>
-                            <small>
-                              {snapshot.clients.find(
-                                (client) => client.id === appointment.clientId,
-                              )?.displayName || "Client"}
-                            </small>
+                            <span>{exceptionSummaryLabel(exception)}</span>
+                            <strong>
+                              {exception.isBlocked ? "Blocked" : "Extended"}
+                            </strong>
                           </button>
                         ))}
+                        {(
+                          dailyAppointments.get(toDateString(currentDate)) || []
+                        )
+                          .filter((appointment) => {
+                            const normalized =
+                              parseTimeValue(appointment.time || "09:00 AM") /
+                              60;
+                            return normalized >= hour && normalized < hour + 1;
+                          })
+                          .map((appointment) => (
+                            <button
+                              key={appointment.id}
+                              type="button"
+                              className={`day-event ${appointment.status.toLowerCase().replace(/\s+/g, "-")}`}
+                              onClick={() =>
+                                setSelectedAppointmentId(appointment.id)
+                              }
+                              aria-label={`${appointment.time}, ${snapshot.clients.find((client) => client.id === appointment.clientId)?.displayName || "Client"}, ${appointment.status}`}
+                            >
+                              <span>{appointment.time}</span>
+                              <strong>{appointment.type}</strong>
+                              <small>
+                                {snapshot.clients.find(
+                                  (client) =>
+                                    client.id === appointment.clientId,
+                                )?.displayName || "Client"}
+                              </small>
+                            </button>
+                          ))}
+                      </div>
                     </div>
-                  </div>
-                ),
+                  );
+                },
               )}
             </div>
           ) : null}
@@ -9850,9 +10104,12 @@ function AppointmentManagementPage() {
           {viewMode === "agenda" ? (
             <div className="agenda-schedule">
               {Array.from(
-                new Set(
-                  filteredAppointments.map((appointment) => appointment.date),
-                ),
+                new Set([
+                  ...filteredAppointments.map(
+                    (appointment) => appointment.date,
+                  ),
+                  ...calendarExceptions.map((exception) => exception.date),
+                ]),
               )
                 .sort()
                 .map((date) => (
@@ -9863,13 +10120,31 @@ function AppointmentManagementPage() {
                         { weekday: "long", month: "long", day: "numeric" },
                       )}
                     </h3>
+                    {(dailyExceptions.get(date) || []).map((exception) => (
+                      <button
+                        key={`exception-${exception.id}`}
+                        type="button"
+                        className={`agenda-entry agenda-availability ${exception.isBlocked ? "exception-blocked" : "exception-extended"}`}
+                        onClick={() => openExceptionFromCalendar(exception)}
+                      >
+                        <span>{exceptionSummaryLabel(exception)}</span>
+                        <div>
+                          <strong>
+                            {exception.isBlocked
+                              ? "Blocked Time"
+                              : "Extended Availability"}
+                          </strong>
+                          <small>Availability record, not an appointment</small>
+                        </div>
+                      </button>
+                    ))}
                     {filteredAppointments
                       .filter((appointment) => appointment.date === date)
                       .map((appointment) => (
                         <button
                           key={appointment.id}
                           type="button"
-                          className="agenda-entry"
+                          className={`agenda-entry ${appointment.status.toLowerCase().replace(/\s+/g, "-")}`}
                           onClick={() =>
                             setSelectedAppointmentId(appointment.id)
                           }
@@ -9882,7 +10157,9 @@ function AppointmentManagementPage() {
                                 (client) => client.id === appointment.clientId,
                               )?.displayName || "Client"}
                             </small>
-                            <small>{appointment.serviceName}</small>
+                            <small>
+                              {appointment.serviceName} · {appointment.status}
+                            </small>
                           </div>
                         </button>
                       ))}
@@ -10857,13 +11134,18 @@ function AppointmentManagementPage() {
                 <span>Exception Type</span>
                 <select
                   value={availabilityDraft.kind}
-                  onChange={(event) =>
-                    setAvailabilityField("kind", event.target.value)
-                  }
+                  onChange={(event) => {
+                    const nextKind = event.target.value;
+                    setAvailabilityDraft((current) => ({
+                      ...current,
+                      kind: nextKind,
+                      allDay:
+                        nextKind === "blocked_time" ? current.allDay : false,
+                    }));
+                  }}
                 >
-                  <option value="blocked">Blocked day</option>
-                  <option value="time_off">Time off</option>
-                  <option value="date_override">Extended hours</option>
+                  <option value="blocked_time">Blocked Time</option>
+                  <option value="date_override">Extended Availability</option>
                   <option value="weekday">Weekly schedule</option>
                 </select>
               </label>
@@ -10879,7 +11161,23 @@ function AppointmentManagementPage() {
                 />
               </label>
 
-              {!["full_day", "time_off"].includes(availabilityDraft.kind) ? (
+              {availabilityDraft.kind === "blocked_time" ? (
+                <label className="checkbox-field full-span">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(availabilityDraft.allDay)}
+                    onChange={(event) =>
+                      setAvailabilityField("allDay", event.target.checked)
+                    }
+                  />
+                  <span>All day</span>
+                </label>
+              ) : null}
+
+              {!(
+                availabilityDraft.kind === "blocked_time" &&
+                availabilityDraft.allDay
+              ) ? (
                 <label>
                   <span>Start Time</span>
                   <input
@@ -10894,7 +11192,10 @@ function AppointmentManagementPage() {
                 <div />
               )}
 
-              {!["full_day", "time_off"].includes(availabilityDraft.kind) ? (
+              {!(
+                availabilityDraft.kind === "blocked_time" &&
+                availabilityDraft.allDay
+              ) ? (
                 <label>
                   <span>End Time</span>
                   <input
@@ -10919,7 +11220,7 @@ function AppointmentManagementPage() {
                 />
               </label>
 
-              {["weekday", "date_override"].includes(availabilityDraft.kind) ? (
+              {availabilityDraft.kind === "weekday" ? (
                 <label className="checkbox-field">
                   <input
                     type="checkbox"
@@ -10953,7 +11254,9 @@ function AppointmentManagementPage() {
                   type="button"
                   className="secondary-button"
                   onClick={() => {
-                    resetAvailabilityDraft(availabilityDraft.kind || "blocked");
+                    resetAvailabilityDraft(
+                      availabilityDraft.kind || "blocked_time",
+                    );
                     setIsAvailabilityOpen(false);
                   }}
                 >

@@ -2283,7 +2283,7 @@
 
 .week-day-body {
   position: relative;
-  min-height: 520px;
+  height: 960px;
   border: 1px solid rgba(6, 43, 43, 0.06);
   border-radius: 0.8rem;
   background: linear-gradient(
