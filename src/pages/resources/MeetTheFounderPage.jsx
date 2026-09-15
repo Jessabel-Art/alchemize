@@ -219,6 +219,14 @@ export default function MeetTheFounderPage() {
             <p className="founder-role">{content.role}</p>
             <p className="founder-summary">{content.summary}</p>
             <p className="founder-credential-line">{content.credentials}</p>
+            <a
+              className="text-link"
+              href="https://jessabel.art"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              View Jessy's Portfolio
+            </a>
           </Reveal>
 
           <Reveal as="figure" className="founder-photo-wrap" delay={80}>
