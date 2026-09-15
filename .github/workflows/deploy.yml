@@ -182,12 +182,36 @@ jobs:
             echo DEPLOYMENT_FILES_OK
           "
 
+          echo "Syncing public frontend..."
+          # The frontend's only other delivery path is a force-orphan push to
+          # the `deploy` git branch (see "Publish deploy branch" below), which
+          # updates GitHub but nothing on Hostinger. The live public_html/ was
+          # a separate git checkout of that branch with no hook, webhook, or
+          # cron ever advancing it, so it silently stayed pinned to whichever
+          # commit it was first checked out at while CI kept reporting
+          # success. Deploy it the same explicit, verified way as the backend.
+          SSH_DOMAIN_ROOT=$(dirname "$SSH_PRIVATE_ROOT")
+          SSH_PUBLIC_ROOT="$SSH_DOMAIN_ROOT/${PUBLIC_WEB_ROOT}"
+          rsync -avz --delete \
+            -e "$SSH_CMD" \
+            --filter='P .git/' \
+            --filter='P .env' \
+            ./deploy-output/${PUBLIC_WEB_ROOT}/ \
+            "$SSH_USER@$SSH_HOST:$SSH_PUBLIC_ROOT/"
+
+          echo "Verifying frontend deployment files..."
+          $SSH_CMD "$SSH_USER@$SSH_HOST" "
+            set -e
+            test -f '$SSH_PUBLIC_ROOT/index.html'
+            test -f '$SSH_PUBLIC_ROOT/alchemize-api.php'
+            echo FRONTEND_DEPLOYMENT_FILES_OK
+          "
+
           echo "Running migrations..."
           $SSH_CMD "$SSH_USER@$SSH_HOST" \
             "php '$SSH_PRIVATE_ROOT/run-migrations.php'"
 
           echo "Running production verification..."
-          SSH_DOMAIN_ROOT=$(dirname "$SSH_PRIVATE_ROOT")
           $SSH_CMD "$SSH_USER@$SSH_HOST" \
             "php '$SSH_PRIVATE_ROOT/verify-deployment-runtime.php' '$SSH_DOMAIN_ROOT'"
 
