@@ -95,6 +95,13 @@ final class AlchemizePortalRepository
 
     public function listTasksForEngagement(int $clientId, string $engagementPublicId): array
     {
+        // Named placeholders must be distinct even when the same value is
+        // bound to more than one -- this app runs with native (not
+        // emulated) PDO prepares, and MySQL's protocol rejects reusing one
+        // named parameter for two placeholder occurrences with
+        // "SQLSTATE[HY093]: Invalid parameter number" (see the identical,
+        // already-documented reasoning in setClientDriveState() in
+        // external-integration-repository.php).
         $statement = $this->database->prepare(
             'SELECT t.public_id AS id, t.title, t.description, t.priority, t.due_date,
                     t.status, t.completed_at, e.public_id AS engagement_id,
@@ -102,7 +109,7 @@ final class AlchemizePortalRepository
              FROM tasks t
              INNER JOIN engagements e ON e.id = t.engagement_id AND e.client_id = :task_client_id
              LEFT JOIN services s ON s.id = t.service_id
-             WHERE t.client_id = :task_client_id
+             WHERE t.client_id = :task_client_id_where
                AND e.public_id = :engagement_public_id
                AND t.visibility IN (\'client\', \'both\')
                AND t.archived_at IS NULL
@@ -110,6 +117,7 @@ final class AlchemizePortalRepository
         );
         $statement->execute([
             'task_client_id' => $clientId,
+            'task_client_id_where' => $clientId,
             'engagement_public_id' => $engagementPublicId,
         ]);
         return $statement->fetchAll();
@@ -210,7 +218,7 @@ final class AlchemizePortalRepository
              FROM documents_metadata d
              INNER JOIN engagements e ON e.id = d.engagement_id AND e.client_id = :document_client_id
              LEFT JOIN services s ON s.id = d.service_id
-             WHERE d.client_id = :document_client_id
+             WHERE d.client_id = :document_client_id_where
                AND e.public_id = :engagement_public_id
                AND d.visibility IN (\'client\', \'shared\')
                AND d.archived_at IS NULL
@@ -218,6 +226,7 @@ final class AlchemizePortalRepository
         );
         $statement->execute([
             'document_client_id' => $clientId,
+            'document_client_id_where' => $clientId,
             'engagement_public_id' => $engagementPublicId,
         ]);
         return $statement->fetchAll();
@@ -233,13 +242,14 @@ final class AlchemizePortalRepository
              FROM appointments a
              INNER JOIN engagements e ON e.id = a.engagement_id AND e.client_id = :appointment_client_id
              LEFT JOIN services s ON s.id = a.service_id
-             WHERE a.client_id = :appointment_client_id
+             WHERE a.client_id = :appointment_client_id_where
                AND e.public_id = :engagement_public_id
                AND a.visibility IN (\'admin\', \'client\', \'both\')
              ORDER BY a.scheduled_at ASC'
         );
         $statement->execute([
             'appointment_client_id' => $clientId,
+            'appointment_client_id_where' => $clientId,
             'engagement_public_id' => $engagementPublicId,
         ]);
         return $this->appointmentDates($statement->fetchAll());
