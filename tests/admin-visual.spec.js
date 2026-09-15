@@ -319,12 +319,10 @@ test("Empty conversations stay compact and settings mutation is preserved", asyn
 }) => {
   await mockAdmin(page, true);
   await page.goto("/admin/communications/");
-  await expect(
-    page.getByText("No conversations match this view."),
-  ).toBeVisible();
+  await expect(page.getByText("No open conversations")).toBeVisible();
   expect(
     (await page.locator(".admin-workspace-grid").boundingBox()).height,
-  ).toBeLessThan(180);
+  ).toBeLessThan(200);
   await page.goto("/admin/settings/");
   await page.getByRole("button", { name: /Edit business identity/i }).click();
   await page

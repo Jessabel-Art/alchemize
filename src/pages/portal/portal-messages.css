@@ -1,0 +1,331 @@
+/* Client Portal → Messages. A deliberate 2-column list + thread workspace
+   on desktop, collapsing to one panel at a time on mobile. Reuses the
+   shared .portal-thread / .portal-thread li message styling (portal.css)
+   so message bubbles read consistently everywhere they appear; page-
+   specific layout (list, filters, composer) lives here. */
+
+.pm-page {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.pm-toolbar {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.pm-compose {
+  display: grid;
+  gap: 0.6rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid rgba(6, 43, 43, 0.14);
+  background: var(--white);
+}
+
+.pm-compose label {
+  display: grid;
+  gap: 0.3rem;
+}
+
+/* Filters */
+.pm-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  border-bottom: 1px solid rgba(6, 43, 43, 0.12);
+  padding-bottom: 0.25rem;
+}
+
+.pm-filter-bar button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: auto;
+  padding: 0.55rem 0.1rem 0.5rem;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--color-text-soft);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.pm-filter-bar button.active {
+  border-color: var(--emerald-deep);
+  color: var(--emerald-deep);
+}
+
+.pm-tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.3rem;
+  height: 1.3rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: rgba(6, 43, 43, 0.08);
+  color: var(--color-text-soft);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.pm-filter-bar button.active .pm-tab-count {
+  background: var(--emerald-deep);
+  color: var(--white);
+}
+
+/* Workspace: list + thread */
+.pm-workspace {
+  display: grid;
+  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.pm-list {
+  min-width: 0;
+  border: 1px solid rgba(6, 43, 43, 0.12);
+  background: var(--white);
+}
+
+.pm-list ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.pm-list li + li {
+  border-top: 1px solid rgba(6, 43, 43, 0.08);
+}
+
+.pm-row {
+  display: grid;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 0.75rem 0.9rem;
+  border: 0;
+  border-left: 2px solid transparent;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.pm-row:hover {
+  background: rgba(6, 43, 43, 0.03);
+}
+
+.pm-row.selected {
+  border-left-color: var(--gold);
+  background: rgba(6, 43, 43, 0.05);
+}
+
+.pm-row-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.pm-row-heading strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.9rem;
+}
+
+.pm-row-heading small {
+  flex: 0 0 auto;
+  color: var(--color-text-soft);
+  font-size: 0.68rem;
+  white-space: nowrap;
+}
+
+.pm-row-preview {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-text-soft);
+}
+
+.pm-row.unread .pm-row-preview {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.pm-row-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.1rem;
+}
+
+.pm-status {
+  font-size: 0.7rem;
+  color: var(--color-text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pm-action-flag {
+  font-size: 0.7rem;
+  color: #8a5a1f;
+}
+
+.pm-unread-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--emerald-deep);
+  flex: 0 0 auto;
+}
+
+/* Thread pane */
+.pm-thread {
+  min-width: 0;
+  min-height: 320px;
+  padding: 1rem 1.25rem 1.25rem;
+  border: 1px solid rgba(6, 43, 43, 0.12);
+  background: var(--white);
+  display: grid;
+  align-content: start;
+}
+
+.pm-thread-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid rgba(6, 43, 43, 0.1);
+  margin-bottom: 0.6rem;
+}
+
+.pm-thread-header h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.pm-thread-context {
+  margin: 0.15rem 0 0;
+  color: var(--color-text-soft);
+  font-size: 0.8rem;
+}
+
+.pm-thread .portal-thread {
+  margin: 0 0 0.75rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  max-height: 52vh;
+  overflow-y: auto;
+}
+
+.pm-thread .portal-thread ol,
+.pm-thread ol.portal-thread {
+  margin: 0;
+}
+
+.pm-loading {
+  color: var(--color-text-soft);
+}
+
+.pm-archived-note {
+  margin: 0.5rem 0 0;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(6, 43, 43, 0.1);
+  color: var(--color-text-soft);
+}
+
+.pm-composer {
+  display: grid;
+  gap: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(6, 43, 43, 0.1);
+}
+
+.pm-composer textarea {
+  min-height: 70px;
+}
+
+.pm-back-button {
+  display: none;
+}
+
+/* Empty states: compact, centered within the pane rather than a large
+   decorative panel. */
+.pm-empty-state {
+  display: grid;
+  gap: 0.2rem;
+  justify-items: center;
+  align-content: center;
+  text-align: center;
+  min-height: 220px;
+  padding: 0.75rem;
+  color: var(--color-text-soft);
+}
+
+.pm-thread > .pm-empty-state {
+  min-height: 280px;
+}
+
+.pm-empty-state h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--color-text);
+}
+
+.pm-empty-state p {
+  margin: 0;
+  max-width: 40ch;
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.pm-list .pm-empty-state {
+  min-height: 160px;
+}
+
+@media (max-width: 1023px) {
+  .pm-workspace {
+    grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  }
+}
+
+/* Mobile: one panel at a time -- the list, or the open thread, never both
+   at once, with an explicit way back. */
+@media (max-width: 760px) {
+  .pm-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .pm-workspace.has-thread .pm-list {
+    display: none;
+  }
+
+  .pm-workspace:not(.has-thread) .pm-thread {
+    display: none;
+  }
+
+  .pm-back-button {
+    display: inline-flex;
+    align-items: center;
+    margin-bottom: 0.6rem;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--emerald-forest);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .pm-thread {
+    min-height: 0;
+  }
+}

@@ -557,10 +557,11 @@ test("messages has no admin templates or fabricated records", async ({
 }) => {
   await page.goto("/client-portal/messages/");
   await expect(
-    page.getByRole("heading", { name: "Send a message to Alchemize" }),
+    page.getByRole("heading", { level: 1, name: "Messages" }),
   ).toBeVisible();
+  await expect(page.getByText("No conversations yet")).toBeVisible();
   await expect(
-    page.getByText("No messages are currently listed."),
+    page.getByText("Messages with the Alchemize team will appear here."),
   ).toBeVisible();
   await expect(page.getByText("Templates", { exact: true })).toHaveCount(0);
 });
@@ -671,7 +672,7 @@ for (const width of [1440, 834, 390]) {
           () => document.documentElement.scrollWidth <= innerWidth,
         ),
       ).toBe(true);
-      if (["services", "appointments", "messages"].includes(resource)) {
+      if (["services", "appointments"].includes(resource)) {
         const main = await page
           .locator(".portal-workspace-primary")
           .boundingBox();
@@ -680,6 +681,15 @@ for (const width of [1440, 834, 390]) {
           .boundingBox();
         if (width > 800) expect(utility.x).toBeGreaterThan(main.x + main.width);
         else expect(utility.y).toBeGreaterThanOrEqual(main.y + main.height);
+      }
+      if (resource === "messages" && width > 760) {
+        const list = await page.locator(".pm-list").boundingBox();
+        const thread = await page.locator(".pm-thread").boundingBox();
+        expect(thread.x).toBeGreaterThan(list.x + list.width);
+      }
+      if (resource === "messages" && width <= 760) {
+        await expect(page.locator(".pm-list")).toBeVisible();
+        await expect(page.locator(".pm-thread")).toBeHidden();
       }
       if (resource === "dashboard" && width === 1440) {
         expect(

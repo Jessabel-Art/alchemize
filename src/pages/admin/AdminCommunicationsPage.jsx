@@ -26,6 +26,25 @@ const statusTone = {
   archived: "neutral",
 };
 
+const listEmptyState = {
+  active: {
+    title: "No open conversations",
+    description: "New client conversations will appear here.",
+  },
+  unread: {
+    title: "No unread conversations",
+    description: "You're caught up on every client message.",
+  },
+  response: {
+    title: "Nothing needs a response",
+    description: "Conversations waiting on Alchemize will appear here.",
+  },
+  archived: {
+    title: "No archived conversations",
+    description: "Archived conversations will appear here once archived.",
+  },
+};
+
 const relatedEntityLabels = {
   service: "Service",
   engagement: "Engagement",
@@ -121,6 +140,22 @@ export default function AdminCommunicationsPage() {
     [items, filter],
   );
 
+  // A conversation open in the center pane that no longer belongs to the
+  // active filter (e.g. switching to Archived while a non-archived thread
+  // is open) must not keep presenting stale content as though it were
+  // still part of the current view -- clear the selection instead. This
+  // must only re-check when the *filter* changes, not whenever `items`
+  // refetches -- a refetch also follows the admin's own actions on the
+  // open thread (archive, resolve, reply), and re-checking against those
+  // would immediately evict the thread the admin just acted on, hiding
+  // things like the Restore-to-Inbox action right after archiving.
+  useEffect(() => {
+    if (opened && !visible.some((thread) => thread.id === opened.thread.id)) {
+      setOpened(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter]);
+
   const open = async (id) => {
     try {
       setError("");
@@ -185,12 +220,12 @@ export default function AdminCommunicationsPage() {
   };
 
   const linkRecord = async () => {
-    if (!opened || !relation.type || !relation.id.trim()) return;
+    if (!opened || !relation.type || !relation.id) return;
     setBusy(true);
     try {
       await portalAdmin.linkMessage(opened.thread.id, {
         related_entity_type: relation.type,
-        related_entity_id: relation.id.trim(),
+        related_entity_id: relation.id,
       });
       setRelation({ type: "", id: "" });
       setOpened(await portalAdmin.message(opened.thread.id));
@@ -220,24 +255,89 @@ export default function AdminCommunicationsPage() {
     return candidates[0] || null;
   }, [opened, snapshot.appointments]);
 
+  // The client's own existing records, grouped by the relationship types
+  // the backend actually supports (server/services/portal-admin-service.php
+  // linkThread(): service, engagement, task, document, appointment,
+  // invoice). "service" is omitted here: linkThread() resolves it through
+  // engagement_services, a join this admin snapshot has no client-scoped
+  // view of, so a selectable list for it can't be built without inventing
+  // an association from a different (client_service_assignments) table
+  // that wouldn't actually resolve on the backend.
+  const relatableByType = useMemo(() => {
+    const clientId = opened ? String(opened.thread.client_id) : null;
+    if (!clientId) return {};
+    return {
+      engagement: snapshot.engagements
+        .filter((row) => row.clientId === clientId)
+        .map((row) => ({
+          value: row.publicId,
+          label: `${row.title || "Engagement"} — ${row.status}`,
+        })),
+      task: snapshot.tasks
+        .filter((row) => row.clientId === clientId)
+        .map((row) => ({
+          value: row.publicId,
+          label: `${row.title || "Task"} — ${row.status}`,
+        })),
+      document: snapshot.documents
+        .filter((row) => row.clientId === clientId)
+        .map((row) => ({
+          value: row.publicId,
+          label: `${row.name || "Document"} — ${row.status}`,
+        })),
+      appointment: snapshot.appointments
+        .filter((row) => row.clientId === clientId && row.publicId)
+        .map((row) => ({
+          value: row.publicId,
+          label: `${row.type || "Appointment"} — ${formatShortDate(row.date)}`,
+        })),
+      invoice: snapshot.invoices
+        .filter((row) => row.clientId === clientId)
+        .map((row) => ({
+          value: row.publicId,
+          label: `Invoice ${row.invoiceNumber || row.id} — ${row.status}`,
+        })),
+    };
+  }, [
+    opened,
+    snapshot.engagements,
+    snapshot.tasks,
+    snapshot.documents,
+    snapshot.appointments,
+    snapshot.invoices,
+  ]);
+
+  const relatableTypeOptions = useMemo(
+    () =>
+      Object.entries(relatedEntityLabels)
+        .filter(([type]) => type !== "service")
+        .map(([type, label]) => ({
+          type,
+          label,
+          options: relatableByType[type] || [],
+        })),
+    [relatableByType],
+  );
+
   const relatedRecord = useMemo(() => {
     const type = opened?.thread?.related_entity_type;
     const id = opened?.thread?.related_entity_id;
     if (!type || !id) return null;
+    const match = (relatableByType[type] || []).find(
+      (option) => option.value === id,
+    );
+    if (match) return match.label;
     if (type === "engagement") {
       const engagement = snapshot.engagements.find((e) => e.publicId === id);
-      return engagement
-        ? engagement.serviceName || engagement.title || "Engagement"
-        : relatedEntityLabels[type] || type;
+      if (engagement)
+        return `${engagement.serviceName || engagement.title || "Engagement"} — ${engagement.status}`;
     }
     if (type === "invoice") {
       const invoice = snapshot.invoices.find((i) => i.publicId === id);
-      return invoice
-        ? `Invoice ${invoice.invoiceNumber || invoice.id}`
-        : relatedEntityLabels[type] || type;
+      if (invoice) return `Invoice ${invoice.invoiceNumber || invoice.id}`;
     }
     return relatedEntityLabels[type] || type;
-  }, [opened, snapshot.engagements, snapshot.invoices]);
+  }, [opened, relatableByType, snapshot.engagements, snapshot.invoices]);
 
   const messageGroups = useMemo(() => {
     const groups = [];
@@ -391,7 +491,10 @@ export default function AdminCommunicationsPage() {
               );
             })
           ) : (
-            <AdminEmptyState title="No conversations match this view." />
+            <AdminEmptyState
+              title={listEmptyState[filter]?.title || "No conversations"}
+              description={listEmptyState[filter]?.description}
+            />
           )}
           {visible.length ? (
             <p className="comm-list-count">
@@ -402,6 +505,13 @@ export default function AdminCommunicationsPage() {
         {opened ? (
           <>
             <section className="admin-conversation-panel" aria-live="polite">
+              <button
+                type="button"
+                className="comm-back-button"
+                onClick={() => setOpened(null)}
+              >
+                ← Back to conversations
+              </button>
               <header className="comm-thread-header">
                 <span className="comm-avatar comm-avatar-lg" aria-hidden="true">
                   {getInitials(opened.thread.client_name)}
@@ -417,14 +527,19 @@ export default function AdminCommunicationsPage() {
                     />
                   </div>
                   <p className="comm-thread-subject">{opened.thread.subject}</p>
-                  <p className="comm-thread-contact">
-                    Client
-                    {clientRecord?.email ? ` · ${clientRecord.email}` : ""}
-                    {clientRecord?.phone ? ` · ${clientRecord.phone}` : ""}
-                    {opened.thread.language_preference === "es"
-                      ? " · Prefers Español"
-                      : ""}
-                  </p>
+                  {relatedRecord ||
+                  opened.thread.language_preference === "es" ? (
+                    <p className="comm-thread-contact">
+                      {relatedRecord}
+                      {relatedRecord &&
+                      opened.thread.language_preference === "es"
+                        ? " · "
+                        : ""}
+                      {opened.thread.language_preference === "es"
+                        ? "Prefers Español"
+                        : ""}
+                    </p>
+                  ) : null}
                 </div>
               </header>
               {messageGroups.map((group) => (
@@ -584,90 +699,131 @@ export default function AdminCommunicationsPage() {
                     <dd>{relatedRecord || "Not linked"}</dd>
                   </div>
                 </dl>
-                <div className="portal-action-group">
+                <div className="comm-related-form">
                   <label>
                     <span>Related record type</span>
                     <select
                       value={relation.type}
                       onChange={(event) =>
-                        setRelation({ ...relation, type: event.target.value })
+                        setRelation({
+                          type: event.target.value,
+                          id: "",
+                        })
                       }
                     >
-                      <option value="">Select</option>
-                      {[
-                        "service",
-                        "engagement",
-                        "task",
-                        "document",
-                        "appointment",
-                        "invoice",
-                      ].map((type) => (
+                      <option value="">Select a type</option>
+                      {relatableTypeOptions.map(({ type, label }) => (
                         <option key={type} value={type}>
-                          {relatedEntityLabels[type] || type}
+                          {label}
                         </option>
                       ))}
                     </select>
                   </label>
-                  <label>
-                    <span>Related record reference</span>
-                    <input
-                      value={relation.id}
-                      onChange={(event) =>
-                        setRelation({ ...relation, id: event.target.value })
-                      }
-                      placeholder="Record reference"
-                    />
-                  </label>
+                  {relation.type ? (
+                    <label>
+                      <span>Related record</span>
+                      <select
+                        value={relation.id}
+                        onChange={(event) =>
+                          setRelation({ ...relation, id: event.target.value })
+                        }
+                      >
+                        <option value="">
+                          {(relatableByType[relation.type] || []).length
+                            ? "Select a record"
+                            : "No matching records for this client"}
+                        </option>
+                        {(relatableByType[relation.type] || []).map(
+                          (option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ),
+                        )}
+                      </select>
+                    </label>
+                  ) : null}
                   <button
                     type="button"
-                    disabled={busy || !relation.type || !relation.id.trim()}
+                    className="secondary-button"
+                    disabled={busy || !relation.type || !relation.id}
                     onClick={linkRecord}
                   >
                     Link record
                   </button>
                 </div>
-                <div className="portal-action-group">
-                  {isArchived ? (
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={() => setStatus("open")}
-                    >
-                      Restore to inbox
-                    </button>
-                  ) : (
-                    <>
+              </div>
+
+              <div className="comm-context-section">
+                <h3>Workflow</h3>
+                {isArchived ? (
+                  <>
+                    <p className="comm-next-step">
+                      <span className="comm-next-step-kicker">Archived</span>
+                      This conversation is archived and read-only. Restore it to
+                      reply.
+                    </p>
+                    <div className="portal-action-group">
                       <button
                         type="button"
+                        className="primary-button"
                         disabled={busy}
-                        onClick={() => setStatus("waiting_on_client")}
+                        onClick={() => setStatus("open")}
                       >
-                        Waiting on client
+                        Restore to Inbox
                       </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="comm-next-step">
+                      <span className="comm-next-step-kicker">Next step</span>
+                      {opened.thread.status === "resolved"
+                        ? "Resolved — no action pending"
+                        : labels[opened.thread.status] || opened.thread.status}
+                    </p>
+                    <div className="portal-action-group">
+                      {opened.thread.status !== "waiting_on_client" ? (
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => setStatus("waiting_on_client")}
+                        >
+                          Waiting on client
+                        </button>
+                      ) : null}
+                      {opened.thread.status !== "waiting_on_alchemize" ? (
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => setStatus("waiting_on_alchemize")}
+                        >
+                          Needs Alchemize response
+                        </button>
+                      ) : null}
+                      {opened.thread.status !== "resolved" ? (
+                        <button
+                          type="button"
+                          className="primary-button"
+                          disabled={busy}
+                          onClick={() => setStatus("resolved")}
+                        >
+                          Mark resolved
+                        </button>
+                      ) : null}
+                    </div>
+                    <div className="portal-action-group comm-archive-action">
                       <button
                         type="button"
-                        disabled={busy}
-                        onClick={() => setStatus("waiting_on_alchemize")}
-                      >
-                        Needs Alchemize response
-                      </button>
-                      <button
-                        type="button"
-                        disabled={busy}
-                        onClick={() => setStatus("resolved")}
-                      >
-                        Mark resolved
-                      </button>
-                      <button
-                        type="button"
+                        className="link-button"
                         disabled={busy}
                         onClick={() => setStatus("archived")}
                       >
-                        Archive
+                        Archive conversation
                       </button>
-                    </>
-                  )}
-                </div>
+                    </div>
+                  </>
+                )}
               </div>
 
               <aside className="dashboard-brand-note">

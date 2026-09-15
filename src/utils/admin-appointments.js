@@ -20,6 +20,7 @@ export function mapAdminAppointment(row) {
   const start = String(row.scheduled_at || "").replace(" ", "T");
   return {
     id: String(row.id),
+    publicId: row.public_id,
     clientId: row.client_id == null ? "" : String(row.client_id),
     leadId: row.lead_id == null ? "" : String(row.lead_id),
     engagementId: row.engagement_id == null ? "" : String(row.engagement_id),

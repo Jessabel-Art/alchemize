@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { portalApi } from "../../services/portal-api.js";
 import { auth } from "../../services/admin-api.js";
 import "./portal.css";
+import "./portal-messages.css";
 import ClientAppointments from "./ClientAppointments.jsx";
 import TasksDocumentsWorkspace from "./TasksDocumentsWorkspace.jsx";
 import ClientBilling from "./ClientBilling.jsx";
@@ -143,7 +144,16 @@ function PortalRecordsPage({ resource, engagementId = null }) {
   const [busy, setBusy] = useState("");
   const content = pageContent[resource];
   const load = useCallback(async () => {
-    setState({ status: "loading", data: null, error: "" });
+    // Only show the full-page loading state on the very first fetch for
+    // this resource. A refetch that follows a mutation (via `run()`) keeps
+    // the previously loaded data in place instead of unmounting the
+    // resource view -- unmounting would wipe any local UI state a resource
+    // component keeps (e.g. which conversation is open in Messages).
+    setState((current) => ({
+      status: current.data ? "ready" : "loading",
+      data: current.data,
+      error: "",
+    }));
     try {
       if (resource === "tasks-and-documents") {
         const [tasks, documents, intakes, services] = await Promise.all([
@@ -1004,191 +1014,154 @@ function Appointments({ items }) {
   return <ClientAppointments initialItems={items} />;
 }
 
-function Messages({ items, empty, busy, run }) {
-  const [subject, setSubject] = useState("");
-  const [message, setMessage] = useState("");
-  const [reply, setReply] = useState({});
-  const [opened, setOpened] = useState(null);
-  const [threadError, setThreadError] = useState("");
+const messageFilterEmptyState = {
+  all: {
+    title: "No conversations yet",
+    description: "Messages with the Alchemize team will appear here.",
+  },
+  unread: {
+    title: "No unread conversations",
+    description: "You're caught up on every message.",
+  },
+  action: {
+    title: "Nothing needs your response",
+    description: "Conversations waiting on you will appear here.",
+  },
+  archived: {
+    title: "No archived conversations",
+    description: "Conversations you archive will appear here.",
+  },
+};
+
+function Messages({ items, busy, run }) {
   const [filter, setFilter] = useState("all");
-  const [readIds, setReadIds] = useState(() => new Set());
-  const filteredItems = items.filter((thread) => {
-    if (filter === "unread")
-      return !readIds.has(thread.id) && Number(thread.unread_count) > 0;
-    if (filter === "action") return Number(thread.client_action_required) > 0;
-    if (filter === "archived") return thread.status === "archived";
-    return thread.status !== "archived";
-  });
+  const [openedId, setOpenedId] = useState(null);
+  const [opened, setOpened] = useState(null);
+  const [threadLoading, setThreadLoading] = useState(false);
+  const [threadError, setThreadError] = useState("");
+  const [reply, setReply] = useState("");
+  const [composeOpen, setComposeOpen] = useState(false);
+  const [compose, setCompose] = useState({ subject: "", message: "" });
+
+  const counts = useMemo(
+    () => ({
+      all: items.filter((thread) => thread.status !== "archived").length,
+      unread: items.filter((thread) => Number(thread.unread_count) > 0).length,
+      action: items.filter((thread) => Number(thread.client_action_required))
+        .length,
+      archived: items.filter((thread) => thread.status === "archived").length,
+    }),
+    [items],
+  );
+
+  const filteredItems = useMemo(
+    () =>
+      items.filter((thread) => {
+        if (filter === "unread") return Number(thread.unread_count) > 0;
+        if (filter === "action")
+          return Number(thread.client_action_required) > 0;
+        if (filter === "archived") return thread.status === "archived";
+        return thread.status !== "archived";
+      }),
+    [items, filter],
+  );
+
+  // A conversation open in the thread pane that no longer belongs to the
+  // active filter must not keep showing as though it still does. Only
+  // re-check when the *filter* changes -- not whenever `items` refetches,
+  // since a refetch also follows the client's own reply/archive actions on
+  // the open thread, and re-checking against those would immediately close
+  // the thread the client just acted on.
+  useEffect(() => {
+    if (openedId && !filteredItems.some((thread) => thread.id === openedId)) {
+      setOpenedId(null);
+      setOpened(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter]);
+
   const openThread = async (id) => {
     setThreadError("");
+    setThreadLoading(true);
+    setOpenedId(id);
     try {
       setOpened(await portalApi.thread(id));
-      setReadIds((current) => new Set([...current, id]));
       window.dispatchEvent(new CustomEvent("alchemize:portal-refresh"));
     } catch (error) {
       setThreadError(error.message);
+    } finally {
+      setThreadLoading(false);
     }
   };
-  return (
-    <div className="portal-workspace-grid">
-      <section className="portal-workspace-primary">
-        <h2>Message history</h2>
 
-        {threadError ? (
-          <p className="portal-feedback error" role="alert">
-            {threadError}
-          </p>
-        ) : null}
-        {opened ? (
-          <section className="portal-thread" aria-live="polite">
-            <div className="portal-section-heading">
-              <div>
-                <h2>{opened.thread.subject}</h2>
-                <p>Conversation with Alchemize</p>
-                {opened.thread.related_entity_type ? (
-                  <small>
-                    Related to {labelFor(opened.thread.related_entity_type)}
-                  </small>
-                ) : null}
-              </div>
-              <button
-                type="button"
-                className="portal-action-button"
-                onClick={() => setOpened(null)}
-              >
-                Close thread
-              </button>
-            </div>
-            <ol>
-              {opened.messages.map((entry) => (
-                <li key={entry.id} className={entry.sender_type}>
-                  <strong>{entry.sender_name}</strong>
-                  <p>{entry.message_body}</p>
-                  <small>{formatDate(entry.created_at, true)}</small>
-                </li>
-              ))}
-            </ol>
-          </section>
-        ) : null}
-        <div className="portal-filter-bar" aria-label="Message filters">
-          {[
-            ["all", "All messages"],
-            ["unread", "Unread"],
-            ["action", "Action needed"],
-            ["archived", "Archived"],
-          ].map(([value, label]) => (
-            <button
-              key={value}
-              type="button"
-              className={filter === value ? "active" : ""}
-              aria-pressed={filter === value}
-              onClick={() => setFilter(value)}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-        {filteredItems.length ? (
-          <ul className="portal-record-list portal-message-list">
-            {filteredItems.map((thread) => (
-              <li key={thread.id}>
-                <div>
-                  <strong>{thread.subject}</strong>
-                  <p>{thread.latest_message}</p>
-                  <small>
-                    {formatDate(thread.last_message_at, true)} ·{" "}
-                    {readIds.has(thread.id) ? 0 : thread.unread_count || 0}{" "}
-                    unread
-                  </small>
-                  {Number(thread.client_action_required) ? (
-                    <p className="portal-pending-note">
-                      Your response is requested.
-                    </p>
-                  ) : null}
-                  {thread.status !== "archived" ? (
-                    <label className="portal-inline-field">
-                      <span>Reply</span>
-                      <textarea
-                        maxLength={5000}
-                        value={reply[thread.id] || ""}
-                        onChange={(event) =>
-                          setReply({
-                            ...reply,
-                            [thread.id]: event.target.value,
-                          })
-                        }
-                      />
-                    </label>
-                  ) : null}
-                </div>
-                <div className="portal-record-meta">
-                  <span>{labelFor(thread.status)}</span>
-                  <div className="portal-action-group">
-                    <ActionButton onClick={() => openThread(thread.id)}>
-                      Open thread
-                    </ActionButton>
-                    {thread.status !== "archived" ? (
-                      <>
-                        <ActionButton
-                          busy={busy === thread.id}
-                          onClick={() =>
-                            run(
-                              thread.id,
-                              () =>
-                                portalApi.reply(
-                                  thread.id,
-                                  reply[thread.id] || "",
-                                ),
-                              "Reply sent.",
-                            )
-                          }
-                        >
-                          Send reply
-                        </ActionButton>
-                        <ActionButton
-                          busy={busy === `${thread.id}-archive`}
-                          onClick={() =>
-                            run(
-                              `${thread.id}-archive`,
-                              () => portalApi.archiveThread(thread.id),
-                              "Conversation archived.",
-                            )
-                          }
-                        >
-                          Archive
-                        </ActionButton>
-                      </>
-                    ) : null}
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <EmptyState>{empty}</EmptyState>
-        )}
-      </section>
-      <aside className="portal-workspace-utility">
-        {" "}
-        <form
-          className="portal-composer"
-          onSubmit={(event) => {
-            event.preventDefault();
-            run(
-              "new-message",
-              () => portalApi.createThread({ subject, message }),
-              "Message sent to Alchemize.",
-            );
-          }}
+  const closeThread = () => {
+    setOpenedId(null);
+    setOpened(null);
+  };
+
+  const sendReply = () => {
+    if (!openedId || !reply.trim()) return;
+    run(
+      `${openedId}-reply`,
+      async () => {
+        await portalApi.reply(openedId, reply.trim());
+        setReply("");
+        setOpened(await portalApi.thread(openedId));
+      },
+      "Reply sent.",
+    );
+  };
+
+  const archiveOpen = () => {
+    if (!openedId) return;
+    run(
+      `${openedId}-archive`,
+      async () => {
+        await portalApi.archiveThread(openedId);
+        closeThread();
+      },
+      "Conversation archived.",
+    );
+  };
+
+  const startConversation = (event) => {
+    event.preventDefault();
+    run(
+      "new-message",
+      async () => {
+        const result = await portalApi.createThread(compose);
+        setCompose({ subject: "", message: "" });
+        setComposeOpen(false);
+        if (result?.thread_id) await openThread(result.thread_id);
+      },
+      "Message sent to Alchemize.",
+    );
+  };
+
+  const emptyState = messageFilterEmptyState[filter];
+
+  return (
+    <div className="pm-page">
+      <div className="pm-toolbar">
+        <button
+          type="button"
+          className="portal-action-button"
+          onClick={() => setComposeOpen((current) => !current)}
         >
-          <h2>Send a message to Alchemize</h2>
+          {composeOpen ? "Close" : "+ New message"}
+        </button>
+      </div>
+      {composeOpen ? (
+        <form className="pm-compose" onSubmit={startConversation}>
           <label>
             <span>Subject</span>
             <input
               required
               maxLength={180}
-              value={subject}
-              onChange={(event) => setSubject(event.target.value)}
+              value={compose.subject}
+              onChange={(event) =>
+                setCompose({ ...compose, subject: event.target.value })
+              }
             />
           </label>
           <label>
@@ -1196,18 +1169,184 @@ function Messages({ items, empty, busy, run }) {
             <textarea
               required
               maxLength={5000}
-              value={message}
-              onChange={(event) => setMessage(event.target.value)}
+              value={compose.message}
+              onChange={(event) =>
+                setCompose({ ...compose, message: event.target.value })
+              }
             />
           </label>
-          <button
-            className="portal-action-button"
-            disabled={busy === "new-message"}
-          >
-            {busy === "new-message" ? "Sending…" : "Send message"}
-          </button>
+          <div className="portal-action-group">
+            <button
+              className="portal-action-button"
+              disabled={busy === "new-message"}
+            >
+              {busy === "new-message" ? "Sending…" : "Send message"}
+            </button>
+            <button type="button" onClick={() => setComposeOpen(false)}>
+              Cancel
+            </button>
+          </div>
         </form>
-      </aside>
+      ) : null}
+      <div className="pm-filter-bar" aria-label="Message filters">
+        {[
+          ["all", "All"],
+          ["unread", "Unread"],
+          ["action", "Action needed"],
+          ["archived", "Archived"],
+        ].map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            className={filter === value ? "active" : ""}
+            aria-pressed={filter === value}
+            onClick={() => setFilter(value)}
+          >
+            {label}
+            <span className="pm-tab-count">{counts[value]}</span>
+          </button>
+        ))}
+      </div>
+      <div className={`pm-workspace ${openedId ? "has-thread" : ""}`}>
+        <section className="pm-list" aria-label="Conversations">
+          {filteredItems.length ? (
+            <ul>
+              {filteredItems.map((thread) => {
+                const unread = Number(thread.unread_count) > 0;
+                return (
+                  <li key={thread.id}>
+                    <button
+                      type="button"
+                      className={`pm-row ${openedId === thread.id ? "selected" : ""} ${unread ? "unread" : ""}`}
+                      aria-pressed={openedId === thread.id}
+                      onClick={() => openThread(thread.id)}
+                    >
+                      <span className="pm-row-heading">
+                        <strong>{thread.subject}</strong>
+                        <small>
+                          {formatDate(thread.last_message_at, true)}
+                        </small>
+                      </span>
+                      <small className="pm-row-preview">
+                        {thread.latest_message}
+                      </small>
+                      <span className="pm-row-footer">
+                        <span className="pm-status">
+                          {labelFor(thread.status)}
+                        </span>
+                        {Number(thread.client_action_required) ? (
+                          <span className="pm-action-flag">
+                            Response requested
+                          </span>
+                        ) : null}
+                        {unread ? (
+                          <span className="pm-unread-dot" aria-hidden="true" />
+                        ) : null}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <div className="pm-empty-state">
+              <h3>{emptyState.title}</h3>
+              <p>{emptyState.description}</p>
+            </div>
+          )}
+        </section>
+        <section className="pm-thread" aria-live="polite">
+          {threadError ? (
+            <p className="portal-feedback error" role="alert">
+              {threadError}
+            </p>
+          ) : null}
+          {openedId ? (
+            threadLoading || !opened ? (
+              <p className="pm-loading">Loading…</p>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className="pm-back-button"
+                  onClick={closeThread}
+                >
+                  ← Back to messages
+                </button>
+                <header className="pm-thread-header">
+                  <div>
+                    <h2>{opened.thread.subject}</h2>
+                    {opened.thread.related_entity_type ? (
+                      <p className="pm-thread-context">
+                        Related to {labelFor(opened.thread.related_entity_type)}
+                      </p>
+                    ) : null}
+                  </div>
+                  <span className="pm-status">
+                    {labelFor(opened.thread.status)}
+                  </span>
+                </header>
+                <ol className="portal-thread">
+                  {opened.messages.map((entry) => (
+                    <li key={entry.id} className={entry.sender_type}>
+                      <div className="portal-thread-meta">
+                        <strong>{entry.sender_name}</strong>
+                        <small>{formatDate(entry.created_at, true)}</small>
+                      </div>
+                      <p>{entry.message_body}</p>
+                    </li>
+                  ))}
+                </ol>
+                {opened.thread.status === "archived" ? (
+                  <p className="pm-archived-note">
+                    This conversation is archived.
+                  </p>
+                ) : (
+                  <div className="pm-composer">
+                    <label>
+                      <span>Reply</span>
+                      <textarea
+                        maxLength={5000}
+                        value={reply}
+                        onChange={(event) => setReply(event.target.value)}
+                      />
+                    </label>
+                    <div className="portal-action-group">
+                      <button
+                        type="button"
+                        className="portal-action-button"
+                        disabled={busy === `${openedId}-reply` || !reply.trim()}
+                        onClick={sendReply}
+                      >
+                        {busy === `${openedId}-reply`
+                          ? "Sending…"
+                          : "Send reply"}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busy === `${openedId}-archive`}
+                        onClick={archiveOpen}
+                      >
+                        {busy === `${openedId}-archive`
+                          ? "Archiving…"
+                          : "Archive"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )
+          ) : (
+            <div className="pm-empty-state">
+              <h3>Select a conversation</h3>
+              <p>
+                Choose a conversation from the list to view its history and
+                respond.
+              </p>
+            </div>
+          )}
+        </section>
+      </div>
     </div>
   );
 }

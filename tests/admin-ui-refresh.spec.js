@@ -507,12 +507,28 @@ for (const width of [1440, 1024, 768, 390]) {
       expect(contextBox.x).toBeGreaterThanOrEqual(
         threadBox.x + threadBox.width,
       );
-    } else {
-      const [listBox, contextBox] = await Promise.all([
+    } else if (width > 800) {
+      const [listBox, threadBox, contextBox] = await Promise.all([
         page.locator(".admin-list-panel").boundingBox(),
+        page.locator(".admin-conversation-panel").boundingBox(),
         page.locator(".admin-context-panel").boundingBox(),
       ]);
-      expect(contextBox.y).toBeGreaterThanOrEqual(listBox.y + listBox.height);
+      expect(threadBox.x).toBeGreaterThanOrEqual(listBox.x + listBox.width);
+      expect(contextBox.y).toBeGreaterThanOrEqual(
+        threadBox.y + threadBox.height,
+      );
+    } else {
+      // ≤800px: one panel at a time -- the list hides once a conversation
+      // is open, and an explicit Back control returns to it.
+      await expect(page.locator(".admin-list-panel")).toBeHidden();
+      await expect(page.locator(".admin-context-panel")).toBeVisible();
+      const back = page.getByRole("button", {
+        name: "← Back to conversations",
+      });
+      await expect(back).toBeVisible();
+      await back.click();
+      await expect(page.locator(".admin-list-panel")).toBeVisible();
+      await expect(page.locator(".admin-conversation-panel")).toHaveCount(0);
     }
   });
 }
@@ -532,12 +548,10 @@ test("Communications preserves compose width and empty-grid height", async ({
 
   await mockAdmin(page, true);
   await page.goto("/admin/communications/");
-  await expect(
-    page.getByText("No conversations match this view."),
-  ).toBeVisible();
+  await expect(page.getByText("No open conversations")).toBeVisible();
   expect(
     (await page.locator(".admin-workspace-grid").boundingBox()).height,
-  ).toBeLessThan(180);
+  ).toBeLessThan(200);
 });
 
 test("Communications no-selection state avoids a permanent actions panel", async ({
@@ -594,7 +608,7 @@ test("Selected conversation renders a compact message timeline, composer, and ac
     context.getByRole("button", { name: "Mark resolved", exact: true }),
   ).toBeVisible();
   await expect(
-    context.getByRole("button", { name: "Archive", exact: true }),
+    context.getByRole("button", { name: "Archive conversation", exact: true }),
   ).toBeVisible();
 });
 

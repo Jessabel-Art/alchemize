@@ -613,7 +613,8 @@
   list-style: none;
 }
 .portal-thread li {
-  max-width: 82%;
+  width: fit-content;
+  max-width: min(70ch, 82%);
   padding: 0.85rem 1rem;
   border-left: 2px solid var(--gold);
   background: var(--ivory);

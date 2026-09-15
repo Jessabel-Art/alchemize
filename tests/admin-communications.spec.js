@@ -344,12 +344,14 @@ test("archive updates the conversation status via the existing mutation", async 
   await page
     .getByRole("button", { name: /Can you confirm the balance/ })
     .click();
-  await page.getByRole("button", { name: "Archive", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Archive conversation", exact: true })
+    .click();
   await expect(async () => {
     expect(payload?.status).toBe("archived");
   }).toPass();
   await expect(
-    page.getByRole("button", { name: "Restore to inbox", exact: true }),
+    page.getByRole("button", { name: "Restore to Inbox", exact: true }),
   ).toBeVisible();
 });
 
@@ -382,6 +384,106 @@ test("no fabricated mockup conversations are rendered", async ({ page }) => {
   ]) {
     await expect(page.getByText(name)).toHaveCount(0);
   }
+});
+
+test("switching filters clears a conversation that no longer matches the active view", async ({
+  page,
+}) => {
+  await mockAdmin(page);
+  await page.goto("/admin/communications/");
+  await page
+    .getByRole("button", { name: /Can you confirm the balance/ })
+    .click();
+  await expect(page.locator(".admin-conversation-panel")).toBeVisible();
+
+  // thr-1 is "waiting_on_alchemize" -- switching to Archived must not keep
+  // it displayed as though it were an archived conversation.
+  await page
+    .locator(".portal-filter-bar")
+    .getByRole("button", { name: /Archived/ })
+    .click();
+  await expect(page.locator(".admin-conversation-panel")).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { name: "Select a conversation" }),
+  ).toBeVisible();
+});
+
+test("related record linking only offers types the data model actually supports, with real client-scoped options", async ({
+  page,
+}) => {
+  await mockAdmin(page);
+  await page.goto("/admin/communications/");
+  await page
+    .getByRole("button", { name: /Can you confirm the balance/ })
+    .click();
+
+  const typeSelect = page.getByLabel("Related record type");
+  const optionLabels = await typeSelect.locator("option").allTextContents();
+  expect(optionLabels).toEqual([
+    "Select a type",
+    "Engagement",
+    "Task",
+    "Document",
+    "Appointment",
+    "Invoice",
+  ]);
+  expect(optionLabels).not.toContain("Service");
+  expect(optionLabels).not.toContain("Intake submission");
+
+  await typeSelect.selectOption("engagement");
+  const recordLabel = page
+    .locator(".comm-related-form label")
+    .filter({ has: page.getByText("Related record", { exact: true }) });
+  const recordSelect = recordLabel.locator("select");
+  await expect(recordSelect).toBeVisible();
+  await expect(
+    recordSelect.locator("option", { hasText: "Business Consulting" }),
+  ).toHaveCount(1);
+
+  await recordSelect.selectOption("eng-pub-5");
+  await expect(
+    page.getByRole("button", { name: "Link record", exact: true }),
+  ).toBeEnabled();
+});
+
+test("restoring an archived conversation returns it to the inbox and re-enables reply", async ({
+  page,
+}) => {
+  let payload = null;
+  await mockAdmin(page, {
+    onStatusUpdate: (body) => {
+      payload = body;
+    },
+  });
+  await page.goto("/admin/communications/");
+  await page
+    .getByRole("button", { name: /Can you confirm the balance/ })
+    .click();
+
+  await page
+    .getByRole("button", { name: "Archive conversation", exact: true })
+    .click();
+  await expect(async () => {
+    expect(payload?.status).toBe("archived");
+  }).toPass();
+  await expect(
+    page.getByText("This conversation is archived and read-only."),
+  ).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Reply" })).toHaveCount(0);
+
+  const restoreButton = page.getByRole("button", {
+    name: "Restore to Inbox",
+    exact: true,
+  });
+  await expect(restoreButton).toBeVisible();
+  await restoreButton.click();
+  await expect(async () => {
+    expect(payload?.status).toBe("open");
+  }).toPass();
+  await expect(
+    page.getByRole("button", { name: "Restore to Inbox", exact: true }),
+  ).toHaveCount(0);
+  await expect(page.getByRole("textbox", { name: "Reply" })).toBeVisible();
 });
 
 for (const width of [1440, 1280, 1024, 834, 390]) {

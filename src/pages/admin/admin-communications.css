@@ -288,12 +288,17 @@
 }
 
 /* Unselected-conversation empty state — deliberately compact so the
-   workspace never reads as one enormous empty region. */
+   workspace never reads as one enormous empty region, but centered within
+   the available thread workspace on desktop rather than pinned to the top
+   of a mostly-blank column. */
 .comm-empty-state {
   display: grid;
   gap: 0.2rem;
-  padding: 0.7rem 0.15rem 0;
-  border-top: 1px solid var(--admin-line);
+  justify-items: center;
+  align-content: center;
+  text-align: center;
+  min-height: 160px;
+  padding: 0.7rem 0.15rem;
   color: var(--color-text-soft);
 }
 
@@ -313,10 +318,92 @@
   line-height: 1.4;
 }
 
+/* Related-record linking: select an existing client record instead of
+   typing an internal reference. */
+.comm-related-form {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 0.7rem;
+}
+
+.comm-related-form label {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.78rem;
+}
+
+.comm-related-form label span {
+  color: var(--color-text-soft);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Workflow: the current ownership/state reads as a labeled statement, not
+   another button, so the actions beneath it are clearly next steps. */
+.comm-next-step {
+  margin: 0 0 0.65rem;
+  font-size: 0.85rem;
+  color: var(--color-text);
+}
+
+.comm-next-step-kicker {
+  display: block;
+  margin-bottom: 0.15rem;
+  color: var(--color-text-soft);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Archive manages organization, not conversation ownership -- kept
+   visually distinct (plain link, its own row) from the state-transition
+   buttons above it. */
+.comm-archive-action {
+  margin-top: 0.6rem;
+}
+
+.comm-archive-action .link-button {
+  color: var(--color-text-soft);
+  font-size: 0.78rem;
+}
+
+/* Mobile "one panel at a time" navigation: hidden on desktop/tablet where
+   the list and thread are already both visible. */
+.comm-back-button {
+  display: none;
+}
+
 @media (max-width: 600px) {
   .comm-row-heading {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.1rem;
+  }
+}
+
+/* Matches admin-workspace.css's own single-column breakpoint (≤800px) so
+   "hide the list, show Back" kicks in exactly when the workspace has
+   already collapsed to one column -- not at a different width, which
+   would leave an inconsistent middle zone with everything stacked at
+   once. */
+@media (max-width: 800px) {
+  .admin-communications.admin-module .has-conversation .admin-list-panel {
+    display: none;
+  }
+
+  .comm-back-button {
+    display: inline-flex;
+    align-items: center;
+    margin-bottom: 0.6rem;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--emerald-forest);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
   }
 }

@@ -916,7 +916,7 @@
       minmax(200px, 230px);
   }
   .admin-portal-shell .admin-workspace-grid.no-selection {
-    grid-template-columns: minmax(260px, 640px);
+    grid-template-columns: minmax(260px, 300px) minmax(0, 1fr);
   }
   .admin-conversation-hint {
     margin: 0;
