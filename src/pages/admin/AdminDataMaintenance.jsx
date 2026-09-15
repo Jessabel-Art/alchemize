@@ -12,16 +12,29 @@ const categoryMeta = {
     title: "Inactive Prospects",
     reviewNoun: "prospect",
     reviewNounPlural: "prospects",
-    actionLabel: "Archive",
-    actionVerb: "archive",
-    confirmTitle: "Archive prospect",
-    confirmBody:
-      "This prospect will be removed from active prospect views, but historical information will be retained.",
-    confirmBodyPlural:
-      "These prospects will be removed from active prospect views, but historical information will be retained.",
     emptyTitle: "No inactive prospects",
     emptyDescription: "No inactive prospects currently require review.",
-    resultKey: "archived",
+    actions: {
+      archive: {
+        label: "Archive",
+        confirmTitle: "Archive prospect",
+        confirmBody:
+          "This prospect will be removed from active prospect views, but historical information will be retained.",
+        confirmBodyPlural:
+          "These prospects will be removed from active prospect views, but historical information will be retained.",
+        resultKey: "archived",
+      },
+      delete: {
+        label: "Delete",
+        confirmTitle: "Delete prospect",
+        confirmBody:
+          "This permanently deletes the prospect record. This action cannot be undone, and is only available when the record has no engagements, invoices, documents, appointments, tasks, or active portal access.",
+        confirmBodyPlural:
+          "This permanently deletes the prospect records. This action cannot be undone, and is only available for records with no engagements, invoices, documents, appointments, tasks, or active portal access.",
+        typedConfirm: "DELETE INACTIVE PROSPECTS",
+        resultKey: "deleted",
+      },
+    },
   },
   completed_engagements: {
     title: "Completed Engagements",
@@ -86,7 +99,89 @@ const categoryMeta = {
     emptyDescription: "No expired security tokens currently require cleanup.",
     resultKey: "deleted",
   },
+  expired_client_requests: {
+    title: "Expired Client Requests",
+    reviewNoun: "request",
+    reviewNounPlural: "requests",
+    emptyTitle: "No expired client requests",
+    emptyDescription: "No stale document requests currently require review.",
+    actions: {
+      archive: {
+        label: "Archive",
+        confirmTitle: "Archive client request",
+        confirmBody:
+          "This request will be removed from active client-request views, but its record is retained.",
+        confirmBodyPlural:
+          "These requests will be removed from active client-request views, but their records are retained.",
+        resultKey: "archived",
+      },
+      delete: {
+        label: "Delete",
+        confirmTitle: "Delete client request",
+        confirmBody:
+          "This permanently deletes the request. Only available when the client never submitted anything for it. This action cannot be undone.",
+        confirmBodyPlural:
+          "This permanently deletes the requests. Only available for requests the client never submitted anything for. This action cannot be undone.",
+        typedConfirm: "DELETE CLIENT REQUESTS",
+        resultKey: "deleted",
+      },
+    },
+  },
+  invoice_disposable: {
+    title: "Disposable Invoices",
+    reviewNoun: "invoice",
+    reviewNounPlural: "invoices",
+    actionLabel: "Delete",
+    actionVerb: "delete",
+    confirmTitle: "Delete disposable invoice",
+    confirmBody:
+      "This permanently deletes the invoice. Only available for draft, cancelled, or voided invoices with zero payment history. This action cannot be undone.",
+    confirmBodyPlural:
+      "This permanently deletes the invoices. Only available for draft, cancelled, or voided invoices with zero payment history. This action cannot be undone.",
+    typedConfirm: "DELETE DISPOSABLE INVOICES",
+    emptyTitle: "No disposable invoices",
+    emptyDescription:
+      "No draft, cancelled, or voided invoices currently qualify for deletion.",
+    resultKey: "deleted",
+  },
+  invoice_uncollected: {
+    title: "Uncollected Invoices",
+    reviewNoun: "invoice",
+    reviewNounPlural: "invoices",
+    actionLabel: "Archive",
+    actionVerb: "archive",
+    confirmTitle: "Archive uncollected invoice",
+    confirmBody:
+      "This invoice will be removed from active billing views. All line items, totals, and payment history are fully preserved.",
+    confirmBodyPlural:
+      "These invoices will be removed from active billing views. All line items, totals, and payment history are fully preserved.",
+    emptyTitle: "No uncollected invoices",
+    emptyDescription:
+      "No stale, uncollected invoices currently require archival review.",
+    resultKey: "archived",
+  },
 };
+
+// Normalizes both category shapes -- a single top-level action
+// (actionVerb/actionLabel/...) or a multi-action `actions` map -- into a
+// uniform [verb, actionMeta][] list so review rows/toolbars/confirm dialogs
+// never need to know which shape a given category uses.
+function categoryActions(meta) {
+  if (meta.actions) return Object.entries(meta.actions);
+  return [
+    [
+      meta.actionVerb,
+      {
+        label: meta.actionLabel,
+        confirmTitle: meta.confirmTitle,
+        confirmBody: meta.confirmBody,
+        confirmBodyPlural: meta.confirmBodyPlural,
+        typedConfirm: meta.typedConfirm,
+        resultKey: meta.resultKey,
+      },
+    ],
+  ];
+}
 
 const dateLabel = (value) =>
   value
@@ -161,11 +256,25 @@ function ReviewRows({ category, records, selected, onToggle, onSoloAction }) {
                   <button
                     type="button"
                     className="secondary-button"
-                    onClick={() => onSoloAction(row.id, "act")}
+                    onClick={() => onSoloAction(row.id, "archive")}
                   >
-                    {meta.actionLabel}
+                    {meta.actions.archive.label}
+                  </button>
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    disabled={!row.delete_eligible}
+                    title={row.delete_blocked_reason || undefined}
+                    onClick={() => onSoloAction(row.id, "delete")}
+                  >
+                    {meta.actions.delete.label}
                   </button>
                 </div>
+                {!row.delete_eligible && row.delete_blocked_reason ? (
+                  <p className="maintenance-row-note">
+                    {row.delete_blocked_reason}
+                  </p>
+                ) : null}
               </td>
             </tr>
           ))}
@@ -357,6 +466,172 @@ function ReviewRows({ category, records, selected, onToggle, onSoloAction }) {
       </AdminTable>
     );
   }
+  if (category === "expired_client_requests") {
+    return (
+      <AdminTable>
+        <thead>
+          <tr>
+            <th aria-label="Select" />
+            <th>Client</th>
+            <th>Request</th>
+            <th>Engagement</th>
+            <th>Status</th>
+            <th>Requested</th>
+            <th>Due</th>
+            <th aria-label="Actions" />
+          </tr>
+        </thead>
+        <tbody>
+          {records.map((row) => (
+            <tr key={row.id}>
+              <td>
+                <input
+                  type="checkbox"
+                  aria-label={`Select ${row.document_name}`}
+                  checked={selected.has(row.id)}
+                  onChange={() => onToggle(row.id)}
+                />
+              </td>
+              <td>{row.client_name || "—"}</td>
+              <td>{row.document_name}</td>
+              <td>{row.engagement_title || "—"}</td>
+              <td>{row.status}</td>
+              <td>{dateLabel(row.requested_date)}</td>
+              <td>{row.due_date ? dateLabel(row.due_date) : "—"}</td>
+              <td>
+                <div className="maintenance-row-actions">
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => onSoloAction(row.id, "archive")}
+                  >
+                    {meta.actions.archive.label}
+                  </button>
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    disabled={!row.delete_eligible}
+                    title={
+                      row.delete_eligible
+                        ? undefined
+                        : "The client already submitted something for this request; only archival is available."
+                    }
+                    onClick={() => onSoloAction(row.id, "delete")}
+                  >
+                    {meta.actions.delete.label}
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </AdminTable>
+    );
+  }
+  if (category === "invoice_disposable") {
+    return (
+      <AdminTable>
+        <thead>
+          <tr>
+            <th aria-label="Select" />
+            <th>Invoice</th>
+            <th>Client</th>
+            <th>Engagement</th>
+            <th>Status</th>
+            <th>Date</th>
+            <th>Amount</th>
+            <th aria-label="Actions" />
+          </tr>
+        </thead>
+        <tbody>
+          {records.map((row) => (
+            <tr key={row.id}>
+              <td>
+                <input
+                  type="checkbox"
+                  aria-label={`Select invoice ${row.invoice_number}`}
+                  checked={selected.has(row.id)}
+                  onChange={() => onToggle(row.id)}
+                />
+              </td>
+              <td>{row.invoice_number}</td>
+              <td>{row.client_name || "—"}</td>
+              <td>{row.engagement_title || "—"}</td>
+              <td>{row.status}</td>
+              <td>{dateLabel(row.invoice_date)}</td>
+              <td>
+                {new Intl.NumberFormat(undefined, {
+                  style: "currency",
+                  currency: row.currency || "USD",
+                }).format(Number(row.subtotal || 0))}
+              </td>
+              <td>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => onSoloAction(row.id, "act")}
+                >
+                  {meta.actionLabel}
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </AdminTable>
+    );
+  }
+  if (category === "invoice_uncollected") {
+    return (
+      <AdminTable>
+        <thead>
+          <tr>
+            <th aria-label="Select" />
+            <th>Invoice</th>
+            <th>Client</th>
+            <th>Engagement</th>
+            <th>Status</th>
+            <th>Due</th>
+            <th>Outstanding</th>
+            <th aria-label="Actions" />
+          </tr>
+        </thead>
+        <tbody>
+          {records.map((row) => (
+            <tr key={row.id}>
+              <td>
+                <input
+                  type="checkbox"
+                  aria-label={`Select invoice ${row.invoice_number}`}
+                  checked={selected.has(row.id)}
+                  onChange={() => onToggle(row.id)}
+                />
+              </td>
+              <td>{row.invoice_number}</td>
+              <td>{row.client_name || "—"}</td>
+              <td>{row.engagement_title || "—"}</td>
+              <td>{row.status}</td>
+              <td>{dateLabel(row.due_date)}</td>
+              <td>
+                {new Intl.NumberFormat(undefined, {
+                  style: "currency",
+                  currency: row.currency || "USD",
+                }).format(Number(row.outstanding_balance || 0))}
+              </td>
+              <td>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => onSoloAction(row.id, "act")}
+                >
+                  {meta.actionLabel}
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </AdminTable>
+    );
+  }
   return null;
 }
 
@@ -467,18 +742,31 @@ export default function AdminDataMaintenance() {
     });
   };
 
-  const requestConfirm = (category, ids) => {
+  const requestConfirm = (category, action, ids) => {
     if (ids.length === 0) return;
-    setConfirm({ category, ids, typedValue: "", busy: false, error: "" });
+    setConfirm({
+      category,
+      action,
+      ids,
+      typedValue: "",
+      busy: false,
+      error: "",
+    });
   };
 
   const runConfirmedAction = async () => {
     if (!confirm) return;
     const meta = categoryMeta[confirm.category];
-    if (meta.typedConfirm && confirm.typedValue !== meta.typedConfirm) {
+    const [, actionMeta] = categoryActions(meta).find(
+      ([verb]) => verb === confirm.action,
+    );
+    if (
+      actionMeta.typedConfirm &&
+      confirm.typedValue !== actionMeta.typedConfirm
+    ) {
       setConfirm((current) => ({
         ...current,
-        error: `Type ${meta.typedConfirm} to confirm.`,
+        error: `Type ${actionMeta.typedConfirm} to confirm.`,
       }));
       return;
     }
@@ -486,14 +774,27 @@ export default function AdminDataMaintenance() {
     try {
       const result = await settings.maintenance("execute", {
         category: confirm.category,
-        action: meta.actionVerb,
+        action: confirm.action,
         selected_ids: confirm.ids,
-        confirm: meta.typedConfirm ? confirm.typedValue : undefined,
+        confirm: actionMeta.typedConfirm ? confirm.typedValue : undefined,
       });
-      const affected = result?.[meta.resultKey] ?? 0;
+      const affected = result?.[actionMeta.resultKey] ?? 0;
+      const blocked = result?.blocked ?? 0;
+      const verbPast =
+        confirm.action === "archive"
+          ? "archived"
+          : confirm.action === "delete"
+            ? "deleted"
+            : confirm.action === "purge"
+              ? "purged"
+              : "removed";
       setFeedback({
         type: "success",
-        message: `${affected} ${affected === 1 ? meta.reviewNoun : meta.reviewNounPlural} ${meta.actionVerb === "archive" ? "archived" : meta.actionVerb === "delete" ? "deleted" : meta.actionVerb === "purge" ? "purged" : "removed"}.`,
+        message:
+          `${affected} ${affected === 1 ? meta.reviewNoun : meta.reviewNounPlural} ${verbPast}.` +
+          (blocked > 0
+            ? ` ${blocked} could not be ${verbPast} and were left unchanged.`
+            : ""),
       });
       setReview((current) => {
         if (!current || current.category !== confirm.category) return current;
@@ -523,14 +824,24 @@ export default function AdminDataMaintenance() {
       dismissRow(category, id);
       return;
     }
-    requestConfirm(category, [id]);
+    const action =
+      kind === "act" ? categoryActions(categoryMeta[category])[0][0] : kind;
+    requestConfirm(category, action, [id]);
   };
 
-  const primaryCategories = [
-    "inactive_prospects",
-    "completed_engagements",
-    "expired_links",
-    "expired_invitations",
+  const primaryGroups = [
+    {
+      label: "Client lifecycle",
+      categories: [
+        "inactive_prospects",
+        "completed_engagements",
+        "expired_client_requests",
+      ],
+    },
+    {
+      label: "Billing",
+      categories: ["invoice_disposable", "invoice_uncollected"],
+    },
   ];
 
   const data = overview.data;
@@ -562,39 +873,77 @@ export default function AdminDataMaintenance() {
         </p>
       ) : (
         <>
-          <div className="maintenance-card-grid">
-            {primaryCategories.map((category) => {
-              const meta = categoryMeta[category];
-              const info = categories[category];
-              const count = info?.count ?? 0;
-              return (
-                <article className="maintenance-card" key={category}>
-                  <h3>{meta.title}</h3>
-                  <p className="maintenance-card-count">
-                    {count} candidate{count === 1 ? "" : "s"}
-                  </p>
-                  <p className="maintenance-card-description">
-                    {info?.description}
-                  </p>
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    onClick={() => openReview(category)}
-                  >
-                    Review{" "}
-                    {count > 0
-                      ? `${count} ${count === 1 ? meta.reviewNoun : meta.reviewNounPlural}`
-                      : meta.reviewNounPlural}
-                  </button>
-                </article>
-              );
-            })}
-          </div>
+          {primaryGroups.map((group) => (
+            <section
+              className="maintenance-group"
+              key={group.label}
+              aria-label={group.label}
+            >
+              <h2 className="maintenance-group-title">{group.label}</h2>
+              <div className="maintenance-card-grid">
+                {group.categories.map((category) => {
+                  const meta = categoryMeta[category];
+                  const info = categories[category];
+                  const count = info?.count ?? 0;
+                  return (
+                    <article className="maintenance-card" key={category}>
+                      <h3>{meta.title}</h3>
+                      <p className="maintenance-card-count">
+                        {count} candidate{count === 1 ? "" : "s"}
+                      </p>
+                      <p className="maintenance-card-description">
+                        {info?.description}
+                      </p>
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        onClick={() => openReview(category)}
+                      >
+                        Review{" "}
+                        {count > 0
+                          ? `${count} ${count === 1 ? meta.reviewNoun : meta.reviewNounPlural}`
+                          : meta.reviewNounPlural}
+                      </button>
+                    </article>
+                  );
+                })}
+              </div>
+            </section>
+          ))}
 
           <section
             className="maintenance-secondary-section"
-            aria-labelledby="expired-tokens-heading"
+            aria-label="System & security"
           >
+            <h2 className="maintenance-group-title">System &amp; security</h2>
+            <div className="maintenance-secondary-row">
+              <div>
+                <h3>Expired Scheduling Links</h3>
+                <p>{categories.expired_links?.description}</p>
+              </div>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => openReview("expired_links")}
+              >
+                Review {summary.expired_links || 0} link
+                {summary.expired_links === 1 ? "" : "s"}
+              </button>
+            </div>
+            <div className="maintenance-secondary-row">
+              <div>
+                <h3>Expired Admin Invitations</h3>
+                <p>{categories.expired_invitations?.description}</p>
+              </div>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => openReview("expired_invitations")}
+              >
+                Review {summary.expired_invitations || 0} invitation
+                {summary.expired_invitations === 1 ? "" : "s"}
+              </button>
+            </div>
             <div className="maintenance-secondary-row">
               <div>
                 <h3 id="expired-tokens-heading">Expired Security Tokens</h3>
@@ -661,60 +1010,62 @@ export default function AdminDataMaintenance() {
       >
         {review ? (
           confirm ? (
-            <div className="maintenance-confirm">
-              <h3>{categoryMeta[confirm.category].confirmTitle}</h3>
-              <p>
-                {confirm.ids.length === 1
-                  ? categoryMeta[confirm.category].confirmBody
-                  : categoryMeta[confirm.category].confirmBodyPlural}
-              </p>
-              <p className="maintenance-confirm-count">
-                {confirm.ids.length} record{confirm.ids.length === 1 ? "" : "s"}{" "}
-                selected.
-              </p>
-              {categoryMeta[confirm.category].typedConfirm ? (
-                <label className="maintenance-typed-confirm">
-                  <span>
-                    Type {categoryMeta[confirm.category].typedConfirm} to
-                    confirm
-                  </span>
-                  <input
-                    value={confirm.typedValue}
-                    onChange={(event) =>
-                      setConfirm((current) => ({
-                        ...current,
-                        typedValue: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-              ) : null}
-              {confirm.error ? (
-                <p role="alert" className="admin-feedback">
-                  {confirm.error}
-                </p>
-              ) : null}
-              <div className="maintenance-confirm-actions">
-                <button
-                  type="button"
-                  className="secondary-button"
-                  disabled={confirm.busy}
-                  onClick={() => setConfirm(null)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="primary-button"
-                  disabled={confirm.busy}
-                  onClick={runConfirmedAction}
-                >
-                  {confirm.busy
-                    ? "Working…"
-                    : categoryMeta[confirm.category].actionLabel}
-                </button>
-              </div>
-            </div>
+            (() => {
+              const [, actionMeta] = categoryActions(
+                categoryMeta[confirm.category],
+              ).find(([verb]) => verb === confirm.action);
+              return (
+                <div className="maintenance-confirm">
+                  <h3>{actionMeta.confirmTitle}</h3>
+                  <p>
+                    {confirm.ids.length === 1
+                      ? actionMeta.confirmBody
+                      : actionMeta.confirmBodyPlural}
+                  </p>
+                  <p className="maintenance-confirm-count">
+                    {confirm.ids.length} record
+                    {confirm.ids.length === 1 ? "" : "s"} selected.
+                  </p>
+                  {actionMeta.typedConfirm ? (
+                    <label className="maintenance-typed-confirm">
+                      <span>Type {actionMeta.typedConfirm} to confirm</span>
+                      <input
+                        value={confirm.typedValue}
+                        onChange={(event) =>
+                          setConfirm((current) => ({
+                            ...current,
+                            typedValue: event.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                  ) : null}
+                  {confirm.error ? (
+                    <p role="alert" className="admin-feedback">
+                      {confirm.error}
+                    </p>
+                  ) : null}
+                  <div className="maintenance-confirm-actions">
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      disabled={confirm.busy}
+                      onClick={() => setConfirm(null)}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      className="primary-button"
+                      disabled={confirm.busy}
+                      onClick={runConfirmedAction}
+                    >
+                      {confirm.busy ? "Working…" : actionMeta.label}
+                    </button>
+                  </div>
+                </div>
+              );
+            })()
           ) : review.loading ? (
             <p role="status">Loading records…</p>
           ) : review.error ? (
@@ -733,17 +1084,27 @@ export default function AdminDataMaintenance() {
                   {review.records.length} record
                   {review.records.length === 1 ? "" : "s"} require review
                 </p>
-                <button
-                  type="button"
-                  className="primary-button"
-                  disabled={review.selected.size === 0}
-                  onClick={() =>
-                    requestConfirm(review.category, Array.from(review.selected))
-                  }
-                >
-                  {categoryMeta[review.category].actionLabel} selected (
-                  {review.selected.size})
-                </button>
+                <div className="maintenance-row-actions">
+                  {categoryActions(categoryMeta[review.category]).map(
+                    ([verb, actionMeta]) => (
+                      <button
+                        key={verb}
+                        type="button"
+                        className="primary-button"
+                        disabled={review.selected.size === 0}
+                        onClick={() =>
+                          requestConfirm(
+                            review.category,
+                            verb,
+                            Array.from(review.selected),
+                          )
+                        }
+                      >
+                        {actionMeta.label} selected ({review.selected.size})
+                      </button>
+                    ),
+                  )}
+                </div>
               </div>
               <div className="maintenance-table-wrap">
                 <ReviewRows

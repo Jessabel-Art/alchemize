@@ -214,6 +214,12 @@ final class AlchemizePortalRepository
                     e.public_id AS engagement_id, e.title AS engagement_title,
                     (SELECT ds.original_filename FROM document_submissions ds WHERE ds.document_id = d.id
                      ORDER BY ds.submitted_at DESC LIMIT 1) AS submitted_filename,
+                    (SELECT ds.version_number FROM document_submissions ds WHERE ds.document_id = d.id
+                     AND ds.archived_at IS NULL ORDER BY ds.version_number DESC LIMIT 1) AS current_version,
+                    (SELECT CASE WHEN r.slug IN (\'client\', \'business-authorized-user\') THEN \'client\' ELSE \'alchemize\' END
+                     FROM document_submissions ds INNER JOIN users u ON u.id = ds.submitted_by_user_id
+                     INNER JOIN roles r ON r.id = u.role_id
+                     WHERE ds.document_id = d.id ORDER BY ds.submitted_at DESC LIMIT 1) AS origin,
                     s.service_name
              FROM documents_metadata d
              INNER JOIN engagements e ON e.id = d.engagement_id AND e.client_id = :document_client_id

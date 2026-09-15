@@ -302,7 +302,6 @@ function ResourceContent(props) {
           invoices={data.invoices || []}
           intake={data.intake || []}
           activity={data.activity || []}
-          empty={empty}
           busy={busy}
           run={run}
         />
@@ -619,7 +618,6 @@ function ServiceDetail({
   invoices = [],
   intake = [],
   activity = [],
-  empty,
   busy,
   run,
 }) {
@@ -642,6 +640,18 @@ function ServiceDetail({
       ["open", "partially_paid", "past_due"].includes(invoice.status) &&
       Number(invoice.outstanding_balance) > 0,
   );
+  const documentGroups = [
+    {
+      key: "from-you",
+      label: "From you",
+      items: documents.filter((document) => document.origin !== "alchemize"),
+    },
+    {
+      key: "from-alchemize",
+      label: "From Alchemize",
+      items: documents.filter((document) => document.origin === "alchemize"),
+    },
+  ];
   const isCompleted = ["completed", "archived"].includes(item.status);
   const bookHref = `/client-portal/appointments?engagement=${encodeURIComponent(item.id)}`;
   const meetUrl = nextAppointment?.meeting_url || "";
@@ -782,114 +792,134 @@ function ServiceDetail({
             </p>
           ) : null}
 
-          {tasks.length ? (
-            <section
-              className="engagement-milestones"
-              aria-label="Tasks and milestones"
-            >
-              <h2>Tasks &amp; milestones</h2>
-              {progressPct !== null ? (
-                <div className="engagement-progress">
-                  <small>
-                    Engagement progress · {completedCount} of {tasks.length}{" "}
-                    milestones completed
-                  </small>
-                  <div
-                    className="engagement-progress-track"
-                    role="progressbar"
-                    aria-valuenow={progressPct}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    aria-label="Engagement progress"
-                  >
+          <section
+            className="engagement-milestones"
+            aria-label="Tasks and milestones"
+          >
+            <h2>Tasks &amp; milestones</h2>
+            {tasks.length === 0 ? (
+              <p className="engagement-action-clear">
+                No milestones have been added to this engagement yet.
+              </p>
+            ) : (
+              <>
+                {progressPct !== null ? (
+                  <div className="engagement-progress">
+                    <small>
+                      Engagement progress · {completedCount} of {tasks.length}{" "}
+                      milestones completed
+                    </small>
                     <div
-                      className="engagement-progress-fill"
-                      style={{ width: `${progressPct}%` }}
-                    />
+                      className="engagement-progress-track"
+                      role="progressbar"
+                      aria-valuenow={progressPct}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-label="Engagement progress"
+                    >
+                      <div
+                        className="engagement-progress-fill"
+                        style={{ width: `${progressPct}%` }}
+                      />
+                    </div>
                   </div>
-                </div>
-              ) : null}
-              <ol className="engagement-milestone-list">
-                {milestones.map((task) => {
-                  const state =
-                    task.status === "completed"
-                      ? "done"
-                      : task.status === "not_started"
-                        ? "upcoming"
-                        : "current";
-                  return (
-                    <li key={task.id} className={`milestone-${state}`}>
-                      <span className="milestone-marker" aria-hidden="true">
-                        {state === "done"
-                          ? "✓"
-                          : state === "current"
-                            ? "●"
-                            : "○"}
-                      </span>
-                      <div>
-                        <strong>{task.title}</strong>
-                        <small>
+                ) : null}
+                <ol className="engagement-milestone-list">
+                  {milestones.map((task) => {
+                    const state =
+                      task.status === "completed"
+                        ? "done"
+                        : task.status === "not_started"
+                          ? "upcoming"
+                          : "current";
+                    return (
+                      <li key={task.id} className={`milestone-${state}`}>
+                        <span className="milestone-marker" aria-hidden="true">
                           {state === "done"
-                            ? `Completed ${formatDate(task.completed_at || task.due_date)}`
-                            : labelFor(task.status)}
-                        </small>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ol>
-            </section>
-          ) : null}
+                            ? "✓"
+                            : state === "current"
+                              ? "●"
+                              : "○"}
+                        </span>
+                        <div>
+                          <strong>{task.title}</strong>
+                          <small>
+                            {state === "done"
+                              ? `Completed ${formatDate(task.completed_at || task.due_date)}`
+                              : labelFor(task.status)}
+                          </small>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ol>
+              </>
+            )}
+          </section>
 
-          {documents.length ? (
-            <section
-              className="engagement-documents"
-              aria-label="Documents and deliverables"
-            >
-              <h2>Documents</h2>
-              <ul className="portal-record-list">
-                {documents.map((document) => (
-                  <li key={document.id}>
-                    <div>
-                      <strong>{document.document_name}</strong>
-                      <p>
-                        {document.client_instructions ||
-                          "Client-visible document"}
-                      </p>
-                      {[
-                        "requested",
-                        "awaiting_upload",
-                        "replacement_requested",
-                      ].includes(document.status) ? (
-                        <DocumentUpload item={document} busy={busy} run={run} />
-                      ) : null}
+          <section
+            className="engagement-documents"
+            aria-label="Documents and deliverables"
+          >
+            <h2>Documents &amp; deliverables</h2>
+            {documents.length === 0 ? (
+              <p className="engagement-action-clear">
+                No documents on file for this engagement yet.
+              </p>
+            ) : (
+              <>
+                {documentGroups.map((group) =>
+                  group.items.length ? (
+                    <div className="engagement-document-group" key={group.key}>
+                      <h3>{group.label}</h3>
+                      <ul className="portal-record-list">
+                        {group.items.map((document) => (
+                          <li key={document.id}>
+                            <div>
+                              <strong>{document.document_name}</strong>
+                              <p>
+                                {document.client_instructions ||
+                                  "Client-visible document"}
+                              </p>
+                              {[
+                                "requested",
+                                "awaiting_upload",
+                                "replacement_requested",
+                              ].includes(document.status) ? (
+                                <DocumentUpload
+                                  item={document}
+                                  busy={busy}
+                                  run={run}
+                                />
+                              ) : null}
+                            </div>
+                            <div className="portal-record-meta">
+                              <span>{labelFor(document.status)}</span>
+                              {document.due_date ? (
+                                <small>
+                                  Due {formatDate(document.due_date)}
+                                </small>
+                              ) : null}
+                              {document.current_version ? (
+                                <a
+                                  className="portal-action-button"
+                                  href={portalApi.documentDownloadUrl(
+                                    document.id,
+                                  )}
+                                >
+                                  Download
+                                </a>
+                              ) : null}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
-                    <div className="portal-record-meta">
-                      <span>{labelFor(document.status)}</span>
-                      {document.due_date ? (
-                        <small>Due {formatDate(document.due_date)}</small>
-                      ) : null}
-                      {document.current_version ? (
-                        <a
-                          className="portal-action-button"
-                          href={portalApi.documentDownloadUrl(document.id)}
-                        >
-                          Download
-                        </a>
-                      ) : null}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
-
-          {!actionItems.length &&
-          !tasks.length &&
-          !documents.length &&
-          !appointments.length ? (
-            <EmptyState>{empty}</EmptyState>
-          ) : null}
+                  ) : null,
+                )}
+              </>
+            )}
+          </section>
         </div>
 
         <aside className="portal-workspace-utility">
@@ -974,14 +1004,21 @@ function ServiceDetail({
               <span className="section-kicker">Billing</span>
               <p>Paid in full.</p>
             </section>
-          ) : null}
+          ) : (
+            <section className="engagement-billing" aria-label="Billing">
+              <span className="section-kicker">Billing</span>
+              <p className="engagement-action-clear">
+                No billing activity for this engagement yet.
+              </p>
+            </section>
+          )}
 
-          {activityFeed.length ? (
-            <section
-              className="engagement-activity"
-              aria-label="Engagement activity"
-            >
-              <span className="section-kicker">Engagement activity</span>
+          <section
+            className="engagement-activity"
+            aria-label="Engagement activity"
+          >
+            <span className="section-kicker">Engagement activity</span>
+            {activityFeed.length ? (
               <ol>
                 {activityFeed.slice(0, 8).map((entry) => (
                   <li key={entry.id}>
@@ -990,8 +1027,12 @@ function ServiceDetail({
                   </li>
                 ))}
               </ol>
-            </section>
-          ) : null}
+            ) : (
+              <p className="engagement-action-clear">
+                No engagement activity recorded yet.
+              </p>
+            )}
+          </section>
 
           <section
             className="engagement-details"

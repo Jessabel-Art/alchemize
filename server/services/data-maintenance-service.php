@@ -12,6 +12,8 @@ declare(strict_types=1);
 final class AlchemizeDataMaintenanceService
 {
     private const ADMIN_ROLES = ['owner-admin', 'administrator', 'staff', 'read-only'];
+    private const CLIENT_REQUEST_STALE_DAYS = 30;
+    private const DISPOSABLE_INVOICE_STATUSES = ['draft', 'cancelled', 'voided'];
 
     public function __construct(
         private readonly PDO $database,
@@ -38,8 +40,11 @@ final class AlchemizeDataMaintenanceService
         $summary = [
             'inactive_prospects' => $this->countInactiveProspects($prospectDays),
             'completed_engagements' => $this->countCompletedEngagements($thresholdMonths),
+            'expired_client_requests' => $this->countExpiredClientRequests(),
             'expired_links' => $this->countExpiredLinks(),
             'expired_invitations' => $this->countExpiredInvitations(),
+            'invoice_disposable' => $this->countDisposableInvoices(),
+            'invoice_uncollected' => $this->countUncollectedInvoices($thresholdMonths),
             'expired_tokens' => $this->countExpiredTokens(),
             'orphaned_records' => 0,
         ];
@@ -54,12 +59,20 @@ final class AlchemizeDataMaintenanceService
                     'description' => "Prospects with no qualifying activity for {$prospectDays}+ days.",
                     'count' => $summary['inactive_prospects'],
                     'action' => 'archive',
+                    'actions' => ['archive', 'delete'],
                 ],
                 'completed_engagements' => [
                     'title' => 'Completed Engagements',
                     'description' => "Completed client engagements older than {$thresholdMonths} months, eligible for archival review.",
                     'count' => $summary['completed_engagements'],
                     'action' => 'archive',
+                ],
+                'expired_client_requests' => [
+                    'title' => 'Expired Client Requests',
+                    'description' => "Document requests still unfulfilled " . self::CLIENT_REQUEST_STALE_DAYS . "+ days past their due date (or since requested, when no due date was set).",
+                    'count' => $summary['expired_client_requests'],
+                    'action' => 'archive',
+                    'actions' => ['archive', 'delete'],
                 ],
                 'expired_links' => [
                     'title' => 'Expired Scheduling Links',
@@ -72,6 +85,18 @@ final class AlchemizeDataMaintenanceService
                     'description' => 'Administrator invitations that expired without being accepted.',
                     'count' => $summary['expired_invitations'],
                     'action' => 'remove',
+                ],
+                'invoice_disposable' => [
+                    'title' => 'Disposable Invoices',
+                    'description' => 'Draft, cancelled, or voided invoices with zero payment history and no payment attempt on record -- safe to remove.',
+                    'count' => $summary['invoice_disposable'],
+                    'action' => 'delete',
+                ],
+                'invoice_uncollected' => [
+                    'title' => 'Uncollected Invoices',
+                    'description' => "Open or past-due invoices more than {$thresholdMonths} months past their due date, eligible to archive out of active billing views. All financial data is preserved.",
+                    'count' => $summary['invoice_uncollected'],
+                    'action' => 'archive',
                 ],
                 'expired_tokens' => [
                     'title' => 'Expired Security Tokens',
@@ -94,6 +119,8 @@ final class AlchemizeDataMaintenanceService
         $category = (string) ($payload['category'] ?? '');
         $limit = max(1, min(100, (int) ($payload['limit'] ?? 25)));
 
+        $thresholdMonths = max(1, (int) ($payload['threshold_months'] ?? 6));
+
         return match ($category) {
             'inactive_prospects' => [
                 'category' => $category,
@@ -106,6 +133,24 @@ final class AlchemizeDataMaintenanceService
                 'action' => 'archive',
                 'count' => $this->countCompletedEngagements(6),
                 'records' => $this->completedEngagementPreview(6, $limit),
+            ],
+            'expired_client_requests' => [
+                'category' => $category,
+                'action' => 'archive',
+                'count' => $this->countExpiredClientRequests(),
+                'records' => $this->expiredClientRequestPreview($limit),
+            ],
+            'invoice_disposable' => [
+                'category' => $category,
+                'action' => 'delete',
+                'count' => $this->countDisposableInvoices(),
+                'records' => $this->disposableInvoicePreview($limit),
+            ],
+            'invoice_uncollected' => [
+                'category' => $category,
+                'action' => 'archive',
+                'count' => $this->countUncollectedInvoices($thresholdMonths),
+                'records' => $this->uncollectedInvoicePreview($thresholdMonths, $limit),
             ],
             'expired_links' => [
                 'category' => $category,
@@ -150,8 +195,37 @@ final class AlchemizeDataMaintenanceService
             return $this->archiveInactiveProspects($selected);
         }
 
+        if ($action === 'delete' && $category === 'inactive_prospects') {
+            if ($confirm !== 'DELETE INACTIVE PROSPECTS') {
+                throw new AlchemizeRequestException(422, 'CONFIRMATION_REQUIRED', 'Type DELETE INACTIVE PROSPECTS to confirm.');
+            }
+            return $this->deleteInactiveProspects($selected);
+        }
+
         if ($action === 'archive' && $category === 'completed_engagements') {
             return $this->archiveCompletedEngagements($selected);
+        }
+
+        if ($action === 'archive' && $category === 'expired_client_requests') {
+            return $this->archiveExpiredClientRequests($selected);
+        }
+
+        if ($action === 'delete' && $category === 'expired_client_requests') {
+            if ($confirm !== 'DELETE CLIENT REQUESTS') {
+                throw new AlchemizeRequestException(422, 'CONFIRMATION_REQUIRED', 'Type DELETE CLIENT REQUESTS to confirm.');
+            }
+            return $this->deleteExpiredClientRequests($selected);
+        }
+
+        if ($action === 'delete' && $category === 'invoice_disposable') {
+            if ($confirm !== 'DELETE DISPOSABLE INVOICES') {
+                throw new AlchemizeRequestException(422, 'CONFIRMATION_REQUIRED', 'Type DELETE DISPOSABLE INVOICES to confirm.');
+            }
+            return $this->deleteDisposableInvoices($selected);
+        }
+
+        if ($action === 'archive' && $category === 'invoice_uncollected') {
+            return $this->archiveUncollectedInvoices($selected);
         }
 
         if ($action === 'delete' && $category === 'expired_links') {
@@ -216,7 +290,13 @@ final class AlchemizeDataMaintenanceService
         $statement->bindValue(':days', $days, PDO::PARAM_INT);
         $statement->bindValue(':limit', $limit, PDO::PARAM_INT);
         $statement->execute();
-        return $statement->fetchAll();
+        $rows = $statement->fetchAll();
+        foreach ($rows as &$row) {
+            $reasons = $this->prospectBusinessRecordReasons((int) $row['id']);
+            $row['delete_eligible'] = $reasons === [];
+            $row['delete_blocked_reason'] = $reasons === [] ? null : ('This record ' . implode(' and ', $reasons) . '.');
+        }
+        return $rows;
     }
 
     private function inactiveProspectIds(int $days): array
@@ -253,6 +333,64 @@ final class AlchemizeDataMaintenanceService
             if ($this->database->inTransaction()) $this->database->rollBack();
             throw $error;
         }
+    }
+
+    // A prospective client is only safe to hard-delete when nothing else in
+    // the system depends on it. engagements/invoices/payments/client_service
+    // already carry an ON DELETE RESTRICT foreign key (the database itself
+    // refuses), but documents_metadata is ON DELETE CASCADE and
+    // tasks/appointments are ON DELETE SET NULL -- neither of those would
+    // fail the DELETE, they would silently destroy or orphan real records,
+    // which is exactly what must never happen here. Checked explicitly
+    // rather than relying on the schema's own delete behavior.
+    private function prospectBusinessRecordReasons(int $clientId): array
+    {
+        $reasons = [];
+        $checks = [
+            'has an engagement on record' => 'SELECT 1 FROM engagements WHERE client_id = :id LIMIT 1',
+            'has an invoice on record' => 'SELECT 1 FROM invoices WHERE client_id = :id LIMIT 1',
+            'has a document on record' => 'SELECT 1 FROM documents_metadata WHERE client_id = :id LIMIT 1',
+            'has an appointment on record' => 'SELECT 1 FROM appointments WHERE client_id = :id LIMIT 1',
+            'has a task on record' => 'SELECT 1 FROM tasks WHERE client_id = :id LIMIT 1',
+            'has active client portal access' => "SELECT 1 FROM client_access_grants WHERE client_id = :id AND status = 'active' LIMIT 1",
+        ];
+        foreach ($checks as $reason => $sql) {
+            $statement = $this->database->prepare($sql);
+            $statement->execute(['id' => $clientId]);
+            if ($statement->fetchColumn() !== false) $reasons[] = $reason;
+        }
+        return $reasons;
+    }
+
+    private function deleteInactiveProspects(array $selected): array
+    {
+        $eligible = array_flip($this->inactiveProspectIds($this->prospectThresholdDays()));
+        $ids = $selected !== [] ? array_values(array_intersect($selected, array_keys($eligible))) : array_keys($eligible);
+        $blocked = $selected !== [] ? count($selected) - count($ids) : 0;
+        $deleted = 0;
+        $failed = 0;
+        foreach ($ids as $id) {
+            if ($this->prospectBusinessRecordReasons($id) !== []) {
+                $blocked++;
+                continue;
+            }
+            $this->database->beginTransaction();
+            try {
+                $statement = $this->database->prepare("DELETE FROM clients WHERE id = :id AND status = 'prospective'");
+                $statement->execute(['id' => $id]);
+                if ($statement->rowCount() > 0) {
+                    $this->database->commit();
+                    $deleted++;
+                    $this->writeAudit('maintenance.prospect_delete', 'client', [$id], '1 deleted stale prospective record with no dependent business records.');
+                } else {
+                    $this->database->rollBack();
+                }
+            } catch (Throwable $error) {
+                if ($this->database->inTransaction()) $this->database->rollBack();
+                $failed++;
+            }
+        }
+        return ['action' => 'delete', 'category' => 'inactive_prospects', 'deleted' => $deleted, 'blocked' => $blocked, 'failed' => $failed];
     }
 
     // ---- Completed engagements --------------------------------------------
@@ -318,6 +456,146 @@ final class AlchemizeDataMaintenanceService
             $this->database->commit();
             $this->writeAudit('maintenance.engagement_archive', 'engagement', $ids, $this->summarizeCount($count, 'archived completed engagement', 'archived completed engagements'));
             return ['action' => 'archive', 'category' => 'completed_engagements', 'archived' => $count, 'blocked' => $blocked, 'failed' => 0];
+        } catch (Throwable $error) {
+            if ($this->database->inTransaction()) $this->database->rollBack();
+            throw $error;
+        }
+    }
+
+    // ---- Expired client requests --------------------------------------------
+    // A "client request" here is a document request (documents_metadata)
+    // still awaiting client action. Archiving is always safe (a status/
+    // archived_at flip, nothing removed). Deletion is only offered for the
+    // narrower set that was never fulfilled at all -- no document_submissions
+    // row exists -- so there is no upload/version history to lose; a request
+    // with status='replacement_requested' by definition already had a
+    // submission at some point and is excluded from deletion for that reason.
+
+    private function clientRequestStaleCondition(): string
+    {
+        return "(
+            (d.due_date IS NOT NULL AND d.due_date < CURRENT_DATE())
+            OR (d.due_date IS NULL AND d.requested_date < DATE_SUB(CURRENT_DATE(), INTERVAL :days DAY))
+        )";
+    }
+
+    private function countExpiredClientRequests(): int
+    {
+        $condition = $this->clientRequestStaleCondition();
+        $statement = $this->database->prepare(
+            "SELECT COUNT(*) FROM documents_metadata d
+             WHERE d.status IN ('requested', 'awaiting_upload', 'replacement_requested')
+               AND d.archived_at IS NULL AND {$condition}"
+        );
+        $statement->bindValue(':days', self::CLIENT_REQUEST_STALE_DAYS, PDO::PARAM_INT);
+        $statement->execute();
+        return (int) $statement->fetchColumn();
+    }
+
+    private function expiredClientRequestPreview(int $limit): array
+    {
+        $condition = $this->clientRequestStaleCondition();
+        $statement = $this->database->prepare(
+            "SELECT d.id, d.public_id, d.document_name, d.status, d.requested_date, d.due_date,
+                    c.display_name AS client_name, e.title AS engagement_title,
+                    EXISTS(SELECT 1 FROM document_submissions ds WHERE ds.document_id = d.id) AS has_submission
+             FROM documents_metadata d
+             LEFT JOIN clients c ON c.id = d.client_id
+             LEFT JOIN engagements e ON e.id = d.engagement_id
+             WHERE d.status IN ('requested', 'awaiting_upload', 'replacement_requested')
+               AND d.archived_at IS NULL AND {$condition}
+             ORDER BY COALESCE(d.due_date, d.requested_date) ASC
+             LIMIT :limit"
+        );
+        $statement->bindValue(':days', self::CLIENT_REQUEST_STALE_DAYS, PDO::PARAM_INT);
+        $statement->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $statement->execute();
+        $rows = $statement->fetchAll();
+        foreach ($rows as &$row) {
+            $row['delete_eligible'] = !((bool) $row['has_submission']) && $row['status'] !== 'replacement_requested';
+        }
+        return $rows;
+    }
+
+    private function expiredClientRequestIds(): array
+    {
+        $condition = $this->clientRequestStaleCondition();
+        $statement = $this->database->prepare(
+            "SELECT d.id FROM documents_metadata d
+             WHERE d.status IN ('requested', 'awaiting_upload', 'replacement_requested')
+               AND d.archived_at IS NULL AND {$condition}"
+        );
+        $statement->bindValue(':days', self::CLIENT_REQUEST_STALE_DAYS, PDO::PARAM_INT);
+        $statement->execute();
+        return array_map('intval', array_column($statement->fetchAll(), 'id'));
+    }
+
+    private function expiredClientRequestDeleteEligibleIds(): array
+    {
+        $condition = $this->clientRequestStaleCondition();
+        $statement = $this->database->prepare(
+            "SELECT d.id FROM documents_metadata d
+             WHERE d.status IN ('requested', 'awaiting_upload')
+               AND d.archived_at IS NULL AND {$condition}
+               AND NOT EXISTS (SELECT 1 FROM document_submissions ds WHERE ds.document_id = d.id)"
+        );
+        $statement->bindValue(':days', self::CLIENT_REQUEST_STALE_DAYS, PDO::PARAM_INT);
+        $statement->execute();
+        return array_map('intval', array_column($statement->fetchAll(), 'id'));
+    }
+
+    private function archiveExpiredClientRequests(array $selected): array
+    {
+        $eligible = array_flip($this->expiredClientRequestIds());
+        $ids = $selected !== [] ? array_values(array_intersect($selected, array_keys($eligible))) : array_keys($eligible);
+        $blocked = $selected !== [] ? count($selected) - count($ids) : 0;
+        if ($ids === []) {
+            return ['action' => 'archive', 'category' => 'expired_client_requests', 'archived' => 0, 'blocked' => $blocked, 'failed' => 0];
+        }
+
+        $this->database->beginTransaction();
+        try {
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $statement = $this->database->prepare(
+                "UPDATE documents_metadata SET status = 'archived', archived_at = CURRENT_TIMESTAMP(6)
+                 WHERE id IN ({$placeholders}) AND status IN ('requested', 'awaiting_upload', 'replacement_requested') AND archived_at IS NULL"
+            );
+            $statement->execute($ids);
+            $count = $statement->rowCount();
+            $this->database->commit();
+            $this->writeAudit('maintenance.client_request_archive', 'document', $ids, $this->summarizeCount($count, 'archived expired client request', 'archived expired client requests'));
+            return ['action' => 'archive', 'category' => 'expired_client_requests', 'archived' => $count, 'blocked' => $blocked, 'failed' => 0];
+        } catch (Throwable $error) {
+            if ($this->database->inTransaction()) $this->database->rollBack();
+            throw $error;
+        }
+    }
+
+    private function deleteExpiredClientRequests(array $selected): array
+    {
+        $eligible = array_flip($this->expiredClientRequestDeleteEligibleIds());
+        $ids = $selected !== [] ? array_values(array_intersect($selected, array_keys($eligible))) : array_keys($eligible);
+        $blocked = $selected !== [] ? count($selected) - count($ids) : 0;
+        if ($ids === []) {
+            return ['action' => 'delete', 'category' => 'expired_client_requests', 'deleted' => 0, 'blocked' => $blocked, 'failed' => 0];
+        }
+
+        $this->database->beginTransaction();
+        try {
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            // Re-verified against the narrower delete-eligible set: no
+            // document_submissions row exists for any of these ids, so
+            // nothing of record is lost.
+            $statement = $this->database->prepare(
+                "DELETE FROM documents_metadata WHERE id IN ({$placeholders})
+                 AND status IN ('requested', 'awaiting_upload') AND archived_at IS NULL
+                 AND NOT EXISTS (SELECT 1 FROM document_submissions ds WHERE ds.document_id = documents_metadata.id)"
+            );
+            $statement->execute($ids);
+            $count = $statement->rowCount();
+            $this->database->commit();
+            $this->writeAudit('maintenance.client_request_delete', 'document', $ids, $this->summarizeCount($count, 'deleted expired client request', 'deleted expired client requests'));
+            return ['action' => 'delete', 'category' => 'expired_client_requests', 'deleted' => $count, 'blocked' => $blocked, 'failed' => 0];
         } catch (Throwable $error) {
             if ($this->database->inTransaction()) $this->database->rollBack();
             throw $error;
@@ -539,6 +817,174 @@ final class AlchemizeDataMaintenanceService
             $this->database->commit();
             $this->writeAudit('maintenance.token_cleanup', 'portal_account_tokens', $ids, $this->summarizeCount($count, 'purged expired security token', 'purged expired security tokens'));
             return ['action' => 'purge', 'category' => 'expired_tokens', 'deleted' => $count, 'blocked' => $blocked, 'failed' => 0];
+        } catch (Throwable $error) {
+            if ($this->database->inTransaction()) $this->database->rollBack();
+            throw $error;
+        }
+    }
+
+    // ---- Invoice maintenance ------------------------------------------------
+    // Two disjoint, non-overlapping pools, never the same invoice: disposable
+    // (never billed for real -- draft/cancelled/voided, zero payment history,
+    // no payment attempt ever started) is safe to hard-delete; uncollected
+    // (genuinely billed and still owed, just stale) is only ever archived --
+    // every financial field, line item, and payment record stays intact,
+    // this only flips a visibility flag. A paid invoice never qualifies for
+    // either pool. payments.invoice_id is ON DELETE RESTRICT, so the
+    // database itself refuses to let a paid/part-paid invoice with recorded
+    // payments be deleted even if this check were ever wrong.
+
+    private function countDisposableInvoices(): int
+    {
+        $placeholders = implode(',', array_fill(0, count(self::DISPOSABLE_INVOICE_STATUSES), '?'));
+        $statement = $this->database->prepare(
+            "SELECT COUNT(*) FROM invoices i
+             WHERE i.status IN ({$placeholders}) AND i.paid_total = 0 AND i.archived_at IS NULL
+               AND NOT EXISTS (SELECT 1 FROM payments p WHERE p.invoice_id = i.id)
+               AND (i.stripe_checkout_session_id IS NULL OR i.stripe_checkout_session_id = '')
+               AND (i.paypal_order_id IS NULL OR i.paypal_order_id = '')"
+        );
+        $statement->execute(self::DISPOSABLE_INVOICE_STATUSES);
+        return (int) $statement->fetchColumn();
+    }
+
+    private function disposableInvoicePreview(int $limit): array
+    {
+        $placeholders = implode(',', array_fill(0, count(self::DISPOSABLE_INVOICE_STATUSES), '?'));
+        $statement = $this->database->prepare(
+            "SELECT i.id, i.public_id, i.invoice_number, i.status, i.invoice_date, i.subtotal, i.currency,
+                    c.display_name AS client_name, e.title AS engagement_title
+             FROM invoices i
+             LEFT JOIN clients c ON c.id = i.client_id
+             LEFT JOIN engagements e ON e.id = i.engagement_id
+             WHERE i.status IN ({$placeholders}) AND i.paid_total = 0 AND i.archived_at IS NULL
+               AND NOT EXISTS (SELECT 1 FROM payments p WHERE p.invoice_id = i.id)
+               AND (i.stripe_checkout_session_id IS NULL OR i.stripe_checkout_session_id = '')
+               AND (i.paypal_order_id IS NULL OR i.paypal_order_id = '')
+             ORDER BY i.created_at DESC
+             LIMIT " . (int) $limit
+        );
+        $statement->execute(self::DISPOSABLE_INVOICE_STATUSES);
+        return $statement->fetchAll();
+    }
+
+    private function disposableInvoiceIds(): array
+    {
+        $placeholders = implode(',', array_fill(0, count(self::DISPOSABLE_INVOICE_STATUSES), '?'));
+        $statement = $this->database->prepare(
+            "SELECT i.id FROM invoices i
+             WHERE i.status IN ({$placeholders}) AND i.paid_total = 0 AND i.archived_at IS NULL
+               AND NOT EXISTS (SELECT 1 FROM payments p WHERE p.invoice_id = i.id)
+               AND (i.stripe_checkout_session_id IS NULL OR i.stripe_checkout_session_id = '')
+               AND (i.paypal_order_id IS NULL OR i.paypal_order_id = '')"
+        );
+        $statement->execute(self::DISPOSABLE_INVOICE_STATUSES);
+        return array_map('intval', array_column($statement->fetchAll(), 'id'));
+    }
+
+    private function deleteDisposableInvoices(array $selected): array
+    {
+        $eligible = array_flip($this->disposableInvoiceIds());
+        $ids = $selected !== [] ? array_values(array_intersect($selected, array_keys($eligible))) : array_keys($eligible);
+        $blocked = $selected !== [] ? count($selected) - count($ids) : 0;
+        $deleted = 0;
+        $failed = 0;
+        foreach ($ids as $id) {
+            $this->database->beginTransaction();
+            try {
+                // Re-verified inline against the same safe criteria (never
+                // trust the eligible-id snapshot alone): the payments FK is
+                // ON DELETE RESTRICT regardless, so a real payment recorded
+                // between preview and execute still blocks this atomically.
+                $placeholders = implode(',', array_fill(0, count(self::DISPOSABLE_INVOICE_STATUSES), '?'));
+                $statement = $this->database->prepare(
+                    "DELETE FROM invoices WHERE id = ? AND status IN ({$placeholders}) AND paid_total = 0 AND archived_at IS NULL
+                     AND NOT EXISTS (SELECT 1 FROM payments p WHERE p.invoice_id = invoices.id)"
+                );
+                $statement->execute([$id, ...self::DISPOSABLE_INVOICE_STATUSES]);
+                if ($statement->rowCount() > 0) {
+                    $this->database->commit();
+                    $deleted++;
+                    $this->writeAudit('maintenance.invoice_delete', 'invoice', [$id], '1 deleted disposable invoice with no payment history.');
+                } else {
+                    $this->database->rollBack();
+                    $blocked++;
+                }
+            } catch (Throwable $error) {
+                if ($this->database->inTransaction()) $this->database->rollBack();
+                $failed++;
+            }
+        }
+        return ['action' => 'delete', 'category' => 'invoice_disposable', 'deleted' => $deleted, 'blocked' => $blocked, 'failed' => $failed];
+    }
+
+    private function countUncollectedInvoices(int $months): int
+    {
+        $statement = $this->database->prepare(
+            "SELECT COUNT(*) FROM invoices i
+             WHERE i.status IN ('open', 'past_due') AND i.archived_at IS NULL AND i.outstanding_balance > 0
+               AND i.due_date IS NOT NULL AND i.due_date < DATE_SUB(CURRENT_DATE(), INTERVAL :months MONTH)"
+        );
+        $statement->bindValue(':months', $months, PDO::PARAM_INT);
+        $statement->execute();
+        return (int) $statement->fetchColumn();
+    }
+
+    private function uncollectedInvoicePreview(int $months, int $limit): array
+    {
+        $statement = $this->database->prepare(
+            "SELECT i.id, i.public_id, i.invoice_number, i.status, i.due_date, i.outstanding_balance, i.currency,
+                    c.display_name AS client_name, e.title AS engagement_title
+             FROM invoices i
+             LEFT JOIN clients c ON c.id = i.client_id
+             LEFT JOIN engagements e ON e.id = i.engagement_id
+             WHERE i.status IN ('open', 'past_due') AND i.archived_at IS NULL AND i.outstanding_balance > 0
+               AND i.due_date IS NOT NULL AND i.due_date < DATE_SUB(CURRENT_DATE(), INTERVAL :months MONTH)
+             ORDER BY i.due_date ASC
+             LIMIT :limit"
+        );
+        $statement->bindValue(':months', $months, PDO::PARAM_INT);
+        $statement->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $statement->execute();
+        return $statement->fetchAll();
+    }
+
+    private function uncollectedInvoiceIds(int $months): array
+    {
+        $statement = $this->database->prepare(
+            "SELECT id FROM invoices
+             WHERE status IN ('open', 'past_due') AND archived_at IS NULL AND outstanding_balance > 0
+               AND due_date IS NOT NULL AND due_date < DATE_SUB(CURRENT_DATE(), INTERVAL :months MONTH)"
+        );
+        $statement->bindValue(':months', $months, PDO::PARAM_INT);
+        $statement->execute();
+        return array_map('intval', array_column($statement->fetchAll(), 'id'));
+    }
+
+    private function archiveUncollectedInvoices(array $selected): array
+    {
+        $eligible = array_flip($this->uncollectedInvoiceIds(6));
+        $ids = $selected !== [] ? array_values(array_intersect($selected, array_keys($eligible))) : array_keys($eligible);
+        $blocked = $selected !== [] ? count($selected) - count($ids) : 0;
+        if ($ids === []) {
+            return ['action' => 'archive', 'category' => 'invoice_uncollected', 'archived' => 0, 'blocked' => $blocked, 'failed' => 0];
+        }
+
+        $this->database->beginTransaction();
+        try {
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            // Only archived_at changes. status, outstanding_balance,
+            // paid_total, line items, and every payment/Stripe/PayPal
+            // reference are left exactly as they are.
+            $statement = $this->database->prepare(
+                "UPDATE invoices SET archived_at = CURRENT_TIMESTAMP(6)
+                 WHERE id IN ({$placeholders}) AND status IN ('open', 'past_due') AND archived_at IS NULL"
+            );
+            $statement->execute($ids);
+            $count = $statement->rowCount();
+            $this->database->commit();
+            $this->writeAudit('maintenance.invoice_archive', 'invoice', $ids, $this->summarizeCount($count, 'archived uncollected invoice', 'archived uncollected invoices'));
+            return ['action' => 'archive', 'category' => 'invoice_uncollected', 'archived' => $count, 'blocked' => $blocked, 'failed' => 0];
         } catch (Throwable $error) {
             if ($this->database->inTransaction()) $this->database->rollBack();
             throw $error;

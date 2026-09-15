@@ -3,6 +3,26 @@
   gap: 1.5rem;
 }
 
+.admin-portal-shell .maintenance-group {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-portal-shell .maintenance-group-title {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-soft);
+}
+
+.admin-portal-shell .maintenance-row-note {
+  margin: 4px 0 0;
+  color: var(--color-text-soft);
+  font-size: 0.76rem;
+}
+
 .admin-portal-shell .maintenance-card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
