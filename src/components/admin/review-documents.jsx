@@ -61,17 +61,17 @@ export function formatIntakeAnswer(field, response) {
   if (!response || response.applicability === "not_applicable") {
     return response?.applicability === "not_applicable"
       ? "Not applicable"
-      : "No answer submitted";
+      : "No response provided";
   }
   const { value } = response;
   if (value === null || value === undefined || value === "") {
-    return "No answer submitted";
+    return "No response provided";
   }
   if (Array.isArray(value)) {
     if (["person_refs", "address_refs"].includes(field.type)) {
       return "Submitted profile reference (historical details unavailable)";
     }
-    if (value.length === 0) return "No answer submitted";
+    if (value.length === 0) return "No response provided";
     return value
       .map(
         (item) =>
@@ -81,10 +81,20 @@ export function formatIntakeAnswer(field, response) {
       .join(", ");
   }
   if (typeof value === "object") return JSON.stringify(value);
+  if (["date", "datetime-local"].includes(field.type)) {
+    return formatReviewDate(value);
+  }
   return (
     field.options?.find((option) => option.value === value)?.label ||
     (field.type === "select" ? humanize(String(value)) : String(value))
   );
+}
+
+// A restrained visual cue for the (uncommon, optional-field) case where a
+// question simply has no answer to show -- it must never compete visually
+// with real client responses.
+export function isIntakeAnswerEmpty(field, response) {
+  return formatIntakeAnswer(field, response) === "No response provided";
 }
 
 // ---------------------------------------------------------------------
@@ -181,7 +191,9 @@ export function InlineFilePreview({
   return (
     <div className="review-file-preview">
       {isImage ? (
-        <img src={previewUrl} alt={filename || "Submitted file"} />
+        <div className="review-file-preview-frame">
+          <img src={previewUrl} alt={filename || "Submitted file"} />
+        </div>
       ) : (
         <iframe src={previewUrl} title={filename || "Submitted file"} />
       )}
@@ -263,12 +275,24 @@ export function IntakeSubmissionDocument({ data }) {
             <section className="review-print-section" key={module.key}>
               <h2>{module.title}</h2>
               <dl className="review-print-answers">
-                {visibleFields.map((field) => (
-                  <div key={field.key}>
-                    <dt>{field.label}</dt>
-                    <dd>{formatIntakeAnswer(field, responses[field.key])}</dd>
-                  </div>
-                ))}
+                {visibleFields.map((field) => {
+                  const response = responses[field.key];
+                  const empty = isIntakeAnswerEmpty(field, response);
+                  return (
+                    <div
+                      key={field.key}
+                      className={empty ? "review-print-answer-empty" : ""}
+                    >
+                      <dt>{field.label}</dt>
+                      {field.helper ? (
+                        <p className="review-print-question-helper">
+                          {field.helper}
+                        </p>
+                      ) : null}
+                      <dd>{formatIntakeAnswer(field, response)}</dd>
+                    </div>
+                  );
+                })}
               </dl>
             </section>
           );
@@ -392,13 +416,22 @@ export function DocumentRequestDocument({ document, submissions = [] }) {
                   className="review-file-version review-print-hide"
                 >
                   <div className="review-file-version-meta">
-                    <strong>{submission.original_filename}</strong>
-                    <span>
-                      {index === 0 ? "Latest — " : ""}version{" "}
-                      {submission.version_number} · uploaded{" "}
+                    <div className="review-file-version-identity">
+                      {index === 0 ? (
+                        <span className="review-file-version-latest">
+                          Latest
+                        </span>
+                      ) : null}
+                      <strong>{submission.original_filename}</strong>
+                    </div>
+                    <span className="review-file-version-detail">
+                      Version {submission.version_number} · uploaded{" "}
                       {formatReviewDate(submission.submitted_at)}
                       {submission.uploaded_by
                         ? ` by ${submission.uploaded_by}`
+                        : ""}
+                      {submission.status
+                        ? ` · ${humanize(submission.status)}`
                         : ""}
                     </span>
                   </div>
@@ -413,6 +446,73 @@ export function DocumentRequestDocument({ document, submissions = [] }) {
             </div>
           )}
         </section>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------
+// Task detail workspace -- same editorial language as the document
+// request viewer, not the small sidebar-drawer card treatment.
+// ---------------------------------------------------------------------
+
+export function TaskDetailDocument({ task, clientName, engagementTitle }) {
+  return (
+    <div className="review-print-sheet" aria-label="Task detail">
+      <div className="review-print-page review-print-page-compact">
+        <header className="review-print-header">
+          <div className="review-print-brand">
+            <img
+              src="/assets/logos/alchemize-logo-dark.png"
+              alt="Alchemize Business Services"
+              className="review-print-logo"
+            />
+          </div>
+          <div className="review-print-title-block">
+            <h1 className="review-print-title">Task</h1>
+            <p className="review-print-subtitle">{task.title}</p>
+          </div>
+        </header>
+
+        <dl className="review-print-meta">
+          <div>
+            <dt>Client</dt>
+            <dd>{clientName}</dd>
+          </div>
+          <div>
+            <dt>Engagement / service</dt>
+            <dd>{engagementTitle || "No engagement"}</dd>
+          </div>
+          <div>
+            <dt>Status</dt>
+            <dd>{humanize(task.status)}</dd>
+          </div>
+          <div>
+            <dt>Priority</dt>
+            <dd>{humanize(task.priority)}</dd>
+          </div>
+          <div>
+            <dt>Due</dt>
+            <dd>{formatReviewDate(task.due_date)}</dd>
+          </div>
+          {task.completed_at ? (
+            <div>
+              <dt>Completed</dt>
+              <dd>{formatReviewDate(task.completed_at)}</dd>
+            </div>
+          ) : null}
+        </dl>
+
+        {task.description ? (
+          <section className="review-print-section">
+            <h2>Instructions</h2>
+            <p>{task.description}</p>
+          </section>
+        ) : (
+          <p className="review-print-answer-empty">
+            No additional instructions were provided for this task.
+          </p>
+        )}
       </div>
     </div>
   );

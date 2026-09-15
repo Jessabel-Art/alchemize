@@ -162,7 +162,7 @@ function buildIntakeDetail(overrides = {}) {
         uploaded_at: "2026-09-02 08:00:00",
       },
     ],
-    definition: intakeDefinition,
+    definition: overrides.definition || intakeDefinition,
   };
 }
 const documentVersions = {
@@ -738,4 +738,168 @@ test("Review filters by type via the legacy ?type= redirect query param", async 
   await page.waitForFunction(() => Boolean(window.adminStore));
   await expect(page.getByText(/Web Digital intake/i)).toBeVisible();
   await expect(page.getByText("Logo files")).toHaveCount(0);
+});
+
+test("intake sections and questions render in the form definition's own order, and an unanswered optional question is shown restrained", async ({
+  page,
+}) => {
+  await mockAdmin(page);
+  await page.route("**/alchemize-api.php?*", async (route) => {
+    const url = new URL(route.request().url());
+    if (url.searchParams.get("route") === "portal-admin/intakes/intake-pub-1") {
+      return route.fulfill({
+        json: {
+          data: buildIntakeDetail({
+            assignment: {
+              module_keys: ["zeta_section", "alpha_section"],
+            },
+            responses: {
+              // No entry at all for zz_field -- an unanswered optional
+              // question, not merely an empty string. aa_field has a real
+              // answer so only zz_field should render as empty.
+              aa_field: {
+                value: "Yes, this is the aye answer.",
+                currently_applicable: true,
+              },
+            },
+            requirements: [],
+            definition: {
+              key: "web_digital",
+              label: "Web & Digital Solutions",
+              modules: [
+                {
+                  key: "zeta_section",
+                  title: "Zeta section",
+                  fields: [
+                    {
+                      key: "zz_field",
+                      label: "Is this the zed question?",
+                      type: "select",
+                    },
+                  ],
+                },
+                {
+                  key: "alpha_section",
+                  title: "Alpha section",
+                  fields: [
+                    {
+                      key: "aa_field",
+                      label: "Is this the aye question?",
+                      type: "text",
+                    },
+                  ],
+                },
+              ],
+            },
+          }),
+        },
+      });
+    }
+    return route.fallback();
+  });
+  await page.goto("/admin/client-requests/");
+  await page.waitForFunction(() => Boolean(window.adminStore));
+  await page
+    .locator("tr", { hasText: "Web Digital intake" })
+    .getByRole("button", { name: "View" })
+    .click();
+  const dialog = page.getByRole("dialog", { name: "Intake submission" });
+  await expect(dialog).toBeVisible();
+
+  // Section/question order follows the form definition's own array order
+  // (Zeta before Alpha), not alphabetical or response order.
+  const headings = dialog.locator(".review-print-section h2");
+  await expect(headings).toHaveCount(2);
+  await expect(headings.nth(0)).toHaveText("Zeta section");
+  await expect(headings.nth(1)).toHaveText("Alpha section");
+
+  // The unanswered optional question shows a restrained fallback, marked
+  // for muted styling, rather than blank space or a raw missing value.
+  const emptyAnswer = dialog.locator(".review-print-answer-empty");
+  await expect(emptyAnswer).toHaveCount(1);
+  await expect(emptyAnswer).toContainText("Is this the zed question?");
+  await expect(emptyAnswer).toContainText("No response provided");
+});
+
+test("the action bar shows Accept as primary and Send Back as secondary when a submission is awaiting Admin Review", async ({
+  page,
+}) => {
+  await mockAdmin(page);
+  await page.goto("/admin/client-requests/");
+  await page.waitForFunction(() => Boolean(window.adminStore));
+  await page
+    .locator("tr", { hasText: "Logo files" })
+    .getByRole("button", { name: "View" })
+    .click();
+  const dialog = page.getByRole("dialog", { name: "Document request" });
+  await expect(dialog.getByRole("button", { name: "Accept" })).toHaveClass(
+    /primary-button/,
+  );
+  await expect(dialog.getByRole("button", { name: "Send Back" })).toHaveClass(
+    /secondary-button/,
+  );
+});
+
+test("a Completed document shows no Mark Completed / Accept / Send Back actions", async ({
+  page,
+}) => {
+  const { state } = await mockAdmin(page);
+  state.documents[0].status = "archived";
+  await page.goto("/admin/client-requests/");
+  await page.waitForFunction(() => Boolean(window.adminStore));
+  await page
+    .locator("tr", { hasText: "Logo files" })
+    .getByRole("button", { name: "View" })
+    .click();
+  const dialog = page.getByRole("dialog", { name: "Document request" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "Accept" })).toHaveCount(0);
+  await expect(
+    dialog.getByRole("button", { name: "Mark Completed" }),
+  ).toHaveCount(0);
+  await expect(dialog.getByRole("button", { name: "Send Back" })).toHaveCount(
+    0,
+  );
+  // The table itself agrees: no Send Back offered on a completed row.
+  await expect(
+    page
+      .locator("tr", { hasText: "Logo files" })
+      .getByRole("button", { name: "Send Back" }),
+  ).toHaveCount(0);
+});
+
+test("task View shows the full editorial workspace (client, engagement, status, priority, due) instead of a mostly-empty card", async ({
+  page,
+}) => {
+  await mockAdmin(page);
+  await page.goto("/admin/client-requests/");
+  await page.waitForFunction(() => Boolean(window.adminStore));
+  await page
+    .locator("tr", { hasText: "Verify ID document" })
+    .getByRole("button", { name: "View" })
+    .click();
+  const dialog = page.getByRole("dialog", { name: "Task detail" });
+  await expect(dialog.getByText("Test Client", { exact: true })).toBeVisible();
+  await expect(dialog.getByText("Website Build")).toBeVisible();
+  await expect(dialog.getByText("In Progress")).toBeVisible();
+  await expect(dialog.getByText("Normal")).toBeVisible();
+});
+
+test("document View shows the submitted file's identity, version, uploader, upload date, and review state", async ({
+  page,
+}) => {
+  await mockAdmin(page);
+  await page.goto("/admin/client-requests/");
+  await page.waitForFunction(() => Boolean(window.adminStore));
+  await page
+    .locator("tr", { hasText: "Logo files" })
+    .getByRole("button", { name: "View" })
+    .click();
+  const dialog = page.getByRole("dialog", { name: "Document request" });
+  await expect(dialog.getByText("Latest", { exact: true })).toBeVisible();
+  await expect(dialog.getByText("logo-files.pdf")).toBeVisible();
+  const versionDetail = dialog.locator(".review-file-version-detail");
+  await expect(versionDetail).toContainText("Version 1");
+  await expect(versionDetail).toContainText("by Test Client");
+  await expect(versionDetail).toContainText("Received");
 });

@@ -41,6 +41,7 @@ import {
   DocumentRequestDocument,
   IntakeSubmissionDocument,
   ReviewDocumentViewer,
+  TaskDetailDocument,
   formatReviewDate,
   resolveWorkflowActions,
   resolveWorkflowStage,
@@ -7237,13 +7238,14 @@ function ClientRequestsPage() {
         </div>
       ) : null}
 
-      {reviewState.open &&
-      (reviewState.type === "Document" || reviewState.type === "Intake") ? (
+      {reviewState.open ? (
         <ReviewDocumentViewer
           title={
             reviewState.type === "Document"
               ? "Document request"
-              : "Intake submission"
+              : reviewState.type === "Intake"
+                ? "Intake submission"
+                : "Task detail"
           }
           printable={reviewState.type === "Intake"}
           onClose={closeReview}
@@ -7253,10 +7255,22 @@ function ClientRequestsPage() {
                 {resolveWorkflowActions(
                   reviewState.row.type,
                   reviewState.row.status,
-                ).canAccept ? (
+                ).canSendBack ? (
                   <button
                     type="button"
                     className="secondary-button"
+                    onClick={() => openSendBack(reviewState.row)}
+                  >
+                    Send Back
+                  </button>
+                ) : null}
+                {resolveWorkflowActions(
+                  reviewState.row.type,
+                  reviewState.row.status,
+                ).canAccept ? (
+                  <button
+                    type="button"
+                    className="primary-button"
                     onClick={() => runWorkflowAction(reviewState.row, "accept")}
                   >
                     Accept
@@ -7268,24 +7282,12 @@ function ClientRequestsPage() {
                 ).canComplete ? (
                   <button
                     type="button"
-                    className="secondary-button"
+                    className="primary-button"
                     onClick={() =>
                       runWorkflowAction(reviewState.row, "complete")
                     }
                   >
                     Mark Completed
-                  </button>
-                ) : null}
-                {resolveWorkflowActions(
-                  reviewState.row.type,
-                  reviewState.row.status,
-                ).canSendBack ? (
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    onClick={() => openSendBack(reviewState.row)}
-                  >
-                    Send Back
                   </button>
                 ) : null}
               </>
@@ -7310,6 +7312,22 @@ function ClientRequestsPage() {
             />
           ) : reviewState.type === "Intake" && reviewState.data ? (
             <IntakeSubmissionDocument data={reviewState.data} />
+          ) : reviewState.type === "Task" && reviewState.data ? (
+            <TaskDetailDocument
+              task={reviewState.data.task}
+              clientName={
+                snapshot.clients.find(
+                  (client) =>
+                    client.id === String(reviewState.data.task.client_id),
+                )?.displayName || "Unknown client"
+              }
+              engagementTitle={
+                snapshot.engagements.find(
+                  (eng) =>
+                    eng.id === String(reviewState.data.task.engagement_id),
+                )?.title
+              }
+            />
           ) : null}
         </ReviewDocumentViewer>
       ) : null}
@@ -7444,102 +7462,6 @@ function ClientRequestsPage() {
           </aside>
         </div>
       ) : null}
-
-      <AdminDetailDrawer
-        open={reviewState.open && reviewState.type === "Task"}
-        title="Task detail"
-        onClose={closeReview}
-      >
-        {reviewState.loading ? (
-          <p role="status">Loading…</p>
-        ) : reviewState.error ? (
-          <div className="admin-toast error" role="alert">
-            {reviewState.error}
-          </div>
-        ) : reviewState.type === "Task" && reviewState.data ? (
-          <div className="admin-detail-grid">
-            {workflowActionError ? (
-              <div className="admin-toast error full-span" role="alert">
-                {workflowActionError}
-              </div>
-            ) : null}
-            <div className="detail-block">
-              <h3>Overview</h3>
-              <dl>
-                <div>
-                  <dt>Task</dt>
-                  <dd>{reviewState.data.task.title}</dd>
-                </div>
-                <div>
-                  <dt>Client</dt>
-                  <dd>
-                    {snapshot.clients.find(
-                      (client) =>
-                        client.id === String(reviewState.data.task.client_id),
-                    )?.displayName || "Unknown client"}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Related engagement / service</dt>
-                  <dd>
-                    {snapshot.engagements.find(
-                      (eng) =>
-                        eng.id === String(reviewState.data.task.engagement_id),
-                    )?.title || "No engagement"}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Status</dt>
-                  <dd>
-                    <AdminStatusBadge
-                      status={humanizeStatus(reviewState.data.task.status)}
-                      tone={
-                        statusTone[
-                          humanizeStatus(reviewState.data.task.status)
-                        ] || "neutral"
-                      }
-                    />
-                  </dd>
-                </div>
-                <div>
-                  <dt>Priority</dt>
-                  <dd>{humanizeStatus(reviewState.data.task.priority)}</dd>
-                </div>
-                <div>
-                  <dt>Due</dt>
-                  <dd>{formatDate(reviewState.data.task.due_date)}</dd>
-                </div>
-              </dl>
-            </div>
-            {reviewState.data.task.description ? (
-              <div className="detail-block">
-                <h3>Description</h3>
-                <p>{reviewState.data.task.description}</p>
-              </div>
-            ) : null}
-            {reviewState.row &&
-            resolveWorkflowActions(reviewState.row.type, reviewState.row.status)
-              .canComplete ? (
-              <div className="full-span admin-header-actions">
-                <button
-                  type="button"
-                  className="secondary-button"
-                  onClick={() => openSendBack(reviewState.row)}
-                >
-                  Send Back
-                </button>
-                <button
-                  type="button"
-                  className="primary-button"
-                  onClick={() => runWorkflowAction(reviewState.row, "complete")}
-                >
-                  Mark Completed
-                </button>
-              </div>
-            ) : null}
-          </div>
-        ) : null}
-      </AdminDetailDrawer>
     </div>
   );
 }
@@ -9161,7 +9083,7 @@ function AppointmentManagementPage() {
     const needsDate = ["blocked", "time_off", "date_override"].includes(
       nextKind,
     );
-    const requiresTimes = !["blocked"].includes(nextKind);
+    const requiresTimes = !["full_day", "time_off"].includes(nextKind);
 
     if (needsDate && !availabilityDraft.dateOverride) {
       setAvailabilityError("Choose the date for this exception.");
@@ -9174,6 +9096,14 @@ function AppointmentManagementPage() {
       setAvailabilityError(
         "Start and end times are required for this exception type.",
       );
+      return;
+    }
+
+    if (
+      requiresTimes &&
+      availabilityDraft.endTime <= availabilityDraft.startTime
+    ) {
+      setAvailabilityError("End time must be after start time.");
       return;
     }
 
