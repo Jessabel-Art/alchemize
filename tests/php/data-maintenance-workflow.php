@@ -74,9 +74,15 @@ function makeClient(AlchemizeClientRepository $repo, string $suffix, string $tag
 }
 
 // --- Inactive prospects: one genuinely stale, one recently active ----------
-$staleProspectId = makeClient($clientRepo, $suffix, 'stale-prospect', 'prospective', '-200 DAY');
-$freshProspectId = makeClient($clientRepo, $suffix, 'fresh-prospect', 'prospective', '-2 DAY');
-$activeClientId = makeClient($clientRepo, $suffix, 'active-client', 'active', '-200 DAY');
+// The eligibility threshold is a real, admin-configured setting (it may
+// not be the 90-day default) -- read it and place fixtures safely on
+// either side of it, rather than assuming a fixed offset.
+$thresholdDays = (int) $service->overview(6)['prospect_threshold_days'];
+verifyWorkflow($thresholdDays >= 1, 'Could not resolve the configured prospect follow-up threshold');
+$staleOffset = '-' . ($thresholdDays + 50) . ' DAY';
+$staleProspectId = makeClient($clientRepo, $suffix, 'stale-prospect', 'prospective', $staleOffset);
+$freshProspectId = makeClient($clientRepo, $suffix, 'fresh-prospect', 'prospective', '-1 HOUR');
+$activeClientId = makeClient($clientRepo, $suffix, 'active-client', 'active', $staleOffset);
 
 $cleanupClientIds = [$staleProspectId, $freshProspectId, $activeClientId];
 $cleanupEngagementIds = [];
