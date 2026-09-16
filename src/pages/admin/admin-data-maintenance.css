@@ -233,6 +233,27 @@
   margin-top: 6px;
 }
 
+.admin-portal-shell .maintenance-purge-breakdown {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 4px 16px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-portal-shell .maintenance-purge-breakdown li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.8rem;
+}
+
+.admin-portal-shell .maintenance-purge-breakdown li span:last-child {
+  font-weight: 600;
+}
+
 @media (max-width: 640px) {
   .admin-portal-shell .maintenance-secondary-row {
     flex-direction: column;

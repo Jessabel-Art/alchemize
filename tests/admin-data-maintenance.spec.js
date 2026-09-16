@@ -34,6 +34,13 @@ const baseCategories = {
     count: 3,
     action: "purge",
   },
+  test_records: {
+    title: "Test / Demo Records",
+    description:
+      "Client and lead records created for development or QA testing, identified by a reserved test email domain (example.com, example.test, and similar). Permanently removes the record and its dependent business data -- engagements, tasks, appointments, invoices, payments, documents, messages, notifications, notes, and activity history. Legitimate production/business records are never affected.",
+    count: 2,
+    action: "purge",
+  },
   orphaned_records: {
     title: "Orphaned Records",
     description:
@@ -50,6 +57,7 @@ function overviewPayload(overrides = {}) {
     expired_links: baseCategories.expired_links.count,
     expired_invitations: baseCategories.expired_invitations.count,
     expired_tokens: baseCategories.expired_tokens.count,
+    test_records: baseCategories.test_records.count,
     orphaned_records: 0,
     ...overrides,
   };
@@ -147,6 +155,27 @@ const expiredTokenRecords = [
   },
 ];
 
+const testRecordFixtures = [
+  {
+    id: 501,
+    public_id: "test-client-501",
+    display_name: "ZZZ Maintenance QA Client",
+    primary_email: "qa.client@example.test",
+    client_type: "individual",
+    status: "active",
+    created_at: "2026-08-01 00:00:00",
+  },
+  {
+    id: 502,
+    public_id: "test-client-502",
+    display_name: "ZZZ Maintenance QA Business",
+    primary_email: "qa.business@example.com",
+    client_type: "business",
+    status: "prospective",
+    created_at: "2026-08-02 00:00:00",
+  },
+];
+
 const previewByCategory = {
   inactive_prospects: {
     category: "inactive_prospects",
@@ -177,6 +206,13 @@ const previewByCategory = {
     action: "purge",
     count: expiredTokenRecords.length,
     records: expiredTokenRecords,
+  },
+  test_records: {
+    category: "test_records",
+    action: "purge",
+    count: testRecordFixtures.length,
+    records: testRecordFixtures,
+    orphan_test_leads: 3,
   },
   orphaned_records: {
     category: "orphaned_records",
@@ -221,6 +257,27 @@ async function mockAdmin(page, { onExecute } = {}) {
       const payload = route.request().postDataJSON();
       executeCalls.push(payload);
       onExecute?.(payload);
+      if (payload.category === "test_records") {
+        const clientCount = payload.selected_ids?.length || 0;
+        return route.fulfill({
+          json: {
+            data: {
+              action: payload.action,
+              category: payload.category,
+              deleted: {
+                clients: clientCount,
+                leads: 3,
+                engagements: clientCount,
+                appointments: clientCount + 3,
+                invoices: clientCount,
+                messages: clientCount * 2,
+              },
+              blocked: 0,
+              failed: 0,
+            },
+          },
+        });
+      }
       const resultKey = {
         inactive_prospects: "archived",
         completed_engagements: "archived",
@@ -440,6 +497,79 @@ test("expired token purge requires typed confirmation and explains active tokens
     });
     expect(calls.at(-1).selected_ids).toHaveLength(2);
   }).toPass();
+});
+
+test("Purge Test Records card is listed under Testing & QA with the real candidate count", async ({
+  page,
+}) => {
+  await mockAdmin(page);
+  await page.goto("/admin/settings?section=data-maintenance");
+  await expect(
+    page.getByRole("heading", { name: "Testing & QA", exact: true }),
+  ).toBeVisible();
+  const purgeCard = page.locator(".maintenance-card", {
+    hasText: "Purge Test Records",
+  });
+  await expect(purgeCard.getByText("2 candidates")).toBeVisible();
+  await expect(purgeCard.getByText(/reserved test email domain/)).toBeVisible();
+});
+
+test("purge test records requires the PURGE TEST DATA phrase and shows a category breakdown on success", async ({
+  page,
+}) => {
+  const calls = await mockAdmin(page);
+  await page.goto("/admin/settings?section=data-maintenance");
+  await page
+    .locator(".maintenance-card", { hasText: "Purge Test Records" })
+    .getByRole("button", { name: /Review/ })
+    .click();
+  await expect(page.getByText("qa.client@example.test")).toBeVisible();
+  await expect(
+    page.getByText(
+      "3 never-converted leads on a reserved test email domain will also be removed automatically when you purge.",
+    ),
+  ).toBeVisible();
+
+  const rows = page.locator("tbody tr");
+  await rows.nth(0).locator('input[type="checkbox"]').check();
+  await page.getByRole("button", { name: /Purge selected \(1\)/ }).click();
+
+  await expect(page.getByText("This action cannot be undone.")).toBeVisible();
+  await expect(
+    page.getByText("Legitimate production and business records are never"),
+  ).toBeVisible();
+
+  // The final purge button must stay gated until the exact phrase is typed.
+  const purgeButton = page.getByRole("button", {
+    name: "Purge",
+    exact: true,
+  });
+  await purgeButton.click();
+  await expect(
+    page.getByText("Type PURGE TEST DATA to confirm."),
+  ).toBeVisible();
+  expect(calls).toHaveLength(0);
+
+  await page
+    .getByLabel("Type PURGE TEST DATA to confirm")
+    .fill("PURGE TEST DATA");
+  await purgeButton.click();
+
+  await expect(async () => {
+    expect(calls.at(-1)).toMatchObject({
+      category: "test_records",
+      action: "purge",
+      confirm: "PURGE TEST DATA",
+    });
+    expect(calls.at(-1).selected_ids).toHaveLength(1);
+  }).toPass();
+
+  await expect(
+    page.getByText("Test records purged successfully.", { exact: false }),
+  ).toBeVisible();
+  const breakdown = page.locator(".maintenance-purge-breakdown");
+  await expect(breakdown.getByText("Clients", { exact: true })).toBeVisible();
+  await expect(breakdown.getByText("Leads", { exact: true })).toBeVisible();
 });
 
 test("a failed maintenance action surfaces an error instead of failing silently", async ({

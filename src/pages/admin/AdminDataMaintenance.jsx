@@ -160,6 +160,42 @@ const categoryMeta = {
       "No stale, uncollected invoices currently require archival review.",
     resultKey: "archived",
   },
+  test_records: {
+    title: "Purge Test Records",
+    reviewNoun: "test client",
+    reviewNounPlural: "test clients",
+    actionLabel: "Purge",
+    actionVerb: "purge",
+    confirmTitle: "Purge test records",
+    confirmBody:
+      "This permanently removes this test client record and its dependent data -- engagements, tasks, appointments, invoices, payments, documents, messages, notifications, notes, and activity history. Only records using a reserved test email domain (example.com, example.test, and similar) qualify; legitimate production and business records are never affected. This action cannot be undone.",
+    confirmBodyPlural:
+      "This permanently removes these test client records and their dependent data -- engagements, tasks, appointments, invoices, payments, documents, messages, notifications, notes, and activity history -- plus any never-converted lead records on the same test email domains. Only records using a reserved test email domain (example.com, example.test, and similar) qualify; legitimate production and business records are never affected. This action cannot be undone.",
+    typedConfirm: "PURGE TEST DATA",
+    emptyTitle: "No test records found",
+    emptyDescription:
+      "No client or lead records using a reserved test email domain were found.",
+    resultKey: "deleted",
+  },
+};
+
+const testPurgeLabels = {
+  clients: "Clients",
+  leads: "Leads",
+  engagements: "Engagements",
+  tasks: "Tasks",
+  appointments: "Appointments",
+  appointment_scheduling_links: "Scheduling links",
+  documents: "Documents",
+  document_submissions: "Document submissions",
+  intake_assignments: "Intake assignments",
+  invoices: "Invoices",
+  payments: "Payments",
+  conversations: "Conversations",
+  messages: "Messages",
+  notifications: "Notifications",
+  notes: "Notes",
+  activity_events: "Activity events",
 };
 
 // Normalizes both category shapes -- a single top-level action
@@ -632,6 +668,51 @@ function ReviewRows({ category, records, selected, onToggle, onSoloAction }) {
       </AdminTable>
     );
   }
+  if (category === "test_records") {
+    return (
+      <AdminTable>
+        <thead>
+          <tr>
+            <th aria-label="Select" />
+            <th>Client</th>
+            <th>Email</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Created</th>
+            <th aria-label="Actions" />
+          </tr>
+        </thead>
+        <tbody>
+          {records.map((row) => (
+            <tr key={row.id}>
+              <td>
+                <input
+                  type="checkbox"
+                  aria-label={`Select ${row.display_name}`}
+                  checked={selected.has(row.id)}
+                  onChange={() => onToggle(row.id)}
+                />
+              </td>
+              <td>{row.display_name}</td>
+              <td>{row.primary_email || "—"}</td>
+              <td>{row.client_type}</td>
+              <td>{row.status}</td>
+              <td>{dateLabel(row.created_at)}</td>
+              <td>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => onSoloAction(row.id, "act")}
+                >
+                  {meta.actionLabel}
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </AdminTable>
+    );
+  }
   return null;
 }
 
@@ -703,6 +784,7 @@ export default function AdminDataMaintenance() {
         error: "",
         records: result.records || [],
         selected: new Set(),
+        orphanTestLeads: result.orphan_test_leads || 0,
       });
     } catch (error) {
       setReview({
@@ -711,6 +793,7 @@ export default function AdminDataMaintenance() {
         error: error.message || "This review could not be loaded.",
         records: [],
         selected: new Set(),
+        orphanTestLeads: 0,
       });
     }
   };
@@ -778,24 +861,47 @@ export default function AdminDataMaintenance() {
         selected_ids: confirm.ids,
         confirm: actionMeta.typedConfirm ? confirm.typedValue : undefined,
       });
-      const affected = result?.[actionMeta.resultKey] ?? 0;
       const blocked = result?.blocked ?? 0;
-      const verbPast =
-        confirm.action === "archive"
-          ? "archived"
-          : confirm.action === "delete"
-            ? "deleted"
-            : confirm.action === "purge"
-              ? "purged"
-              : "removed";
-      setFeedback({
-        type: "success",
-        message:
-          `${affected} ${affected === 1 ? meta.reviewNoun : meta.reviewNounPlural} ${verbPast}.` +
-          (blocked > 0
-            ? ` ${blocked} could not be ${verbPast} and were left unchanged.`
-            : ""),
-      });
+      if (confirm.category === "test_records") {
+        const deleted = result?.deleted || {};
+        const total = Object.values(deleted).reduce(
+          (sum, count) => sum + (count || 0),
+          0,
+        );
+        setFeedback({
+          type: "success",
+          message:
+            `Test records purged successfully. ${total} record${total === 1 ? "" : "s"} removed.` +
+            (blocked > 0
+              ? ` ${blocked} selected record${blocked === 1 ? "" : "s"} no longer qualified as test records and were left unchanged.`
+              : ""),
+          breakdown: Object.entries(deleted)
+            .filter(([, count]) => count > 0)
+            .map(([key, count]) => ({
+              key,
+              label: testPurgeLabels[key] || key,
+              count,
+            })),
+        });
+      } else {
+        const affected = result?.[actionMeta.resultKey] ?? 0;
+        const verbPast =
+          confirm.action === "archive"
+            ? "archived"
+            : confirm.action === "delete"
+              ? "deleted"
+              : confirm.action === "purge"
+                ? "purged"
+                : "removed";
+        setFeedback({
+          type: "success",
+          message:
+            `${affected} ${affected === 1 ? meta.reviewNoun : meta.reviewNounPlural} ${verbPast}.` +
+            (blocked > 0
+              ? ` ${blocked} could not be ${verbPast} and were left unchanged.`
+              : ""),
+        });
+      }
       setReview((current) => {
         if (!current || current.category !== confirm.category) return current;
         const idSet = new Set(confirm.ids);
@@ -842,6 +948,10 @@ export default function AdminDataMaintenance() {
       label: "Billing",
       categories: ["invoice_disposable", "invoice_uncollected"],
     },
+    {
+      label: "Testing & QA",
+      categories: ["test_records"],
+    },
   ];
 
   const data = overview.data;
@@ -854,7 +964,7 @@ export default function AdminDataMaintenance() {
         Review and manage records that are no longer part of active operations.
       </p>
       {feedback ? (
-        <p
+        <div
           role={feedback.type === "error" ? "alert" : "status"}
           className={
             feedback.type === "error"
@@ -862,8 +972,18 @@ export default function AdminDataMaintenance() {
               : "admin-feedback success"
           }
         >
-          {feedback.message}
-        </p>
+          <p>{feedback.message}</p>
+          {feedback.breakdown && feedback.breakdown.length > 0 ? (
+            <ul className="maintenance-purge-breakdown">
+              {feedback.breakdown.map((item) => (
+                <li key={item.key}>
+                  <span>{item.label}</span>
+                  <span>{item.count}</span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
       ) : null}
       {overview.loading ? (
         <p role="status">Loading maintenance overview…</p>
@@ -1072,51 +1192,64 @@ export default function AdminDataMaintenance() {
             <p role="alert" className="admin-feedback">
               {review.error}
             </p>
-          ) : review.records.length === 0 ? (
-            <AdminEmptyState
-              title={categoryMeta[review.category].emptyTitle}
-              description={categoryMeta[review.category].emptyDescription}
-            />
           ) : (
             <>
-              <div className="maintenance-review-toolbar">
-                <p>
-                  {review.records.length} record
-                  {review.records.length === 1 ? "" : "s"} require review
+              {review.category === "test_records" &&
+              review.orphanTestLeads > 0 ? (
+                <p className="maintenance-row-note">
+                  {review.orphanTestLeads} never-converted lead
+                  {review.orphanTestLeads === 1 ? "" : "s"} on a reserved test
+                  email domain will also be removed automatically when you
+                  purge.
                 </p>
-                <div className="maintenance-row-actions">
-                  {categoryActions(categoryMeta[review.category]).map(
-                    ([verb, actionMeta]) => (
-                      <button
-                        key={verb}
-                        type="button"
-                        className="primary-button"
-                        disabled={review.selected.size === 0}
-                        onClick={() =>
-                          requestConfirm(
-                            review.category,
-                            verb,
-                            Array.from(review.selected),
-                          )
-                        }
-                      >
-                        {actionMeta.label} selected ({review.selected.size})
-                      </button>
-                    ),
-                  )}
-                </div>
-              </div>
-              <div className="maintenance-table-wrap">
-                <ReviewRows
-                  category={review.category}
-                  records={review.records}
-                  selected={review.selected}
-                  onToggle={toggleSelect}
-                  onSoloAction={(id, kind) =>
-                    onSoloAction(review.category, id, kind)
-                  }
+              ) : null}
+              {review.records.length === 0 ? (
+                <AdminEmptyState
+                  title={categoryMeta[review.category].emptyTitle}
+                  description={categoryMeta[review.category].emptyDescription}
                 />
-              </div>
+              ) : (
+                <>
+                  <div className="maintenance-review-toolbar">
+                    <p>
+                      {review.records.length} record
+                      {review.records.length === 1 ? "" : "s"} require review
+                    </p>
+                    <div className="maintenance-row-actions">
+                      {categoryActions(categoryMeta[review.category]).map(
+                        ([verb, actionMeta]) => (
+                          <button
+                            key={verb}
+                            type="button"
+                            className="primary-button"
+                            disabled={review.selected.size === 0}
+                            onClick={() =>
+                              requestConfirm(
+                                review.category,
+                                verb,
+                                Array.from(review.selected),
+                              )
+                            }
+                          >
+                            {actionMeta.label} selected ({review.selected.size})
+                          </button>
+                        ),
+                      )}
+                    </div>
+                  </div>
+                  <div className="maintenance-table-wrap">
+                    <ReviewRows
+                      category={review.category}
+                      records={review.records}
+                      selected={review.selected}
+                      onToggle={toggleSelect}
+                      onSoloAction={(id, kind) =>
+                        onSoloAction(review.category, id, kind)
+                      }
+                    />
+                  </div>
+                </>
+              )}
             </>
           )
         ) : null}

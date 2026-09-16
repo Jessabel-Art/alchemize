@@ -15,6 +15,13 @@ final class AlchemizeDataMaintenanceService
     private const CLIENT_REQUEST_STALE_DAYS = 30;
     private const DISPOSABLE_INVOICE_STATUSES = ['draft', 'cancelled', 'voided'];
 
+    // RFC 2606 reserved domains -- these can never belong to a real client
+    // (they are non-routable/reserved for documentation and testing use) and
+    // are already the exact convention this repo's own test fixtures use
+    // (tests/php/data-maintenance-workflow.php, Playwright specs, etc.). A
+    // deterministic domain match, not fuzzy name/keyword matching.
+    private const TEST_EMAIL_DOMAINS = ['example.com', 'example.net', 'example.org', 'example.edu', 'example.test', 'example.invalid'];
+
     public function __construct(
         private readonly PDO $database,
         private readonly int $actorUserId,
@@ -46,6 +53,7 @@ final class AlchemizeDataMaintenanceService
             'invoice_disposable' => $this->countDisposableInvoices(),
             'invoice_uncollected' => $this->countUncollectedInvoices($thresholdMonths),
             'expired_tokens' => $this->countExpiredTokens(),
+            'test_records' => $this->countTestClients() + $this->countOrphanTestLeads(),
             'orphaned_records' => 0,
         ];
 
@@ -102,6 +110,12 @@ final class AlchemizeDataMaintenanceService
                     'title' => 'Expired Security Tokens',
                     'description' => 'Expired, unused authentication links (password reset, portal setup, email change).',
                     'count' => $summary['expired_tokens'],
+                    'action' => 'purge',
+                ],
+                'test_records' => [
+                    'title' => 'Test / Demo Records',
+                    'description' => 'Client and lead records created for development or QA testing, identified by a reserved test email domain (example.com, example.test, and similar). Permanently removes the record and its dependent business data -- engagements, tasks, appointments, invoices, payments, documents, messages, notifications, notes, and activity history. Legitimate production/business records are never affected.',
+                    'count' => $summary['test_records'],
                     'action' => 'purge',
                 ],
                 'orphaned_records' => [
@@ -169,6 +183,13 @@ final class AlchemizeDataMaintenanceService
                 'action' => 'purge',
                 'count' => $this->countExpiredTokens(),
                 'records' => $this->expiredTokenPreview($limit),
+            ],
+            'test_records' => [
+                'category' => $category,
+                'action' => 'purge',
+                'count' => $this->countTestClients(),
+                'records' => $this->testClientPreview($limit),
+                'orphan_test_leads' => $this->countOrphanTestLeads(),
             ],
             'orphaned_records' => [
                 'category' => $category,
@@ -244,6 +265,13 @@ final class AlchemizeDataMaintenanceService
                 throw new AlchemizeRequestException(422, 'CONFIRMATION_REQUIRED', 'Type PURGE EXPIRED TOKENS to confirm token cleanup.');
             }
             return $this->purgeExpiredTokens($selected);
+        }
+
+        if ($action === 'purge' && $category === 'test_records') {
+            if ($confirm !== 'PURGE TEST DATA') {
+                throw new AlchemizeRequestException(422, 'CONFIRMATION_REQUIRED', 'Type PURGE TEST DATA to confirm.');
+            }
+            return $this->purgeTestRecords($selected);
         }
 
         throw new AlchemizeRequestException(422, 'VALIDATION_ERROR', 'This maintenance action is not available.');
@@ -989,6 +1017,198 @@ final class AlchemizeDataMaintenanceService
             if ($this->database->inTransaction()) $this->database->rollBack();
             throw $error;
         }
+    }
+
+    // ---- Test / demo records ------------------------------------------------
+    // A client is a test record when its primary_email uses a reserved
+    // RFC 2606 domain (example.com/.net/.org/.edu/.test/.invalid) -- never a
+    // real business's email. Purging a test client cascades everything that
+    // depends specifically on it, walked in FK-safe order (payments before
+    // invoices, engagements before the client row, etc.); columns that are
+    // ON DELETE CASCADE from clients are left to the database once the
+    // client row itself is removed. Leads on the same reserved domains are
+    // only purged once no client references them (origin_lead_id) -- a
+    // still-referenced lead is left alone this run and will be swept the
+    // next time its client is gone. Global config, service catalog data,
+    // templates, audit_events, and user accounts are never touched.
+
+    private function testDomainCondition(string $emailColumn): string
+    {
+        $placeholders = implode(',', array_fill(0, count(self::TEST_EMAIL_DOMAINS), '?'));
+        return "LOWER(SUBSTRING_INDEX({$emailColumn}, '@', -1)) IN ({$placeholders})";
+    }
+
+    private function countTestClients(): int
+    {
+        $condition = $this->testDomainCondition('primary_email');
+        $statement = $this->database->prepare(
+            "SELECT COUNT(*) FROM clients WHERE primary_email IS NOT NULL AND primary_email <> '' AND {$condition}"
+        );
+        $statement->execute(self::TEST_EMAIL_DOMAINS);
+        return (int) $statement->fetchColumn();
+    }
+
+    private function testClientPreview(int $limit): array
+    {
+        $condition = $this->testDomainCondition('primary_email');
+        $statement = $this->database->prepare(
+            "SELECT id, public_id, display_name, primary_email, client_type, status, created_at
+             FROM clients
+             WHERE primary_email IS NOT NULL AND primary_email <> '' AND {$condition}
+             ORDER BY created_at DESC
+             LIMIT " . (int) $limit
+        );
+        $statement->execute(self::TEST_EMAIL_DOMAINS);
+        return $statement->fetchAll();
+    }
+
+    private function testClientIds(): array
+    {
+        $condition = $this->testDomainCondition('primary_email');
+        $statement = $this->database->prepare(
+            "SELECT id FROM clients WHERE primary_email IS NOT NULL AND primary_email <> '' AND {$condition}"
+        );
+        $statement->execute(self::TEST_EMAIL_DOMAINS);
+        return array_map('intval', array_column($statement->fetchAll(), 'id'));
+    }
+
+    private function countOrphanTestLeads(): int
+    {
+        $condition = $this->testDomainCondition('email');
+        $statement = $this->database->prepare(
+            "SELECT COUNT(*) FROM leads WHERE {$condition}
+               AND NOT EXISTS (SELECT 1 FROM clients WHERE clients.origin_lead_id = leads.id)"
+        );
+        $statement->execute(self::TEST_EMAIL_DOMAINS);
+        return (int) $statement->fetchColumn();
+    }
+
+    private function orphanTestLeadIds(): array
+    {
+        $condition = $this->testDomainCondition('email');
+        $statement = $this->database->prepare(
+            "SELECT id FROM leads WHERE {$condition}
+               AND NOT EXISTS (SELECT 1 FROM clients WHERE clients.origin_lead_id = leads.id)"
+        );
+        $statement->execute(self::TEST_EMAIL_DOMAINS);
+        return array_map('intval', array_column($statement->fetchAll(), 'id'));
+    }
+
+    private function deleteWhere(string $table, string $column, int $id): int
+    {
+        $statement = $this->database->prepare("DELETE FROM {$table} WHERE {$column} = ?");
+        $statement->execute([$id]);
+        return $statement->rowCount();
+    }
+
+    private function purgeTestClientDependents(int $clientId): array
+    {
+        // messages/document_submissions carry client_id directly, so they're
+        // counted here before their CASCADE-linked parent (message_threads /
+        // documents_metadata) is removed below.
+        return [
+            'messages' => $this->deleteWhere('messages', 'client_id', $clientId),
+            'conversations' => $this->deleteWhere('message_threads', 'client_id', $clientId),
+            'notifications' => $this->deleteWhere('notifications', 'client_id', $clientId),
+            'document_submissions' => $this->deleteWhere('document_submissions', 'client_id', $clientId),
+            'documents' => $this->deleteWhere('documents_metadata', 'client_id', $clientId),
+            'intake_assignments' => $this->deleteWhere('intake_assignments', 'client_id', $clientId),
+            // payments.invoice_id is ON DELETE RESTRICT, so payments must go
+            // before invoices; both carry client_id directly.
+            'payments' => $this->deleteWhere('payments', 'client_id', $clientId),
+            'invoices' => $this->deleteWhere('invoices', 'client_id', $clientId),
+            'appointment_scheduling_links' => $this->deleteWhere('appointment_scheduling_links', 'client_id', $clientId),
+            'appointments' => $this->deleteWhere('appointments', 'client_id', $clientId),
+            'tasks' => $this->deleteWhere('tasks', 'client_id', $clientId),
+            // engagements.client_id is ON DELETE RESTRICT -- must be cleared
+            // before the client row itself can be deleted.
+            'engagements' => $this->deleteWhere('engagements', 'client_id', $clientId),
+            'notes' => $this->deleteWhere('notes', 'client_id', $clientId),
+            'activity_events' => $this->deleteWhere('activity_events', 'client_id', $clientId),
+        ];
+    }
+
+    private function purgeOrphanTestLead(int $leadId): array
+    {
+        return [
+            'appointments' => $this->deleteWhere('appointments', 'lead_id', $leadId),
+            'appointment_scheduling_links' => $this->deleteWhere('appointment_scheduling_links', 'lead_id', $leadId),
+            'activity_events' => $this->deleteWhere('activity_events', 'lead_id', $leadId),
+            // lead_contact_attempts / lead_service_interests are ON DELETE
+            // CASCADE from leads.id and are removed with the lead row below.
+            'leads' => $this->deleteWhere('leads', 'id', $leadId),
+        ];
+    }
+
+    private function purgeTestRecords(array $selected): array
+    {
+        // The frontend's selection is never trusted on its own -- re-derive
+        // the currently-eligible test client id set and intersect, exactly
+        // like every other purge/delete action in this service.
+        $eligible = array_flip($this->testClientIds());
+        $clientIds = $selected !== [] ? array_values(array_intersect($selected, array_keys($eligible))) : array_keys($eligible);
+        $blocked = $selected !== [] ? count($selected) - count($clientIds) : 0;
+
+        $totals = array_fill_keys([
+            'clients', 'leads', 'engagements', 'tasks', 'appointments',
+            'appointment_scheduling_links', 'documents', 'document_submissions',
+            'intake_assignments', 'invoices', 'payments', 'conversations',
+            'messages', 'notifications', 'notes', 'activity_events',
+        ], 0);
+
+        $this->database->beginTransaction();
+        try {
+            foreach ($clientIds as $clientId) {
+                // Re-verified inline against the same test-domain condition
+                // -- a client whose email was corrected to a real address
+                // between preview and execute must never be purged.
+                $condition = $this->testDomainCondition('primary_email');
+                $check = $this->database->prepare(
+                    "SELECT id FROM clients WHERE id = ? AND primary_email IS NOT NULL AND primary_email <> '' AND {$condition}"
+                );
+                $check->execute([$clientId, ...self::TEST_EMAIL_DOMAINS]);
+                if ($check->fetchColumn() === false) {
+                    $blocked++;
+                    continue;
+                }
+                foreach ($this->purgeTestClientDependents($clientId) as $key => $count) {
+                    $totals[$key] += $count;
+                }
+                $totals['clients'] += $this->deleteWhere('clients', 'id', $clientId);
+            }
+
+            foreach ($this->orphanTestLeadIds() as $leadId) {
+                foreach ($this->purgeOrphanTestLead($leadId) as $key => $count) {
+                    $totals[$key] += $count;
+                }
+            }
+
+            $this->database->commit();
+        } catch (Throwable $error) {
+            if ($this->database->inTransaction()) $this->database->rollBack();
+            throw $error;
+        }
+
+        $totalRecords = array_sum($totals);
+        $parts = [];
+        foreach ($totals as $key => $count) {
+            if ($count > 0) $parts[] = "{$count} {$key}";
+        }
+        $detail = $parts === [] ? '' : ' (' . implode(', ', $parts) . ')';
+        $this->writeAudit(
+            'maintenance.test_records_purge',
+            'test_records',
+            $clientIds,
+            $this->summarizeCount($totalRecords, 'test/demo record purged', 'test/demo records purged') . $detail
+        );
+
+        return [
+            'action' => 'purge',
+            'category' => 'test_records',
+            'deleted' => $totals,
+            'blocked' => $blocked,
+            'failed' => 0,
+        ];
     }
 
     private function summarizeCount(int $count, string $singular, string $plural): string
