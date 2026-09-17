@@ -4,8 +4,10 @@
 // methods the settings API route calls, and proves the safety guarantees the
 // feature depends on:
 //
-//   - test clients/leads are identified only by a reserved RFC 2606 email
-//     domain (example.test, etc.) -- never by name/keyword matching
+//   - test clients/leads are identified by a reserved RFC 2606 email domain
+//     (example.test, etc.) OR a word-boundary-anchored "test" name/message
+//     match (see the second section below for the word-boundary matching
+//     and non-matching cases) -- never by a loose substring match
 //   - the purge cannot execute without the exact "PURGE TEST DATA" phrase
 //   - a tampered selected_ids list can never purge a client whose email does
 //     not use a reserved test domain, no matter what the client asked for
@@ -75,19 +77,20 @@ function makePurgeClient(AlchemizeClientRepository $repo, string $suffix, string
     ]);
 }
 
-function makePurgeLead(AlchemizeLeadRepository $repo, string $suffix, string $tag, string $email): int {
+function makePurgeLead(AlchemizeLeadRepository $repo, string $suffix, string $tag, string $email, string $message = 'Automated purge-workflow fixture message.'): int {
     return $repo->create([
         'public_id' => alchemize_uuid_v4(), 'full_name' => "ZZZ Purge Test Lead {$tag} {$suffix}",
         'business_name' => null, 'email' => $email, 'phone' => null, 'audience' => 'individual',
-        'service_key' => null, 'message' => 'Automated purge-workflow test fixture.',
+        'service_key' => null, 'message' => $message,
         'preferred_contact' => 'email', 'language_preference' => 'en', 'status' => 'new', 'source' => 'website_contact',
     ]);
 }
 
-// A client/lead using a real-looking domain must never be treated as a test
-// record -- this is the negative control proving the feature does not use
-// fuzzy name matching (both fixtures below have "ZZZ Purge Test" in their
-// name, exactly like the real test fixtures, and must still survive).
+// A client/lead using a real-looking domain, and whose "ZZZ Purge Test"
+// fixture naming never actually starts or ends with the word "test" (it is
+// always sandwiched between other words), must never be treated as a test
+// record -- this is the negative control proving domain-less name matching
+// requires the word at an edge, not merely present anywhere in the string.
 $legitDomain = "verified-client-mail-{$suffix}.dev";
 
 $testClientId = makePurgeClient($clientRepo, $suffix, 'client', "zzz.purge.client.{$suffix}@example.test");
@@ -311,3 +314,138 @@ $remainingClients = (int) $db->query("SELECT COUNT(*) FROM clients WHERE id IN (
 $remainingLeads = (int) $db->query("SELECT COUNT(*) FROM leads WHERE id IN (" . implode(',', array_map('intval', $cleanupLeadIds)) . ")")->fetchColumn();
 verifyWorkflow($remainingClients === 0 && $remainingLeads === 0, 'Disposable test fixtures were not fully cleaned up');
 echo "\nPurge Test Records workflow: reserved-domain identification, the required confirmation phrase, tampered-selection safety, FK-safe cascading deletes, accurate per-category counts, preservation of legitimate records, and audit history all verified against the real database.\n";
+
+// ============================================================================
+// Section 2: broadened detection -- word-boundary name/title matching,
+// standalone-word description/notes matching, false-positive substring
+// rejection, standalone operational records independent of client status,
+// and parent-preservation when only a child record is flagged.
+// ============================================================================
+echo "\n=== Broadened detection: name/title word-boundary matching ===\n";
+
+$suffix2 = bin2hex(random_bytes(4));
+$legitDomain2 = "verified-broad-mail-{$suffix2}.dev";
+
+function makeBroadClient(AlchemizeClientRepository $repo, string $suffix, string $tag, string $displayName, string $domain): int {
+    return $repo->create([
+        'public_id' => alchemize_uuid_v4(), 'client_type' => 'individual',
+        'display_name' => $displayName, 'legal_name' => null, 'preferred_name' => null,
+        'primary_email' => "zzz.broad.{$tag}.{$suffix}@{$domain}", 'primary_phone' => null,
+        'preferred_contact_method' => 'email', 'language_preference' => 'en',
+        'status' => 'active', 'portal_status' => 'active', 'source' => 'website', 'origin_lead_id' => null,
+    ]);
+}
+
+// All of these use a real, non-reserved email domain -- only the name field
+// can trigger detection, isolating the name-pattern rule from the existing
+// domain rule.
+$matchStartClientId = makeBroadClient($clientRepo, $suffix2, 'start', "Test Client {$suffix2}", $legitDomain2);
+$matchEndClientId = makeBroadClient($clientRepo, $suffix2, 'end', "ZZZ {$suffix2} Client Test", $legitDomain2);
+$matchCaseClientId = makeBroadClient($clientRepo, $suffix2, 'case', "TEST CLIENT {$suffix2}", $legitDomain2);
+$nonMatchContestId = makeBroadClient($clientRepo, $suffix2, 'contest', "Contest Productions {$suffix2}", $legitDomain2);
+$nonMatchTestingtonId = makeBroadClient($clientRepo, $suffix2, 'testington', "Testington LLC {$suffix2}", $legitDomain2);
+$nonMatchAttestationId = makeBroadClient($clientRepo, $suffix2, 'attestation', "Attestation Services {$suffix2}", $legitDomain2);
+$nonMatchLatestId = makeBroadClient($clientRepo, $suffix2, 'latest', "Latest Client {$suffix2}", $legitDomain2);
+// Completely legitimate control -- no test marker anywhere (name or domain).
+$legitCleanId = makeBroadClient($clientRepo, $suffix2, 'clean', "Acme Corp {$suffix2}", $legitDomain2);
+
+$cleanupClientIds2 = [
+    $matchStartClientId, $matchEndClientId, $matchCaseClientId,
+    $nonMatchContestId, $nonMatchTestingtonId, $nonMatchAttestationId, $nonMatchLatestId,
+    $legitCleanId,
+];
+
+// Standalone operational records on the fully-legitimate client, proving a
+// record is purgeable on its own fields independent of its client's status,
+// and that purging it never touches the parent client.
+$db->prepare("INSERT INTO appointments (public_id, client_id, appointment_type, scheduled_at, status) VALUES (:pid, :client, 'Test Appointment', CURRENT_TIMESTAMP(6), 'requested')")
+    ->execute(['pid' => alchemize_uuid_v4(), 'client' => $legitCleanId]);
+$db->prepare("INSERT INTO appointments (public_id, client_id, appointment_type, scheduled_at, status) VALUES (:pid, :client, 'Consultation', CURRENT_TIMESTAMP(6), 'requested')")
+    ->execute(['pid' => alchemize_uuid_v4(), 'client' => $legitCleanId]);
+
+$broadEngagementId = $engagementRepo->create([
+    'public_id' => alchemize_uuid_v4(), 'engagement_number' => "ZZZ-BROAD-ENG-{$suffix2}", 'client_id' => $legitCleanId,
+    'title' => "ZZZ Broad Engagement {$suffix2}", 'description' => 'This is a test', 'status' => 'in_progress',
+    'start_date' => date('Y-m-d'), 'target_date' => null, 'completion_date' => null, 'owner_user_id' => null,
+    'billing_arrangement' => null, 'scope_notes' => null, 'pricing_notes' => null,
+]);
+
+$db->prepare('INSERT INTO invoices (public_id, invoice_number, client_id, invoice_date, status, client_facing_notes) VALUES (:pid, :num, :client, :date, :status, :notes)')
+    ->execute(['pid' => alchemize_uuid_v4(), 'num' => "ZZZ-BROAD-INV-{$suffix2}", 'client' => $legitCleanId, 'date' => date('Y-m-d'), 'status' => 'draft', 'notes' => 'Testing the invoice workflow test']);
+
+// Orphan leads: one whose message contains "test" as a standalone word
+// (must be swept), one whose message is neutral (must survive).
+$broadOrphanLeadId = makePurgeLead($leadRepo, $suffix2, 'broad-orphan', "zzz.broad.orphan.{$suffix2}@{$legitDomain2}", 'Client created for test purposes.');
+$broadLegitLeadId = makePurgeLead($leadRepo, $suffix2, 'broad-legit', "zzz.broad.legit.{$suffix2}@{$legitDomain2}", 'Interested in the quarterly service package.');
+
+$cleanupLeadIds2 = [$broadOrphanLeadId, $broadLegitLeadId];
+
+try {
+    $preview2 = $service->preview(['category' => 'test_records', 'limit' => 200]);
+    $preview2ClientIds = array_column($preview2['records'], 'id');
+
+    verifyWorkflow(in_array($matchStartClientId, $preview2ClientIds, true), 'MISS: "Test Client" (starts with the word "test") was not detected');
+    verifyWorkflow(in_array($matchEndClientId, $preview2ClientIds, true), 'MISS: "Client Test" (ends with the word "test") was not detected');
+    verifyWorkflow(in_array($matchCaseClientId, $preview2ClientIds, true), 'MISS: "TEST CLIENT" (case-insensitive) was not detected');
+    verifyWorkflow(!in_array($nonMatchContestId, $preview2ClientIds, true), 'FALSE POSITIVE: "Contest Productions" was incorrectly detected as a test record');
+    verifyWorkflow(!in_array($nonMatchTestingtonId, $preview2ClientIds, true), 'FALSE POSITIVE: "Testington LLC" was incorrectly detected as a test record');
+    verifyWorkflow(!in_array($nonMatchAttestationId, $preview2ClientIds, true), 'FALSE POSITIVE: "Attestation Services" was incorrectly detected as a test record');
+    verifyWorkflow(!in_array($nonMatchLatestId, $preview2ClientIds, true), 'FALSE POSITIVE: "Latest Client" was incorrectly detected as a test record');
+    verifyWorkflow(!in_array($legitCleanId, $preview2ClientIds, true), 'FALSE POSITIVE: "Acme Corp" (a fully legitimate client) was incorrectly detected as a test record');
+    echo "PASS Name/title matching triggers only on a real leading or trailing \"test\" word (Test Client / Client Test / TEST CLIENT) and never on a mere substring (Contest / Testington LLC / Attestation Services / Latest Client)\n";
+
+    verifyWorkflow($preview2['breakdown']['appointments'] >= 1, 'preview() breakdown did not report the standalone test appointment');
+    verifyWorkflow($preview2['breakdown']['engagements'] >= 1, 'preview() breakdown did not report the standalone test engagement');
+    verifyWorkflow($preview2['breakdown']['invoices'] >= 1, 'preview() breakdown did not report the standalone test invoice');
+    echo "PASS preview() breakdown reflects the standalone appointment/engagement/invoice test records using the exact same detection logic as execute()\n";
+
+    echo "\n=== Broadened detection: purge execution ===\n";
+    $result3 = $service->execute([
+        'action' => 'purge', 'category' => 'test_records', 'confirm' => 'PURGE TEST DATA',
+        'selected_ids' => [$matchStartClientId, $matchEndClientId, $matchCaseClientId],
+    ]);
+    verifyWorkflow($result3['deleted']['clients'] === 3, 'Expected exactly the 3 name-matched clients to be purged, got: ' . $result3['deleted']['clients']);
+    verifyWorkflow($result3['deleted']['appointments'] >= 1, 'The standalone "Test Appointment" on the legitimate client was not purged');
+    verifyWorkflow($result3['deleted']['engagements'] >= 1, 'The standalone test-worded engagement on the legitimate client was not purged');
+    verifyWorkflow($result3['deleted']['invoices'] >= 1, 'The standalone test-worded invoice on the legitimate client was not purged');
+    verifyWorkflow($result3['deleted']['leads'] >= 1, 'The orphan lead flagged via its message field was not purged');
+    echo "PASS Name-matched clients, and standalone appointment/engagement/invoice/lead records identified purely by their own fields, were all purged\n";
+
+    verifyWorkflow(tableCount($db, 'clients', 'id', $matchStartClientId) === 0, '"Test Client" survived the purge');
+    verifyWorkflow(tableCount($db, 'clients', 'id', $matchEndClientId) === 0, '"Client Test" survived the purge');
+    verifyWorkflow(tableCount($db, 'clients', 'id', $matchCaseClientId) === 0, '"TEST CLIENT" survived the purge');
+    verifyWorkflow(tableCount($db, 'clients', 'id', $nonMatchContestId) === 1, '"Contest Productions" was incorrectly deleted');
+    verifyWorkflow(tableCount($db, 'clients', 'id', $nonMatchTestingtonId) === 1, '"Testington LLC" was incorrectly deleted');
+    verifyWorkflow(tableCount($db, 'clients', 'id', $nonMatchAttestationId) === 1, '"Attestation Services" was incorrectly deleted');
+    verifyWorkflow(tableCount($db, 'clients', 'id', $nonMatchLatestId) === 1, '"Latest Client" was incorrectly deleted');
+    verifyWorkflow(tableCount($db, 'leads', 'id', $broadOrphanLeadId) === 0, 'The message-flagged orphan lead survived the purge');
+    verifyWorkflow(tableCount($db, 'leads', 'id', $broadLegitLeadId) === 1, 'The legitimate orphan lead (neutral message) was incorrectly deleted');
+    echo "PASS Only the genuinely test-flagged clients and lead were removed; every non-matching and legitimate record survives untouched\n";
+
+    // --- Parent preservation: the legitimate client itself, and its
+    //     non-test appointment, must survive even though one appointment,
+    //     one engagement, and one invoice belonging to it were purged. ---
+    verifyWorkflow(tableCount($db, 'clients', 'id', $legitCleanId) === 1, 'The legitimate parent client was deleted merely because one of its child records was flagged as test data');
+    $remainingAppointments = (int) $db->query("SELECT COUNT(*) FROM appointments WHERE client_id = {$legitCleanId}")->fetchColumn();
+    verifyWorkflow($remainingAppointments === 1, 'Expected exactly the non-test "Consultation" appointment to survive on the legitimate client, found: ' . $remainingAppointments);
+    $remainingType = (string) $db->query("SELECT appointment_type FROM appointments WHERE client_id = {$legitCleanId} LIMIT 1")->fetchColumn();
+    verifyWorkflow($remainingType === 'Consultation', 'The surviving appointment was not the legitimate "Consultation" one');
+    verifyWorkflow(tableCount($db, 'engagements', 'id', $broadEngagementId) === 0, 'The standalone test-worded engagement survived when it should have been purged');
+    echo "PASS A legitimate parent client is never deleted merely because one of its child records was independently flagged as test data; its remaining legitimate records are untouched\n";
+} finally {
+    $db->exec("DELETE FROM appointments WHERE client_id = " . (int) $legitCleanId);
+    $db->exec("DELETE FROM invoices WHERE client_id = " . (int) $legitCleanId);
+    $db->exec("DELETE FROM engagements WHERE client_id = " . (int) $legitCleanId);
+    if ($cleanupClientIds2) {
+        $db->exec("DELETE FROM clients WHERE id IN (" . implode(',', array_map('intval', $cleanupClientIds2)) . ")");
+    }
+    if ($cleanupLeadIds2) {
+        $db->exec("DELETE FROM leads WHERE id IN (" . implode(',', array_map('intval', $cleanupLeadIds2)) . ")");
+    }
+    $db->exec("DELETE FROM audit_events WHERE event_type = 'maintenance.test_records_purge' AND entity_id IN (" . implode(',', array_map('intval', [$matchStartClientId, $matchEndClientId, $matchCaseClientId])) . ")");
+}
+
+$remainingClients2 = (int) $db->query("SELECT COUNT(*) FROM clients WHERE id IN (" . implode(',', array_map('intval', $cleanupClientIds2)) . ")")->fetchColumn();
+$remainingLeads2 = (int) $db->query("SELECT COUNT(*) FROM leads WHERE id IN (" . implode(',', array_map('intval', $cleanupLeadIds2)) . ")")->fetchColumn();
+verifyWorkflow($remainingClients2 === 0 && $remainingLeads2 === 0, 'Disposable broadened-detection fixtures were not fully cleaned up');
+echo "\nBroadened test-record detection: word-boundary name/title matching, standalone-word description matching, false-positive substring rejection, standalone operational records independent of client status, and parent preservation all verified against the real database.\n";

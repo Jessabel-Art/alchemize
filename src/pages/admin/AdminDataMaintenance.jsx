@@ -168,13 +168,13 @@ const categoryMeta = {
     actionVerb: "purge",
     confirmTitle: "Purge test records",
     confirmBody:
-      "This permanently removes this test client record and its dependent data -- engagements, tasks, appointments, invoices, payments, documents, messages, notifications, notes, and activity history. Only records using a reserved test email domain (example.com, example.test, and similar) qualify; legitimate production and business records are never affected. This action cannot be undone.",
+      'This permanently removes this test client record and its dependent data -- engagements, tasks, appointments, invoices, payments, documents, messages, notifications, notes, and activity history. A record qualifies as test data by a reserved test email domain (example.com, example.test, and similar), a name/title starting or ending with "test", or "test" appearing as its own word in a description or notes field. Standalone appointments, engagements, invoices, and other operational records with their own qualifying fields are also purged even when their client is legitimate. Legitimate production and business records are never affected. This action cannot be undone.',
     confirmBodyPlural:
-      "This permanently removes these test client records and their dependent data -- engagements, tasks, appointments, invoices, payments, documents, messages, notifications, notes, and activity history -- plus any never-converted lead records on the same test email domains. Only records using a reserved test email domain (example.com, example.test, and similar) qualify; legitimate production and business records are never affected. This action cannot be undone.",
+      'This permanently removes these test client records and their dependent data -- engagements, tasks, appointments, invoices, payments, documents, messages, notifications, notes, and activity history -- plus any never-converted lead records and standalone operational records (appointments, engagements, invoices, and more) independently identified as test data. A record qualifies by a reserved test email domain (example.com, example.test, and similar), a name/title starting or ending with "test", or "test" appearing as its own word in a description or notes field. Legitimate production and business records are never affected. This action cannot be undone.',
     typedConfirm: "PURGE TEST DATA",
     emptyTitle: "No test records found",
     emptyDescription:
-      "No client or lead records using a reserved test email domain were found.",
+      'No client, lead, or operational records matching a reserved test email domain, a qualifying test name/title, or a standalone "test" in a description were found.',
     resultKey: "deleted",
   },
 };
@@ -785,6 +785,7 @@ export default function AdminDataMaintenance() {
         records: result.records || [],
         selected: new Set(),
         orphanTestLeads: result.orphan_test_leads || 0,
+        breakdown: result.breakdown || null,
       });
     } catch (error) {
       setReview({
@@ -794,6 +795,7 @@ export default function AdminDataMaintenance() {
         records: [],
         selected: new Set(),
         orphanTestLeads: 0,
+        breakdown: null,
       });
     }
   };
@@ -1142,6 +1144,23 @@ export default function AdminDataMaintenance() {
                       ? actionMeta.confirmBody
                       : actionMeta.confirmBodyPlural}
                   </p>
+                  {confirm.category === "test_records" && review.breakdown ? (
+                    <div>
+                      <p className="maintenance-confirm-count">
+                        Test records found
+                      </p>
+                      <ul className="maintenance-purge-breakdown">
+                        {Object.entries(review.breakdown)
+                          .filter(([, count]) => count > 0)
+                          .map(([key, count]) => (
+                            <li key={key}>
+                              <span>{testPurgeLabels[key] || key}</span>
+                              <span>{count}</span>
+                            </li>
+                          ))}
+                      </ul>
+                    </div>
+                  ) : null}
                   <p className="maintenance-confirm-count">
                     {confirm.ids.length} record
                     {confirm.ids.length === 1 ? "" : "s"} selected.
