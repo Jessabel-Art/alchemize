@@ -1,37 +1,48 @@
 Title: Business Tax Preparation Organizer
-Subtitle: Organize business records, reconciliation questions, missing items, and filing-readiness for the tax year.
+Subtitle: A tax-season preparation system -- what changed, what you have, what's missing, and what to ask your preparer.
 Category: Business Tax
 Short: Business Tax Organizer
 Filename: business-tax-preparation-organizer.pdf
+Outcomes: Capture every business change that could affect this year's return|Reconcile income before your preparer has to ask why it does not match|Turn missing documents into a tracked, followed-up list|Walk into tax season with your questions already written down
+Time: 30-40 minutes, plus time to gather documents
+Nearby: Prior-year return, bookkeeping access, payment-processor summaries
+CTAHeadline: THE RECORDS ARE ORGANIZED. LET'S GET THE TREATMENT RIGHT.
 CTA: Need help organizing business tax preparation? Schedule a consultation at getalchemize.com.
 Disclaimer: This organizer provides general record-preparation guidance. It does not make tax determinations, guarantee an outcome, or replace advice based on the business's facts, entity, jurisdictions, and current law.
 ---
 
-# Business tax snapshot
+# What changed this year
 
-This page is meant to capture the business's actual facts before the return is prepared. A strong tax organizer answers: what changed, what records exist, what is still missing, and what can be explained clearly.
+A strong tax organizer does not start with forms. It starts with facts: what changed, what records exist, what is still missing, and what can be explained clearly to a preparer.
+
+TIMELINE: What changed|What should exist|What you have|What's missing|Questions to ask
+
+## Business snapshot
+
+MICRO: START HERE|Fill in what you know today. A blank field tells your preparer exactly what still needs confirming -- that is useful, not a failure.
+
 | Field | Current information |
 | Tax year / legal business name | |
 | DBA / EIN | |
 | Entity type / state(s) of operation | |
-| Owners / ownership changes | |
 | Accounting method, if known | |
 | Bookkeeping platform | |
-| Tax professional / preparer | |
 
-## What changed this year?
+## Business change timeline
 
 [ ] Ownership, entity structure, location, or states of operation
 [ ] Employees, contractors, or new revenue streams
 [ ] Equipment, assets, loans, vehicles, or major purchases
 [ ] Closure, sale, or discontinuation of activity
-LINES: Change details and dates|4
-CALLOUT: Business change timeline|A business year can change because of ownership, hiring, financing, equipment, property, location, or activity. Track the change date and the record that supports it.
+LINES: Change details and dates|3
 ---PAGE---
 
-# Income and bookkeeping readiness
+# Income reconciliation
 
-The most valuable tax organizer does not simply collect totals. It helps identify whether the totals are consistent, whether missing support exists, and whether the bookkeeping reflects the real business activity.
+The most valuable organizer does not just collect totals. It checks whether they agree with each other, and flags what needs a closer look before the return is prepared.
+
+## Bookkeeping readiness
+
 [ ] Bookkeeping is current through year-end
 [ ] Revenue and bank deposits have been reviewed
 [ ] Payment-processor totals and information returns have been compared
@@ -40,27 +51,25 @@ The most valuable tax organizer does not simply collect totals. It helps identif
 
 ## Income reconciliation
 
-| Income source | Books total | Processor / information return | Difference | Resolved? |
+| Income source | Books total | Processor / 1099 total | Difference | Resolved? |
 | | | | | |
 | | | | | |
 | | | | | |
-| | | | | |
-CALLOUT: Identify; do not force|A difference is a question to investigate. Do not change records merely to match another statement without understanding timing, fees, refunds, duplicates, or other causes.
-LINES: Reconciliation questions|4
 
 ## Common reasons totals differ
 
-[ ] Timing differences
-[ ] Payment processor fees or refunds
-[ ] Chargebacks or duplicate entries
-[ ] Gross-versus-net reporting
-[ ] Transfer or intercompany activity
-[ ] Period or cutoff differences
+CHIPS: Timing|Processor fees|Refunds|Chargebacks|Gross vs. net|Transfers
+
+WATCH: Identify, do not force|A difference is a question to investigate. Do not change records merely to match another statement without understanding timing, fees, refunds, duplicates, or other causes.
+LINES: Reconciliation questions for your preparer|3
 ---PAGE---
 
-# Expense organization
+# Expense and owner activity
 
-This is not a classification exercise alone. It is a record-organization exercise. The goal is to identify where support exists, what questions remain, and what should be discussed with the preparer.
+This is a record-organization exercise, not a classification exercise. The goal is to identify where support exists, what questions remain, and what to raise with your preparer -- not to decide how anything is treated.
+
+## Expense categories
+
 | Category | Bookkeeping complete? | Supporting records? | Question |
 | Advertising / software | | | |
 | Office / supplies | | | |
@@ -68,8 +77,6 @@ This is not a classification exercise alone. It is a record-organization exercis
 | Rent / utilities | | | |
 | Travel / meals / vehicle | | | |
 | Contractors / payroll | | | |
-| Taxes / licenses / repairs | | | |
-| Equipment / other | | | |
 
 ## Owner activity
 
@@ -77,41 +84,34 @@ This is not a classification exercise alone. It is a record-organization exercis
 | Owner-paid expenses / reimbursements | | | |
 | Owner contributions | | | |
 | Owner distributions / draws | | | |
+CALLOUT: No tax determination here|Record the facts and locate support. Classification, deductibility, depreciation, and reporting are determined separately, with your preparer.
 
 ## Questions to flag
 
 [ ] Personal and business activity mixed together
 [ ] Large unusual purchase or expense
 [ ] Missing receipt or source support
-[ ] Duplicate or unclear vendor entry
 [ ] Owner activity not recorded separately
 ---PAGE---
 
 # People, assets, and other records
 
-A business tax organizer becomes more useful when it captures not only accounts, but also the people and assets that drive activity and reporting.
+A business tax organizer becomes more useful when it captures the people and assets driving activity -- not just the accounts.
 
-## Contractors
+## Contractors and payroll
 
-| Contractor | W-9 on file | Payments reviewed | 1099 review needed |
-| | | | |
-| | | | |
-| | | | |
-
-## Employees and payroll
-
-| Payroll item | Complete? | Source available? | Notes |
+| Item | Complete? | Source available? | Notes |
+| Contractor payments (W-9 on file) | | | |
 | Payroll summaries and filings | | | |
 | Year-end payroll reports | | | |
-| Contractor payments and forms | | | |
-| Employee benefits or compensation records | | | |
+| Employee benefits or compensation | | | |
 
 ## Assets and equipment
 
-| Asset | Date acquired | Cost | Business use | Supporting record |
-| | | | | |
-| | | | | |
-| | | | | |
+| Asset | Date acquired | Cost | Business use |
+| | | | |
+| | | | |
+| | | | |
 
 ## Other record areas
 
@@ -120,54 +120,61 @@ A business tax organizer becomes more useful when it captures not only accounts,
 [ ] Loans and financing statements
 [ ] Insurance records and estimated tax payments
 [ ] Depreciation or basis information
-CALLOUT: No tax determination|Record facts and locate support. Classification, deductibility, depreciation, reporting, and other tax treatment must be determined separately.
 ---PAGE---
 
 # Tax records and correspondence
 
-Before preparing for filing, confirm you have the full set of documents that explain the year: returns, filings, notices, and the actions taken in response.
+Before filing, confirm you have the full set of documents that explain the year: prior filings, notices, and the actions already taken in response to each one.
+
 [ ] Prior-year return and supporting schedules
 [ ] Depreciation schedules, if applicable
 [ ] Estimated-tax and extension payments
-[ ] State and local filings
-[ ] Payroll filings
+[ ] State, local, and payroll filings
 [ ] Sales-tax filings, where applicable
 
 ## Notice tracker
+
+MICRO: WHY THIS MATTERS|Keep the notice, the response, payment confirmation, and related correspondence together. A partial paper trail is a common source of preparer delays.
 
 | Agency | Notice date | Deadline | Issue | Status |
 | | | | | |
 | | | | | |
 | | | | | |
-| | | | | |
-CALLOUT: Preserve the full history|Keep the notice, the delivery date or envelope when relevant, the response, payment confirmation, and related correspondence together. The paper trail matters.
-LINES: Questions about filings or correspondence|4
 ---PAGE---
 
-# Final readiness
+# Final filing readiness
 
-A final business tax organizer is not a filing list. It is a readiness checklist for the preparer and the owner.
-[ ] Books are current and income differences are identified
-[ ] Expense support and owner activity are organized
-[ ] Payroll, contractor, asset, vehicle, inventory, and loan records are reviewed
-[ ] Prior returns, payments, filings, and notices are available
-[ ] Missing items and preparation questions are documented
-[ ] Secure sharing method is confirmed
+A finished organizer is not a filing list. It is a readiness check for both the preparer and the owner.
+
+## Readiness dashboard
+
+| Category | Not started | In progress | Ready | Professional review |
+| Bookkeeping and reconciliation | [ ] | [ ] | [ ] | [ ] |
+| Expense support and owner activity | [ ] | [ ] | [ ] | [ ] |
+| Payroll, assets, and contractors | [ ] | [ ] | [ ] | [ ] |
+| Prior filings and notices | [ ] | [ ] | [ ] | [ ] |
 
 ## Missing-items tracker
 
-| Missing item | Owner / issuer | Requested | Due | Status |
-| | | | | |
-| | | | | |
-| | | | | |
+| Missing item | Owner / issuer | Requested | Status |
+| | | | |
+| | | | |
+| | | | |
 
-## Questions for preparation
+## Questions for your preparer
 
-LINES: Questions and facts to review|4
+LINES: Questions and facts to review together|3
 
 ## After filing
 
 [ ] Retain the return and supporting schedules
 [ ] Note carryforward and recurring items
-[ ] Improve next-year bookkeeping and calendar applicable deadlines
-CALLOUT: Security reminder|Do not send EIN records, banking information, returns, identity documents, payroll records, or other sensitive information through an unsecured contact form or ordinary email. Use only an approved secure method when instructed.
+[ ] Improve next-year bookkeeping and calendar the next deadlines
+WATCH: Security reminder|Do not send EIN records, banking information, returns, identity documents, or payroll records through an unsecured contact form or ordinary email. Use only an approved secure method when instructed.
+---PAGE---
+
+# Before you send this to your preparer
+
+You now have a change timeline, reconciled income, organized expense support, and a tracked list of what is still missing. That is the difference between a preparer who has to chase down answers and one who can start working immediately.
+
+LINES: What still feels uncertain about this year's numbers?|3

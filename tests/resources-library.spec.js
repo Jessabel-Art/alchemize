@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, statSync } from "node:fs";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import {
@@ -92,6 +92,21 @@ test("downloadable resources provide locale-specific English and Spanish PDF tar
   );
   for (const path of spanishPaths) {
     expect(existsSync(`public${path}`)).toBe(true);
+  }
+});
+
+test("every canonical resource PDF exists in both languages and is a real, non-trivial file", () => {
+  // A minimum size sanity check catches a generator run that silently wrote
+  // an empty or truncated file -- both languages must produce a genuine,
+  // multi-page PDF, not just a file that exists.
+  const MIN_PDF_BYTES = 20_000;
+  for (const resource of downloadableResources) {
+    for (const download of [resource.download, resource.spanishDownload]) {
+      const fullPath = `public${download}`;
+      expect(existsSync(fullPath)).toBe(true);
+      const { size } = statSync(fullPath);
+      expect(size).toBeGreaterThan(MIN_PDF_BYTES);
+    }
   }
 });
 
