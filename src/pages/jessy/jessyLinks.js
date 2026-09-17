@@ -1,6 +1,3 @@
-// TODO: confirm the exact Instagram URLs for these two accounts before
-// treating this page as final -- these are placeholders pending Jessy's
-// exact handles.
 export const jessyLinks = {
   getalchemize: {
     label: "GetAlchemize.com",
@@ -17,13 +14,13 @@ export const jessyLinks = {
   alchemizeAgency: {
     label: "Alchemize Agency",
     description: "Instagram",
-    href: "https://www.instagram.com/alchemizeagency/",
+    href: "https://www.instagram.com/getalchemize/",
     external: true,
   },
   pinkladyz: {
     label: "PinkLadyZ",
     description: "Car Instagram",
-    href: "https://www.instagram.com/pinkladyz/",
+    href: "https://www.instagram.com/pinkladyjessz/",
     external: true,
   },
 };
