@@ -51,6 +51,7 @@ export const APP_ROUTE_PATHS = [
   "/terms",
   "/login",
   "/register",
+  "/jessy",
   "/admin",
   "/admin/dashboard",
   "/admin/leads",
@@ -102,7 +103,8 @@ export const PUBLIC_SITEMAP_ROUTES = APP_ROUTE_PATHS.filter(
     !path.startsWith("/admin") &&
     !path.startsWith("/client-portal") &&
     !path.startsWith("/login") &&
-    !path.startsWith("/register"),
+    !path.startsWith("/register") &&
+    path !== "/jessy",
 );
 
 export function getSitemapRoutes() {
