@@ -5764,6 +5764,8 @@ function ClientRequestsPage() {
   const [priorityFilter, setPriorityFilter] = useState("All");
   const [requestFiltersOpen, setRequestFiltersOpen] = useState(false);
   const [newRequestOpen, setNewRequestOpen] = useState(false);
+  const [newRequestBusy, setNewRequestBusy] = useState(false);
+  const [newRequestError, setNewRequestError] = useState("");
   const [requestType, setRequestType] = useState("Document Request");
   const [documentTypeOptions, setDocumentTypeOptions] = useState([]);
   const [requestForm, setRequestForm] = useState({
@@ -6410,8 +6412,41 @@ function ClientRequestsPage() {
     );
   }, [documentForm.client_id, snapshot.engagements]);
 
-  const createRequest = (event) => {
+  const resetNewRequestForms = () => {
+    setRequestForm({
+      clientId: "",
+      engagementId: "",
+      title: "",
+      instructions: "",
+      dueDate: "",
+      priority: "Normal",
+      owner: "Owner / Administrator",
+      intakeType: "",
+      visibility: "Client Visible",
+    });
+    setDocumentForm({
+      client_id: "",
+      engagement_id: "",
+      document_name: "",
+      document_type: "",
+      custom_document_type: "",
+      due_date: "",
+      client_instructions: "",
+      status: "awaiting_upload",
+      visibility: "shared",
+      requested_date: new Date().toISOString().slice(0, 10),
+    });
+  };
+
+  // Every branch below persists through the real backend (documentApi /
+  // taskApi / intakeAdmin) and then re-fetches the authoritative queue via
+  // refreshClientRequestsData() -- never a client-only adminStore row. That
+  // is what previously caused "Unknown client" (a fabricated row referencing
+  // a client the admin store had not resolved) and the row vanishing on
+  // reload (nothing had actually been persisted to the database).
+  const createRequest = async (event) => {
     event.preventDefault();
+    setNewRequestError("");
 
     if (requestType === "Document Request") {
       const selectedType = documentTypeOptions.find(
@@ -6431,62 +6466,40 @@ function ClientRequestsPage() {
         return;
       }
 
-      const created = {
-        id: `doc-${Date.now().toString().slice(-6)}`,
-        clientId: Number(documentForm.client_id),
-        engagementId: Number(documentForm.engagement_id),
-        name:
-          documentForm.document_type === "custom_document"
-            ? documentForm.custom_document_type.trim()
-            : selectedType?.label ||
-              documentForm.document_name ||
-              selectedType?.value ||
-              "Document request",
-        category:
-          documentForm.document_type === "custom_document"
-            ? "Custom Document"
-            : selectedType?.label || documentForm.document_type || "Document",
-        status: "Requested",
-        requestedAt:
-          documentForm.due_date || new Date().toISOString().slice(0, 10),
-        receivedAt: null,
-        reviewedAt: null,
-        serviceName:
-          snapshot.engagements.find(
-            (eng) => eng.id === Number(documentForm.engagement_id),
-          )?.serviceName || "General admin support",
-        instructions: documentForm.client_instructions,
-        dueDate: documentForm.due_date,
-        assignedReviewer: requestForm.owner,
-        priority: requestForm.priority,
-      };
-      adminStore.replaceCollections({
-        documents: [created, ...snapshot.documents],
-      });
-      setNewRequestOpen(false);
-      setRequestForm({
-        clientId: "",
-        engagementId: "",
-        title: "",
-        instructions: "",
-        dueDate: "",
-        priority: "Normal",
-        owner: "Owner / Administrator",
-        intakeType: "",
-        visibility: "Client Visible",
-      });
-      setDocumentForm({
-        client_id: "",
-        engagement_id: "",
-        document_name: "",
-        document_type: "",
-        custom_document_type: "",
-        due_date: "",
-        client_instructions: "",
-        status: "awaiting_upload",
-        visibility: "shared",
-        requested_date: new Date().toISOString().slice(0, 10),
-      });
+      const documentName =
+        documentForm.document_type === "custom_document"
+          ? documentForm.custom_document_type.trim()
+          : selectedType?.label ||
+            documentForm.document_name ||
+            selectedType?.value ||
+            "Document request";
+
+      setNewRequestBusy(true);
+      try {
+        await documentApi.create({
+          client_id: documentForm.client_id,
+          engagement_id: documentForm.engagement_id,
+          document_name: documentName,
+          document_type:
+            documentForm.document_type === "custom_document"
+              ? ""
+              : documentForm.document_type,
+          status: documentForm.status,
+          visibility: documentForm.visibility,
+          due_date: documentForm.due_date,
+          client_instructions: documentForm.client_instructions,
+          requested_date: documentForm.requested_date,
+        });
+        await refreshClientRequestsData();
+        setNewRequestOpen(false);
+        resetNewRequestForms();
+      } catch (error) {
+        setNewRequestError(
+          error.message || "This document request could not be created.",
+        );
+      } finally {
+        setNewRequestBusy(false);
+      }
       return;
     }
 
@@ -6495,43 +6508,58 @@ function ClientRequestsPage() {
     if (!clientId || !engagementId) {
       return;
     }
+
     if (requestType === "Intake Form") {
-      const created = {
-        id: `task-${Date.now().toString().slice(-6)}`,
-        clientId,
-        engagementId,
-        title: requestForm.title || "Intake assignment",
-        description: requestForm.instructions,
-        dueDate: requestForm.dueDate,
-        status: "Waiting on Client",
-        priority: requestForm.priority,
-        assignedTo: requestForm.owner,
-        serviceName:
-          snapshot.engagements.find((eng) => eng.id === engagementId)
-            ?.serviceName || "General admin support",
-        category: "Intake",
-      };
-      adminStore.replaceCollections({ tasks: [created, ...snapshot.tasks] });
-      setNewRequestOpen(false);
+      const client = snapshot.clients.find((item) => item.id === clientId);
+      const engagement = snapshot.engagements.find(
+        (item) => item.id === engagementId,
+      );
+      if (!client?.publicId || !engagement?.publicId) {
+        setNewRequestError(
+          "Unable to resolve the selected client or engagement. Refresh and try again.",
+        );
+        return;
+      }
+      setNewRequestBusy(true);
+      try {
+        await intakeAdmin.assign({
+          client_id: client.publicId,
+          engagement_id: engagement.publicId,
+          due_date: requestForm.dueDate,
+        });
+        await refreshClientRequestsData();
+        setNewRequestOpen(false);
+        resetNewRequestForms();
+      } catch (error) {
+        setNewRequestError(
+          error.message || "This intake could not be assigned.",
+        );
+      } finally {
+        setNewRequestBusy(false);
+      }
       return;
     }
-    const created = {
-      id: `task-${Date.now().toString().slice(-6)}`,
-      clientId,
-      engagementId,
-      title: requestForm.title || "Action item",
-      description: requestForm.instructions,
-      dueDate: requestForm.dueDate,
-      status: "Waiting on Client",
-      priority: requestForm.priority,
-      assignedTo: requestForm.owner,
-      serviceName:
-        snapshot.engagements.find((eng) => eng.id === engagementId)
-          ?.serviceName || "General admin support",
-      category: "Action",
-    };
-    adminStore.replaceCollections({ tasks: [created, ...snapshot.tasks] });
-    setNewRequestOpen(false);
+
+    setNewRequestBusy(true);
+    try {
+      await taskApi.create({
+        client_id: clientId,
+        engagement_id: engagementId,
+        title: requestForm.title || "Action item",
+        description: requestForm.instructions,
+        due_date: requestForm.dueDate,
+        priority: (requestForm.priority || "normal").toLowerCase(),
+        status: "waiting_on_client",
+        visibility: "both",
+      });
+      await refreshClientRequestsData();
+      setNewRequestOpen(false);
+      resetNewRequestForms();
+    } catch (error) {
+      setNewRequestError(error.message || "This task could not be created.");
+    } finally {
+      setNewRequestBusy(false);
+    }
   };
 
   return (
@@ -6544,7 +6572,10 @@ function ClientRequestsPage() {
           {
             label: "New Request",
             primary: true,
-            onClick: () => setNewRequestOpen(true),
+            onClick: () => {
+              setNewRequestError("");
+              setNewRequestOpen(true);
+            },
           },
         ]}
       />
@@ -7230,8 +7261,17 @@ function ClientRequestsPage() {
                   </label>
                 </>
               )}
-              <button type="submit" className="primary-button full-span">
-                Create request
+              {newRequestError ? (
+                <p role="alert" className="admin-feedback full-span">
+                  {newRequestError}
+                </p>
+              ) : null}
+              <button
+                type="submit"
+                className="primary-button full-span"
+                disabled={newRequestBusy}
+              >
+                {newRequestBusy ? "Creating…" : "Create request"}
               </button>
             </form>
           </aside>

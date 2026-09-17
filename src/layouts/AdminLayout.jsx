@@ -21,6 +21,7 @@ const titleCase = (value = "") =>
   value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 const mapClient = (row) => ({
   id: String(row.id),
+  publicId: row.public_id,
   displayName: row.display_name,
   clientType: titleCase(row.client_type),
   businessName: row.legal_name || "",
