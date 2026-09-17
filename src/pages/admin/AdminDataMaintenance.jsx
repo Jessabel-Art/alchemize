@@ -196,6 +196,7 @@ const testPurgeLabels = {
   notifications: "Notifications",
   notes: "Notes",
   activity_events: "Activity events",
+  service_assignments: "Service assignments",
 };
 
 // Normalizes both category shapes -- a single top-level action

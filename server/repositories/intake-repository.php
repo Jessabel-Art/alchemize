@@ -38,12 +38,16 @@ final class AlchemizeIntakeRepository
 
     public function findAdmin(string $publicId): ?array
     {
+        // LEFT JOIN, not INNER: a relationship-resolution problem (a client
+        // or engagement row that can't be matched) must never silently drop
+        // this assignment from an admin lookup -- it stays visible with a
+        // null client/engagement rather than vanishing outright.
         $statement = $this->database->prepare(
             'SELECT ia.*, c.public_id AS client_public_id, c.display_name AS client_name,
                     e.public_id AS engagement_public_id, e.title AS engagement_title,
                     (SELECT GROUP_CONCAT(DISTINCT COALESCE(s.service_code,esi.service_code_snapshot)) FROM engagement_service_items esi LEFT JOIN services s ON s.id=esi.service_id WHERE esi.engagement_id=e.id) AS intake_service_codes
-             FROM intake_assignments ia INNER JOIN clients c ON c.id = ia.client_id
-             INNER JOIN engagements e ON e.id = ia.engagement_id WHERE ia.public_id = :id LIMIT 1'
+             FROM intake_assignments ia LEFT JOIN clients c ON c.id = ia.client_id
+             LEFT JOIN engagements e ON e.id = ia.engagement_id WHERE ia.public_id = :id LIMIT 1'
         );
         $statement->execute(['id' => $publicId]); $row = $statement->fetch();
         return is_array($row) ? $this->decodeAssignment($row) : null;
@@ -51,6 +55,9 @@ final class AlchemizeIntakeRepository
 
     public function listAdmin(): array
     {
+        // LEFT JOIN, not INNER: see findAdmin() above -- the Admin Client
+        // Requests queue must keep showing an assignment even if its client
+        // or engagement can't be resolved, instead of silently excluding it.
         return array_map([$this, 'decodeAssignment'], $this->database->query(
             'SELECT ia.public_id AS id, ia.family_key, ia.module_keys, ia.status, ia.completion_percentage,
                     ia.due_date, ia.submitted_at, ia.blocking_reason, c.public_id AS client_id,
@@ -58,8 +65,8 @@ final class AlchemizeIntakeRepository
                     (SELECT GROUP_CONCAT(DISTINCT COALESCE(s.service_code,esi.service_code_snapshot)) FROM engagement_service_items esi LEFT JOIN services s ON s.id=esi.service_id WHERE esi.engagement_id=e.id) AS intake_service_codes,
                     u.display_name AS assigned_team_member,
                     (SELECT COUNT(*) FROM intake_requirements ir WHERE ir.intake_assignment_id = ia.id AND ir.status = \'missing\') AS missing_requirements
-             FROM intake_assignments ia INNER JOIN clients c ON c.id = ia.client_id
-             INNER JOIN engagements e ON e.id = ia.engagement_id LEFT JOIN users u ON u.id = ia.assigned_to_user_id
+             FROM intake_assignments ia LEFT JOIN clients c ON c.id = ia.client_id
+             LEFT JOIN engagements e ON e.id = ia.engagement_id LEFT JOIN users u ON u.id = ia.assigned_to_user_id
              WHERE ia.archived_at IS NULL ORDER BY ia.created_at DESC'
         )->fetchAll());
     }

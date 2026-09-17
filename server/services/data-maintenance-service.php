@@ -1334,9 +1334,11 @@ final class AlchemizeDataMaintenanceService
             'appointment_scheduling_links' => $this->deleteWhere('appointment_scheduling_links', 'client_id', $clientId),
             'appointments' => $this->deleteWhere('appointments', 'client_id', $clientId),
             'tasks' => $this->deleteWhere('tasks', 'client_id', $clientId),
-            // engagements.client_id is ON DELETE RESTRICT -- must be cleared
-            // before the client row itself can be deleted.
+            // engagements.client_id and client_service_assignments.client_id
+            // are both ON DELETE RESTRICT -- must be cleared before the
+            // client row itself can be deleted.
             'engagements' => $this->deleteWhere('engagements', 'client_id', $clientId),
+            'service_assignments' => $this->deleteWhere('client_service_assignments', 'client_id', $clientId),
             'notes' => $this->deleteWhere('notes', 'client_id', $clientId),
             'activity_events' => $this->deleteWhere('activity_events', 'client_id', $clientId),
         ];
@@ -1368,6 +1370,7 @@ final class AlchemizeDataMaintenanceService
             'appointment_scheduling_links', 'documents', 'document_submissions',
             'intake_assignments', 'invoices', 'payments', 'conversations',
             'messages', 'notifications', 'notes', 'activity_events',
+            'service_assignments',
         ], 0);
 
         $this->database->beginTransaction();

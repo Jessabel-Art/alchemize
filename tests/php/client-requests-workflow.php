@@ -305,6 +305,55 @@ try {
     verifyWorkflow(str_contains($body, "'owner-admin', 'administrator', 'staff', 'read-only'"), 'alchemize_require_read_only_or_higher() no longer matches the expected admin-only role list');
     verifyWorkflow(!str_contains($body, "'client'"), 'alchemize_require_read_only_or_higher() unexpectedly allows the client role -- internal notes would leak to the Client Portal');
     echo "PASS the notes API's authorization gate never includes the client role -- internal notes stay admin-only\n";
+
+    // =========================================================
+    // 5. Admin Client Requests: a relationship-resolution problem must never
+    //    silently drop a legitimate assignment from the admin queue.
+    //    intake_assignments.client_id/engagement_id are both ON DELETE
+    //    CASCADE, so a real delete can never leave this row orphaned --
+    //    FOREIGN_KEY_CHECKS is disabled only long enough to construct that
+    //    otherwise-unreachable edge case directly, proving listAdmin()/
+    //    findAdmin() use LEFT JOIN (not INNER JOIN) and keep the row visible
+    //    instead of excluding it.
+    // =========================================================
+    $orphanEngagementId = $engagementRepo->create([
+        'public_id' => bin2hex(random_bytes(16)), 'engagement_number' => 'ENG-ORPHAN-TEST-' . time(), 'client_id' => $clientId,
+        'title' => 'ZZZ Workflow Test Orphan Engagement', 'description' => null, 'status' => 'in_progress',
+        'start_date' => date('Y-m-d'), 'target_date' => null, 'completion_date' => null, 'owner_user_id' => null,
+        'billing_arrangement' => null, 'scope_notes' => null, 'pricing_notes' => null,
+    ]);
+    $orphanAssignmentId = $intakeRepo->createAssignment([
+        'public_id' => bin2hex(random_bytes(16)), 'client_id' => $clientId, 'engagement_id' => $orphanEngagementId,
+        'family_key' => 'client_profile', 'module_keys' => json_encode(['contact']), 'assigned_by_user_id' => $userId,
+        'assigned_to_user_id' => null, 'due_date' => null,
+    ]);
+    $orphanAssignmentPublicId = (string) $db->query("SELECT public_id FROM intake_assignments WHERE id = $orphanAssignmentId")->fetchColumn();
+
+    try {
+        $db->exec('SET FOREIGN_KEY_CHECKS = 0');
+        try {
+            $db->exec("UPDATE intake_assignments SET client_id = 999999999, engagement_id = 999999999 WHERE id = $orphanAssignmentId");
+        } finally {
+            $db->exec('SET FOREIGN_KEY_CHECKS = 1');
+        }
+
+        $adminList = $intakeAdmin->list();
+        $listedIds = array_column($adminList['items'], 'id');
+        verifyWorkflow(in_array($orphanAssignmentPublicId, $listedIds, true), 'An intake assignment with an unresolvable client/engagement was silently excluded from the Admin Client Requests queue -- listAdmin() must use LEFT JOIN, not INNER JOIN');
+        $orphanRow = $adminList['items'][array_search($orphanAssignmentPublicId, $listedIds, true)];
+        verifyWorkflow($orphanRow['client_id'] === null, 'An unresolvable client should surface as null, not a stale or wrong client id');
+        echo "PASS listAdmin() keeps an assignment visible even when its client/engagement relationship cannot be resolved, instead of silently dropping it\n";
+
+        $adminGet = $intakeAdmin->get($orphanAssignmentPublicId);
+        verifyWorkflow($adminGet['assignment']['id'] === $orphanAssignmentId, 'AlchemizeIntakeAdminService::get() (backed by findAdmin()) failed to resolve an assignment whose client/engagement relationship is broken -- it must still return the row itself');
+        echo "PASS findAdmin() (via AlchemizeIntakeAdminService::get()) also keeps resolving the row itself when its client/engagement relationship cannot be resolved\n";
+    } finally {
+        // Cleaned up here by its own numeric id, not via $cleanup()'s
+        // client_id-scoped deletes -- this row's client_id was deliberately
+        // corrupted above and would no longer match $clientId.
+        $db->exec("DELETE FROM intake_responses WHERE intake_assignment_id = $orphanAssignmentId");
+        $db->exec("DELETE FROM intake_assignments WHERE id = $orphanAssignmentId");
+    }
 } finally {
     $cleanup();
 }

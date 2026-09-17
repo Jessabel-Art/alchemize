@@ -449,3 +449,55 @@ $remainingClients2 = (int) $db->query("SELECT COUNT(*) FROM clients WHERE id IN 
 $remainingLeads2 = (int) $db->query("SELECT COUNT(*) FROM leads WHERE id IN (" . implode(',', array_map('intval', $cleanupLeadIds2)) . ")")->fetchColumn();
 verifyWorkflow($remainingClients2 === 0 && $remainingLeads2 === 0, 'Disposable broadened-detection fixtures were not fully cleaned up');
 echo "\nBroadened test-record detection: word-boundary name/title matching, standalone-word description matching, false-positive substring rejection, standalone operational records independent of client status, and parent preservation all verified against the real database.\n";
+
+// ============================================================================
+// Section 3: production regression -- a test client with a
+// client_service_assignments row (client_service_assignments.client_id is
+// ON DELETE RESTRICT) must purge cleanly instead of throwing an uncaught
+// PDOException (SQLSTATE 23000/1451) that surfaced in production as an
+// HTTP 500 on POST settings/maintenance/execute. The purge must remain
+// fully transactional: if any deletion in the run fails, nothing from
+// that run is left behind.
+// ============================================================================
+echo "\n=== Regression: client_service_assignments FK (production 500) ===\n";
+
+$suffix3 = bin2hex(random_bytes(4));
+
+$serviceId = (int) $db->query("SELECT id FROM services LIMIT 1")->fetchColumn();
+if ($serviceId === 0) {
+    $db->prepare("INSERT INTO services (public_id, service_code, service_name, description, audience, category, status, default_duration, billing_type, default_price, currency, active_flag) VALUES (:pid, :code, :name, 'Regression fixture service', 'individual', 'General', 'active', 60, 'one_time', 100, 'USD', 1)")
+        ->execute(['pid' => alchemize_uuid_v4(), 'code' => "zzz-purge-svc-{$suffix3}", 'name' => "ZZZ Purge Service {$suffix3}"]);
+    $serviceId = (int) $db->lastInsertId();
+}
+
+$csaClientId = makePurgeClient($clientRepo, $suffix3, 'csa-client', "zzz.purge.csa.{$suffix3}@example.test");
+$cleanupClientIds3 = [$csaClientId];
+
+try {
+    $db->prepare("INSERT INTO client_service_assignments (public_id, client_id, service_id, status, pricing_snapshot, catalog_version) VALUES (:pid, :client, :service, 'active', :snapshot, '1')")
+        ->execute(['pid' => alchemize_uuid_v4(), 'client' => $csaClientId, 'service' => $serviceId, 'snapshot' => json_encode(['price' => 100])]);
+
+    verifyWorkflow(tableCount($db, 'client_service_assignments', 'client_id', $csaClientId) === 1, 'Setup failed: the service-assignment fixture was not created');
+
+    $result4 = $service->execute([
+        'action' => 'purge', 'category' => 'test_records', 'confirm' => 'PURGE TEST DATA',
+        'selected_ids' => [$csaClientId],
+    ]);
+    verifyWorkflow($result4['deleted']['clients'] === 1, 'A test client with a client_service_assignments row was not purged: ' . json_encode($result4));
+    verifyWorkflow($result4['deleted']['service_assignments'] === 1, 'The client_service_assignments row was not reported as deleted: ' . json_encode($result4));
+    echo "PASS purge(test_records) no longer throws on a client with a client_service_assignments row -- the exact production 500 is fixed\n";
+
+    verifyWorkflow(tableCount($db, 'clients', 'id', $csaClientId) === 0, 'The client survived despite a successful-looking purge result');
+    verifyWorkflow(tableCount($db, 'client_service_assignments', 'client_id', $csaClientId) === 0, 'The client_service_assignments row survived the purge');
+    echo "PASS Both the client and its service-assignment row are gone after the purge\n";
+} finally {
+    $db->exec("DELETE FROM client_service_assignments WHERE client_id = " . (int) $csaClientId);
+    if ($cleanupClientIds3) {
+        $db->exec("DELETE FROM clients WHERE id IN (" . implode(',', array_map('intval', $cleanupClientIds3)) . ")");
+    }
+    $db->exec("DELETE FROM audit_events WHERE event_type = 'maintenance.test_records_purge' AND entity_id IN (" . implode(',', array_map('intval', [$csaClientId])) . ")");
+}
+
+$remainingClients3 = (int) $db->query("SELECT COUNT(*) FROM clients WHERE id IN (" . implode(',', array_map('intval', $cleanupClientIds3)) . ")")->fetchColumn();
+verifyWorkflow($remainingClients3 === 0, 'Disposable client_service_assignments regression fixture was not fully cleaned up');
+echo "\nclient_service_assignments regression: a test client with an active service assignment now purges successfully instead of failing with an FK integrity error.\n";
