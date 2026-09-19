@@ -1,20 +1,26 @@
 import {
   Briefcase,
+  Calculator,
   ClipboardCheck,
+  Compass,
   FileText,
   Focus,
+  Languages,
+  Laptop,
   Monitor,
   Search,
   Settings,
   Sprout,
-  TrendingUp,
-  User,
+  Stamp,
+  Wallet,
   Wrench,
 } from "lucide-react";
 import Reveal from "../../components/ui/Reveal.jsx";
 import { LocalizedLink as Link } from "../../i18n/LocalizedLink.jsx";
 import { useLanguage } from "../../i18n/LanguageContext.jsx";
 import usePageMetadata from "../../i18n/usePageMetadata.js";
+import { getServiceCategories } from "../services/publicServiceIndex.js";
+import { capabilityAreas } from "../../data/capabilityAreas.js";
 import { resourceBySlug } from "../resources/resourcesData.js";
 import { resourceBySlugEs } from "../resources/resourcesData.es.js";
 import { getDownloadableResource } from "../resources/downloadableResources.js";
@@ -23,8 +29,18 @@ import { homeContent } from "./homeContent.js";
 import "./home.css";
 
 const processIcons = [Search, Focus, Wrench];
-const individualIcons = [FileText, User, TrendingUp];
-const businessIcons = [Briefcase, Settings, Monitor, TrendingUp];
+const categoryIcons = {
+  "tax-preparation": FileText,
+  "notary-document-services": Stamp,
+  "translation-apostille-support": Languages,
+  "digital-support": Laptop,
+  "business-foundation": Briefcase,
+  "operations-administration": Settings,
+  "bookkeeping-payroll-support": Wallet,
+  "tax-financial-organization": Calculator,
+  "web-digital-solutions": Monitor,
+  "business-advisory": Compass,
+};
 
 const BOTANICAL_IMAGE = "/assets/images/home/botanical-asset.png";
 
@@ -80,7 +96,8 @@ function resolveResourceCard(item, language) {
 function HomePage() {
   const { language } = useLanguage();
   const content = homeContent[language];
-  const businessItems = content.capabilities.slice(0, 4);
+  const individualCategories = getServiceCategories("individuals", language);
+  const businessCategories = getServiceCategories("businesses", language);
   const resourceCards = content.resources.items.map((item) =>
     resolveResourceCard(item, language),
   );
@@ -144,12 +161,12 @@ function HomePage() {
               <span>{content.paths.individualLabel}</span>
               <h3>{content.paths.individualTitle}</h3>
               <ul className="home-path-list">
-                {content.paths.individualItems.map((label, index) => {
-                  const Icon = individualIcons[index];
+                {individualCategories.map(({ key, name }) => {
+                  const Icon = categoryIcons[key];
                   return (
-                    <li key={label}>
+                    <li key={key}>
                       <Icon aria-hidden="true" strokeWidth={1.5} />
-                      <span>{label}</span>
+                      <span>{name}</span>
                     </li>
                   );
                 })}
@@ -163,12 +180,12 @@ function HomePage() {
                 <span>{content.paths.businessLabel}</span>
                 <h3>{content.paths.businessTitle}</h3>
                 <ul className="home-path-list">
-                  {businessItems.map(([label], index) => {
-                    const Icon = businessIcons[index];
+                  {businessCategories.map(({ key, name }) => {
+                    const Icon = categoryIcons[key];
                     return (
-                      <li key={label}>
+                      <li key={key}>
                         <Icon aria-hidden="true" strokeWidth={1.5} />
-                        <span>{label}</span>
+                        <span>{name}</span>
                       </li>
                     );
                   })}
@@ -190,7 +207,8 @@ function HomePage() {
       </section>
 
       <section className="home-connect">
-        <div className="home-watermark" aria-hidden="true">
+        <div className="home-watermark" aria-hidden="true" />
+        <div className="home-watermark-word" aria-hidden="true">
           <span>Direction</span>
         </div>
         <div className="content-shell home-connect-grid">
@@ -240,18 +258,16 @@ function HomePage() {
             </Link>
           </Reveal>
           <div className="home-capability-groups">
-            {content.capabilityGroups.map(([title, detail, to], index) => (
+            {capabilityAreas[language].map((area, index) => (
               <Reveal
-                as={Link}
                 className="home-capability-group"
-                to={to}
-                key={title}
+                key={area.title}
                 delay={index * 60}
               >
                 <span>{String(index + 1).padStart(2, "0")}</span>
                 <div>
-                  <h3>{title}</h3>
-                  <p>{detail}</p>
+                  <h3>{area.title}</h3>
+                  <p>{area.copy}</p>
                 </div>
               </Reveal>
             ))}
@@ -336,7 +352,9 @@ function HomePage() {
                       <h3>{card.title}</h3>
                       <p>{card.descriptor}</p>
                       <span className="text-link">
-                        {content.resources.readGuide}
+                        {card.external
+                          ? content.resources.downloadResource
+                          : content.resources.readGuide}
                       </span>
                     </div>
                   </CardTag>

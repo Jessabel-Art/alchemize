@@ -34,7 +34,7 @@ import {
   staffOptions,
 } from "../../../js/data/admin-store.js";
 import { getDocumentTypeOptionsForEngagement } from "../../data/documentTypeCatalog.js";
-import { contactServiceGroups } from "../services/serviceCatalog.js";
+import { getContactServiceGroups } from "../services/publicServiceIndex.js";
 import { businessContact, contactRouting } from "../../data/contactInfo.js";
 import InvoiceDocument from "../../components/invoices/InvoiceDocument.jsx";
 import {
@@ -67,6 +67,13 @@ import {
   reports as reportsApi,
   tasks as taskApi,
 } from "../../services/admin-api.js";
+
+// Internal lists show one entry per canonical service key; the public-only
+// Individuals -> Digital Support alias of `business-digital` is excluded.
+const contactServiceGroups = getContactServiceGroups("en").map((group) => ({
+  ...group,
+  items: group.items.filter((item) => !item.alias),
+}));
 
 const leadStatuses = [
   "New",

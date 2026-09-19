@@ -1,6 +1,8 @@
 import Logo from "../brand/Logo.jsx";
 import { LocalizedLink as Link } from "../../i18n/LocalizedLink.jsx";
 import { useLanguage } from "../../i18n/LanguageContext.jsx";
+import { businessContact, contactRouting } from "../../data/contactInfo.js";
+import { getServiceCategories } from "../../pages/services/publicServiceIndex.js";
 import "./footer.css";
 
 const socialLinks = [
@@ -34,34 +36,21 @@ const socialLabels = {
   },
 };
 
-const groups = {
+// Service groups come from the canonical taxonomy (see serviceTaxonomy.js);
+// only the company and access links are authored here.
+const serviceGroupTitles = {
   en: [
-    [
-      "Individuals",
-      [
-        ["Tax Preparation", "/services/individuals/tax-preparation"],
-        [
-          "Notary & Documents",
-          "/services/individuals/notary-document-services",
-        ],
-        ["Translation Services", "/services/individuals/translation-services"],
-        ["Apostille Services", "/services/individuals/apostille-services"],
-      ],
-    ],
-    [
-      "Businesses",
-      [
-        ["Business Consulting", "/services/businesses/advisory-optimization"],
-        [
-          "Business Operations",
-          "/services/businesses/operations-implementation",
-        ],
-        ["Business Readiness", "/services/businesses/readiness-growth"],
-        ["Bookkeeping", "/services/businesses/bookkeeping-financial-reporting"],
-        ["Payroll", "/services/businesses/payroll-processing"],
-        ["Business Tax", "/services/businesses/business-tax-support"],
-      ],
-    ],
+    ["Individuals", "individuals"],
+    ["Businesses", "businesses"],
+  ],
+  es: [
+    ["Personas", "individuals"],
+    ["Empresas", "businesses"],
+  ],
+};
+
+const staticGroups = {
+  en: [
     [
       "Company",
       [
@@ -82,44 +71,6 @@ const groups = {
   ],
   es: [
     [
-      "Personas",
-      [
-        ["Preparación de impuestos", "/services/individuals/tax-preparation"],
-        [
-          "Notaría y documentos",
-          "/services/individuals/notary-document-services",
-        ],
-        [
-          "Servicios de traducción",
-          "/services/individuals/translation-services",
-        ],
-        ["Servicios de apostilla", "/services/individuals/apostille-services"],
-      ],
-    ],
-    [
-      "Empresas",
-      [
-        [
-          "Asesoría y optimización",
-          "/services/businesses/advisory-optimization",
-        ],
-        [
-          "Operaciones e implementación",
-          "/services/businesses/operations-implementation",
-        ],
-        ["Preparación y crecimiento", "/services/businesses/readiness-growth"],
-        [
-          "Teneduría de libros y reportes financieros",
-          "/services/businesses/bookkeeping-financial-reporting",
-        ],
-        ["Procesamiento de nómina", "/services/businesses/payroll-processing"],
-        [
-          "Apoyo tributario para empresas",
-          "/services/businesses/business-tax-support",
-        ],
-      ],
-    ],
-    [
       "Empresa",
       [
         ["Por qué Alchemize", "/why-alchemize"],
@@ -139,6 +90,21 @@ const groups = {
   ],
 };
 
+// Approved contact and location wording. Nationwide applies to virtual business
+// support only; regulated services are not implied to be available everywhere.
+const contactCopy = {
+  en: {
+    location: "Fayetteville, NC",
+    virtual: "Virtual business support available nationwide.",
+    phone: "910-644-0207",
+  },
+  es: {
+    location: "Fayetteville, NC",
+    virtual: "Apoyo empresarial virtual disponible a nivel nacional.",
+    phone: "910-644-0207",
+  },
+};
+
 function Footer() {
   const { language, isSpanish } = useLanguage();
   return (
@@ -156,6 +122,16 @@ function Footer() {
               ? "Transformamos la complejidad en oportunidad."
               : "Transforming complexity into opportunity."}
           </p>
+          <address className="footer-contact">
+            <span>{contactCopy[language].location}</span>
+            <a href={businessContact.phone.href}>
+              {contactCopy[language].phone}
+            </a>
+            <a href={contactRouting.general.mailto}>
+              {contactRouting.general.email}
+            </a>
+            <p>{contactCopy[language].virtual}</p>
+          </address>
           <div className="footer-social">
             {socialLinks.map(({ name, href, path }) => (
               <a
@@ -173,7 +149,21 @@ function Footer() {
             ))}
           </div>
         </div>
-        {groups[language].map(([title, links]) => (
+        {serviceGroupTitles[language].map(([title, audience]) => (
+          <div className="footer-group" key={audience}>
+            <h2>{title}</h2>
+            {getServiceCategories(audience, language).map((category) => (
+              <Link
+                key={category.key}
+                to={category.route}
+                state={category.linkState}
+              >
+                {category.name}
+              </Link>
+            ))}
+          </div>
+        ))}
+        {staticGroups[language].map(([title, links]) => (
           <div className="footer-group" key={title}>
             <h2>{title}</h2>
             {links.map(([label, to]) => (

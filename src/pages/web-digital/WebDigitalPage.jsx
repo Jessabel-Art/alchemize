@@ -1,7 +1,14 @@
+import { useLocation } from "react-router-dom";
 import Reveal from "../../components/ui/Reveal.jsx";
 import { LocalizedLink as Link } from "../../i18n/LocalizedLink.jsx";
 import { useLanguage } from "../../i18n/LanguageContext.jsx";
 import usePageMetadata from "../../i18n/usePageMetadata.js";
+import {
+  leadOriginState,
+  trackServiceCtaClick,
+} from "../../services/leadAnalytics.js";
+import { webDigitalSummary } from "./webDigitalSummary.js";
+import { webDigitalDetail } from "./webDigitalDetail.js";
 import "./web-digital.css";
 
 const BOTANICAL_IMAGE = "/assets/images/services/botanical-asset.png";
@@ -9,17 +16,24 @@ const BOTANICAL_CORNER_IMAGE =
   "/assets/images/services/resources-botanical-cta.png";
 const HERO_VISUAL = "/assets/images/services/web-digital-hero.png";
 
+// The three solution groups keep the summary's titles (so the Services page
+// listing and this page agree); each carries the capability panels for it.
+const solutionGroups = (lang) =>
+  webDigitalSummary[lang].capabilities.map((title, index) => ({
+    title,
+    panels: webDigitalDetail[lang].panels[index],
+  }));
+
 const contentMap = {
   en: {
     metadata: {
       title: "Small Business Website Design & Digital Solutions | Alchemize",
-      description:
-        "Professional website design and connected digital systems for small businesses, entrepreneurs, and professionals who need a credible online presence and the practical tools behind it.",
+      description: webDigitalDetail.en.metaDescription,
     },
     hero: {
       eyebrow: "Web & Digital Solutions",
       title: "Professional digital presence for the work that matters.",
-      copy: "Alchemize creates professional websites and connected digital systems for businesses, professionals, and independent service providers. From your website and local search presence to forms, scheduling, email, payments, and integrations, we build around how your business actually works.",
+      copy: webDigitalDetail.en.heroCopy,
       primary: "Request a Project Proposal",
       secondary: "See What We Build ↓",
     },
@@ -67,76 +81,10 @@ const contentMap = {
     solutions: {
       eyebrow: "Service architecture",
       title: "Website and digital solutions",
-      copy: "Start with the website alone or build a broader digital foundation around it. Scope is based on what the business actually needs.",
-      categories: [
-        {
-          title: "Website design & development",
-          items: [
-            [
-              "Landing-page websites",
-              "Focused websites designed to introduce a service or offering clearly.",
-            ],
-            [
-              "Small-business websites",
-              "Professional, well-structured sites that support credibility, inquiries, and client trust.",
-            ],
-            [
-              "Professional & portfolio websites",
-              "Clear presentation of services, projects, expertise, and contact information.",
-            ],
-            [
-              "Website redesigns & refreshes",
-              "Improve an existing digital presence without losing the business's core clarity.",
-            ],
-          ],
-        },
-        {
-          title: "Visibility & digital presence",
-          items: [
-            [
-              "Local SEO",
-              "Improve local visibility with search-ready website structure.",
-            ],
-            [
-              "Google Business Profile setup",
-              "Establish or improve the business's presence in local Google results.",
-            ],
-            [
-              "Search-ready website structure",
-              "Build pages, metadata, and content hierarchy with search visibility in mind.",
-            ],
-            [
-              "Responsive & mobile optimization",
-              "Ensure the site remains easy to use and readable across devices.",
-            ],
-          ],
-        },
-        {
-          title: "Systems & support",
-          items: [
-            [
-              "Forms & lead capture",
-              "Capture inquiries directly from the website.",
-            ],
-            [
-              "Appointment scheduling integrations",
-              "Connect booking tools clients can use directly.",
-            ],
-            [
-              "Business email & domain configuration",
-              "Set up a professional email and domain foundation.",
-            ],
-            [
-              "Payment & selected third-party integrations",
-              "Connect the tools the business already relies on.",
-            ],
-            [
-              "Website maintenance & support",
-              "Keep the site reliable after launch.",
-            ],
-          ],
-        },
-      ],
+      copy: webDigitalSummary.en.statement,
+      categories: solutionGroups("en"),
+      lifecycle: webDigitalDetail.en.lifecycle,
+      panelLabels: webDigitalDetail.en.panelLabels,
     },
     system: {
       eyebrow: "Around the website",
@@ -198,7 +146,7 @@ const contentMap = {
       ],
     },
     process: {
-      eyebrow: "How we work",
+      eyebrow: "Web project workflow",
       title: "Simple project process",
       copy: "A clear, structured path from first conversation to launch.",
       items: [
@@ -225,40 +173,30 @@ const contentMap = {
     after: {
       eyebrow: "After launch",
       title: "Digital support for what comes next.",
-      intro:
-        "A website is not necessarily finished when it launches. Depending on the engagement, ongoing support can include:",
+      intro: webDigitalDetail.en.after.intro,
       label: "Ongoing support may include",
-      items: [
-        "Website updates",
-        "Content changes",
-        "Integration support",
-        "Domain & DNS assistance",
-        "Business email support",
-        "Local search updates",
-        "Analytics review",
-        "Future improvements",
-      ],
+      items: webDigitalDetail.en.after.items,
       closing:
         "Ongoing support can be included in the original scope or arranged separately as the business evolves.",
     },
+    faq: webDigitalDetail.en.faq,
     final: {
       eyebrow: "Need more than a standard website?",
       title: "Not sure what your digital presence needs yet?",
-      copy: "You do not need to know whether you need a new website, redesign, SEO work, integrations, or a broader digital setup before contacting us. Tell us what you are trying to accomplish, and we will identify an appropriate starting point.",
+      copy: webDigitalDetail.en.finalCopy,
       cta: "Request a Project Proposal",
     },
   },
   es: {
     metadata: {
       title: "Diseño de sitios web para pequeñas empresas | Alchemize",
-      description:
-        "Diseño de sitios web profesional y sistemas digitales conectados para pequeñas empresas, emprendedores y profesionales que necesitan una presencia en línea clara y confiable.",
+      description: webDigitalDetail.es.metaDescription,
     },
     hero: {
       eyebrow: "Web y soluciones digitales",
       title: "Una presencia digital profesional para el trabajo que importa.",
-      copy: "Alchemize crea sitios web profesionales y sistemas digitales conectados para empresas, profesionales y proveedores de servicios independientes. Desde su sitio web y presencia en búsquedas locales hasta formularios, programación de citas, correo electrónico, pagos e integraciones, construimos alrededor de cómo funciona realmente su negocio.",
-      primary: "Programar una consulta",
+      copy: webDigitalDetail.es.heroCopy,
+      primary: "Solicitar una propuesta de proyecto",
       secondary: "Ver qué construimos ↓",
     },
     positioning: {
@@ -305,76 +243,10 @@ const contentMap = {
     solutions: {
       eyebrow: "Arquitectura de servicios",
       title: "Sitios web y soluciones digitales",
-      copy: "Comience solo con el sitio web o desarrolle una base digital más amplia a su alrededor. El alcance se define según lo que el negocio realmente necesita.",
-      categories: [
-        {
-          title: "Diseño y desarrollo de sitios web",
-          items: [
-            [
-              "Sitios de aterrizaje",
-              "Sitios enfocados diseñados para presentar un servicio u oferta con claridad.",
-            ],
-            [
-              "Sitios para pequeñas empresas",
-              "Sitios profesionales y bien estructurados que respaldan la credibilidad, las consultas y la confianza del cliente.",
-            ],
-            [
-              "Sitios profesionales y de portafolio",
-              "Presentación clara de servicios, proyectos, experiencia e información de contacto.",
-            ],
-            [
-              "Rediseños y actualizaciones de sitios",
-              "Mejore una presencia digital existente sin perder la claridad principal del negocio.",
-            ],
-          ],
-        },
-        {
-          title: "Visibilidad y presencia digital",
-          items: [
-            [
-              "SEO local",
-              "Mejore la visibilidad local con una estructura de sitio preparada para búsquedas.",
-            ],
-            [
-              "Configuración de Google Business Profile",
-              "Establezca o mejore la presencia del negocio en los resultados locales de Google.",
-            ],
-            [
-              "Estructura del sitio preparada para búsquedas",
-              "Construya páginas, metadatos y jerarquía de contenido pensando en la visibilidad en buscadores.",
-            ],
-            [
-              "Optimización responsive y móvil",
-              "Garantice que el sitio siga siendo fácil de usar y leer en todos los dispositivos.",
-            ],
-          ],
-        },
-        {
-          title: "Sistemas y soporte",
-          items: [
-            [
-              "Formularios y captura de leads",
-              "Capture consultas directamente desde el sitio web.",
-            ],
-            [
-              "Integraciones de programación de citas",
-              "Conecte herramientas de reserva que los clientes puedan usar directamente.",
-            ],
-            [
-              "Configuración de correo empresarial y dominio",
-              "Establezca una base profesional de correo electrónico y dominio.",
-            ],
-            [
-              "Pagos e integraciones seleccionadas de terceros",
-              "Conecte las herramientas que el negocio ya utiliza.",
-            ],
-            [
-              "Mantenimiento y soporte del sitio web",
-              "Mantenga el sitio confiable después del lanzamiento.",
-            ],
-          ],
-        },
-      ],
+      copy: webDigitalSummary.es.statement,
+      categories: solutionGroups("es"),
+      lifecycle: webDigitalDetail.es.lifecycle,
+      panelLabels: webDigitalDetail.es.panelLabels,
     },
     system: {
       eyebrow: "Alrededor del sitio web",
@@ -436,7 +308,7 @@ const contentMap = {
       ],
     },
     process: {
-      eyebrow: "Cómo trabajamos",
+      eyebrow: "Flujo de trabajo del proyecto web",
       title: "Proceso simple de proyecto",
       copy: "Un camino claro y estructurado desde la primera conversación hasta el lanzamiento.",
       items: [
@@ -466,27 +338,18 @@ const contentMap = {
     after: {
       eyebrow: "Después del lanzamiento",
       title: "Apoyo digital para lo que sigue.",
-      intro:
-        "Un sitio web no necesariamente está terminado cuando se lanza. Según el proyecto, el soporte continuo puede incluir:",
+      intro: webDigitalDetail.es.after.intro,
       label: "El soporte continuo puede incluir",
-      items: [
-        "Actualizaciones del sitio web",
-        "Cambios de contenido",
-        "Soporte de integraciones",
-        "Asistencia con dominio y DNS",
-        "Soporte de correo empresarial",
-        "Actualizaciones de búsqueda local",
-        "Revisión de analíticas",
-        "Mejoras futuras",
-      ],
+      items: webDigitalDetail.es.after.items,
       closing:
         "El soporte continuo puede incluirse en el alcance original o coordinarse por separado a medida que el negocio evoluciona.",
     },
+    faq: webDigitalDetail.es.faq,
     final: {
       eyebrow: "¿Necesita más que un sitio web estándar?",
       title: "¿No está seguro de lo que necesita su presencia digital?",
-      copy: "No necesita saber si requiere un sitio web nuevo, un rediseño, trabajo de SEO, integraciones o una configuración digital más amplia antes de contactarnos. Cuéntenos qué desea lograr y le ayudaremos a identificar un punto de partida adecuado.",
-      cta: "Programar una consulta",
+      copy: webDigitalDetail.es.finalCopy,
+      cta: "Solicitar una propuesta de proyecto",
     },
   },
 };
@@ -524,6 +387,24 @@ const processIcons = [
 function WebDigitalPage() {
   const { language } = useLanguage();
   const content = contentMap[language];
+  const location = useLocation();
+  // Individual Services -> Digital Support is a second way into this same page.
+  // Its links carry `entryAudience`, so the inquiry (and its measurement) keeps
+  // the audience that asked; every other visit is a business inquiry.
+  const audience =
+    location.state?.entryAudience === "individual" ? "individual" : "business";
+  const contactCta = (ctaLocation, ctaLabel) => ({
+    to: `/contact?service=business-digital&audience=${audience}`,
+    state: leadOriginState({ ctaLocation, serviceKey: "business-digital" }),
+    onClick: () =>
+      trackServiceCtaClick({
+        serviceKey: "business-digital",
+        audience,
+        ctaLocation,
+        ctaLabel,
+        language,
+      }),
+  });
   usePageMetadata({
     en: contentMap.en.metadata,
     es: contentMap.es.metadata,
@@ -544,7 +425,7 @@ function WebDigitalPage() {
             <div className="webx-actions">
               <Link
                 className="button button-primary"
-                to="/contact?service=business-digital&audience=business"
+                {...contactCta("web_hero", content.hero.primary)}
               >
                 {content.hero.primary}
               </Link>
@@ -581,9 +462,21 @@ function WebDigitalPage() {
                   <i />
                 </div>
                 <div className="webx-mini-grid">
-                  <span />
-                  <span />
-                  <span />
+                  <span>
+                    <b />
+                    <i />
+                    <i />
+                  </span>
+                  <span>
+                    <b />
+                    <i />
+                    <i />
+                  </span>
+                  <span>
+                    <b />
+                    <i />
+                    <i />
+                  </span>
                 </div>
               </div>
             </div>
@@ -629,7 +522,6 @@ function WebDigitalPage() {
             {content.audiences.items.map(([title, text], index) => (
               <Reveal as="article" delay={index * 60} key={title}>
                 <div className="webx-audience-head">
-                  <span>{String(index + 1).padStart(2, "0")}</span>
                   <h2>{title}</h2>
                 </div>
                 <p>{text}</p>
@@ -648,6 +540,28 @@ function WebDigitalPage() {
             </div>
             <p>{content.solutions.copy}</p>
           </Reveal>
+          <Reveal className="webx-lifecycle">
+            <div className="webx-lifecycle-head">
+              <span className="eyebrow">
+                {content.solutions.lifecycle.eyebrow}
+              </span>
+              <p className="webx-lifecycle-title">
+                {content.solutions.lifecycle.title}
+              </p>
+              <p>{content.solutions.lifecycle.intro}</p>
+            </div>
+            <ol className="webx-lifecycle-stages">
+              {content.solutions.lifecycle.stages.map(
+                ([label, text], index) => (
+                  <li key={label}>
+                    <span>{String(index + 1).padStart(2, "0")}</span>
+                    <strong>{label}</strong>
+                    <p>{text}</p>
+                  </li>
+                ),
+              )}
+            </ol>
+          </Reveal>
           <div className="webx-solution-categories">
             {content.solutions.categories.map((category, catIndex) => (
               <Reveal
@@ -657,14 +571,32 @@ function WebDigitalPage() {
                 key={category.title}
               >
                 <div className="webx-solution-category-head">
-                  <span>{String(catIndex + 1).padStart(2, "0")}</span>
                   <h3>{category.title}</h3>
                 </div>
-                <div className="webx-solution-index">
-                  {category.items.map(([title, text]) => (
-                    <article key={title}>
-                      <h4>{title}</h4>
-                      <p>{text}</p>
+                <div className="webx-solution-panels">
+                  {category.panels.map((panel) => (
+                    <article key={panel.name} className="webx-panel">
+                      <header>
+                        <span className="webx-panel-stage">{panel.stage}</span>
+                        <h4>{panel.name}</h4>
+                      </header>
+                      <p className="webx-panel-lead">{panel.lead}</p>
+                      {panel.projects ? (
+                        <p className="webx-panel-projects">
+                          <strong>
+                            {content.solutions.panelLabels.projects}
+                          </strong>{" "}
+                          {panel.projects.join(" · ")}
+                        </p>
+                      ) : null}
+                      <ul aria-label={content.solutions.panelLabels.includes}>
+                        {panel.points.map((point) => (
+                          <li key={point}>{point}</li>
+                        ))}
+                      </ul>
+                      {panel.note ? (
+                        <p className="webx-panel-note">{panel.note}</p>
+                      ) : null}
                     </article>
                   ))}
                 </div>
@@ -750,7 +682,6 @@ function WebDigitalPage() {
                 delay={index * 40}
                 key={item}
               >
-                <span>{String(index + 1).padStart(2, "0")}</span>
                 <p>{item}</p>
               </Reveal>
             ))}
@@ -802,6 +733,23 @@ function WebDigitalPage() {
         </div>
       </section>
 
+      <section className="webx-faq">
+        <div className="content-shell webx-faq-grid">
+          <Reveal>
+            <span className="eyebrow">{content.faq.eyebrow}</span>
+            <h2>{content.faq.title}</h2>
+          </Reveal>
+          <div className="webx-faq-list">
+            {content.faq.items.map(({ q, a }) => (
+              <details key={q}>
+                <summary>{q}</summary>
+                <p>{a}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="webx-consult webx-consult--bottom">
         <img
           className="webx-consult-botanical"
@@ -819,7 +767,7 @@ function WebDigitalPage() {
             <p>{content.final.copy}</p>
             <Link
               className="button button-primary"
-              to="/contact?service=business-digital&audience=business"
+              {...contactCta("web_close", content.final.cta)}
             >
               {content.final.cta}
             </Link>

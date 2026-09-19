@@ -48,6 +48,10 @@ import ServiceCategoryPage from "../pages/services/ServiceCategoryPage.jsx";
 import ServiceDetailPage from "../pages/services/ServiceDetailPage.jsx";
 import PublicSchedulingPage from "../pages/appointments/PublicSchedulingPage.jsx";
 import { trackPageView } from "../services/analytics.js";
+import {
+  installContactLinkTracking,
+  noteRoute,
+} from "../services/leadAnalytics.js";
 
 function ScrollRestoration() {
   const location = useLocation();
@@ -129,12 +133,16 @@ function App() {
   const location = useLocation();
 
   useEffect(() => {
+    noteRoute(location.pathname);
     trackPageView({
       pathname: location.pathname + location.search,
       title: document.title || "Alchemize Business Services",
       origin: window.location.origin,
     });
   }, [location.pathname, location.search]);
+
+  // phone_click / email_click: one delegated listener for the whole app
+  useEffect(() => installContactLinkTracking(), []);
 
   return (
     <>

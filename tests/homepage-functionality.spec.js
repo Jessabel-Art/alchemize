@@ -1,24 +1,48 @@
 import { expect, test } from "@playwright/test";
 
-const capabilityGroupTargets = [
-  ["Business Foundation", "/services/businesses/advisory-optimization"],
-  [
-    "Operations & Administration",
-    "/services/businesses/operations-implementation",
-  ],
-  ["Financial Organization", "/services/businesses/business-tax-support"],
-  ["Web & Digital Solutions", "/web-digital"],
-];
-
-test("homepage capability groups reach their matching business service families", async ({
+test("homepage capability grid describes capabilities and is not a second service menu", async ({
   page,
 }) => {
-  for (const [label, target] of capabilityGroupTargets) {
-    await page.goto("/", { waitUntil: "networkidle" });
-    await page.locator(".home-capability-group", { hasText: label }).click();
-    await expect(page).toHaveURL(new RegExp(`${target}/?$`));
-    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-  }
+  await page.goto("/", { waitUntil: "networkidle" });
+  const tiles = page.locator(".home-capability-group");
+  await expect(tiles).toHaveCount(6);
+  await expect(tiles.locator("a")).toHaveCount(0);
+  const titles = await tiles.locator("h3").allTextContents();
+  expect(titles).toEqual([
+    "Operations & Structure",
+    "Administration & Organization",
+    "Client Service & Coordination",
+    "Financial & Operational Responsibility",
+    "Digital Business & E-Commerce",
+    "UX & Web Development",
+  ]);
+  // none of them repeats a canonical service category name
+  const categories = await page
+    .locator(".home-business-panel .home-path-list span")
+    .allTextContents();
+  expect(categories.length).toBe(6);
+  for (const title of titles) expect(categories).not.toContain(title);
+});
+
+test("homepage service discovery lists the canonical categories", async ({
+  page,
+}) => {
+  await page.goto("/", { waitUntil: "networkidle" });
+  const panels = page.locator(".home-path-grid article");
+  await expect(panels.nth(0).locator("li span")).toHaveText([
+    "Tax Preparation",
+    "Notary & Document Services",
+    "Translation & Apostille Support",
+    "Digital Support",
+  ]);
+  await expect(panels.nth(1).locator("li span")).toHaveText([
+    "Business Foundation",
+    "Business Advisory",
+    "Operations & Administration",
+    "Tax & Financial Organization",
+    "Bookkeeping & Payroll Support",
+    "Web & Digital Solutions",
+  ]);
 });
 
 test("homepage hero and service CTAs retain correct destinations", async ({
@@ -130,7 +154,7 @@ test("homepage refinement remains composed without horizontal overflow", async (
     await page.setViewportSize({ width, height: 1000 });
     await expect(page.locator(".home-connect-process")).toBeVisible();
     await expect(page.locator(".home-resource-card")).toHaveCount(3);
-    await expect(page.locator(".home-capability-group")).toHaveCount(4);
+    await expect(page.locator(".home-capability-group")).toHaveCount(6);
     const overflows = await page.evaluate(
       () =>
         document.documentElement.scrollWidth >

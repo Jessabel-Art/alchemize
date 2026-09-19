@@ -12,6 +12,7 @@ import {
 } from "../../seo/siteSchema.js";
 import { findService, legacyServiceRoutes } from "./serviceCatalog.js";
 import { findServiceEs } from "./serviceCatalog.es.js";
+import { getCategoryForService } from "./publicServiceIndex.js";
 import { serviceDetailUi } from "./servicesContent.js";
 import "./services.css";
 
@@ -19,6 +20,7 @@ function useServiceMetadata(service, language) {
   useEffect(() => {
     if (!service) return undefined;
     const prefix = language === "es" ? "/es" : "";
+    const category = getCategoryForService(service.serviceKey, language);
     const canonical = `${SITE_URL}${prefix}/services/${service.audience}/${service.slug}`;
     const seoTitle = service.seoTitle || `${service.title} | Alchemize`;
     const seoDescription =
@@ -89,6 +91,9 @@ function useServiceMetadata(service, language) {
             service.audienceLabel,
             `${SITE_URL}${prefix}/services#${service.audience}`,
           ],
+          ...(category?.multiService
+            ? [[category.name, `${SITE_URL}${prefix}/services#${category.key}`]]
+            : []),
           [service.title, canonical],
         ]),
       ],

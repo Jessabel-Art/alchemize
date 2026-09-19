@@ -2,50 +2,33 @@ import {
   ClipboardCheck,
   Compass,
   Focus,
-  FolderTree,
   Link2,
-  MoveRight,
   RefreshCw,
   Search,
   ShieldCheck,
+  Wrench,
 } from "lucide-react";
 import Reveal from "../../components/ui/Reveal.jsx";
 import { LocalizedLink as Link } from "../../i18n/LocalizedLink.jsx";
 import { useLanguage } from "../../i18n/LanguageContext.jsx";
 import usePageMetadata from "../../i18n/usePageMetadata.js";
+import { getServiceCategories } from "../services/publicServiceIndex.js";
 import { whyContent } from "./whyContent.js";
 import "./why-alchemize.css";
 
-const approachIcons = [Search, FolderTree, Focus, MoveRight];
+const approachIcons = [Search, Focus, Wrench];
 const principleIcons = [Compass, Link2, ClipboardCheck, ShieldCheck, RefreshCw];
-
-const continuityRoutes = {
-  "Tax Preparation": "/services/individuals/tax-preparation",
-  "Notary & Documents": "/services/individuals/notary-document-services",
-  "Translation & Apostille": [
-    { label: "Translation", to: "/services/individuals/translation-services" },
-    { label: "Apostille", to: "/services/individuals/apostille-services" },
-  ],
-  "Digital Support": "/web-digital",
-  "Preparation & Organization": "/services/individuals",
-  "Startup Support": "/services/businesses/readiness-growth",
-  "Bookkeeping & Payroll": [
-    {
-      label: "Bookkeeping",
-      to: "/services/businesses/bookkeeping-financial-reporting",
-    },
-    { label: "Payroll", to: "/services/businesses/payroll-processing" },
-  ],
-  "Business Tax Support": "/services/businesses/business-tax-support",
-  "Operations & Administration":
-    "/services/businesses/operations-implementation",
-  Advisory: "/services/businesses/advisory-optimization",
-};
 
 function WhyAlchemizePage() {
   const { language } = useLanguage();
   const content = whyContent[language];
   usePageMetadata({ en: whyContent.en.metadata, es: whyContent.es.metadata });
+  // Category names, order and links all come from the canonical taxonomy.
+  const categoriesFor = (audience) => getServiceCategories(audience, language);
+  const categoryList = (audience) =>
+    categoriesFor(audience)
+      .map((category) => category.name)
+      .join(". ") + ".";
 
   return (
     <article className="why-page">
@@ -107,8 +90,8 @@ function WhyAlchemizePage() {
                 {content.audiences.individual.eyebrow}
               </span>
               <h2>{content.audiences.individual.title}</h2>
-              <p>{content.audiences.individual.copy}</p>
-              <Link className="text-link" to="/services/individuals">
+              <p>{categoryList("individuals")}</p>
+              <Link className="text-link" to="/services/#individuals">
                 {content.audiences.individual.link}
               </Link>
             </Reveal>
@@ -123,10 +106,10 @@ function WhyAlchemizePage() {
                 {content.audiences.business.eyebrow}
               </span>
               <h2>{content.audiences.business.title}</h2>
-              <p>{content.audiences.business.copy}</p>
+              <p>{categoryList("businesses")}</p>
               <Link
                 className="text-link why-light-link"
-                to="/services/businesses"
+                to="/services/#businesses"
               >
                 {content.audiences.business.link}
               </Link>
@@ -202,64 +185,32 @@ function WhyAlchemizePage() {
           <div className="why-pathways">
             <span className="why-pathways-origin" aria-hidden="true" />
             <div className="why-pathways-grid">
-              {content.continuity.paths.map(
-                ([label, audience, stages], pathIndex) => (
-                  <Reveal
-                    as="article"
-                    className={`why-pathway why-pathway--${audience}`}
-                    delay={pathIndex * 100}
-                    key={label}
-                  >
-                    <h3>{label}</h3>
-                    <ol className="why-pathway-list">
-                      {stages.map((stage) => {
-                        const route = continuityRoutes[stage] ?? "/services";
-                        const isSplitLabel = Array.isArray(route);
-
-                        return (
-                          <li key={stage} className="why-pathway-item">
-                            <span
-                              className="why-pathway-node"
-                              aria-hidden="true"
-                            />
-                            {isSplitLabel ? (
-                              <span className="why-pathway-stage why-pathway-stage--split">
-                                {route.map((item, index) => (
-                                  <span
-                                    key={item.label}
-                                    className="why-pathway-inline"
-                                  >
-                                    <Link
-                                      className="why-pathway-link"
-                                      to={item.to}
-                                    >
-                                      {item.label}
-                                    </Link>
-                                    {index < route.length - 1 && (
-                                      <span
-                                        className="why-pathway-separator"
-                                        aria-hidden="true"
-                                      >
-                                        &
-                                      </span>
-                                    )}
-                                  </span>
-                                ))}
-                              </span>
-                            ) : (
-                              <Link className="why-pathway-link" to={route}>
-                                <span className="why-pathway-stage">
-                                  {stage}
-                                </span>
-                              </Link>
-                            )}
-                          </li>
-                        );
-                      })}
-                    </ol>
-                  </Reveal>
-                ),
-              )}
+              {content.continuity.paths.map(([label, audience], pathIndex) => (
+                <Reveal
+                  as="article"
+                  className={`why-pathway why-pathway--${audience}`}
+                  delay={pathIndex * 100}
+                  key={label}
+                >
+                  <h3>{label}</h3>
+                  <ol className="why-pathway-list">
+                    {categoriesFor(audience).map((category) => (
+                      <li key={category.key} className="why-pathway-item">
+                        <span className="why-pathway-node" aria-hidden="true" />
+                        <Link
+                          className="why-pathway-link"
+                          to={category.route}
+                          state={category.linkState}
+                        >
+                          <span className="why-pathway-stage">
+                            {category.name}
+                          </span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ol>
+                </Reveal>
+              ))}
             </div>
           </div>
         </div>

@@ -16,13 +16,14 @@ test("derives the complete public selector from canonical service-page keys", ()
       "individual-tax",
       "individual-notary",
       "individual-translation",
-      "business-advisory",
-      "business-operations",
+      "individual-apostille",
       "business-digital",
       "business-readiness",
+      "business-advisory",
+      "business-operations",
+      "business-financial",
       "business-bookkeeping",
       "business-payroll",
-      "business-financial",
     ],
   );
 });
@@ -49,10 +50,17 @@ test("contact selector groups are accessible and contain no duplicate values", (
       { audience: "business", label: "Business Services" },
     ],
   );
+  // Within an audience every value is unique. `business-digital` appears once per
+  // audience (Digital Support / Web & Digital Solutions): one canonical key.
+  for (const group of contactServiceGroups) {
+    const groupValues = group.items.map((item) => item.value);
+    assert.equal(groupValues.length, new Set(groupValues).size, group.audience);
+  }
   const values = contactServiceGroups.flatMap((group) =>
     group.items.map((item) => item.value),
   );
-  assert.equal(values.length, new Set(values).size);
+  assert.equal(values.filter((v) => v === "business-digital").length, 2);
+  assert.ok(values.includes("individual-apostille"));
   assert.ok(values.includes("individual-tax"));
   assert.ok(values.includes("individual-notary"));
   assert.ok(values.includes("business-readiness"));

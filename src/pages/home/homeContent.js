@@ -16,7 +16,7 @@ export const homeContent = {
       primary: "Schedule a Consultation",
       secondary: "Explore Services",
       alt: "Professional reviewing organized business materials at a desk",
-      caption: "Assess. Optimize. Implement.",
+      caption: "Assess. Identify. Implement.",
     },
     paths: {
       eyebrow: "Start with what you need",
@@ -24,25 +24,11 @@ export const homeContent = {
       copy: "Practical guidance, organized systems, and professional support for every stage — whether you're managing personal responsibilities or growing a business.",
       individualLabel: "For individuals",
       individualTitle: "Individual Services",
-      individualItems: [
-        "Tax Preparation",
-        "Document Services",
-        "Financial Guidance",
-      ],
       individualLink: "Explore individual services",
       businessLabel: "For entrepreneurs · freelancers · businesses",
       businessTitle: "Business Services",
       businessLink: "Explore business services",
     },
-    capabilities: [
-      ["Business Consulting", "/services/businesses/advisory-optimization"],
-      ["Business Operations", "/services/businesses/operations-implementation"],
-      ["Web & Digital Solutions", "/web-digital"],
-      ["Business Readiness", "/services/businesses/readiness-growth"],
-      ["Bookkeeping", "/services/businesses/bookkeeping-financial-reporting"],
-      ["Payroll", "/services/businesses/payroll-processing"],
-      ["Business Tax", "/services/businesses/business-tax-support"],
-    ],
     connect: {
       eyebrow: "Your responsibilities connect",
       title: "Many important business and personal decisions overlap.",
@@ -55,40 +41,18 @@ export const homeContent = {
       ],
     },
     business: {
-      eyebrow: "Business capabilities",
+      eyebrow: "What we bring to the work",
       title:
         "More than recommendations. Support for putting the work into place.",
       copy: "Alchemize brings together strategy, systems, and practical implementation so you can move forward with clarity and less guesswork.",
       exploreAll: "Explore All Services",
       ariaPrefix: "Explore",
     },
-    capabilityGroups: [
-      [
-        "Business Foundation",
-        "Consulting · Readiness · Formation support",
-        "/services/businesses/advisory-optimization",
-      ],
-      [
-        "Operations & Administration",
-        "Processes · Bookkeeping · Payroll support",
-        "/services/businesses/operations-implementation",
-      ],
-      [
-        "Financial Organization",
-        "Business tax · Records · Compliance guidance",
-        "/services/businesses/business-tax-support",
-      ],
-      [
-        "Web & Digital Solutions",
-        "Website design · SEO · Digital presence",
-        "/web-digital",
-      ],
-    ],
     trust: {
-      alt: "Jessy Santos working with business documents at a desk",
+      alt: "Person writing in a spiral notebook with one hand resting on printed financial documents, a laptop and a mug on the dark desk beside them",
       eyebrow: "Clear guidance. Practical support.",
       title: "Professional does not have to mean impersonal.",
-      copy: "Alchemize combines organized processes and professional standards with clear, direct communication.",
+      copy: "We turn unclear, unfinished situations into next steps you understand, then help carry them out. You know what needs to happen, why, and what comes next.",
       link: "Why Alchemize",
     },
     resources: {
@@ -97,6 +61,7 @@ export const homeContent = {
       copy: "Guides, checklists, and insights to help you take the next step with confidence.",
       button: "Explore All Resources",
       readGuide: "Read the guide",
+      downloadResource: "Download the workbook",
       featuredLabel: "Featured resource",
       items: [
         {
@@ -144,7 +109,7 @@ export const homeContent = {
       primary: "Programar una consulta",
       secondary: "Explorar servicios",
       alt: "Profesional revisando materiales empresariales organizados en un escritorio",
-      caption: "Evaluar. Optimizar. Implementar.",
+      caption: "Evaluar. Identificar. Implementar.",
     },
     paths: {
       eyebrow: "Comience con lo que necesita",
@@ -152,38 +117,12 @@ export const homeContent = {
       copy: "Orientación práctica, sistemas organizados y apoyo profesional para cada etapa, ya sea que esté gestionando responsabilidades personales o haciendo crecer una empresa.",
       individualLabel: "Para personas",
       individualTitle: "Servicios para personas",
-      individualItems: [
-        "Preparación de impuestos",
-        "Servicios de documentos",
-        "Asesoría financiera",
-      ],
       individualLink: "Explorar servicios para personas",
       businessLabel:
         "Para emprendedores · profesionales independientes · empresas",
       businessTitle: "Servicios para empresas",
       businessLink: "Explorar servicios para empresas",
     },
-    capabilities: [
-      ["Asesoría y optimización", "/services/businesses/advisory-optimization"],
-      [
-        "Operaciones e implementación",
-        "/services/businesses/operations-implementation",
-      ],
-      ["Web y soluciones digitales", "/web-digital"],
-      [
-        "Preparación y crecimiento empresarial",
-        "/services/businesses/readiness-growth",
-      ],
-      [
-        "Teneduría de libros y reportes financieros",
-        "/services/businesses/bookkeeping-financial-reporting",
-      ],
-      ["Procesamiento de nómina", "/services/businesses/payroll-processing"],
-      [
-        "Apoyo tributario para empresas",
-        "/services/businesses/business-tax-support",
-      ],
-    ],
     connect: {
       eyebrow: "Sus responsabilidades están conectadas",
       title:
@@ -197,40 +136,18 @@ export const homeContent = {
       ],
     },
     business: {
-      eyebrow: "Capacidades empresariales",
+      eyebrow: "Lo que aportamos al trabajo",
       title:
         "Más que recomendaciones. Apoyo para poner el trabajo en práctica.",
       copy: "Alchemize combina estrategia, sistemas e implementación práctica para que usted avance con claridad y menos incertidumbre.",
       exploreAll: "Explorar todos los servicios",
       ariaPrefix: "Explorar",
     },
-    capabilityGroups: [
-      [
-        "Bases del negocio",
-        "Asesoría · Preparación · Apoyo de formación",
-        "/services/businesses/advisory-optimization",
-      ],
-      [
-        "Operaciones y administración",
-        "Procesos · Teneduría de libros · Nómina",
-        "/services/businesses/operations-implementation",
-      ],
-      [
-        "Organización financiera",
-        "Impuestos empresariales · Registros · Cumplimiento",
-        "/services/businesses/business-tax-support",
-      ],
-      [
-        "Web y soluciones digitales",
-        "Diseño de sitios · SEO · Presencia digital",
-        "/web-digital",
-      ],
-    ],
     trust: {
-      alt: "Jessy Santos trabajando con documentos empresariales en un escritorio",
+      alt: "Persona escribiendo en un cuaderno de espiral con una mano sobre documentos financieros impresos, junto a una computadora portátil y una taza en un escritorio oscuro",
       eyebrow: "Orientación clara. Apoyo práctico.",
       title: "Ser profesional no significa ser impersonal.",
-      copy: "Alchemize combina procesos organizados y estándares profesionales con una comunicación clara y directa.",
+      copy: "Convertimos situaciones poco claras o inconclusas en pasos que usted entiende, y le ayudamos a llevarlos a cabo. Usted sabe qué debe suceder, por qué y qué sigue.",
       link: "Por qué Alchemize",
     },
     resources: {
@@ -239,6 +156,7 @@ export const homeContent = {
       copy: "Guías, listas de verificación e información práctica para ayudarle a dar el próximo paso con confianza.",
       button: "Explorar todos los recursos",
       readGuide: "Leer la guía",
+      downloadResource: "Descargar el cuaderno",
       featuredLabel: "Recurso destacado",
       items: [
         {

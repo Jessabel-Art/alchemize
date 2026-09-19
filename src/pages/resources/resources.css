@@ -1056,15 +1056,26 @@
 }
 
 .resource-back-link {
-  display: inline-flex;
+  display: flex;
+  width: fit-content;
   gap: 0.45rem;
-  margin-bottom: clamp(2rem, 5vw, 4rem);
+  margin-bottom: clamp(1.5rem, 3.5vw, 2.5rem);
   color: #cfdbd7;
   font-size: 0.72rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   align-items: center;
+}
+
+.resource-back-link {
+  position: relative;
+}
+
+.resource-back-link::before {
+  content: "";
+  position: absolute;
+  inset: -0.75rem -0.25rem;
 }
 
 .resource-back-link svg {
@@ -1359,6 +1370,10 @@
   padding: clamp(2rem, 5vw, 4rem);
   background: var(--emerald-forest);
   color: var(--white);
+}
+
+.resource-next .eyebrow {
+  color: var(--gold);
 }
 
 .resource-next h2 {

@@ -323,17 +323,28 @@
     0 0 0 55px rgba(215, 176, 95, 0.035),
     0 0 0 110px rgba(215, 176, 95, 0.02);
 }
-.home-watermark span {
+/* The word is sized from the section's own height (container units) so the
+   whole of "DIRECTION" reads inside the band at every width instead of being
+   clipped top and bottom. */
+.home-watermark-word {
+  position: absolute;
+  inset: 0;
+  container-type: size;
+  pointer-events: none;
+}
+.home-watermark-word span {
   position: absolute;
   top: 50%;
-  left: -27%;
+  right: clamp(0.75rem, 4vw, 4rem);
   color: rgba(255, 255, 255, 0.035);
   font-family: var(--font-display);
-  font-size: clamp(5.5rem, 11vw, 10rem);
+  font-size: 3.5rem;
+  font-size: 16cqh;
   line-height: 1;
   text-transform: uppercase;
-  transform: translateY(-50%) rotate(-90deg);
   white-space: nowrap;
+  writing-mode: vertical-rl;
+  transform: translateY(-50%) rotate(180deg);
 }
 .home-connect-grid {
   position: relative;
@@ -478,39 +489,22 @@
   border-right: 1px solid var(--color-border);
   border-bottom: 1px solid var(--color-border);
   color: inherit;
-  transition:
-    background-color var(--transition-base),
-    padding var(--transition-base);
 }
 .home-capability-group > span {
   flex: 0 0 auto;
-  color: var(--gold);
+  color: var(--emerald-forest);
   font-family: var(--font-display);
   font-size: 1.1rem;
 }
 .home-capability-group h3 {
   color: var(--emerald-deep);
   font-size: 1.08rem;
-  transition: color var(--transition-fast);
 }
 .home-capability-group p {
   margin-top: 0.4rem;
   color: var(--color-text-soft);
   font-size: 0.82rem;
   line-height: 1.55;
-}
-.home-capability-group:hover,
-.home-capability-group:focus-visible {
-  padding-left: clamp(1.75rem, 3vw, 2.25rem);
-  background: rgba(215, 176, 95, 0.075);
-}
-.home-capability-group:hover h3,
-.home-capability-group:focus-visible h3 {
-  color: var(--emerald-forest);
-}
-.home-capability-group:focus-visible {
-  outline: 2px solid var(--gold);
-  outline-offset: -2px;
 }
 
 /* ==========================================================================

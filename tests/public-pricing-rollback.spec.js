@@ -14,8 +14,15 @@ const affectedRoutes = [
   "/services/businesses/business-tax-support/",
 ];
 
+// Public pricing policy: only Translation and Apostille publish prices (covered
+// by service-detail-content.spec.js). Every other service page stays price-free.
+const publiclyPriced = [
+  "/services/individuals/translation-services/",
+  "/services/individuals/apostille-services/",
+];
+
 for (const route of affectedRoutes) {
-  test(`${route} uses the editorial service layout without public pricing`, async ({
+  test(`${route} uses the editorial service layout ${publiclyPriced.includes(route) ? "with only its approved public pricing" : "without public pricing"}`, async ({
     page,
   }) => {
     await page.goto(route);
@@ -24,7 +31,9 @@ for (const route of affectedRoutes) {
     await expect(
       page.getByText("Compare standardized service options."),
     ).toHaveCount(0);
-    await expect(page.getByText(/\$\d[\d,]*(?:\.\d{2})?/)).toHaveCount(0);
+    if (!publiclyPriced.includes(route)) {
+      await expect(page.getByText(/\$\d[\d,]*(?:\.\d{2})?/)).toHaveCount(0);
+    }
     await expect(
       page.getByText("Who this is for", { exact: true }),
     ).toHaveCount(0);

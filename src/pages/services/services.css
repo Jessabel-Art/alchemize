@@ -238,40 +238,182 @@
   transform: translateX(4px);
 }
 
-.service-row-copy p {
-  max-width: 760px;
+.service-row-copy p,
+.service-child-copy p {
+  max-width: 38rem;
+  text-wrap: pretty;
   margin-top: 0.8rem;
   color: var(--color-text-soft);
   line-height: 1.7;
 }
 
-.service-row-copy ul {
+/* Capabilities are supporting detail: one quiet line of small regular text,
+   never heavier than the service name above it. */
+.service-row-copy ul,
+.service-child-copy ul {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.3rem 1.1rem;
-  margin: 1rem 0 0;
+  gap: 0.15rem 1.1rem;
+  margin: 0.85rem 0 0;
   padding: 0;
   list-style: none;
 }
 
-.service-row-copy li {
-  position: relative;
-  padding-left: 0.7rem;
-  color: var(--emerald-forest);
-  font-size: 0.76rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
+.service-row-copy li,
+.service-child-copy li {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  color: var(--color-text-soft);
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: 1.6;
 }
 
-.service-row-copy li::before {
+.service-row-copy li::before,
+.service-child-copy li::before {
   content: "";
-  position: absolute;
-  left: 0;
-  top: 0.54em;
+  flex: 0 0 auto;
   width: 4px;
   height: 4px;
+  transform: translateY(-0.12em);
   border-radius: 50%;
   background: var(--gold);
+}
+
+/* CATEGORY WITH SEVERAL SERVICES
+   Level 2 (category) is a header, not a link: large display name, a small
+   count label, no arrow, no hover. Level 3 (the services) sit inside it,
+   indented behind a fine gold rule on a faint tint, in a smaller type scale,
+   separated by dotted rules, each with its own arrow. */
+.service-group {
+  padding: clamp(1.5rem, 2vw, 2.2rem) 0 clamp(1.4rem, 2vw, 2rem);
+  border-bottom: 1px solid rgba(6, 43, 43, 0.18);
+  scroll-margin-top: calc(var(--site-header-height) + 2rem);
+}
+
+.service-group-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 1.1rem;
+  break-after: avoid;
+}
+
+.service-group-head h3 {
+  margin: 0;
+  color: var(--emerald-deep);
+  font-size: clamp(2rem, 3vw, 3rem);
+  line-height: 0.96;
+}
+
+.service-group-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0;
+  color: var(--emerald-forest);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.service-group-count::before {
+  content: "";
+  width: 24px;
+  height: 1px;
+  background: var(--gold);
+}
+
+.service-group-descriptor {
+  max-width: 38rem;
+  margin: 0.75rem 0 0;
+  color: var(--color-text-soft);
+  line-height: 1.7;
+  text-wrap: pretty;
+}
+
+.service-group-children {
+  margin: 1.2rem 0 0 clamp(0.25rem, 1.2vw, 1rem);
+  padding-left: clamp(0.9rem, 2vw, 1.75rem);
+  border-left: 1px solid var(--gold);
+  background: rgba(6, 43, 43, 0.028);
+}
+
+.service-child {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.75rem 1.25rem;
+  padding: 1.25rem clamp(0.75rem, 1.5vw, 1.25rem) 1.25rem 0;
+  border-top: 1px dotted rgba(6, 43, 43, 0.28);
+  color: inherit;
+  text-decoration: none;
+  transition: background-color var(--transition-base);
+}
+
+.service-child:first-child {
+  border-top: 0;
+}
+
+.service-child:hover,
+.service-child:focus-visible {
+  background: rgba(6, 43, 43, 0.03);
+}
+
+.service-child:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: -2px;
+}
+
+.service-child-copy h4 {
+  margin: 0;
+  color: var(--emerald-deep);
+  font-size: clamp(1.35rem, 1.9vw, 1.7rem);
+  font-weight: 500;
+  line-height: 1.12;
+  transition: transform var(--transition-base);
+}
+
+.service-child-copy p {
+  margin-top: 0.5rem;
+  font-size: 0.95rem;
+  line-height: 1.65;
+}
+
+.service-child:hover h4,
+.service-child:focus-visible h4 {
+  transform: translateX(4px);
+}
+
+.service-child .service-row-arrow {
+  align-self: start;
+  margin-top: 0.05rem;
+  font-size: 1.5rem;
+}
+
+.service-child:hover .service-row-arrow,
+.service-child:focus-visible .service-row-arrow {
+  transform: translateX(6px);
+  color: var(--gold);
+}
+
+@media (max-width: 640px) {
+  .service-group-head h3 {
+    font-size: 2rem;
+  }
+  .service-group-children {
+    margin-left: 0.15rem;
+    padding-left: 0.85rem;
+  }
+  .service-child {
+    padding-right: 0.5rem;
+  }
+  /* keep every arrow aligned with the service name, not floating mid-block */
+  .service-row .service-row-arrow {
+    align-self: start;
+    margin-top: 0.35rem;
+  }
 }
 
 .service-row-arrow {
@@ -337,6 +479,8 @@
 }
 .service-breadcrumb a {
   color: var(--emerald-forest);
+  /* typography.css sets a { font-size: 1rem }; match the crumb the link sits in */
+  font-size: inherit;
 }
 .service-detail-hero {
   position: relative;
@@ -1222,6 +1366,38 @@
     position: static;
   }
 
+  /* SECTION INTRO vs SERVICE LISTINGS (collapsed, single-column layout)
+     Level 1 eyebrow, level 2 positioning statement, level 3 service titles.
+     The intro is one cohesive unit set smaller than the service titles that
+     follow it, then separated from them by clear space on either side of the
+     existing list rule. Desktop (two columns) is not affected. */
+  .services-catalog-inner {
+    row-gap: clamp(2.75rem, 8vw, 4rem);
+  }
+
+  .services-catalog-intro {
+    max-width: 36rem;
+  }
+
+  .services-catalog-intro h2 {
+    margin-top: 0.6rem;
+    font-size: clamp(1.45rem, 3.2vw, 1.75rem);
+    line-height: 1.14;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  .services-catalog-intro p {
+    margin-top: 0.7rem;
+    font-size: 0.98rem;
+    line-height: 1.65;
+    text-wrap: pretty;
+  }
+
+  .services-list > :first-child {
+    padding-top: clamp(2.25rem, 6vw, 3rem);
+  }
+
   .service-detail-mark {
     min-height: 220px;
   }
@@ -1281,16 +1457,19 @@
     max-width: none;
   }
 
+  /* the arrow stays beside the service name, never on a line of its own */
   .service-row {
-    grid-template-columns: 1fr;
-    gap: 0.45rem 0;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.45rem 1rem;
     padding: 1.4rem 0;
   }
 
   .service-row-arrow {
-    justify-self: flex-end;
+    justify-self: end;
+    align-self: start;
     min-width: 0;
-    font-size: 1.8rem;
+    margin-top: 0.3rem;
+    font-size: 1.6rem;
   }
 
   .service-row-copy h3 {
@@ -1299,11 +1478,6 @@
 
   .service-row-copy p {
     max-width: none;
-  }
-
-  .service-row-copy ul {
-    display: grid;
-    gap: 0.5rem;
   }
 
   .service-capability-grid div:nth-child(even) {
@@ -1364,13 +1538,9 @@
     padding: 1rem 0.8rem;
   }
 
-  .service-row-copy ul {
-    gap: 0.35rem 0;
-  }
-
-  .service-row-copy li {
-    padding-left: 0.55rem;
-    font-size: 0.68rem;
+  .service-row-copy li,
+  .service-child-copy li {
+    font-size: 0.76rem;
   }
 }
 
@@ -1470,15 +1640,6 @@
   );
 }
 
-.editorial-service-mark > span {
-  position: absolute;
-  top: 1rem;
-  left: 0;
-  color: var(--gold);
-  font-family: var(--font-display);
-  font-size: 1.1rem;
-}
-
 .editorial-service-mark > svg {
   width: clamp(92px, 11vw, 145px);
   height: auto;
@@ -1545,14 +1706,12 @@
 .editorial-service-context .eyebrow,
 .service-breadcrumb,
 .editorial-service-close .eyebrow,
-.editorial-service-scope .eyebrow,
-.editorial-service-mark > span {
+.editorial-service-scope .eyebrow {
   letter-spacing: 0.12em;
 }
 
 .editorial-service-related h3,
 .editorial-service-status span,
-.editorial-service-mark > span,
 .editorial-service-boundary strong,
 .eyebrow--gold {
   color: var(--gold-deep, #7e6b2c);
@@ -2039,6 +2198,568 @@
 
   .editorial-service-status {
     gap: 0.5rem;
+  }
+}
+
+/* ------------------------------------------------------------------
+   SERVICE-DETAIL MODULES
+   Fit, grouped scope, options, pricing, steps, comparison, FAQ and noted
+   related links. Built from the editorial system's existing tokens and
+   patterns; a page renders only the modules its content defines.
+   ------------------------------------------------------------------ */
+
+.editorial-service-fit,
+.editorial-service-options,
+.editorial-service-pricing,
+.editorial-service-steps,
+.editorial-service-compare,
+.editorial-service-faq {
+  padding: clamp(3.25rem, 5.5vw, 5.25rem) 0;
+}
+
+.editorial-service-fit,
+.editorial-service-steps,
+.editorial-service-faq {
+  background: var(--white);
+}
+
+.editorial-service-options,
+.editorial-service-pricing,
+.editorial-service-compare {
+  background: var(--ivory);
+}
+
+.editorial-service-fit h2,
+.editorial-service-options h2,
+.editorial-service-pricing h2,
+.editorial-service-steps h2,
+.editorial-service-compare h2,
+.editorial-service-faq h2 {
+  max-width: 20ch;
+  margin: 0.65rem 0 0;
+  color: var(--emerald-deep);
+  font-size: clamp(1.9rem, 2.9vw, 3rem);
+  line-height: 1.02;
+  letter-spacing: -0.025em;
+}
+
+.editorial-service-fit .eyebrow,
+.editorial-service-options .eyebrow,
+.editorial-service-pricing .eyebrow,
+.editorial-service-steps .eyebrow,
+.editorial-service-compare .eyebrow,
+.editorial-service-faq .eyebrow {
+  letter-spacing: 0.12em;
+}
+
+.editorial-service-fit-grid,
+.editorial-service-compare-grid,
+.editorial-service-faq-grid {
+  display: grid;
+  grid-template-columns: minmax(230px, 0.62fr) minmax(0, 1.38fr);
+  gap: clamp(2rem, 6vw, 6.5rem);
+  align-items: start;
+}
+
+.editorial-service-compare-grid > div:first-child > p {
+  max-width: 44ch;
+  margin: 1.1rem 0 0;
+  color: var(--color-text-soft);
+  line-height: 1.7;
+}
+
+.editorial-service-module-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.85fr);
+  gap: 1.2rem clamp(2rem, 6vw, 6rem);
+  align-items: end;
+}
+
+.editorial-service-module-head > p {
+  margin: 0;
+  color: var(--color-text-soft);
+  line-height: 1.7;
+}
+
+.editorial-service-module-note {
+  max-width: 68ch;
+  margin: 1.6rem 0 0;
+  padding-left: 1rem;
+  border-left: 3px solid var(--gold);
+  color: #4b5c57;
+  line-height: 1.65;
+}
+
+/* fit */
+.editorial-service-fit-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 clamp(1.5rem, 3vw, 3rem);
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid rgba(6, 43, 43, 0.22);
+  list-style: none;
+}
+
+.editorial-service-fit-list li {
+  position: relative;
+  padding: 0.95rem 0 0.95rem 1.4rem;
+  border-bottom: 1px solid rgba(6, 43, 43, 0.14);
+  color: var(--navy);
+  line-height: 1.5;
+}
+
+.editorial-service-fit-list li::before {
+  content: "";
+  position: absolute;
+  top: 1.42rem;
+  left: 0;
+  width: 0.5rem;
+  height: 0.5rem;
+  border: 1px solid var(--gold);
+  transform: rotate(45deg);
+}
+
+/* grouped scope, inside the existing scope band */
+.editorial-service-scope-groups {
+  display: grid;
+  gap: 2rem;
+}
+
+.editorial-service-scope-group h3 {
+  margin: 0 0 0.7rem;
+  color: var(--gold);
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.editorial-service--advisory .editorial-service-scope-group h3 {
+  color: #6c561f;
+}
+
+.editorial-service-scope-group ul {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 clamp(1.2rem, 3vw, 2.5rem);
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.34);
+  list-style: none;
+}
+
+.editorial-service--advisory .editorial-service-scope-group ul {
+  border-color: rgba(6, 43, 43, 0.34);
+}
+
+.editorial-service-scope-group li {
+  padding: 0.85rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  font-family: var(--font-display);
+  font-size: clamp(1.02rem, 1.3vw, 1.18rem);
+  line-height: 1.32;
+}
+
+.editorial-service--advisory .editorial-service-scope-group li {
+  border-color: rgba(6, 43, 43, 0.2);
+}
+
+/* options */
+.editorial-service-option-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 235px), 1fr));
+  gap: clamp(0.9rem, 1.6vw, 1.4rem);
+  margin: clamp(1.8rem, 3vw, 2.6rem) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.editorial-service-option {
+  display: flex;
+  flex-direction: column;
+  padding: clamp(1.25rem, 2vw, 1.75rem);
+  border: 1px solid rgba(6, 43, 43, 0.16);
+  background: var(--white);
+}
+
+.editorial-service-option-tag {
+  color: var(--emerald-deep);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.editorial-service-option h3 {
+  margin: 0.9rem 0 0.6rem;
+  color: var(--emerald-deep);
+  font-size: clamp(1.3rem, 1.8vw, 1.6rem);
+  line-height: 1.12;
+}
+
+.editorial-service-option p {
+  margin: 0;
+  color: var(--color-text-soft);
+  font-size: 0.93rem;
+  line-height: 1.62;
+}
+
+.editorial-service-option .text-link {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-self: flex-start;
+  margin-top: 1rem;
+}
+
+.editorial-service-option .text-link svg,
+.editorial-service-compare-list .text-link svg {
+  flex: 0 0 16px;
+  width: 16px;
+}
+
+/* pricing (Translation and Apostille only) */
+#pricing {
+  scroll-margin-top: 6rem;
+}
+
+.editorial-service-price-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+  gap: clamp(0.9rem, 1.6vw, 1.4rem);
+  margin: clamp(1.8rem, 3vw, 2.6rem) 0 0;
+}
+
+.editorial-service-price-card {
+  display: flex;
+  flex-direction: column;
+  padding: clamp(1.3rem, 2vw, 1.8rem);
+  border: 1px solid rgba(6, 43, 43, 0.16);
+  border-top: 3px solid var(--gold);
+  background: var(--white);
+}
+
+.editorial-service-price-card h3 {
+  margin: 0;
+  color: var(--emerald-deep);
+  font-size: clamp(1.3rem, 1.8vw, 1.55rem);
+  line-height: 1.12;
+}
+
+.editorial-service-price {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 0.5rem;
+  align-items: baseline;
+  margin: 1.1rem 0 0;
+  color: var(--emerald-deep);
+}
+
+.editorial-service-price strong {
+  font-family: var(--font-display);
+  font-size: clamp(2.3rem, 3.3vw, 3rem);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.editorial-service-price span {
+  color: #4b5c57;
+  font-size: 0.86rem;
+}
+
+.editorial-service-price span[aria-hidden="true"] {
+  font-family: var(--font-display);
+  font-size: 1.7rem;
+  line-height: 1;
+}
+
+.editorial-service-price-meta {
+  margin: 0.3rem 0 0;
+  color: #4b5c57;
+  font-size: 0.78rem;
+  letter-spacing: 0.03em;
+}
+
+.editorial-service-price-card
+  > p:not(.editorial-service-price):not(.editorial-service-price-meta) {
+  margin: 1rem 0 0;
+  color: var(--color-text-soft);
+  font-size: 0.93rem;
+  line-height: 1.6;
+}
+
+.editorial-service-price-card ul {
+  margin: 1rem 0 0;
+  padding: 0.9rem 0 0;
+  border-top: 1px solid rgba(6, 43, 43, 0.14);
+  list-style: none;
+}
+
+.editorial-service-price-card li {
+  position: relative;
+  padding: 0.28rem 0 0.28rem 1.1rem;
+  color: var(--navy);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.editorial-service-price-card li::before {
+  content: "";
+  position: absolute;
+  top: 0.82rem;
+  left: 0;
+  width: 0.5rem;
+  height: 1px;
+  background: var(--gold);
+}
+
+.editorial-service-pricing-foot {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: clamp(1.5rem, 4vw, 4rem);
+  margin: clamp(1.8rem, 3vw, 2.4rem) 0;
+  padding-top: clamp(1.4rem, 2vw, 1.8rem);
+  border-top: 1px solid rgba(6, 43, 43, 0.22);
+}
+
+.editorial-service-pricing-extras {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+}
+
+.editorial-service-pricing-extras dt {
+  color: #6c561f;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.editorial-service-pricing-extras dd {
+  margin: 0.25rem 0 0;
+  color: var(--navy);
+  line-height: 1.6;
+}
+
+.editorial-service-pricing-separate {
+  padding-left: 1.1rem;
+  border-left: 3px solid var(--gold);
+}
+
+.editorial-service-pricing-separate h3 {
+  margin: 0 0 0.6rem;
+  color: var(--emerald-deep);
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.editorial-service-pricing-separate ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.editorial-service-pricing-separate li {
+  padding: 0.3rem 0;
+  color: var(--color-text-soft);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+/* steps (services that otherwise show a "what to bring" panel) */
+/* step numbers sit on white here, so use the darker gold-toned brand mix the
+   advisory variant already uses (plain --gold measures ~2:1 on white) */
+.editorial-service-steps .editorial-service-process span {
+  color: #765818;
+}
+
+.editorial-service-steps .editorial-service-specific-heading {
+  margin: 0;
+}
+
+.editorial-service-steps .editorial-service-process {
+  margin-top: clamp(1.6rem, 3vw, 2.4rem);
+}
+
+/* compare */
+.editorial-service-compare-list {
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid rgba(6, 43, 43, 0.24);
+  list-style: none;
+}
+
+.editorial-service-compare-list li {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.36fr) minmax(0, 1fr);
+  gap: 0.4rem clamp(1rem, 3vw, 2.5rem);
+  padding: 1.1rem 1rem;
+  border-bottom: 1px solid rgba(6, 43, 43, 0.18);
+  border-left: 3px solid transparent;
+}
+
+.editorial-service-compare-list li.is-current {
+  border-left-color: var(--gold);
+  background: rgba(215, 176, 95, 0.12);
+}
+
+.editorial-service-compare-list strong {
+  color: var(--emerald-deep);
+  font-family: var(--font-display);
+  font-size: clamp(1.15rem, 1.5vw, 1.35rem);
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.editorial-service-compare-list strong em {
+  display: block;
+  margin-top: 0.3rem;
+  color: #6c561f;
+  font-family: var(--font-body);
+  font-size: 0.68rem;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.editorial-service-compare-list p {
+  margin: 0;
+  color: var(--color-text-soft);
+  line-height: 1.62;
+}
+
+.editorial-service-compare-list .text-link {
+  display: inline-flex;
+  grid-column: 2;
+  gap: 0.5rem;
+  margin-top: 0.3rem;
+}
+
+/* faq */
+.editorial-service-faq-list {
+  border-top: 1px solid rgba(6, 43, 43, 0.24);
+}
+
+.editorial-service-faq-list details {
+  border-bottom: 1px solid rgba(6, 43, 43, 0.18);
+}
+
+.editorial-service-faq-list summary {
+  position: relative;
+  padding: 1.1rem 2.4rem 1.1rem 0;
+  color: var(--emerald-deep);
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-size: clamp(1.15rem, 1.5vw, 1.35rem);
+  line-height: 1.28;
+  list-style: none;
+}
+
+.editorial-service-faq-list summary::-webkit-details-marker {
+  display: none;
+}
+
+.editorial-service-faq-list summary::after {
+  content: "+";
+  position: absolute;
+  top: 0.95rem;
+  right: 0.2rem;
+  color: #6c561f;
+  font-family: var(--font-body);
+  font-size: 1.4rem;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.editorial-service-faq-list details[open] summary::after {
+  content: "\2212";
+}
+
+.editorial-service-faq-list summary:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.editorial-service-faq-list details p {
+  max-width: 64ch;
+  margin: 0 0 1.25rem;
+  color: var(--color-text-soft);
+  line-height: 1.72;
+}
+
+.editorial-service-faq + .editorial-service-close {
+  border-top: 1px solid rgba(6, 43, 43, 0.14);
+}
+
+/* the display serif's default numerals are old-style; prices and question
+   numbers read better with lining figures */
+.editorial-service-price strong,
+.editorial-service-option h3,
+.editorial-service-price-card h3,
+.editorial-service-compare-list strong,
+.editorial-service-faq-list summary,
+.editorial-service-scope-group li {
+  font-variant-numeric: lining-nums;
+}
+
+/* related links with a line of context */
+.editorial-service-links--noted a {
+  min-height: 60px;
+  padding: 0.8rem 0;
+}
+
+.editorial-service-links--noted strong {
+  display: block;
+  font-weight: 600;
+}
+
+.editorial-service-links--noted small {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--color-text-soft);
+  font-size: 0.8rem;
+  font-weight: 400;
+  line-height: 1.45;
+}
+
+@media (max-width: 900px) {
+  .editorial-service-fit-grid,
+  .editorial-service-compare-grid,
+  .editorial-service-faq-grid,
+  .editorial-service-module-head,
+  .editorial-service-pricing-foot {
+    grid-template-columns: 1fr;
+  }
+
+  .editorial-service-module-head {
+    align-items: start;
+  }
+}
+
+@media (max-width: 700px) {
+  .editorial-service-fit-list,
+  .editorial-service-scope-group ul {
+    grid-template-columns: 1fr;
+  }
+
+  .editorial-service-compare-list li {
+    grid-template-columns: 1fr;
+  }
+
+  .editorial-service-compare-list .text-link {
+    grid-column: auto;
+  }
+
+  .editorial-service-pricing .button {
+    width: 100%;
   }
 }
 

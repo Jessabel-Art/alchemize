@@ -1,20 +1,37 @@
 import { ArrowRight, Download } from "lucide-react";
 import Reveal from "../ui/Reveal.jsx";
 import LocalizedLink from "../../i18n/LocalizedLink.jsx";
+import { getDownloadableResource } from "../../pages/resources/downloadableResources.js";
+import { getCategoryForService } from "../../pages/services/publicServiceIndex.js";
+import {
+  leadOriginState,
+  trackServiceCtaClick,
+} from "../../services/leadAnalytics.js";
+import {
+  ServiceCompare,
+  ServiceFaq,
+  ServiceFit,
+  ServiceOptions,
+  ServicePricing,
+  ServiceRelated,
+  ServiceScopeGroups,
+  ServiceSteps,
+  moduleLabels,
+} from "./ServiceDetailModules.jsx";
 
 const shared = {
   en: {
     services: "Services",
     context: "Why it matters",
     scope: "What we handle",
-    approach: "Working method",
+    approach: "How this service works",
     preparation: "What to bring",
     boundary: "Scope and boundaries",
     related: "Related services",
     resources: "Useful resources",
     consultation: "Schedule a Consultation",
     information: "Request Information",
-    download: "Download the preparation checklist",
+    downloadResource: "Download PDF",
     close: "Discuss the work",
     closeBody:
       "Share the current situation, timing, and desired outcome. Alchemize will confirm fit, scope, and the appropriate next step before work begins.",
@@ -23,14 +40,14 @@ const shared = {
     services: "Servicios",
     context: "Por qué importa",
     scope: "Lo que manejamos",
-    approach: "Método de trabajo",
+    approach: "Cómo funciona este servicio",
     preparation: "Qué traer",
     boundary: "Alcance y límites",
     related: "Servicios relacionados",
     resources: "Recursos útiles",
     consultation: "Programar una consulta",
     information: "Solicitar información",
-    download: "Descargar la lista de preparación",
+    downloadResource: "Descargar PDF",
     close: "Conversemos sobre el trabajo",
     closeBody:
       "Comparta la situación actual, los plazos y el resultado deseado. Alchemize confirmará la compatibilidad, el alcance y el siguiente paso antes de comenzar.",
@@ -40,7 +57,6 @@ const shared = {
 const profiles = {
   "individual-tax": {
     type: "project",
-    number: "01",
     motif: "document-stack",
     watermark: "Return",
     mark: ["Records", "Review", "Return"],
@@ -60,7 +76,6 @@ const profiles = {
   },
   "individual-notary": {
     type: "project",
-    number: "02",
     motif: "document-frame",
     watermark: "Witness",
     mark: ["Document", "Identity", "Act"],
@@ -73,14 +88,13 @@ const profiles = {
       es: "La cita es solo una parte del proceso.",
     },
     second: {
-      en: "The document, signer, identification, receiving-party requirements, and requested notarial act all need to align. Alchemize handles the authorized notarial step without selecting forms or interpreting legal effect.",
-      es: "El documento, el firmante, la identificación, los requisitos del destinatario y el acto notarial deben coincidir. Alchemize realiza el acto autorizado sin seleccionar formularios ni interpretar efectos legales.",
+      en: "The document, signer, identification, receiving-party requirements, and requested notarial act all need to align. The notarial act is completed by an authorized notary, without selecting forms or interpreting legal effect.",
+      es: "El documento, el firmante, la identificación, los requisitos del destinatario y el acto notarial deben coincidir. El acto notarial lo realiza un notario autorizado, sin seleccionar formularios ni interpretar efectos legales.",
     },
     scopeTitle: { en: "Appointment support", es: "Apoyo para la cita" },
   },
   "individual-translation": {
     type: "project",
-    number: "03",
     motif: "language-lines",
     watermark: "Clarity",
     mark: ["Source", "Meaning", "Delivery"],
@@ -97,7 +111,6 @@ const profiles = {
   },
   "individual-apostille": {
     type: "project",
-    number: "04",
     motif: "route-path",
     watermark: "Destination",
     mark: ["Document", "Authority", "Destination"],
@@ -120,7 +133,6 @@ const profiles = {
   },
   "business-advisory": {
     type: "advisory",
-    number: "05",
     motif: "direction-nodes",
     watermark: "Direction",
     mark: ["Diagnose", "Prioritize", "Plan"],
@@ -140,7 +152,6 @@ const profiles = {
   },
   "business-operations": {
     type: "advisory",
-    number: "06",
     motif: "workflow-map",
     watermark: "Systems",
     mark: ["Workflow", "System", "Adoption"],
@@ -163,7 +174,6 @@ const profiles = {
   },
   "business-digital": {
     type: "project",
-    number: "07",
     motif: "wireframe",
     watermark: "Structure",
     mark: ["Experience", "System", "Visibility"],
@@ -183,7 +193,6 @@ const profiles = {
   },
   "business-readiness": {
     type: "advisory",
-    number: "08",
     motif: "grid-foundation",
     watermark: "Foundation",
     mark: ["Foundation", "Readiness", "Opportunity"],
@@ -203,7 +212,6 @@ const profiles = {
   },
   "business-bookkeeping": {
     type: "managed",
-    number: "09",
     motif: "ledger-grid",
     watermark: "Records",
     mark: ["Record", "Reconcile", "Report"],
@@ -226,7 +234,6 @@ const profiles = {
   },
   "business-payroll": {
     type: "managed",
-    number: "10",
     motif: "cycle-rhythm",
     watermark: "Cadence",
     mark: ["Input", "Process", "Record"],
@@ -249,7 +256,6 @@ const profiles = {
   },
   "business-financial": {
     type: "project",
-    number: "11",
     motif: "calendar-grid",
     watermark: "Deadline",
     mark: ["Records", "Deadline", "Filing"],
@@ -538,7 +544,6 @@ function ServiceMotif({ profile, type = "default" }) {
 function HeroMark({ profile, Icon }) {
   return (
     <Reveal className="editorial-service-mark" delay={100}>
-      <span>{profile.number}</span>
       <Icon aria-hidden="true" strokeWidth={1.05} />
       <div>
         {profile.mark.map((word) => (
@@ -591,7 +596,15 @@ function Scope({ service, profile, language, labels }) {
   );
 }
 
-function ServiceSpecific({ service, profile, language, labels }) {
+function ServiceSpecific({
+  service,
+  resource,
+  profile,
+  language,
+  labels,
+  steps,
+  prepare,
+}) {
   if (profile.type === "project") {
     return (
       <section className="editorial-service-specific editorial-service-specific--project">
@@ -608,26 +621,22 @@ function ServiceSpecific({ service, profile, language, labels }) {
                 ? "No necesita resolver cada pregunta antes de comunicarse. Los documentos disponibles ayudan a confirmar el alcance y detectar requisitos pendientes."
                 : "You do not need to resolve every question before reaching out. The available documents help confirm scope and identify requirements that still need attention."}
             </p>
-            {service.checklist[1] ? (
+            {resource ? (
               <a
                 className="text-link"
-                href={service.checklist[1]}
+                href={resource.download}
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <Download aria-hidden="true" /> {labels.download}
+                <Download aria-hidden="true" /> {labels.downloadResource}:{" "}
+                {resource.title}
               </a>
-            ) : (
-              <p className="text-link" role="status">
-                {service.checklist[0]} ·{" "}
-                {language === "es" ? "En desarrollo" : "In development"}
-              </p>
-            )}
+            ) : null}
           </Reveal>
           <div className="editorial-service-prepare-panel">
             <ServiceMotif profile={profile} />
             <ul>
-              {service.prepare.slice(0, 5).map((item) => (
+              {prepare.slice(0, 5).map((item) => (
                 <li key={item}>{item}</li>
               ))}
             </ul>
@@ -660,7 +669,7 @@ function ServiceSpecific({ service, profile, language, labels }) {
           </h2>
         </div>
         <ol className="editorial-service-process">
-          {service.process.map(([name, description], index) => (
+          {steps.map(([name, description], index) => (
             <li key={name}>
               <span>{String(index + 1).padStart(2, "0")}</span>
               <h3>{name}</h3>
@@ -676,7 +685,35 @@ function ServiceSpecific({ service, profile, language, labels }) {
 export default function EditorialServicePage({ service, ui, language }) {
   const profile = profiles[service.serviceKey];
   const labels = shared[language] || shared.en;
+  const resource = service.resourceId
+    ? getDownloadableResource(service.resourceId, language)
+    : null;
   const { Icon } = service;
+  // A category served by one page is that page; only a category that groups
+  // several service pages appears as its own breadcrumb level.
+  const category = getCategoryForService(service.serviceKey, language);
+  // Service-specific modules (summary, who it is for, scope groups, options,
+  // pricing, process, comparison, FAQ, CTA wording). A page uses only the
+  // modules its detail defines.
+  const detail = service.detail ?? {};
+  const cta = detail.cta ?? {};
+  const modules = moduleLabels[language] ?? moduleLabels.en;
+  const steps = detail.process ?? service.process;
+  const prepare = detail.prepare ?? service.prepare;
+  // Every inquiry CTA on the page opens Contact with this service selected and
+  // reports the click (with where on the page it was) to the lead funnel.
+  const contactCta = (ctaLocation, ctaLabel) => ({
+    to: `/contact?service=${service.serviceKey}`,
+    state: leadOriginState({ ctaLocation, serviceKey: service.serviceKey }),
+    onClick: () =>
+      trackServiceCtaClick({
+        serviceKey: service.serviceKey,
+        audience: service.audience,
+        ctaLocation,
+        ctaLabel,
+        language,
+      }),
+  });
   return (
     <article
       className={`editorial-service editorial-service--${profile.type} editorial-service--${service.serviceKey}`}
@@ -691,6 +728,14 @@ export default function EditorialServicePage({ service, ui, language }) {
           {service.audienceLabel}
         </LocalizedLink>
         <span aria-hidden="true">/</span>
+        {category?.multiService ? (
+          <>
+            <LocalizedLink to={`/services/#${category.key}`}>
+              {category.name}
+            </LocalizedLink>
+            <span aria-hidden="true">/</span>
+          </>
+        ) : null}
         <span aria-current="page">{service.title}</span>
       </nav>
       <section
@@ -700,28 +745,31 @@ export default function EditorialServicePage({ service, ui, language }) {
           <Reveal>
             <span className="eyebrow eyebrow--gold">{service.title}</span>
             <h1>{profile.hero[language]}</h1>
-            <p>{service.seoDescription || service.overview}</p>
+            <p>
+              {detail.summary || service.seoDescription || service.overview}
+            </p>
             <div className="editorial-service-actions">
               <LocalizedLink
                 className="button button-primary"
-                to={`/contact?service=${service.serviceKey}`}
+                {...contactCta("service_hero", cta.hero || labels.consultation)}
               >
-                {labels.consultation}
+                {cta.hero || labels.consultation}
               </LocalizedLink>
-              {service.checklist[1] ? (
+              {detail.pricing ? (
+                <a href="#pricing">
+                  {modules.seePricing} <ArrowRight aria-hidden="true" />
+                </a>
+              ) : null}
+              {resource ? (
                 <a
-                  href={service.checklist[1]}
+                  href={resource.download}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <Download aria-hidden="true" /> {service.checklist[0]}
+                  <Download aria-hidden="true" /> {labels.downloadResource}:{" "}
+                  {resource.title}
                 </a>
-              ) : (
-                <span>
-                  {service.checklist[0]} ·{" "}
-                  {language === "es" ? "En desarrollo" : "In development"}
-                </span>
-              )}
+              ) : null}
             </div>
           </Reveal>
           <HeroMark profile={profile} Icon={Icon} />
@@ -739,18 +787,38 @@ export default function EditorialServicePage({ service, ui, language }) {
           </Reveal>
         </div>
       </section>
-      <Scope
-        service={service}
-        profile={profile}
+      <ServiceFit fit={detail.fit} language={language} />
+      {detail.does ? (
+        <ServiceScopeGroups does={detail.does} language={language} />
+      ) : (
+        <Scope
+          service={service}
+          profile={profile}
+          language={language}
+          labels={labels}
+        />
+      )}
+      <ServicePricing
+        serviceKey={service.serviceKey}
+        pricing={detail.pricing}
         language={language}
-        labels={labels}
+        ctaProps={contactCta("service_pricing", detail.pricing?.cta ?? "")}
       />
+      <ServiceOptions options={detail.options} language={language} />
+      {profile.type === "project" && detail.process ? (
+        <ServiceSteps steps={detail.process} language={language} />
+      ) : null}
       <ServiceSpecific
         service={service}
+        resource={resource}
         profile={profile}
         language={language}
         labels={labels}
+        steps={steps}
+        prepare={prepare}
       />
+      <ServiceCompare compare={detail.compare} language={language} />
+      <ServiceFaq faq={detail.faq} language={language} />
       <section className="editorial-service-close">
         <div className="content-shell">
           <div className="editorial-service-boundary">
@@ -769,25 +837,34 @@ export default function EditorialServicePage({ service, ui, language }) {
           <div className="editorial-service-close-grid">
             <Reveal>
               <span className="eyebrow eyebrow--gold">{labels.close}</span>
-              <h2>{service.cta}</h2>
-              <p>{labels.closeBody}</p>
+              <h2>{cta.title || service.cta}</h2>
+              <p>{cta.body || labels.closeBody}</p>
               <div>
                 <LocalizedLink
                   className="button button-primary"
-                  to={`/contact?service=${service.serviceKey}`}
+                  {...contactCta(
+                    "service_close",
+                    cta.close || labels.consultation,
+                  )}
                 >
-                  {labels.consultation}
+                  {cta.close || labels.consultation}
                 </LocalizedLink>
-                <LocalizedLink className="text-link" to="/contact">
-                  {labels.information}
+                <LocalizedLink
+                  className="text-link"
+                  {...contactCta(
+                    "service_close_info",
+                    cta.info || labels.information,
+                  )}
+                >
+                  {cta.info || labels.information}
                 </LocalizedLink>
               </div>
             </Reveal>
             <div className="editorial-service-related">
-              <section>
-                <h3>{labels.related}</h3>
-                <LinkRows items={service.related} />
-              </section>
+              <ServiceRelated
+                items={service.related}
+                heading={labels.related}
+              />
               {service.resources.some(([, to]) => Boolean(to)) ? (
                 <section>
                   <h3>{labels.resources}</h3>

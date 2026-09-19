@@ -509,7 +509,7 @@ function FaqPage() {
                     <p>{category.description}</p>
                   </header>
 
-                  <div className="faq-accordion" role="list">
+                  <ul className="faq-accordion">
                     {category.items.map(
                       ({ question, answer, links, disclosure }) => {
                         const itemId = `faq-${slugify(category.category)}-${slugify(
@@ -518,11 +518,7 @@ function FaqPage() {
                         const isOpen = openQuestion === question;
 
                         return (
-                          <article
-                            key={question}
-                            className="faq-accordion-item"
-                            role="listitem"
-                          >
+                          <li key={question} className="faq-accordion-item">
                             <button
                               type="button"
                               className="faq-question"
@@ -580,11 +576,11 @@ function FaqPage() {
                                 </small>
                               ) : null}
                             </div>
-                          </article>
+                          </li>
                         );
                       },
                     )}
-                  </div>
+                  </ul>
                 </section>
               ))
             ) : (

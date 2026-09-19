@@ -6,6 +6,10 @@ import {
   Workflow,
   ClipboardCheck,
 } from "lucide-react";
+import { DOWNLOADABLE_RESOURCE_IDS } from "../resources/downloadableResources.js";
+import { sortByCanonicalOrder } from "../../data/serviceTaxonomy.js";
+import { webDigitalSummary } from "../web-digital/webDigitalSummary.js";
+import { serviceDetailEn } from "./serviceDetail.en.js";
 
 export const serviceStatuses = {
   medicare: "planned",
@@ -84,7 +88,7 @@ const individual = [
     ],
     boundary:
       "Tax treatment depends on individual circumstances. Alchemize does not provide legal advice or representation services. Supported return types and jurisdictions must be confirmed before engagement; matters outside scope may require a CPA, attorney, enrolled agent, or other qualified professional.",
-    checklist: ["Individual Tax Preparation Organizer", null],
+    resourceId: DOWNLOADABLE_RESOURCE_IDS.individualTax,
     resources: [
       [
         "Individual Tax Preparation Organizer",
@@ -113,7 +117,7 @@ const individual = [
     audienceLabel: "Individual Services",
     slug: "notary-document-services",
     serviceKey: "individual-notary",
-    title: "Notary & Administrative Document Support",
+    title: "Notary & Document Services",
     seoTitle: "North Carolina Notary Services | Alchemize",
     seoDescription:
       "North Carolina notary and nonlegal administrative document support for signatures, acknowledgments, packet organization, and clear appointment expectations.",
@@ -179,7 +183,7 @@ const individual = [
     ],
     boundary:
       "Alchemize does not determine whether a document is legally sufficient, select legal forms, draft legal language, interpret legal consequences, or provide legal advice. Requirements depend on the document, receiving party, applicable law, and commission authority.",
-    checklist: ["Consultation Preparation Workbook", null],
+    resourceId: DOWNLOADABLE_RESOURCE_IDS.consultation,
     resources: [
       ["Preparing for a Notary Appointment", null],
       ["Consultation Preparation Workbook", null],
@@ -259,7 +263,7 @@ const individual = [
     ],
     boundary:
       "Translation services are design and document-support services and do not guarantee acceptance, certification, legal effect, or any agency-specific result. Some institutions, courts, immigration matters, foreign governments, or other authorities may impose specific translation or certification requirements, and those requirements should be confirmed before service begins.",
-    checklist: ["Consultation Preparation Workbook", null],
+    resourceId: DOWNLOADABLE_RESOURCE_IDS.consultation,
     resources: [
       ["Consultation Preparation Workbook", null],
       ["Preparing for a Notary Appointment", null],
@@ -341,7 +345,7 @@ const individual = [
     ],
     boundary:
       "Alchemize provides facilitation and administrative document-coordination support. The apostille is issued by the appropriate government authority, not Alchemize. Government, shipping, courier, and third-party fees are separate. Processing times and issuance are controlled by the issuing authority. Alchemize does not provide legal or immigration advice and does not guarantee issuance or acceptance by a foreign authority.",
-    checklist: ["Consultation Preparation Workbook", null],
+    resourceId: DOWNLOADABLE_RESOURCE_IDS.consultation,
     resources: [
       ["Consultation Preparation Workbook", null],
       ["Preparing for a Notary Appointment", null],
@@ -363,7 +367,7 @@ const business = [
     audienceLabel: "Business Services",
     slug: "advisory-optimization",
     serviceKey: "business-advisory",
-    title: "Business Consulting",
+    title: "Business Advisory",
     seoTitle: "Small Business Consulting & Advisory Services | Alchemize",
     seoDescription:
       "Small business consulting and advisory support for owners who need clearer priorities, process improvements, and practical next steps for what to change or improve.",
@@ -430,7 +434,7 @@ const business = [
     ],
     boundary:
       "Consulting engagements identify issues, clarify priorities, and develop recommendations or implementation plans. Substantial implementation is priced separately unless explicitly included. Business advisory does not replace legal, accounting, tax, investment, or other regulated professional advice.",
-    checklist: ["Consultation Preparation Workbook", null],
+    resourceId: DOWNLOADABLE_RESOURCE_IDS.consultation,
     resources: [
       [
         "When Your Business Needs a Process",
@@ -452,7 +456,7 @@ const business = [
     audienceLabel: "Business Services",
     slug: "operations-implementation",
     serviceKey: "business-operations",
-    title: "Business Operations",
+    title: "Operations & Administration",
     seoTitle: "Small Business Operations & Process Support | Alchemize",
     seoDescription:
       "Small business operations support for workflows, process improvement, administrative systems, and practical implementation that helps the business run more smoothly.",
@@ -521,7 +525,7 @@ const business = [
     ],
     boundary:
       "Operational support is limited to the agreed administrative and implementation scope. Legal, HR, accounting, cybersecurity, and other specialized matters may require another qualified provider.",
-    checklist: ["Business Operations & Systems Workbook", null],
+    resourceId: DOWNLOADABLE_RESOURCE_IDS.operations,
     resources: [
       [
         "A Simple Administrative System",
@@ -547,7 +551,7 @@ const business = [
     audienceLabel: "Business Services",
     slug: "readiness-growth",
     serviceKey: "business-readiness",
-    title: "Business Readiness",
+    title: "Business Foundation",
     seoTitle: "Small Business Startup & Readiness Support | Alchemize",
     seoDescription:
       "Small business startup support, readiness planning, and launch preparation for entrepreneurs who need stronger records, process clarity, and next-step organization.",
@@ -616,7 +620,7 @@ const business = [
     ],
     boundary:
       "Business planning and financial-readiness support does not include financing procurement, lender matching, lender negotiation, application submission, or financing guarantees. Alchemize does not guarantee formation outcomes, certifications, registrations, vendor acceptance, or legal compliance. Legal, tax, lending, and procurement decisions may require qualified professionals.",
-    checklist: ["Business Startup & Formation Workbook", null],
+    resourceId: DOWNLOADABLE_RESOURCE_IDS.startup,
     resources: [
       ["Your First Year in Business", "/resources/your-first-year-in-business"],
       [
@@ -708,7 +712,7 @@ const business = [
     ],
     boundary:
       "Recurring bookkeeping includes transaction categorization, reconciliations, income and expense tracking, recurring financial reporting, and support appropriate to the selected tier. Tax preparation is a separate service and is not included in monthly bookkeeping. Bookkeeping does not replace CPA, audit, payroll-processing, or investment-advisory services.",
-    checklist: ["Business Tax Preparation Organizer", null],
+    resourceId: DOWNLOADABLE_RESOURCE_IDS.businessTax,
     resources: [
       [
         "Business Records: What Needs a Home",
@@ -797,7 +801,7 @@ const business = [
     ],
     boundary:
       "Payroll support is administrative and operational. Alchemize enters payroll and W-4 information as supplied and does not advise employees how to complete withholding elections. Alchemize does not provide HR, employment-law, legal, or individualized tax advice and does not replace the payroll platform’s tax filing or deposit functions. Platform/software charges are separate.",
-    checklist: ["Business Tax Preparation Organizer", null],
+    resourceId: DOWNLOADABLE_RESOURCE_IDS.businessTax,
     resources: [
       [
         "Business Records: What Needs a Home",
@@ -819,7 +823,7 @@ const business = [
     audienceLabel: "Business Services",
     slug: "business-tax-support",
     serviceKey: "business-financial",
-    title: "Business Tax",
+    title: "Tax & Financial Organization",
     seoTitle: "Small Business Tax Preparation & Support | Alchemize",
     seoDescription:
       "Small business tax preparation and support for organized records, year-end readiness, and virtual tax document preparation where service requirements allow.",
@@ -886,7 +890,7 @@ const business = [
     ],
     boundary:
       "Business tax support is centered on organization, preparation, and readiness. Alchemize does not provide legal tax advice, representation, or professional tax strategy beyond the defined service scope. Supported return types, tax obligations, and jurisdictions must be confirmed before engagement; specialized work may require a CPA, attorney, enrolled agent, or other qualified professional.",
-    checklist: ["Business Tax Preparation Organizer", null],
+    resourceId: DOWNLOADABLE_RESOURCE_IDS.businessTax,
     resources: [
       [
         "Business Records: What Needs a Home",
@@ -908,57 +912,56 @@ const business = [
   },
 ];
 
-const canonicalServiceOrder = [
-  "individual-tax",
-  "individual-notary",
-  "individual-translation",
-  "business-advisory",
-  "business-operations",
-  "business-digital",
-  "business-readiness",
-  "business-bookkeeping",
-  "business-payroll",
-  "business-financial",
-];
+// Related-service links are authored as [label, route]. The label is always
+// taken from the destination's own canonical title, so a related link can never
+// disagree with the page it points to.
+const routeOf = (service) => `/services/${service.audience}/${service.slug}`;
+const canonicalTitleByRoute = new Map([
+  ...[...individual, ...business].map((service) => [
+    routeOf(service),
+    service.title,
+  ]),
+  ["/web-digital", webDigitalSummary.en.title],
+]);
+const withCanonicalRelated = (service) => ({
+  ...service,
+  related: service.related.map(([label, route, note]) => [
+    canonicalTitleByRoute.get(route) ?? label,
+    route,
+    note,
+  ]),
+});
 
-const sortByCanonicalOrder = (services) => {
-  const indexMap = new Map(
-    canonicalServiceOrder.map((serviceKey, index) => [serviceKey, index]),
-  );
-
-  return [...services].sort((a, b) => {
-    const aIndex = indexMap.get(a.serviceKey) ?? Number.MAX_SAFE_INTEGER;
-    const bIndex = indexMap.get(b.serviceKey) ?? Number.MAX_SAFE_INTEGER;
-    return aIndex - bIndex;
-  });
+// The service-detail modules (who it is for, scope, options, boundaries, FAQ,
+// annotated related services) are authored in serviceDetail.en.js by canonical
+// serviceKey and attached here, so a service object carries everything its page
+// renders. A related link is [label, route, note]; the label is resolved from the
+// destination's title above.
+const withDetail = (service) => {
+  const detail = serviceDetailEn[service.serviceKey];
+  if (!detail) return service;
+  return {
+    ...service,
+    detail,
+    related: detail.related
+      ? detail.related.map(([route, note]) => ["", route, note])
+      : service.related,
+  };
 };
 
-const businessServiceEntries = [
-  ...business,
-  { serviceKey: "business-digital", title: "Web & Digital Solutions" },
-];
+const individualServices = sortByCanonicalOrder(individual)
+  .map(withDetail)
+  .map(withCanonicalRelated);
+const businessServices = sortByCanonicalOrder(business)
+  .map(withDetail)
+  .map(withCanonicalRelated);
 
-export const serviceCatalog = [...individual, ...business];
+export const serviceCatalog = [...individualServices, ...businessServices];
 export const serviceGroups = {
-  individuals: individual,
-  businesses: sortByCanonicalOrder(business),
+  individuals: individualServices,
+  businesses: businessServices,
 };
-export const contactServiceGroups = [
-  {
-    audience: "individual",
-    label: "Individual Services",
-    items: individual
-      .filter((service) => service.serviceKey !== "individual-apostille")
-      .map(({ serviceKey, title }) => ({ value: serviceKey, label: title })),
-  },
-  {
-    audience: "business",
-    label: "Business Services",
-    items: sortByCanonicalOrder(businessServiceEntries).map(
-      ({ serviceKey, title }) => ({ value: serviceKey, label: title }),
-    ),
-  },
-];
+
 export const findService = (audience, slug) =>
   serviceCatalog.find(
     (service) => service.audience === audience && service.slug === slug,

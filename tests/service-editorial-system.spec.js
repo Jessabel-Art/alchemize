@@ -31,6 +31,12 @@ const serviceRoutes = [
   ],
 ];
 
+// Only these two services publish prices (see service-detail-content.spec.js).
+const publiclyPriced = [
+  "/services/individuals/translation-services/",
+  "/services/individuals/apostille-services/",
+];
+
 for (const [route, headline] of serviceRoutes) {
   test(`${route} uses the editorial service system`, async ({ page }) => {
     await page.goto(route);
@@ -50,7 +56,9 @@ for (const [route, headline] of serviceRoutes) {
       page.getByText("When this service becomes useful.", { exact: true }),
     ).toHaveCount(0);
     await expect(page.locator(".public-pricing")).toHaveCount(0);
-    await expect(page.getByText(/\$\d[\d,]*(?:\.\d{2})?/)).toHaveCount(0);
+    if (!publiclyPriced.includes(route)) {
+      await expect(page.getByText(/\$\d[\d,]*(?:\.\d{2})?/)).toHaveCount(0);
+    }
     await expect(
       page.getByRole("link", { name: "Schedule a Consultation" }).first(),
     ).toBeVisible();
@@ -79,11 +87,13 @@ test("public navigation shows only one digital service family", async ({
       .getByRole("navigation")
       .getByRole("link", { name: "Web & Digital Solutions" }),
   ).toBeVisible();
+  // Web & Digital Solutions is a canonical business category, so the footer
+  // lists it once (alongside the other five) rather than omitting it.
   await expect(
     page
       .getByRole("contentinfo")
       .getByRole("link", { name: "Web & Digital Solutions" }),
-  ).toHaveCount(0);
+  ).toHaveCount(1);
   await expect(
     page.getByRole("link", { name: "Digital Business & Technology" }),
   ).toHaveCount(0);
@@ -91,13 +101,19 @@ test("public navigation shows only one digital service family", async ({
     page.getByRole("link", { name: "Digital Business & Tech" }),
   ).toHaveCount(0);
   await expect(
-    page.getByRole("link", { name: "Business Consulting", exact: true }),
+    page.getByRole("link", { name: "Business Advisory", exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("link", { name: "Business Operations", exact: true }),
+    page.getByRole("link", {
+      name: "Operations & Administration",
+      exact: true,
+    }),
   ).toBeVisible();
   await expect(
-    page.getByRole("link", { name: "Bookkeeping", exact: true }),
+    page.getByRole("link", {
+      name: "Bookkeeping & Payroll Support",
+      exact: true,
+    }),
   ).toBeVisible();
 });
 

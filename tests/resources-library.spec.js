@@ -143,7 +143,7 @@ test("follow the journey renders the four editorial stages", async ({
 }) => {
   await page.goto("/resources", { waitUntil: "domcontentloaded" });
   await expect(
-    page.getByRole("heading", { name: "Follow the journey." }),
+    page.getByRole("heading", { name: "Follow the preparation journey." }),
   ).toBeVisible();
   const steps = page.locator(".resource-journey-steps li");
   await expect(steps).toHaveCount(4);

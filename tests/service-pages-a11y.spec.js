@@ -36,7 +36,7 @@ test("service index exposes one audience catalog at a time", async ({
 }) => {
   await page.goto("/services/#businesses");
   await expect(
-    page.getByRole("heading", { name: "Business Consulting" }),
+    page.getByRole("heading", { name: "Business Advisory" }),
   ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Tax Preparation" }),

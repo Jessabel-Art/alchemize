@@ -1,5 +1,6 @@
 export const servicesContent = {
   en: {
+    groupCount: (count) => `${count} services`,
     metadata: {
       title: "Business & Individual Services | Alchemize",
       description:
@@ -35,10 +36,9 @@ export const servicesContent = {
       },
       businesses: {
         eyebrow: "Business services",
-        heading:
-          "Build a stronger business. Improve how it operates. Prepare for what comes next.",
+        heading: "Build the business. Strengthen the systems behind it.",
         description:
-          "Practical support that moves from assessment and recommendations into implementation where Alchemize can help.",
+          "From establishing the foundation to improving operations, organizing financial responsibilities, and building the systems customers interact with, Alchemize connects business guidance with practical implementation.",
       },
     },
     close: {
@@ -49,6 +49,7 @@ export const servicesContent = {
     },
   },
   es: {
+    groupCount: (count) => `${count} servicios`,
     metadata: {
       title: "Servicios para Negocios y Personas | Alchemize",
       description:
@@ -86,9 +87,9 @@ export const servicesContent = {
       businesses: {
         eyebrow: "Servicios empresariales",
         heading:
-          "Fortalezca su negocio. Mejore sus operaciones. Prepárese para lo que sigue.",
+          "Construya el negocio. Fortalezca los sistemas que lo respaldan.",
         description:
-          "Apoyo práctico que puede avanzar desde la evaluación y las recomendaciones hasta la implementación cuando Alchemize pueda ayudar.",
+          "Desde establecer la base hasta mejorar las operaciones, organizar las responsabilidades financieras y construir los sistemas con los que interactúan sus clientes, Alchemize conecta la orientación empresarial con la implementación práctica.",
       },
     },
     close: {

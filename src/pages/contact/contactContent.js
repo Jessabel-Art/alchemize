@@ -24,6 +24,7 @@ export const contactContent = {
       message: "What are you trying to accomplish, improve, or resolve?",
       website: "Website",
       submit: "Send Inquiry",
+      choose: "Select one",
       unsure: "I'm not sure yet",
       individual: "Me / my household",
       business: "My business",
@@ -35,18 +36,11 @@ export const contactContent = {
       privacy:
         "Do not include Social Security numbers, tax records, banking information, medical information, identification documents, or other sensitive records in this form. If documents are needed, we'll provide the appropriate next step.",
     },
-    services: {
-      "individual-tax": "Tax Preparation",
-      "individual-notary": "Notary & Document Services",
-      "individual-translation": "Translation Services",
-      "individual-apostille": "Apostille Services",
-      "business-advisory": "Business Consulting",
-      "business-operations": "Business Operations",
-      "business-digital": "Web & Digital Solutions",
-      "business-readiness": "Business Readiness",
-      "business-bookkeeping": "Bookkeeping",
-      "business-payroll": "Payroll",
-      "business-financial": "Business Tax",
+    confirmation: {
+      kicker: "Request received",
+      title: "Thank you for contacting Alchemize.",
+      body: "Your request has been received and will be reviewed. Alchemize will reach out using the contact details you provided.",
+      again: "Send another request",
     },
     serviceGroups: {
       individual: "Individual Services",
@@ -86,12 +80,22 @@ export const contactContent = {
       rateLimited: "Please wait before sending another request.",
       temporary: "We were unable to submit your request. Please try again.",
       fallback: "We were unable to submit your request. Please try again.",
-      success: "Thank you for contacting Alchemize. We will follow up shortly.",
+      success:
+        "Thank you for contacting Alchemize. Your request has been received.",
       reference: "Reference",
       required: "Please complete this required field.",
       email: "Please enter a valid email address.",
       messageLength: "Please provide at least 10 characters.",
-      fieldErrors: {},
+      phoneRequired: "Enter a phone number, or choose another contact method.",
+      fieldErrors: {
+        full_name: "Enter your first and last name.",
+        email: "Enter a valid email address.",
+        phone: "Enter a valid phone number.",
+        audience: "Select who the inquiry is for.",
+        service_key: "Select a valid service.",
+        message: "Briefly describe what you need.",
+        preferred_contact: "Select a valid contact method.",
+      },
     },
   },
   es: {
@@ -119,6 +123,7 @@ export const contactContent = {
       message: "¿Qué desea lograr, mejorar o resolver?",
       website: "Sitio web",
       submit: "Enviar consulta",
+      choose: "Seleccione una opción",
       unsure: "Aún no estoy seguro",
       individual: "Para mí o mi hogar",
       business: "Para mi empresa",
@@ -131,18 +136,11 @@ export const contactContent = {
       privacy:
         "No incluya números de Seguro Social, declaraciones de impuestos, información bancaria o médica, documentos de identidad ni otros datos confidenciales. Si necesitamos documentos, le indicaremos el método apropiado para enviarlos.",
     },
-    services: {
-      "individual-tax": "Preparación de impuestos",
-      "individual-notary": "Servicios de notaría y documentos",
-      "individual-translation": "Servicios de traducción",
-      "individual-apostille": "Servicios de apostilla",
-      "business-advisory": "Asesoría y optimización empresarial",
-      "business-operations": "Operaciones e implementación",
-      "business-digital": "Soluciones web y digitales",
-      "business-readiness": "Formación y preparación empresarial",
-      "business-bookkeeping": "Teneduría de libros y reportes financieros",
-      "business-payroll": "Procesamiento de nómina",
-      "business-financial": "Apoyo financiero y tributario",
+    confirmation: {
+      kicker: "Solicitud recibida",
+      title: "Gracias por comunicarse con Alchemize.",
+      body: "Su solicitud fue recibida y será revisada. Alchemize se comunicará con usted mediante los datos de contacto que proporcionó.",
+      again: "Enviar otra solicitud",
     },
     serviceGroups: {
       individual: "Servicios individuales",
@@ -183,11 +181,13 @@ export const contactContent = {
       temporary: "No pudimos enviar su solicitud. Inténtelo de nuevo.",
       fallback: "No pudimos enviar su solicitud. Inténtelo de nuevo.",
       success:
-        "Gracias por comunicarse con Alchemize. Nos pondremos en contacto pronto.",
+        "Gracias por comunicarse con Alchemize. Su solicitud fue recibida.",
       reference: "Referencia",
       required: "Complete este campo obligatorio.",
       email: "Ingrese un correo electrónico válido.",
       messageLength: "Escriba al menos 10 caracteres.",
+      phoneRequired:
+        "Ingrese un número de teléfono o elija otro medio de contacto.",
       fieldErrors: {
         full_name: "Ingrese su nombre y apellido.",
         email: "Ingrese un correo electrónico válido.",

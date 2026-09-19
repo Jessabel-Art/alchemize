@@ -1,5 +1,12 @@
-import { contactServiceGroups } from "../src/pages/services/serviceCatalog.js";
-import { trackContactFormSuccess } from "../src/services/analytics.js";
+import { getContactServiceGroups } from "../src/pages/services/publicServiceIndex.js";
+import {
+  trackContactFormError,
+  trackContactFormStart,
+  trackContactFormSubmit,
+} from "../src/services/leadAnalytics.js";
+
+// English groups: only the canonical keys and audiences are used from here.
+const contactServiceGroups = getContactServiceGroups("en");
 
 const canonicalServiceKeys = new Set(
   contactServiceGroups.flatMap((group) =>
@@ -19,11 +26,6 @@ const legacyServiceAliases = {
   "web-digital": "business-digital",
   "digital-business-technology": "business-digital",
 };
-
-const serviceAudience = (serviceKey) =>
-  serviceKey === "business-digital" || serviceKey?.startsWith("business-")
-    ? "business"
-    : "individual";
 
 function normalizeServiceKey(value) {
   const normalized = legacyServiceAliases[value] ?? value;
@@ -94,7 +96,13 @@ function applyLocalizedValidity(form, messages) {
     ))
       continue;
     field.setCustomValidity("");
-    if (field.validity.valueMissing) {
+    const method = form.elements.namedItem("contactMethod")?.value;
+    if (field.name === "phone" && method === "phone" && !field.value.trim()) {
+      field.setCustomValidity(
+        messages.phoneRequired ??
+          "Enter a phone number, or choose another contact method.",
+      );
+    } else if (field.validity.valueMissing) {
       field.setCustomValidity(
         messages.required ?? "Please complete this required field.",
       );
@@ -137,43 +145,45 @@ function buildPayload(form) {
   };
 }
 
-function initializePreselection(form) {
-  const select = form.elements.namedItem("service");
-  const audience = form.elements.namedItem("audience");
-  const requested = new window.URLSearchParams(window.location.search).get(
-    "service",
-  );
-  const serviceKey = normalizeServiceKey(requested ?? "");
-  if (!serviceKey || !(select instanceof window.HTMLSelectElement)) return;
-  const requestedOption = requested
-    ? [...select.options].some((option) => option.value === requested)
-    : false;
-  select.value = requestedOption ? requested : serviceKey;
-  if (audience instanceof window.HTMLSelectElement)
-    audience.value = serviceAudience(serviceKey);
+// What analytics may know about the form: fixed identifiers only. The service is
+// re-normalised to a canonical key so a translated label can never leak through.
+function analyticsSnapshot(form) {
+  const data = new window.FormData(form);
+  return {
+    serviceKey: normalizeServiceKey(String(data.get("service") ?? "")),
+    audience: String(data.get("audience") ?? ""),
+    language:
+      String(data.get("languagePreference") ?? "en") === "es" ? "es" : "en",
+  };
 }
 
-export function initContactForm(messages = {}) {
+export function initContactForm(messages = {}, hooks = {}) {
   const form = document.querySelector("[data-contact-form]");
   if (!(form instanceof window.HTMLFormElement)) return;
 
   const status = form.querySelector("#form-status");
   const submit = form.querySelector("button[type='submit']");
-  const service = form.elements.namedItem("service");
-  const audience = form.elements.namedItem("audience");
   if (
     !(status instanceof window.HTMLElement) ||
     !(submit instanceof window.HTMLButtonElement)
   )
     return;
 
-  initializePreselection(form);
-  const handleServiceChange = () => {
-    const key = normalizeServiceKey(service.value);
-    if (key && audience instanceof window.HTMLSelectElement)
-      audience.value = serviceAudience(key);
+  // contact_form_start: once per form interaction, on the first real edit or
+  // selection. Focusing or tabbing through does not count, and neither does the
+  // hidden honeypot field.
+  let started = false;
+  const handleFirstInteraction = (event) => {
+    const target = event.target;
+    if (started || !(target instanceof window.HTMLElement)) return;
+    if (!target.matches("input, select, textarea")) return;
+    if (target.closest(".contact-honeypot")) return;
+    started = true;
+    trackContactFormStart({
+      ...analyticsSnapshot(form),
+      origin: hooks.getOrigin?.(),
+    });
   };
-  service?.addEventListener("change", handleServiceChange);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -181,7 +191,14 @@ export function initContactForm(messages = {}) {
     clearFieldErrors(form);
 
     applyLocalizedValidity(form, messages);
-    if (!form.reportValidity()) return;
+    if (!form.reportValidity()) {
+      trackContactFormError({
+        errorType: "validation",
+        errorField: form.querySelector(":invalid")?.getAttribute("name") ?? "",
+        ...analyticsSnapshot(form),
+      });
+      return;
+    }
     submit.disabled = true;
     submit.setAttribute("aria-busy", "true");
     const originalLabel = submit.textContent;
@@ -192,7 +209,17 @@ export function initContactForm(messages = {}) {
       "submitting",
     );
 
-    let validationFailure = false;
+    const payload = buildPayload(form);
+    const snapshot = analyticsSnapshot(form);
+    const fallbackMessage =
+      messages.temporary ||
+      messages.failure ||
+      messages.fallback ||
+      "We couldn't submit your request. Please try again.";
+    // { type, message, moveFocus, field } describing why nothing was stored
+    let failure = null;
+    let confirmed = null;
+
     try {
       const response = await fetch("/alchemize-api.php?route=leads", {
         method: "POST",
@@ -200,53 +227,89 @@ export function initContactForm(messages = {}) {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
-        body: JSON.stringify(buildPayload(form)),
+        body: JSON.stringify(payload),
       });
       const result = await response.json().catch(() => null);
 
       if (!response.ok) {
         if (response.status === 422) {
-          validationFailure = true;
           showFieldErrors(form, result?.error?.fields, messages);
+          failure = {
+            type: "server_validation",
+            field: Object.keys(result?.error?.fields ?? {})[0] ?? "",
+            message:
+              messages.validation || result?.error?.message || fallbackMessage,
+            moveFocus: false,
+          };
+        } else if (response.status === 429) {
+          failure = {
+            type: "rate_limited",
+            message:
+              messages.rateLimited || result?.error?.message || fallbackMessage,
+          };
+        } else {
+          failure = {
+            type: response.status >= 500 ? "server_error" : "request_rejected",
+            message: fallbackMessage,
+          };
         }
-        const publicMessage =
-          response.status === 422
-            ? messages.validation || result?.error?.message
-            : response.status === 429
-              ? messages.rateLimited || result?.error?.message
-              : messages.temporary || messages.failure;
-        throw new Error(
-          publicMessage || "Your request could not be submitted.",
+      } else if (
+        typeof result?.data?.leadId !== "string" ||
+        result.data.leadId === ""
+      ) {
+        // 2xx but no stored-lead confirmation (e.g. a proxy/SPA fallback page)
+        failure = { type: "invalid_response", message: fallbackMessage };
+      } else {
+        confirmed = result.data;
+      }
+    } catch {
+      // fetch itself failed (offline, DNS, blocked): never surface the
+      // browser's untranslated technical message
+      failure = { type: "network_error", message: fallbackMessage };
+    }
+
+    try {
+      if (confirmed) {
+        form.reset();
+        started = false;
+        // Analytics only counts a lead the backend stored. The honeypot and
+        // duplicate paths also answer 2xx but do not create a new lead.
+        if (!payload.website && confirmed.duplicate !== true) {
+          trackContactFormSubmit({ ...snapshot, origin: hooks.getOrigin?.() });
+        }
+        setStatus(
+          status,
+          messages.success ??
+            "Thank you for contacting Alchemize. We will follow up shortly.",
+          "success",
+          !hooks.onSuccess,
+        );
+        hooks.onSuccess?.();
+      } else {
+        trackContactFormError({
+          errorType: failure.type,
+          errorField: failure.field,
+          ...snapshot,
+        });
+        setStatus(
+          status,
+          failure.message,
+          "error",
+          failure.moveFocus !== false,
         );
       }
-
-      form.reset();
-      trackContactFormSuccess();
-      setStatus(
-        status,
-        messages.success ??
-          "Thank you for contacting Alchemize. We will follow up shortly.",
-        "success",
-      );
-    } catch (error) {
-      setStatus(
-        status,
-        error instanceof Error
-          ? error.message
-          : (messages.fallback ??
-              "We couldn't submit your request. Please try again."),
-        "error",
-        !validationFailure,
-      );
     } finally {
       submit.disabled = false;
       submit.removeAttribute("aria-busy");
       submit.textContent = originalLabel;
     }
   };
+  form.addEventListener("input", handleFirstInteraction);
+  form.addEventListener("change", handleFirstInteraction);
   form.addEventListener("submit", handleSubmit);
   return () => {
-    service?.removeEventListener("change", handleServiceChange);
+    form.removeEventListener("input", handleFirstInteraction);
+    form.removeEventListener("change", handleFirstInteraction);
     form.removeEventListener("submit", handleSubmit);
   };
 }

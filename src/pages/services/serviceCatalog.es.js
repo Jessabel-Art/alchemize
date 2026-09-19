@@ -1,4 +1,6 @@
 import { serviceGroups } from "./serviceCatalog.js";
+import { webDigitalSummary } from "../web-digital/webDigitalSummary.js";
+import { serviceDetailEs } from "./serviceDetail.es.js";
 
 const translations = {
   "tax-preparation": {
@@ -89,10 +91,9 @@ const translations = {
       ],
     ],
     cta: "¿Listo para organizar el proceso de declaración?",
-    checklist: ["Individual Tax Preparation Organizer", null],
   },
   "notary-document-services": {
-    title: "Servicios notariales y apoyo documental administrativo",
+    title: "Servicios notariales y de documentos",
     seoTitle: "Servicios de Notario en Carolina del Norte | Alchemize",
     seoDescription:
       "Servicios de notario en Carolina del Norte para documentos, firmas, reconocimientos y apoyo administrativo con citas claras y requisitos bien definidos.",
@@ -246,7 +247,6 @@ const translations = {
       ["Cómo prepararse para una cita notarial", null],
     ],
     cta: "¿Necesita materiales traducidos con claridad y consistencia?",
-    checklist: ["Consultation Preparation Workbook", null],
   },
   "apostille-services": {
     title: "Facilitación y apoyo para apostillas de Carolina del Norte",
@@ -323,10 +323,9 @@ const translations = {
       ["Cómo prepararse para una cita notarial", null],
     ],
     cta: "¿Necesita organizar un paquete documental para autenticación o uso en el extranjero?",
-    checklist: ["Consultation Preparation Workbook", null],
   },
   "advisory-optimization": {
-    title: "Asesoría y optimización empresarial",
+    title: "Asesoría empresarial",
     seoTitle: "Consultoría Empresarial para Pequeñas Empresas | Alchemize",
     seoDescription:
       "Consultoría empresarial para pequeñas empresas con apoyo en prioridades, mejora operativa y decisiones prácticas sobre qué cambiar o mejorar.",
@@ -397,10 +396,7 @@ const translations = {
         "Operaciones e implementación",
         "/services/businesses/operations-implementation",
       ],
-      [
-        "Negocios digitales y tecnología",
-        "/services/businesses/digital-business-technology",
-      ],
+      ["Web y soluciones digitales", "/web-digital"],
     ],
     resources: [
       [
@@ -413,10 +409,9 @@ const translations = {
       ],
     ],
     cta: "¿No sabe qué está causando la fricción?",
-    checklist: ["Consultation Preparation Workbook", null],
   },
   "operations-implementation": {
-    title: "Operaciones e implementación empresarial",
+    title: "Operaciones y administración",
     seoTitle: "Apoyo Operativo para Pequeñas Empresas | Alchemize",
     seoDescription:
       "Apoyo operativo para pequeñas empresas en procesos, flujos de trabajo, sistemas administrativos e implementación práctica para mejorar la operación del negocio.",
@@ -489,10 +484,7 @@ const translations = {
         "Asesoría y optimización empresarial",
         "/services/businesses/advisory-optimization",
       ],
-      [
-        "Negocios digitales y tecnología",
-        "/services/businesses/digital-business-technology",
-      ],
+      ["Web y soluciones digitales", "/web-digital"],
       [
         "Servicios notariales y de documentos",
         "/services/individuals/notary-document-services",
@@ -509,7 +501,6 @@ const translations = {
       ],
     ],
     cta: "¿Listo para poner el proceso en práctica?",
-    checklist: ["Business Operations & Systems Workbook", null],
   },
   "digital-business-technology": {
     title: "Negocios digitales y tecnología",
@@ -598,10 +589,9 @@ const translations = {
       ],
     ],
     cta: "¿Necesita que sus herramientas trabajen en conjunto?",
-    checklist: ["Business Operations & Systems Workbook", null],
   },
   "readiness-growth": {
-    title: "Preparación y crecimiento empresarial",
+    title: "Bases del negocio",
     seoTitle: "Apoyo para Iniciar un Pequeño Negocio | Alchemize",
     seoDescription:
       "Apoyo para iniciar un pequeño negocio y preparación para lanzamiento, con organización de registros, claridad de procesos y próximos pasos para emprendedores.",
@@ -674,10 +664,7 @@ const translations = {
         "Operaciones e implementación",
         "/services/businesses/operations-implementation",
       ],
-      [
-        "Negocios digitales y tecnología",
-        "/services/businesses/digital-business-technology",
-      ],
+      ["Web y soluciones digitales", "/web-digital"],
       [
         "Apoyo tributario para empresas",
         "/services/businesses/business-tax-support",
@@ -691,10 +678,9 @@ const translations = {
       ],
     ],
     cta: "¿Está preparando al negocio para lo que sigue?",
-    checklist: ["Business Startup & Formation Workbook", null],
   },
   "bookkeeping-financial-reporting": {
-    title: "Teneduría de libros y reportes financieros",
+    title: "Teneduría de libros",
     seoTitle: "Teneduría de libros para Pequeños Negocios | Alchemize",
     seoDescription:
       "Teneduría de libros para pequeños negocios con conciliación, reportes financieros y apoyo virtual para empresas en crecimiento.",
@@ -763,17 +749,16 @@ const translations = {
     boundary:
       "El apoyo contable cubre registros financieros organizados y reportes según el servicio seleccionado. No sustituye servicios de CPA, auditor, preparador de impuestos, procesamiento de nómina ni asesoría de inversiones. Los libros organizados pueden ayudar a preparar registros más claros para la preparación de impuestos de fin de año y la revisión profesional.",
     related: [
-      ["Procesamiento de nómina", "/services/businesses/payroll-processing"],
+      ["Nómina", "/services/businesses/payroll-processing"],
       [
         "Apoyo tributario para empresas",
         "/services/businesses/business-tax-support",
       ],
     ],
     cta: "¿Necesita que el proceso de registros financieros sea más claro y confiable?",
-    checklist: ["Business Tax Preparation Organizer", null],
   },
   "payroll-processing": {
-    title: "Procesamiento de nómina",
+    title: "Nómina",
     seoTitle: "Servicios de Nómina para Pequeñas Empresas | Alchemize",
     seoDescription:
       "Apoyo de nómina para pequeñas empresas con registros organizados, reportes recurrentes y administración virtual donde lo permite el flujo seleccionado.",
@@ -841,7 +826,7 @@ const translations = {
       "El apoyo de nómina es administrativo y operativo. Alchemize no asume responsabilidad directa por remesas fiscales salvo que se establezca específicamente a través de la plataforma seleccionada y el flujo acordado. Las capacidades admitidas, los requisitos de la plataforma y las obligaciones legales deben confirmarse antes del compromiso.",
     related: [
       [
-        "Teneduría de libros y reportes financieros",
+        "Teneduría de libros",
         "/services/businesses/bookkeeping-financial-reporting",
       ],
       [
@@ -850,10 +835,9 @@ const translations = {
       ],
     ],
     cta: "¿Necesita que los registros y la administración de nómina estén más organizados?",
-    checklist: ["Business Tax Preparation Organizer", null],
   },
   "business-tax-support": {
-    title: "Apoyo tributario para empresas",
+    title: "Impuestos y organización financiera",
     seoTitle: "Preparación de Impuestos para Pequeñas Empresas | Alchemize",
     seoDescription:
       "Preparación de impuestos para pequeñas empresas con organización documental, preparación de fin de año y apoyo virtual donde los requisitos del servicio lo permitan.",
@@ -921,10 +905,10 @@ const translations = {
       "El apoyo tributario para empresas se centra en organización, preparación y disposición. Alchemize no brinda asesoría legal tributaria ni representación ni estrategia tributaria profesional más allá del alcance definido del servicio. Los tipos de declaraciones admitidas, las obligaciones tributarias y las jurisdicciones deben confirmarse antes del compromiso; el trabajo especializado puede requerir un CPA, abogado, agente registrado u otro profesional calificado.",
     related: [
       [
-        "Teneduría de libros y reportes financieros",
+        "Teneduría de libros",
         "/services/businesses/bookkeeping-financial-reporting",
       ],
-      ["Procesamiento de nómina", "/services/businesses/payroll-processing"],
+      ["Nómina", "/services/businesses/payroll-processing"],
     ],
     resources: [
       [
@@ -937,11 +921,11 @@ const translations = {
       ],
     ],
     cta: "¿Necesita que los registros tributarios de su empresa estén organizados antes de la temporada de declaraciones?",
-    checklist: ["Business Tax Preparation Organizer", null],
   },
 };
 
 function translateService(service) {
+  const detail = serviceDetailEs[service.serviceKey];
   return {
     ...service,
     audienceLabel:
@@ -949,13 +933,46 @@ function translateService(service) {
         ? "Servicios individuales"
         : "Servicios empresariales",
     ...translations[service.slug],
+    // the same modules as the English page, authored in serviceDetail.es.js
+    ...(detail
+      ? {
+          detail,
+          related: detail.related.map(([route, note]) => ["", route, note]),
+        }
+      : {}),
   };
 }
 
-export const serviceGroupsEs = Object.fromEntries(
+const translatedGroups = Object.fromEntries(
   Object.entries(serviceGroups).map(([audience, services]) => [
     audience,
     services.map(translateService),
+  ]),
+);
+
+// Related-service labels come from the destination's own (Spanish) title, the
+// same rule the English catalog applies, so they cannot disagree with it.
+const esTitleByRoute = new Map([
+  ...Object.values(translatedGroups)
+    .flat()
+    .map((service) => [
+      `/services/${service.audience}/${service.slug}`,
+      service.title,
+    ]),
+  ["/web-digital", webDigitalSummary.es.title],
+]);
+
+export const serviceGroupsEs = Object.fromEntries(
+  Object.entries(translatedGroups).map(([audience, services]) => [
+    audience,
+    services.map((service) => ({
+      ...service,
+      related: service.related.map(([label, route, note]) => [
+        esTitleByRoute.get(route) ?? label,
+        route,
+        note,
+      ]),
+    })),
   ]),
 );
 

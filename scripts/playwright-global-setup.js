@@ -12,6 +12,8 @@ export default async function startPreview() {
       host: "127.0.0.1",
       port: 4173,
       strictPort: true,
+      // lead-funnel-analytics.spec.js maps the production hostnames here
+      allowedHosts: ["getalchemize.com", "www.getalchemize.com"],
     },
   });
 

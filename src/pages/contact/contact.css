@@ -106,9 +106,10 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
+/* Shown in place of the fields once the backend has stored the request. */
 .contact-success {
-  margin: 1.25rem 0 0;
-  padding: 1rem 1.1rem;
+  scroll-margin-top: 7rem; /* clear the sticky header when focus scrolls here */
+  padding: clamp(1.25rem, 3vw, 2rem);
   border-left: 3px solid var(--gold);
   background: rgba(8, 72, 72, 0.05);
   color: var(--emerald-deep);
@@ -116,15 +117,26 @@
 .contact-success[hidden] {
   display: none;
 }
-.contact-success strong {
-  display: block;
-  margin-bottom: 0.4rem;
-  font-family: var(--font-display);
-  font-size: 1.45rem;
+.contact-success:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 4px;
+}
+.contact-form .contact-success h2 {
+  margin-bottom: 1rem;
+  font-size: clamp(1.9rem, 3.2vw, 2.8rem);
 }
 .contact-success p {
   margin: 0;
-  line-height: 1.6;
+  line-height: 1.65;
+}
+.contact-success p + p {
+  margin-top: 0.75rem;
+}
+.contact-success-next {
+  font-weight: 600;
+}
+.contact-success .button {
+  margin-top: 1.5rem;
 }
 .contact-aside {
   padding: clamp(2rem, 4vw, 3rem);

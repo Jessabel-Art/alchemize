@@ -7,6 +7,7 @@ const ALCHEMIZE_SERVICE_KEYS = [
     'individual-insurance',
     'individual-notary',
     'individual-translation',
+    'individual-apostille',
     'business-readiness',
     'business-operations',
     'business-digital',
@@ -26,6 +27,24 @@ const ALCHEMIZE_SERVICE_ALIASES = [
     'business-formation' => 'business-readiness',
     'business-tax' => 'business-financial',
 ];
+
+// A service belongs to the audience its key names, except `business-digital`
+// (Web & Digital Solutions): individuals and independent professionals reach the
+// same canonical service through Individual Services -> Digital Support, so it is
+// valid for either audience and the audience field records who is asking.
+function alchemize_service_matches_audience(string $serviceKey, ?string $audience): bool
+{
+    if ($serviceKey === 'business-digital') {
+        return in_array($audience, ['individual', 'business'], true);
+    }
+    if ($audience === 'business') {
+        return str_starts_with($serviceKey, 'business-');
+    }
+    if ($audience === 'individual') {
+        return !str_starts_with($serviceKey, 'business-');
+    }
+    return true;
+}
 
 function alchemize_string_value(array $payload, string $field): ?string
 {
@@ -82,10 +101,7 @@ function alchemize_validate_lead(array $payload): array
         $serviceKey = ALCHEMIZE_SERVICE_ALIASES[$serviceKey] ?? $serviceKey;
         if (!in_array($serviceKey, ALCHEMIZE_SERVICE_KEYS, true)) {
             $errors['service_key'] = 'Select a valid service area or leave it blank.';
-        } elseif (
-            ($audience === 'business' && !str_starts_with($serviceKey, 'business-'))
-            || ($audience === 'individual' && str_starts_with($serviceKey, 'business-'))
-        ) {
+        } elseif (!alchemize_service_matches_audience($serviceKey, $audience)) {
             $errors['service_key'] = 'Select a service that matches the chosen audience.';
         }
     } else {
@@ -186,10 +202,7 @@ function alchemize_validate_lead_update(array $payload, array $existingLead): ar
             $serviceKey = ALCHEMIZE_SERVICE_ALIASES[$serviceKey] ?? $serviceKey;
             if (!in_array($serviceKey, ALCHEMIZE_SERVICE_KEYS, true)) {
                 $errors['service_key'] = 'Select a valid service area or leave it blank.';
-            } elseif (
-                ($audience === 'business' && !str_starts_with($serviceKey, 'business-'))
-                || ($audience === 'individual' && str_starts_with($serviceKey, 'business-'))
-            ) {
+            } elseif (!alchemize_service_matches_audience($serviceKey, $audience)) {
                 $errors['service_key'] = 'Select a service that matches the chosen audience.';
             } else {
                 $data['service_key'] = $serviceKey;

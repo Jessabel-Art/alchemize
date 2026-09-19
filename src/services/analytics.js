@@ -206,13 +206,10 @@ export function trackEvent(eventName = "", eventParams = {}, runtime = {}) {
   }
 }
 
-export function trackContactFormSuccess(runtime = {}) {
-  return trackEvent(
-    "contact_form_submitted",
-    { form_type: "contact", source: "public" },
-    runtime,
-  );
-}
+// Contact-form funnel events (service_cta_click, contact_form_start,
+// contact_form_submit, contact_form_error, phone_click, email_click) live in
+// leadAnalytics.js. The former `contact_form_submitted` event fired on any 2xx
+// response and is intentionally gone so a lead is never counted twice.
 
 export function trackSchedulingSuccess(runtime = {}) {
   return trackEvent(

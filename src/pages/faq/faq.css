@@ -92,7 +92,7 @@
 }
 
 .faq-category-nav em {
-  color: var(--gold);
+  color: var(--emerald-forest);
   font-style: normal;
   font-weight: 700;
 }
@@ -161,7 +161,7 @@
   align-items: center;
   justify-content: center;
   width: 2rem;
-  color: var(--gold);
+  color: var(--emerald-forest);
   font-size: 2rem;
   line-height: 1;
 }

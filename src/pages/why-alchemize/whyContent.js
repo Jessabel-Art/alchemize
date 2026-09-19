@@ -23,17 +23,15 @@ export const whyContent = {
         "Modern work moves between records, documents, communication, websites, and digital systems. Alchemize brings those responsibilities into a clearer process and works with the tools a business actually uses.",
       ],
       sequence: [
-        "Start with the situation.",
-        "Organize what matters.",
-        "Identify the right next step.",
-        "Move forward with practical support.",
+        "Assess what is happening.",
+        "Identify what needs attention.",
+        "Implement the practical next steps.",
       ],
     },
     audiences: {
       individual: {
         eyebrow: "For individuals",
         title: "Personal responsibilities deserve a clear process.",
-        copy: "Tax preparation. Notary. Translation. Apostille support. Documents. Digital services. Preparation and organization.",
         link: "Explore individual services",
       },
       principle: {
@@ -43,7 +41,6 @@ export const whyContent = {
       business: {
         eyebrow: "For businesses",
         title: "Structure behind every stage of the business.",
-        copy: "Startup. Bookkeeping. Payroll. Taxes. Operations. Digital services. Administration. Advisory.",
         link: "Explore business services",
       },
     },
@@ -52,20 +49,16 @@ export const whyContent = {
       title: "A clear progression from question to action.",
       items: [
         [
-          "Understand",
+          "Assess",
           "Start with the situation, responsibility, question, or goal. Before deciding on a service, understand what is actually happening and what the client needs to accomplish.",
         ],
         [
-          "Organize",
-          "Identify the information, records, documents, deadlines, and decisions that matter.",
+          "Identify",
+          "Determine which information, records, documents, deadlines, and decisions matter, which service and options are appropriate, what the practical next steps are, and whether any part of the need belongs with another licensed or specialized professional.",
         ],
         [
-          "Clarify",
-          "Determine the appropriate service, available options, and practical next steps.",
-        ],
-        [
-          "Move Forward",
-          "Take action with professional support where Alchemize can help, and identify when another licensed or specialized professional is required.",
+          "Implement",
+          "Where the engagement permits, take action with professional support: put the practical next steps into place.",
         ],
       ],
     },
@@ -101,29 +94,8 @@ export const whyContent = {
       title: "Your needs will change. The support can evolve with them.",
       copy: "An individual may begin with tax or document support and later turn an idea into a business. An entrepreneur may begin with readiness work, then need bookkeeping, payroll, a digital presence, or stronger operating systems. The relationship can continue as the responsibility changes, without treating each next step as an unrelated transaction.",
       paths: [
-        [
-          "For individuals",
-          "individuals",
-          [
-            "Tax Preparation",
-            "Notary & Documents",
-            "Translation & Apostille",
-            "Digital Support",
-            "Preparation & Organization",
-          ],
-        ],
-        [
-          "For businesses",
-          "businesses",
-          [
-            "Startup Support",
-            "Bookkeeping & Payroll",
-            "Business Tax Support",
-            "Operations & Administration",
-            "Digital Support",
-            "Advisory",
-          ],
-        ],
+        ["For individuals", "individuals"],
+        ["For businesses", "businesses"],
       ],
     },
     final: {
@@ -160,17 +132,15 @@ export const whyContent = {
         "El trabajo moderno se mueve entre registros, documentos, comunicación, sitios web y sistemas digitales. Alchemize integra esas responsabilidades en un proceso más claro y trabaja con las herramientas que la empresa realmente utiliza.",
       ],
       sequence: [
-        "Comience con la situación.",
-        "Organice lo importante.",
-        "Identifique el próximo paso adecuado.",
-        "Avance con apoyo práctico.",
+        "Evaluar lo que está ocurriendo.",
+        "Identificar lo que necesita atención.",
+        "Implementar los próximos pasos prácticos.",
       ],
     },
     audiences: {
       individual: {
         eyebrow: "Para personas",
         title: "Las responsabilidades personales merecen un proceso claro.",
-        copy: "Preparación de impuestos. Notaría. Traducción. Apoyo de apostilla. Documentos. Servicios digitales. Preparación y organización.",
         link: "Explorar servicios para personas",
       },
       principle: {
@@ -180,7 +150,6 @@ export const whyContent = {
       business: {
         eyebrow: "Para empresas",
         title: "Estructura para cada etapa de la empresa.",
-        copy: "Inicio. Teneduría de libros. Nómina. Impuestos. Operaciones. Servicios digitales. Administración. Asesoría.",
         link: "Explorar servicios para empresas",
       },
     },
@@ -189,20 +158,16 @@ export const whyContent = {
       title: "Una progresión clara desde la pregunta hasta la acción.",
       items: [
         [
-          "Comprender",
+          "Evaluar",
           "Comience con la situación, la responsabilidad, la pregunta o el objetivo. Antes de decidir un servicio, entienda qué está ocurriendo realmente y qué necesita lograr la persona o empresa.",
         ],
         [
-          "Organizar",
-          "Identifique la información, los registros, los documentos, los plazos y las decisiones que importan.",
+          "Identificar",
+          "Determine qué información, registros, documentos, plazos y decisiones importan, qué servicio y opciones son apropiados, cuáles son los próximos pasos prácticos y si alguna parte de la necesidad corresponde a otro profesional licenciado o especializado.",
         ],
         [
-          "Aclarar",
-          "Determine el servicio apropiado, las opciones disponibles y los próximos pasos prácticos.",
-        ],
-        [
-          "Avanzar",
-          "Tome acción con apoyo profesional donde Alchemize pueda ayudar e identifique cuando se requiere otro profesional licenciado o especializado.",
+          "Implementar",
+          "Cuando el compromiso lo permita, tome acción con apoyo profesional: ponga en práctica los próximos pasos.",
         ],
       ],
     },
@@ -238,29 +203,8 @@ export const whyContent = {
       title: "Sus necesidades cambiarán. El apoyo puede evolucionar con ellas.",
       copy: "Una persona puede comenzar con impuestos o documentos y después convertir una idea en un negocio. Un emprendedor puede comenzar con preparación empresarial y luego necesitar Teneduría de libros, nómina, presencia digital o sistemas operativos más sólidos. La relación puede continuar a medida que cambia la responsabilidad, sin tratar cada paso como una transacción sin conexión.",
       paths: [
-        [
-          "Para personas",
-          "individuals",
-          [
-            "Preparación de impuestos",
-            "Notaría y documentos",
-            "Traducción y apostilla",
-            "Apoyo digital",
-            "Preparación y organización",
-          ],
-        ],
-        [
-          "Para empresas",
-          "businesses",
-          [
-            "Inicio",
-            "Teneduría de libros y nómina",
-            "Impuestos empresariales",
-            "Operaciones y administración",
-            "Apoyo digital",
-            "Asesoría",
-          ],
-        ],
+        ["Para personas", "individuals"],
+        ["Para empresas", "businesses"],
       ],
     },
     final: {

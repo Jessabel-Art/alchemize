@@ -93,6 +93,36 @@ test('accepts active canonical translation and digital service keys', function (
     expect(alchemize_validate_lead($digital)['valid'] === true);
 });
 
+test('accepts the active Apostille service key for individuals only', function (): void {
+    $apostille = valid_payload();
+    $apostille['service_key'] = 'individual-apostille';
+    expect(alchemize_validate_lead($apostille)['valid'] === true);
+    expect(alchemize_validate_lead($apostille)['data']['service_key'] === 'individual-apostille');
+    $apostille['audience'] = 'business';
+    expect(isset(alchemize_validate_lead($apostille)['errors']['service_key']));
+});
+
+test('lets the canonical Web & Digital key serve both individuals and businesses', function (): void {
+    foreach (['individual', 'business'] as $audience) {
+        $digital = valid_payload();
+        $digital['audience'] = $audience;
+        $digital['service_key'] = 'business-digital';
+        $result = alchemize_validate_lead($digital);
+        expect($result['valid'] === true);
+        expect($result['data']['service_key'] === 'business-digital');
+        expect($result['data']['audience'] === $audience);
+    }
+});
+
+test('still rejects other business services for individuals and individual services for businesses', function (): void {
+    $payload = valid_payload();
+    $payload['service_key'] = 'business-payroll';
+    expect(isset(alchemize_validate_lead($payload)['errors']['service_key']));
+    $payload['audience'] = 'business';
+    $payload['service_key'] = 'individual-translation';
+    expect(isset(alchemize_validate_lead($payload)['errors']['service_key']));
+});
+
 test('normalizes legacy formation and tax families to maintained public keys', function (): void {
     $formation = valid_payload();
     $formation['audience'] = 'business';

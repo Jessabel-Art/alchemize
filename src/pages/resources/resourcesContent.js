@@ -43,7 +43,7 @@ export const resourcesUi = {
     },
     journey: {
       eyebrow: "Not sure where to start?",
-      title: "Follow the journey.",
+      title: "Follow the preparation journey.",
       text: "Resources for every stage of your business.",
       steps: [
         ["Understand", "Learn the basics and see the big picture."],
@@ -135,7 +135,7 @@ export const resourcesUi = {
     },
     journey: {
       eyebrow: "¿No sabe por dónde empezar?",
-      title: "Siga el recorrido.",
+      title: "Siga el recorrido de preparación.",
       text: "Recursos para cada etapa de su negocio.",
       steps: [
         ["Comprender", "Aprenda lo básico y vea el panorama general."],

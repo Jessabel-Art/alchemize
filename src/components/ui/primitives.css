@@ -102,6 +102,16 @@
   letter-spacing: 0.095em;
   text-transform: uppercase;
 }
+/* Larger invisible hit area (no layout change) so 20px-tall text links stay
+   easy to tap. */
+.text-link {
+  position: relative;
+}
+.text-link::before {
+  content: "";
+  position: absolute;
+  inset: -0.7rem -0.2rem;
+}
 .text-link::after {
   content: "→";
   transition: transform 0.2s ease;

@@ -1,24 +1,31 @@
 import { useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import Reveal from "../../components/ui/Reveal.jsx";
 import { useLanguage } from "../../i18n/LanguageContext.jsx";
 import LocalizedLink from "../../i18n/LocalizedLink.jsx";
 import usePageMetadata from "../../i18n/usePageMetadata.js";
-import { serviceGroups } from "./serviceCatalog.js";
-import { serviceGroupsEs } from "./serviceCatalog.es.js";
+import { categoryByKey } from "../../data/serviceTaxonomy.js";
+import { getServiceCategories } from "./publicServiceIndex.js";
 import { servicesContent } from "./servicesContent.js";
 import "./services.css";
 
 const audienceOrder = ["individuals", "businesses"];
+
+// The hash selects an audience ("#businesses") or deep-links to a category row
+// ("#bookkeeping-payroll-support"), which belongs to one audience.
+const audienceFromHash = (hash) => {
+  const id = hash.replace(/^#/, "");
+  if (audienceOrder.includes(id)) return id;
+  return categoryByKey.get(id)?.audience ?? null;
+};
 const getInitialAudience = () =>
-  typeof window !== "undefined" &&
-  window.location.hash.slice(1) === "businesses"
-    ? "businesses"
-    : "individuals";
+  (typeof window !== "undefined" && audienceFromHash(window.location.hash)) ||
+  "individuals";
 
 function ServicesPage() {
   const { language } = useLanguage();
   const content = servicesContent[language];
-  const groups = language === "es" ? serviceGroupsEs : serviceGroups;
+  const location = useLocation();
   const [audience, setAudience] = useState(getInitialAudience);
   const [hasInteracted, setHasInteracted] = useState(false);
   const catalogRef = useRef(null);
@@ -37,6 +44,23 @@ function ServicesPage() {
     window.addEventListener("hashchange", sync);
     return () => window.removeEventListener("hashchange", sync);
   }, []);
+
+  // Client-side navigation to a category deep link (footer, breadcrumb, home)
+  // changes the hash without a hashchange event: show its audience, then scroll
+  // to the row once the panel is visible.
+  useEffect(() => {
+    const id = location.hash.replace(/^#/, "");
+    const category = categoryByKey.get(id);
+    if (!category) return undefined;
+    setAudience(category.audience);
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById(id)?.scrollIntoView({
+        behavior: "auto",
+        block: "start",
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [location.hash]);
 
   useEffect(() => {
     if (!hasInteracted) return;
@@ -151,31 +175,92 @@ function ServicesPage() {
                 <p>{content.audience[option].description}</p>
               </Reveal>
               <div className="services-list">
-                {groups[option].map(
-                  ({ title, statement, capabilities, slug }, index) => (
-                    <Reveal
-                      as={LocalizedLink}
-                      className="service-row"
-                      delay={index * 40}
-                      key={title}
-                      to={`/services/${option}/${slug}/`}
-                    >
-                      <div className="service-row-copy">
-                        <h3>{title}</h3>
-                        <p>{statement}</p>
-                        <ul
-                          aria-label={`${title}: ${language === "es" ? "capacidades" : "capabilities"}`}
+                {getServiceCategories(option, language).map(
+                  (category, index) => {
+                    const capabilitiesWord =
+                      language === "es" ? "capacidades" : "capabilities";
+                    if (category.services.length === 1) {
+                      const [service] = category.services;
+                      return (
+                        <Reveal
+                          as={LocalizedLink}
+                          className="service-row"
+                          delay={index * 40}
+                          id={category.key}
+                          key={category.key}
+                          to={category.route}
+                          state={category.linkState}
                         >
-                          {capabilities.map((item) => (
-                            <li key={item}>{item}</li>
+                          <div className="service-row-copy">
+                            <h3>{category.name}</h3>
+                            <p>{category.summary ?? service.statement}</p>
+                            <ul
+                              aria-label={`${category.name}: ${capabilitiesWord}`}
+                            >
+                              {service.capabilities.map((item) => (
+                                <li key={item}>{item}</li>
+                              ))}
+                            </ul>
+                          </div>
+                          <span
+                            className="service-row-arrow"
+                            aria-hidden="true"
+                          >
+                            →
+                          </span>
+                        </Reveal>
+                      );
+                    }
+                    return (
+                      <Reveal
+                        as="article"
+                        className="service-group"
+                        delay={index * 40}
+                        id={category.key}
+                        key={category.key}
+                        aria-labelledby={`${category.key}-title`}
+                      >
+                        <header className="service-group-head">
+                          <h3 id={`${category.key}-title`}>{category.name}</h3>
+                          <p className="service-group-count">
+                            {content.groupCount(category.services.length)}
+                          </p>
+                        </header>
+                        {category.summary ? (
+                          <p className="service-group-descriptor">
+                            {category.summary}
+                          </p>
+                        ) : null}
+                        <div className="service-group-children">
+                          {category.services.map((service) => (
+                            <LocalizedLink
+                              className="service-child"
+                              key={service.serviceKey}
+                              to={service.route}
+                            >
+                              <div className="service-child-copy">
+                                <h4>{service.title}</h4>
+                                <p>{service.statement}</p>
+                                <ul
+                                  aria-label={`${service.title}: ${capabilitiesWord}`}
+                                >
+                                  {service.capabilities.map((item) => (
+                                    <li key={item}>{item}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                              <span
+                                className="service-row-arrow"
+                                aria-hidden="true"
+                              >
+                                →
+                              </span>
+                            </LocalizedLink>
                           ))}
-                        </ul>
-                      </div>
-                      <span className="service-row-arrow" aria-hidden="true">
-                        →
-                      </span>
-                    </Reveal>
-                  ),
+                        </div>
+                      </Reveal>
+                    );
+                  },
                 )}
               </div>
             </div>

@@ -180,7 +180,7 @@ test("SPA pageviews do not double-fire and conversion events are safe", () => {
     );
 
     const contactEvent = trackEvent(
-      "contact_form_submitted",
+      "contact_form_submit",
       {
         form_type: "contact",
         email: "person@example.com",
@@ -195,7 +195,7 @@ test("SPA pageviews do not double-fire and conversion events are safe", () => {
 
     assert.deepEqual(contactEvent, { form_type: "contact" });
     assert.equal(
-      calls.some((args) => args[1] === "contact_form_submitted"),
+      calls.some((args) => args[1] === "contact_form_submit"),
       true,
     );
 

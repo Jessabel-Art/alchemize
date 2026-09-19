@@ -13,6 +13,7 @@ import LocalizedLink from "../../i18n/LocalizedLink.jsx";
 import { resourceBySlug } from "./resourcesData.js";
 import { resourceBySlugEs } from "./resourcesData.es.js";
 import { resourcesUi } from "./resourcesContent.js";
+import { getArticleDownload } from "./downloadableResources.js";
 import useResourceMetadata from "./useResourceMetadata.js";
 import "./resources.css";
 
@@ -149,6 +150,7 @@ export default function ResourceDetailPage({ resource }) {
   const { language } = useLanguage();
   const ui = resourcesUi[language].article;
   const map = language === "es" ? resourceBySlugEs : resourceBySlug;
+  const downloadHref = getArticleDownload(resource.slug, language);
   useResourceMetadata(resource, language);
   useEffect(() => {
     if (new URLSearchParams(location.search).get("print") === "1") {
@@ -187,8 +189,8 @@ export default function ResourceDetailPage({ resource }) {
             <button type="button" onClick={() => window.print()}>
               <Printer aria-hidden="true" /> {ui.print}
             </button>
-            {resource.download && (
-              <a href={resource.download} download>
+            {downloadHref && (
+              <a href={downloadHref} download>
                 <Download aria-hidden="true" /> {ui.download}
               </a>
             )}
