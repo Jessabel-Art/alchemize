@@ -90,10 +90,8 @@ test("footer lists the canonical categories and the approved contact details", a
     footer.getByRole("link", { name: "hello@getalchemize.com" }),
   ).toHaveAttribute("href", "mailto:hello@getalchemize.com");
   await expect(footer).toContainText("Fayetteville, NC");
-  await expect(footer).toContainText(
-    "Virtual business support available nationwide.",
-  );
-  // Nationwide applies to virtual business support only.
+  await expect(footer).toContainText("Virtual services available nationwide.");
+  // Nationwide applies to virtual services only.
   await expect(footer).not.toContainText(
     /all services (are )?available nationwide/i,
   );
@@ -108,6 +106,9 @@ test("Spanish footer keeps the same contact details and category structure", asy
     footer.getByRole("link", { name: "910-644-0207" }),
   ).toHaveAttribute("href", "tel:+19106440207");
   await expect(footer).toContainText("Fayetteville, NC");
+  await expect(footer).toContainText(
+    "Servicios virtuales disponibles a nivel nacional.",
+  );
   await expect(footer.locator(".footer-group").nth(0).locator("a")).toHaveCount(
     4,
   );

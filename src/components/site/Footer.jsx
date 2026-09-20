@@ -90,19 +90,19 @@ const staticGroups = {
   ],
 };
 
-// Approved contact and location wording. Nationwide applies to virtual business
-// support only; regulated services are not implied to be available everywhere.
+// Approved contact and location wording. Nationwide applies to virtual services
+// only; regulated services are not implied to be available everywhere.
 const contactCopy = {
   en: {
     location: "Fayetteville, NC",
-    virtual: "Virtual business support available nationwide.",
+    virtual: "Virtual services available nationwide.",
     descriptor:
       "Business operations · financial organization · documents · digital solutions",
     phone: "910-644-0207",
   },
   es: {
     location: "Fayetteville, NC",
-    virtual: "Apoyo empresarial virtual disponible a nivel nacional.",
+    virtual: "Servicios virtuales disponibles a nivel nacional.",
     descriptor:
       "Operaciones empresariales · organización financiera · documentos · soluciones digitales",
     phone: "910-644-0207",
