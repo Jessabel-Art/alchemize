@@ -43,6 +43,12 @@ jobs:
   browser-quality:
     runs-on: ubuntu-latest
     needs: static-quality
+    env:
+      # The lead-funnel analytics spec runs the real GA4 gating logic, which is
+      # off in a build without a measurement ID (a local .env supplies one).
+      # A placeholder is enough: the spec stubs the Google script and never
+      # sends anything.
+      VITE_ANALYTICS_ID: G-QAHARNESS
     steps:
       - name: Checkout
         uses: actions/checkout@v4
