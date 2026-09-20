@@ -121,11 +121,6 @@ function Footer() {
           >
             <Logo surface="dark" className="brand-logo--footer" />
           </Link>
-          <p>
-            {isSpanish
-              ? "Transformamos la complejidad en oportunidad."
-              : "Transforming complexity into opportunity."}
-          </p>
           <p className="footer-descriptor">
             {contactCopy[language].descriptor}
           </p>
