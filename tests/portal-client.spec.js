@@ -72,6 +72,9 @@ const portalPayloads = {
 };
 
 test.beforeEach(async ({ page }) => {
+  // The session ends at logout, as it does on the server; otherwise the login
+  // page sees a live session and bounces straight back to the dashboard.
+  let loggedOut = false;
   await page.route("**/alchemize-api.php?*", async (route) => {
     const requestUrl = new URL(route.request().url());
     const apiRoute = requestUrl.searchParams.get("route");
@@ -80,16 +83,19 @@ test.beforeEach(async ({ page }) => {
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
-          data: {
-            authenticated: true,
-            user: { user_id: 7, role_slug: "client" },
-            csrf_token: "test-token",
-          },
+          data: loggedOut
+            ? { authenticated: false, csrf_token: "" }
+            : {
+                authenticated: true,
+                user: { user_id: 7, role_slug: "client" },
+                csrf_token: "test-token",
+              },
         }),
       });
       return;
     }
     if (apiRoute === "auth/logout") {
+      loggedOut = true;
       await route.fulfill({
         status: 200,
         contentType: "application/json",
