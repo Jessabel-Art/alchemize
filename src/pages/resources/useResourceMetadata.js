@@ -1,6 +1,8 @@
 import { useEffect } from "react";
+import { isEnglishOnlyPath } from "../../i18n/LanguageContext.jsx";
 import {
   ensureMeta,
+  ensureSocialImage,
   injectSiteEntitySchema,
   buildBreadcrumbListSchema,
   SITE_URL,
@@ -9,8 +11,13 @@ import {
 export default function useResourceMetadata(resource, language = "en") {
   useEffect(() => {
     const prefix = language === "es" ? "/es" : "";
+    // The brand suffix is dropped when it would push the title past ~65
+    // characters (long guide titles are already descriptive).
+    const suffixed = resource ? `${resource.title} | Alchemize` : "";
     const title = resource
-      ? `${resource.title} | Alchemize Resource Library`
+      ? suffixed.length <= 65
+        ? suffixed
+        : resource.title
       : language === "es"
         ? "Recursos | Guías prácticas para impuestos, negocios y operaciones"
         : "Resources | Practical Guides for Taxes, Business & Operations";
@@ -20,7 +27,7 @@ export default function useResourceMetadata(resource, language = "en") {
         ? "Guías prácticas, listas de verificación y recursos oficiales para impuestos, operaciones empresariales, documentos y administración diaria."
         : "Practical guides, checklists, and official resources for taxes, business operations, document support, and day-to-day business administration.";
     const path = resource ? `/resources/${resource.slug}` : "/resources";
-    const canonical = `${SITE_URL}${prefix}${path}`;
+    const canonical = `${SITE_URL}${isEnglishOnlyPath(path) ? "" : prefix}${path}`;
     document.title = title;
 
     ensureMeta('meta[name="description"]', {
@@ -72,6 +79,7 @@ export default function useResourceMetadata(resource, language = "en") {
     }
     canonicalLink.href = canonical;
 
+    ensureSocialImage();
     injectSiteEntitySchema();
 
     const oldScript = document.getElementById("resource-structured-data");

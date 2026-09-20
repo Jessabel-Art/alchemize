@@ -217,7 +217,7 @@ const es = {
       "Aclare la meta principal del sitio.",
       "Identifique las audiencias y acciones importantes.",
       "Reúna contenido, elementos de marca e información de acceso.",
-      "Programe una consulta para hablar sobre alcance y punto de partida.",
+      "Comuníquese con Alchemize para hablar sobre alcance y punto de partida.",
     ],
   },
   "digital-presence-audit": {

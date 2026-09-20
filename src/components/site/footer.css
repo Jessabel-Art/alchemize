@@ -16,6 +16,13 @@
   margin-top: 1rem;
   color: #c8d6d1;
 }
+.footer-brand .footer-descriptor {
+  margin-top: 0.55rem;
+  color: #9fb4ad;
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  line-height: 1.6;
+}
 .footer-contact {
   display: grid;
   gap: 0.15rem;

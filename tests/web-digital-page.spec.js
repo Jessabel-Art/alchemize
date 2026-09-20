@@ -25,7 +25,7 @@ test("page renders with the correct major section headings", async ({
   await expect(
     page.getByRole("heading", {
       level: 2,
-      name: "A website should do more than exist.",
+      name: "Built through real business use.",
     }),
   ).toBeVisible();
   await expect(
@@ -163,16 +163,16 @@ test("proposal CTA is functional and appears exactly twice", async ({
 }) => {
   await page.goto("/web-digital", { waitUntil: "domcontentloaded" });
   const proposalLinks = page.getByRole("link", {
-    name: "Request a Project Proposal",
+    name: "Discuss Your Project",
   });
   await expect(proposalLinks).toHaveCount(2);
   await expect(
     page.locator(".webx-actions").getByRole("link", {
-      name: "Request a Project Proposal",
+      name: "Discuss Your Project",
     }),
   ).toHaveCount(1);
   const heroCta = page.locator(".webx-actions").getByRole("link", {
-    name: "Request a Project Proposal",
+    name: "Discuss Your Project",
   });
   await expect(heroCta).toHaveAttribute(
     "href",
@@ -180,7 +180,7 @@ test("proposal CTA is functional and appears exactly twice", async ({
   );
   const finalCta = page
     .locator(".webx-consult--bottom")
-    .getByRole("link", { name: "Request a Project Proposal" });
+    .getByRole("link", { name: "Discuss Your Project" });
   await expect(finalCta).toHaveAttribute(
     "href",
     "/contact?service=business-digital&audience=business",

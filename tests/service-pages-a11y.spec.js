@@ -72,7 +72,7 @@ test("legacy business route redirects to its canonical service", async ({
 test("consultation links preselect the service family", async ({ page }) => {
   await page.goto("/web-digital");
   await page
-    .getByRole("link", { name: "Request a Project Proposal" })
+    .getByRole("link", { name: "Discuss Your Project" })
     .first()
     .click();
   await expect(page.locator("select[name=service]")).toHaveValue(

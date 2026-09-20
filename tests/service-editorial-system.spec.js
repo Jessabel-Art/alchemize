@@ -59,9 +59,10 @@ for (const [route, headline] of serviceRoutes) {
     if (!publiclyPriced.includes(route)) {
       await expect(page.getByText(/\$\d[\d,]*(?:\.\d{2})?/)).toHaveCount(0);
     }
+    // the request CTA is service-specific and routes into the contact flow
     await expect(
-      page.getByRole("link", { name: "Schedule a Consultation" }).first(),
-    ).toBeVisible();
+      page.locator(".editorial-service-actions a.button").first(),
+    ).toHaveAttribute("href", /\/contact\?service=/);
   });
 }
 
@@ -101,19 +102,23 @@ test("public navigation shows only one digital service family", async ({
     page.getByRole("link", { name: "Digital Business & Tech" }),
   ).toHaveCount(0);
   await expect(
-    page.getByRole("link", { name: "Business Advisory", exact: true }),
+    page.getByRole("link", { name: "Business Advisory", exact: true }).first(),
   ).toBeVisible();
   await expect(
-    page.getByRole("link", {
-      name: "Operations & Administration",
-      exact: true,
-    }),
+    page
+      .getByRole("link", {
+        name: "Operations & Administration",
+        exact: true,
+      })
+      .first(),
   ).toBeVisible();
   await expect(
-    page.getByRole("link", {
-      name: "Bookkeeping & Payroll Support",
-      exact: true,
-    }),
+    page
+      .getByRole("link", {
+        name: "Bookkeeping & Payroll Support",
+        exact: true,
+      })
+      .first(),
   ).toBeVisible();
 });
 
@@ -136,12 +141,12 @@ test("merged web & digital content is visible beyond a website-only landing page
       .first(),
   ).toBeVisible();
   await expect(
-    page.getByRole("link", { name: "Request a Project Proposal" }),
+    page.getByRole("link", { name: "Discuss Your Project" }),
   ).toHaveCount(2);
   await expect(
     page
       .locator(".webx-actions")
-      .getByRole("link", { name: "Request a Project Proposal" }),
+      .getByRole("link", { name: "Discuss Your Project" }),
   ).toHaveCount(1);
 });
 

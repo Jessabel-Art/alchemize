@@ -13,6 +13,8 @@ import LocalizedLink from "../../i18n/LocalizedLink.jsx";
 import { resourceBySlug } from "./resourcesData.js";
 import { resourceBySlugEs } from "./resourcesData.es.js";
 import { resourcesUi } from "./resourcesContent.js";
+import { resourceServiceKey } from "./resourceServicePaths.js";
+import { getServiceLink } from "../services/publicServiceIndex.js";
 import { getArticleDownload } from "./downloadableResources.js";
 import useResourceMetadata from "./useResourceMetadata.js";
 import "./resources.css";
@@ -151,6 +153,9 @@ export default function ResourceDetailPage({ resource }) {
   const ui = resourcesUi[language].article;
   const map = language === "es" ? resourceBySlugEs : resourceBySlug;
   const downloadHref = getArticleDownload(resource.slug, language);
+  const practiceService = resourceServiceKey[resource.slug]
+    ? getServiceLink(resourceServiceKey[resource.slug], language)
+    : null;
   useResourceMetadata(resource, language);
   useEffect(() => {
     if (new URLSearchParams(location.search).get("print") === "1") {
@@ -218,12 +223,18 @@ export default function ResourceDetailPage({ resource }) {
                 <li key={step}>{step}</li>
               ))}
             </ol>
-            <LocalizedLink
-              className="text-link"
-              to={resource.servicePath || "/services"}
-            >
-              {resource.serviceLabel || ui.serviceLink}
-            </LocalizedLink>
+            {practiceService ? (
+              <p className="resource-service-path">
+                <span>{ui.practice}</span>
+                <LocalizedLink className="text-link" to={practiceService.route}>
+                  {ui.practiceLink(practiceService.title)}
+                </LocalizedLink>
+              </p>
+            ) : (
+              <LocalizedLink className="text-link" to="/services">
+                {ui.serviceLink}
+              </LocalizedLink>
+            )}
           </section>
           <aside className="resource-disclaimer">
             <strong>{ui.notice}</strong>

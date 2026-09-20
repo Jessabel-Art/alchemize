@@ -118,7 +118,7 @@ const individual = [
     slug: "notary-document-services",
     serviceKey: "individual-notary",
     title: "Notary & Document Services",
-    seoTitle: "North Carolina Notary Services | Alchemize",
+    seoTitle: "North Carolina Notary & Document Support | Alchemize",
     seoDescription:
       "North Carolina notary and nonlegal administrative document support for signatures, acknowledgments, packet organization, and clear appointment expectations.",
     Icon: FileCheck2,
@@ -200,9 +200,9 @@ const individual = [
     slug: "translation-services",
     serviceKey: "individual-translation",
     title: "Translation Services",
-    seoTitle: "Document Translation Services | Alchemize",
+    seoTitle: "English–Spanish Document Translation | Alchemize",
     seoDescription:
-      "Professional document translation services for individuals and businesses, with virtual support available and North Carolina-based coordination where appropriate.",
+      "English–Spanish document translation, from short personal records to certified, official-use translations, with pricing published on the page.",
     Icon: FileCheck2,
     statement:
       "Clear translation support for documents that need to be understandable, organized, and ready for the next step.",
@@ -457,7 +457,7 @@ const business = [
     slug: "operations-implementation",
     serviceKey: "business-operations",
     title: "Operations & Administration",
-    seoTitle: "Small Business Operations & Process Support | Alchemize",
+    seoTitle: "Small Business Operations & Process Improvement | Alchemize",
     seoDescription:
       "Small business operations support for workflows, process improvement, administrative systems, and practical implementation that helps the business run more smoothly.",
     Icon: Workflow,
@@ -735,9 +735,9 @@ const business = [
     slug: "payroll-processing",
     serviceKey: "business-payroll",
     title: "Payroll",
-    seoTitle: "Small Business Payroll Processing Services | Alchemize",
+    seoTitle: "Small Business Payroll Support & Reporting | Alchemize",
     seoDescription:
-      "Payroll processing support for small businesses, including organized payroll records, recurring reporting, and virtual administration where the selected workflow allows.",
+      "Payroll support for small businesses: organized payroll records, recurring reporting, and administration alongside the payroll platform or provider the business uses.",
     Icon: Landmark,
     statement:
       "Payroll administration and processing through the applicable payroll platform, with organized payroll records and recurring reporting.",

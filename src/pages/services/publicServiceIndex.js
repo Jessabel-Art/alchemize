@@ -117,6 +117,13 @@ export function getServiceCategories(audience, language) {
   });
 }
 
+// Title and route of one public service, for links that point at it from
+// elsewhere (for example the end of a resource).
+export function getServiceLink(serviceKey, language) {
+  const service = serviceMaps[lang(language)].get(serviceKey);
+  return service ? { title: service.title, route: service.route } : null;
+}
+
 export function getCategoryForService(serviceKey, language) {
   const category = categoryByServiceKey.get(serviceKey);
   if (!category) return null;

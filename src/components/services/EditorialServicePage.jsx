@@ -12,6 +12,7 @@ import {
   ServiceFaq,
   ServiceFit,
   ServiceOptions,
+  ServiceProof,
   ServicePricing,
   ServiceRelated,
   ServiceScopeGroups,
@@ -29,7 +30,7 @@ const shared = {
     boundary: "Scope and boundaries",
     related: "Related services",
     resources: "Useful resources",
-    consultation: "Schedule a Consultation",
+    consultation: "Tell Us What You Need",
     information: "Request Information",
     downloadResource: "Download PDF",
     close: "Discuss the work",
@@ -45,7 +46,7 @@ const shared = {
     boundary: "Alcance y límites",
     related: "Servicios relacionados",
     resources: "Recursos útiles",
-    consultation: "Programar una consulta",
+    consultation: "Cuéntenos qué necesita",
     information: "Solicitar información",
     downloadResource: "Descargar PDF",
     close: "Conversemos sobre el trabajo",
@@ -839,6 +840,7 @@ export default function EditorialServicePage({ service, ui, language }) {
               <span className="eyebrow eyebrow--gold">{labels.close}</span>
               <h2>{cta.title || service.cta}</h2>
               <p>{cta.body || labels.closeBody}</p>
+              <ServiceProof proof={detail.proof} language={language} />
               <div>
                 <LocalizedLink
                   className="button button-primary"

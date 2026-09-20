@@ -147,11 +147,14 @@ test("the canonical methodology is Assess, Identify, Implement", async ({
     "Identify",
     "Implement",
   ]);
+  // Why Alchemize no longer restates the methodology; it explains the four
+  // roles (advice vs. implementation) and three connected-business examples
   await page.goto("/why-alchemize");
   await expect(page.locator(".why-approach-steps h3")).toHaveText([
-    "Assess",
-    "Identify",
-    "Implement",
+    "Advisory",
+    "Operations",
+    "Administrative support",
+    "Digital",
   ]);
   await expect(page.locator(".why-sequence li")).toHaveCount(3);
 });

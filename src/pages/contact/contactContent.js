@@ -7,9 +7,9 @@ export const contactContent = {
     },
     page: {
       eyebrow: "Start the conversation",
-      title: "Tell us what you are working through.",
+      title: "Start with the problem, not the service.",
       summary:
-        "You do not need to identify the exact service before reaching out. Start with the situation, responsibility, or outcome in front of you.",
+        "Tell us what you're trying to accomplish, improve, organize, or resolve. We'll review the request, determine whether it fits Alchemize's scope, and identify the appropriate next step.",
     },
     form: {
       kicker: "Consultation request",
@@ -39,7 +39,7 @@ export const contactContent = {
     confirmation: {
       kicker: "Request received",
       title: "Thank you for contacting Alchemize.",
-      body: "Your request has been received and will be reviewed. Alchemize will reach out using the contact details you provided.",
+      body: "Your request has been received.",
       again: "Send another request",
     },
     serviceGroups: {
@@ -51,19 +51,19 @@ export const contactContent = {
       title: "A clear first step.",
       steps: [
         [
-          "Describe the need",
-          "Tell us what is happening and what you need help moving forward.",
+          "Tell us what's going on",
+          "Describe what you're trying to accomplish, improve, organize, or resolve.",
         ],
         [
-          "Identify the path",
-          "We will determine whether the request fits Alchemize's scope and what comes next.",
+          "We review the request",
+          "We determine whether it fits Alchemize's scope.",
         ],
         [
-          "Prepare the conversation",
-          "If a consultation is appropriate, you will receive guidance about what to have ready.",
+          "We identify the next step",
+          "That may be a conversation, a defined service, or a referral when the need belongs elsewhere.",
         ],
       ],
-      note: "Alchemize will follow up within 24 hours to schedule the consultation.",
+      note: "Alchemize will review your request and follow up using the contact information provided.",
       language: "We speak Spanish. / Se habla español.",
       contacts: {
         general: "General inquiries",
@@ -106,9 +106,9 @@ export const contactContent = {
     },
     page: {
       eyebrow: "Inicie la conversación",
-      title: "Cuéntenos qué necesita resolver.",
+      title: "Comience con el problema, no con el servicio.",
       summary:
-        "No necesita identificar el servicio exacto antes de comunicarse. Comience con la situación, la responsabilidad o el resultado que tiene por delante.",
+        "Cuéntenos qué intenta lograr, mejorar, organizar o resolver. Revisaremos la solicitud, determinaremos si encaja en el alcance de Alchemize e identificaremos el siguiente paso adecuado.",
     },
     form: {
       kicker: "Solicitud de consulta",
@@ -139,7 +139,7 @@ export const contactContent = {
     confirmation: {
       kicker: "Solicitud recibida",
       title: "Gracias por comunicarse con Alchemize.",
-      body: "Su solicitud fue recibida y será revisada. Alchemize se comunicará con usted mediante los datos de contacto que proporcionó.",
+      body: "Su solicitud fue recibida.",
       again: "Enviar otra solicitud",
     },
     serviceGroups: {
@@ -151,19 +151,19 @@ export const contactContent = {
       title: "Un primer paso claro.",
       steps: [
         [
-          "Describa la necesidad",
-          "Cuéntenos qué está ocurriendo y qué necesita hacer avanzar.",
+          "Cuéntenos qué está pasando",
+          "Describa qué intenta lograr, mejorar, organizar o resolver.",
         ],
         [
-          "Identifique el camino",
-          "Determinaremos si la solicitud está dentro del alcance de Alchemize y cuál es el próximo paso.",
+          "Revisamos la solicitud",
+          "Determinamos si encaja en el alcance de Alchemize.",
         ],
         [
-          "Prepare la conversación",
-          "Si una consulta es apropiada, recibirá orientación sobre lo que debe tener listo.",
+          "Identificamos el siguiente paso",
+          "Puede ser una conversación, un servicio definido o una referencia cuando la necesidad corresponde a otro profesional.",
         ],
       ],
-      note: "Alchemize se comunicará dentro de 24 horas para programar la consulta.",
+      note: "Alchemize revisará su solicitud y se comunicará con usted usando la información de contacto que proporcionó.",
       language: "Se habla español.",
       contacts: {
         general: "Consultas generales",

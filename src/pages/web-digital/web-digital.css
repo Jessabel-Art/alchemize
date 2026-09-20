@@ -332,6 +332,13 @@
   font-size: clamp(1.55rem, 2.2vw, 2.25rem);
   line-height: 1.22;
 }
+.webx-positioning-copy > p.webx-positioning-origin {
+  margin: 1.25rem 0 0;
+  color: var(--color-text-soft);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.7;
+}
 .webx-positioning-copy ul {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -642,6 +649,34 @@
   margin: 0 0 1.25rem;
   color: var(--color-text-soft);
   line-height: 1.72;
+}
+.webx-related {
+  margin-top: clamp(1.75rem, 3vw, 2.5rem);
+}
+.webx-related h3 {
+  margin: 0 0 0.75rem;
+  color: #6c561f;
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.webx-related ul {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.webx-related a {
+  color: var(--emerald-deep);
+  font-weight: 600;
+  text-underline-offset: 0.2em;
+}
+.webx-related a:hover,
+.webx-related a:focus-visible {
+  color: #6c561f;
 }
 @media (max-width: 700px) {
   .webx-lifecycle-head {

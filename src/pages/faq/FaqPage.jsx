@@ -395,7 +395,7 @@ function FaqPage() {
         "Find clear answers about Alchemize services, consultations, business support, and what to expect before starting a project or engagement.",
     },
     es: {
-      title: "FAQ | Preguntas y respuestas sobre servicios empresariales",
+      title: "Preguntas frecuentes | Alchemize Business Services",
       description:
         "Encuentre respuestas claras sobre los servicios de Alchemize, las consultas, el apoyo empresarial y qué esperar antes de comenzar un proyecto o servicio.",
     },

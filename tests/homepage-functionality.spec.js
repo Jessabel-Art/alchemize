@@ -18,7 +18,7 @@ test("homepage capability grid describes capabilities and is not a second servic
   ]);
   // none of them repeats a canonical service category name
   const categories = await page
-    .locator(".home-business-panel .home-path-list span")
+    .locator(".home-business-panel .home-path-list li")
     .allTextContents();
   expect(categories.length).toBe(6);
   for (const title of titles) expect(categories).not.toContain(title);
@@ -29,13 +29,13 @@ test("homepage service discovery lists the canonical categories", async ({
 }) => {
   await page.goto("/", { waitUntil: "networkidle" });
   const panels = page.locator(".home-path-grid article");
-  await expect(panels.nth(0).locator("li span")).toHaveText([
+  await expect(panels.nth(0).locator("li")).toHaveText([
     "Tax Preparation",
     "Notary & Document Services",
     "Translation & Apostille Support",
     "Digital Support",
   ]);
-  await expect(panels.nth(1).locator("li span")).toHaveText([
+  await expect(panels.nth(1).locator("li")).toHaveText([
     "Business Foundation",
     "Business Advisory",
     "Operations & Administration",
@@ -50,7 +50,7 @@ test("homepage hero and service CTAs retain correct destinations", async ({
 }) => {
   await page.goto("/", { waitUntil: "networkidle" });
   await expect(
-    page.getByRole("link", { name: "Schedule a Consultation" }).first(),
+    page.getByRole("link", { name: "Tell Us What You Need" }).first(),
   ).toHaveAttribute("href", "/contact");
   await expect(
     page.getByRole("link", { name: "Explore Services" }),
@@ -66,13 +66,13 @@ test("homepage hero and service CTAs retain correct destinations", async ({
   ).toHaveAttribute("href", "/services");
 });
 
-test("homepage Why Alchemize CTA retains correct destination", async ({
+test("homepage credibility section leads to the Founder page", async ({
   page,
 }) => {
   await page.goto("/", { waitUntil: "networkidle" });
   await expect(
-    page.locator(".home-trust").getByRole("link", { name: "Why Alchemize" }),
-  ).toHaveAttribute("href", "/why-alchemize");
+    page.locator(".home-trust").getByRole("link", { name: "Meet the Founder" }),
+  ).toHaveAttribute("href", "/resources/meet-the-founder");
 });
 
 test("homepage resource cards use existing valid resource routes", async ({
@@ -104,7 +104,7 @@ test("homepage resource cards use existing valid resource routes", async ({
 test("homepage final consultation CTA works", async ({ page }) => {
   await page.goto("/", { waitUntil: "networkidle" });
   const finalCta = page.locator(".home-final").getByRole("link", {
-    name: "Schedule a Consultation",
+    name: "Tell Us What You Need",
   });
   await expect(finalCta).toHaveAttribute("href", "/contact");
   await finalCta.click();

@@ -171,7 +171,15 @@ for (const { code, prefix, labelIndex, unsure } of languages) {
         ? "Thank you for contacting Alchemize."
         : "Gracias por comunicarse con Alchemize.",
     );
-    await expect(panel).toContainText(code === "en" ? "24 hours" : "24 horas");
+    // no response-time promise, and no assumption that a consultation follows
+    await expect(panel).toContainText(
+      code === "en"
+        ? "follow up using the contact information"
+        : "se comunicará con usted",
+    );
+    await expect(panel).not.toContainText(
+      /24 (hours|horas)|schedule|programar/i,
+    );
     await expect(page.getByRole("status")).toHaveCount(1);
 
     // starting another request returns a blank form with focus on the first field

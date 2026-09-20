@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test";
 const routeExpectations = [
   {
     route: "/",
-    check: ["WebSite", "Organization"],
+    check: ["WebSite", "ProfessionalService"],
     metaChecks: ['meta[property="og:title"]', 'meta[name="twitter:card"]'],
   },
   {
@@ -46,7 +46,7 @@ const routeExpectations = [
   },
   {
     route: "/es",
-    check: ["WebSite", "Organization"],
+    check: ["WebSite", "ProfessionalService"],
     metaChecks: ['meta[property="og:title"]', 'meta[name="twitter:card"]'],
   },
   {

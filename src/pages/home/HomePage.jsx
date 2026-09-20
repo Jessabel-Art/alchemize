@@ -161,12 +161,18 @@ function HomePage() {
               <span>{content.paths.individualLabel}</span>
               <h3>{content.paths.individualTitle}</h3>
               <ul className="home-path-list">
-                {individualCategories.map(({ key, name }) => {
+                {individualCategories.map(({ key, name, route, linkState }) => {
                   const Icon = categoryIcons[key];
                   return (
                     <li key={key}>
                       <Icon aria-hidden="true" strokeWidth={1.5} />
-                      <span>{name}</span>
+                      {route ? (
+                        <Link to={route} state={linkState}>
+                          {name}
+                        </Link>
+                      ) : (
+                        <span>{name}</span>
+                      )}
                     </li>
                   );
                 })}
@@ -180,12 +186,18 @@ function HomePage() {
                 <span>{content.paths.businessLabel}</span>
                 <h3>{content.paths.businessTitle}</h3>
                 <ul className="home-path-list">
-                  {businessCategories.map(({ key, name }) => {
+                  {businessCategories.map(({ key, name, route, linkState }) => {
                     const Icon = categoryIcons[key];
                     return (
                       <li key={key}>
                         <Icon aria-hidden="true" strokeWidth={1.5} />
-                        <span>{name}</span>
+                        {route ? (
+                          <Link to={route} state={linkState}>
+                            {name}
+                          </Link>
+                        ) : (
+                          <span>{name}</span>
+                        )}
                       </li>
                     );
                   })}
@@ -287,7 +299,15 @@ function HomePage() {
             <span className="eyebrow">{content.trust.eyebrow}</span>
             <h2>{content.trust.title}</h2>
             <p>{content.trust.copy}</p>
-            <Link className="text-link" to="/why-alchemize">
+            <dl className="home-trust-signals">
+              {content.trust.signals.map(([label, text]) => (
+                <div key={label}>
+                  <dt>{label}</dt>
+                  <dd>{text}</dd>
+                </div>
+              ))}
+            </dl>
+            <Link className="text-link" to="/resources/meet-the-founder">
               {content.trust.link}
             </Link>
           </Reveal>

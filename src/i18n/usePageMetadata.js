@@ -1,7 +1,8 @@
 import { useEffect } from "react";
-import { useLanguage } from "./LanguageContext.jsx";
+import { normalizePathname, useLanguage } from "./LanguageContext.jsx";
 import {
   ensureMeta,
+  ensureSocialImage,
   injectSiteEntitySchema,
   SITE_URL,
 } from "../seo/siteSchema.js";
@@ -22,7 +23,9 @@ export default function usePageMetadata(metadata) {
 
   useEffect(() => {
     const canonicalPath =
-      typeof window !== "undefined" ? window.location.pathname : path("/");
+      typeof window !== "undefined"
+        ? normalizePathname(window.location.pathname)
+        : path("/");
     const canonical = `${SITE_URL}${canonicalPath}`;
 
     document.title = localized.title;
@@ -72,6 +75,7 @@ export default function usePageMetadata(metadata) {
     }
     canonicalLink.href = canonical;
 
+    ensureSocialImage();
     injectSiteEntitySchema();
   }, [language, localized.description, localized.title, path]);
 }

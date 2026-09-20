@@ -3,6 +3,7 @@ import PageShell from "../../components/ui/PageShell.jsx";
 import { businessContact, contactRouting } from "../../data/contactInfo.js";
 import {
   ensureMeta,
+  ensureSocialImage,
   injectSiteEntitySchema,
   SITE_URL,
 } from "../../seo/siteSchema.js";
@@ -603,6 +604,7 @@ function LegalPage({ title, summary }) {
     }
     canonical.href = canonicalUrl;
 
+    ensureSocialImage();
     injectSiteEntitySchema();
   }, [isPrivacy]);
 

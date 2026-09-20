@@ -1,8 +1,26 @@
 export const SITE_URL = "https://getalchemize.com";
 
+export const SOCIAL_IMAGE = {
+  url: `${SITE_URL}/assets/images/home/alchemize-hero.webp`,
+  width: 1672,
+  height: 941,
+};
+
+// Inline reference to the organization entity (search engines do not reliably
+// resolve @id across separate JSON-LD blocks, so name and url travel with it).
+const organizationRef = {
+  "@type": "ProfessionalService",
+  "@id": `${SITE_URL}/#organization`,
+  name: "Alchemize Business Services",
+  url: SITE_URL,
+};
+
+// Same facts as the visible footer: Fayetteville, NC; virtual business support
+// nationwide. No street address is published, so none is described here.
 const organizationBase = {
   "@context": "https://schema.org",
-  "@type": "Organization",
+  "@type": "ProfessionalService",
+  "@id": `${SITE_URL}/#organization`,
   name: "Alchemize Business Services",
   url: SITE_URL,
   description:
@@ -11,6 +29,25 @@ const organizationBase = {
     "@type": "ImageObject",
     url: `${SITE_URL}/assets/logos/alchemize-logo-dark.png`,
   },
+  image: SOCIAL_IMAGE.url,
+  telephone: "+1-910-644-0207",
+  email: "hello@getalchemize.com",
+  address: {
+    "@type": "PostalAddress",
+    addressLocality: "Fayetteville",
+    addressRegion: "NC",
+    addressCountry: "US",
+  },
+  areaServed: [
+    { "@type": "State", name: "North Carolina" },
+    { "@type": "Country", name: "United States" },
+  ],
+  knowsLanguage: ["en", "es"],
+  sameAs: [
+    "https://www.instagram.com/getalchemize/",
+    "https://www.threads.com/@getalchemize",
+    "https://www.linkedin.com/company/alchemize-business-services/",
+  ],
   founder: {
     "@type": "Person",
     name: "Jessy Santos",
@@ -50,6 +87,26 @@ export function ensureMeta(selector, attributes) {
   return element;
 }
 
+// Default share image. Pages that do not have their own use the brand image.
+export function ensureSocialImage() {
+  ensureMeta('meta[property="og:image"]', {
+    property: "og:image",
+    content: SOCIAL_IMAGE.url,
+  });
+  ensureMeta('meta[property="og:image:width"]', {
+    property: "og:image:width",
+    content: String(SOCIAL_IMAGE.width),
+  });
+  ensureMeta('meta[property="og:image:height"]', {
+    property: "og:image:height",
+    content: String(SOCIAL_IMAGE.height),
+  });
+  ensureMeta('meta[name="twitter:image"]', {
+    name: "twitter:image",
+    content: SOCIAL_IMAGE.url,
+  });
+}
+
 export function injectSiteEntitySchema() {
   ensureJsonLd("alchemize-organization-schema", organizationBase);
   ensureJsonLd("alchemize-website-schema", {
@@ -60,12 +117,7 @@ export function injectSiteEntitySchema() {
     description:
       "Practical business, tax, operations, document, and digital support for individuals, entrepreneurs, and small businesses.",
     inLanguage: ["en", "es"],
-    publisher: {
-      "@type": "Organization",
-      name: "Alchemize Business Services",
-      url: SITE_URL,
-      logo: `${SITE_URL}/assets/logos/alchemize-logo-dark.png`,
-    },
+    publisher: organizationRef,
   });
 }
 
@@ -90,7 +142,7 @@ export function buildServiceSchema(service, language, canonical) {
         "translation-services",
         "bookkeeping-financial-reporting",
         "payroll-processing",
-        "digital-business-technology",
+        "web-digital",
       ].includes(serviceSlug)
     ) {
       return "United States";
@@ -106,12 +158,7 @@ export function buildServiceSchema(service, language, canonical) {
       language === "es" ? service.titleEs || service.title : service.title,
     description,
     url: canonical,
-    provider: {
-      "@type": "Organization",
-      name: "Alchemize Business Services",
-      url: SITE_URL,
-      logo: `${SITE_URL}/assets/logos/alchemize-logo-dark.png`,
-    },
+    provider: organizationRef,
   };
 
   if (areaServed) {

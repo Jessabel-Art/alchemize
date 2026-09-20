@@ -16,7 +16,7 @@ export const webDigitalDetail = {
     metaDescription:
       "Website design, maintenance, SEO, Google Business Profile, automation, and custom web applications for small businesses, scoped around how the business operates.",
     heroCopy:
-      "Alchemize builds and maintains professional websites and the systems around them: local search and Google Business Profile, forms and scheduling, automation, and custom applications when a website alone is not enough. Every project is scoped around how your business actually works.",
+      "Alchemize builds and maintains websites and the systems around them: local search and Google Business Profile, forms and scheduling, automation, and custom applications when a website alone is not enough. Each is scoped around the business process it is meant to support.",
     lifecycle: {
       eyebrow: "How the services relate",
       title: "Build. Maintain. Optimize. Automate.",
@@ -78,7 +78,7 @@ export const webDigitalDetail = {
             "APIs and integrations",
             "Custom workflows and software",
           ],
-          note: "These projects begin with discovery, so the deliverables, integrations, and timeline are defined before a proposal.",
+          note: "These projects begin with discovery, so the deliverables, integrations, and timeline are defined before a proposal. Business-systems experience informs the scoping; technical execution relies on current development capability.",
         },
       ],
       [
@@ -203,7 +203,7 @@ export const webDigitalDetail = {
     metaDescription:
       "Diseño de sitios web, mantenimiento, SEO, Google Business Profile, automatización y aplicaciones web a la medida para pequeñas empresas, según cómo opera el negocio.",
     heroCopy:
-      "Alchemize construye y mantiene sitios web profesionales y los sistemas que los rodean: búsqueda local y Google Business Profile, formularios y programación de citas, automatización y aplicaciones a la medida cuando un sitio web no basta. Cada proyecto se define según cómo funciona realmente su negocio.",
+      "Alchemize construye y mantiene sitios web y los sistemas que los rodean: búsqueda local y Google Business Profile, formularios y programación de citas, automatización y aplicaciones a la medida cuando un sitio web no basta. Cada uno se define según el proceso empresarial al que debe servir.",
     lifecycle: {
       eyebrow: "Cómo se relacionan los servicios",
       title: "Construir. Mantener. Optimizar. Automatizar.",
@@ -270,7 +270,7 @@ export const webDigitalDetail = {
             "APIs e integraciones",
             "Flujos de trabajo y software a la medida",
           ],
-          note: "Estos proyectos comienzan con una etapa de descubrimiento, para definir los entregables, las integraciones y el calendario antes de una propuesta.",
+          note: "Estos proyectos comienzan con una etapa de descubrimiento, para definir los entregables, las integraciones y el calendario antes de una propuesta. La experiencia en sistemas empresariales orienta la definición del alcance; la ejecución técnica se apoya en la capacidad de desarrollo actual.",
         },
       ],
       [

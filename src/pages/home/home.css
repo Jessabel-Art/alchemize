@@ -208,6 +208,16 @@
   color: var(--color-text-soft);
   font-size: 0.88rem;
 }
+.home-path-list a {
+  color: inherit;
+  text-decoration: none;
+}
+.home-path-list a:hover,
+.home-path-list a:focus-visible {
+  color: var(--emerald-deep);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
 .home-path-list svg {
   width: 16px;
   height: 16px;
@@ -549,6 +559,37 @@
   max-width: 520px;
   color: var(--color-text-soft);
   line-height: 1.75;
+}
+/* compact evidence grid: rules and type, not cards */
+.home-trust-signals {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 clamp(1.25rem, 3vw, 2.25rem);
+  max-width: 640px;
+  margin: 1.5rem 0 1.3rem;
+  border-top: 1px solid rgba(6, 43, 43, 0.2);
+}
+.home-trust-signals div {
+  padding: 0.85rem 0;
+  border-bottom: 1px solid rgba(6, 43, 43, 0.14);
+}
+.home-trust-signals dt {
+  color: var(--emerald-deep);
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-variant-numeric: lining-nums;
+  line-height: 1.15;
+}
+.home-trust-signals dd {
+  margin: 0.3rem 0 0;
+  color: var(--color-text-soft);
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+@media (max-width: 600px) {
+  .home-trust-signals {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ==========================================================================

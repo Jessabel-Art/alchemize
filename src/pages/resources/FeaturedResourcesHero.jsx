@@ -68,13 +68,16 @@ export default function FeaturedResourcesHero() {
         {content.label} {activeIndex + 1} {language === "es" ? "de" : "of"}{" "}
         {slides.length}: {active.resource.title}
       </p>
+      {/* The rotating slide title is not the page heading: the page keeps one
+          stable H1 whatever slide is showing. */}
+      <h1 className="sr-only">{content.pageTitle}</h1>
       <div
         className={`resource-showcase-grid${active.heroImage ? " has-image" : ""}`}
       >
         <div className="resource-showcase-main">
           <div className="resource-showcase-copy" key={`copy-${active.slug}`}>
             <span className="resource-showcase-label">{active.label}</span>
-            <h1>{active.resource.title}</h1>
+            <h2 className="resource-showcase-title">{active.resource.title}</h2>
             <p>{active.summary}</p>
             <div className="resource-showcase-actions">
               <LocalizedLink

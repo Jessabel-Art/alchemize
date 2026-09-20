@@ -96,11 +96,15 @@ const contactCopy = {
   en: {
     location: "Fayetteville, NC",
     virtual: "Virtual business support available nationwide.",
+    descriptor:
+      "Business operations · financial organization · documents · digital solutions",
     phone: "910-644-0207",
   },
   es: {
     location: "Fayetteville, NC",
     virtual: "Apoyo empresarial virtual disponible a nivel nacional.",
+    descriptor:
+      "Operaciones empresariales · organización financiera · documentos · soluciones digitales",
     phone: "910-644-0207",
   },
 };
@@ -121,6 +125,9 @@ function Footer() {
             {isSpanish
               ? "Transformamos la complejidad en oportunidad."
               : "Transforming complexity into opportunity."}
+          </p>
+          <p className="footer-descriptor">
+            {contactCopy[language].descriptor}
           </p>
           <address className="footer-contact">
             <span>{contactCopy[language].location}</span>

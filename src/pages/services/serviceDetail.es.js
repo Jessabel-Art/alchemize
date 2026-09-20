@@ -227,8 +227,8 @@ export const serviceDetailEs = {
 
   "individual-apostille": {
     cta: {
-      hero: "Iniciar una solicitud de apostilla",
-      close: "Iniciar una solicitud de apostilla",
+      hero: "Solicitar apoyo para apostilla",
+      close: "Solicitar apoyo para apostilla",
       info: "Consultar sobre su documento",
       title: "Cuéntenos sobre el documento y su destino.",
       body: "Indíquenos el tipo de documento y el país de destino. Alchemize revisa lo que el documento necesita y confirma el alcance y los siguientes pasos antes de iniciar el servicio.",
@@ -289,7 +289,7 @@ export const serviceDetailEs = {
           "Notarización o traducción certificada, cuando el documento los necesite",
         ],
       },
-      cta: "Iniciar una solicitud de apostilla",
+      cta: "Solicitar apoyo para apostilla",
     },
     does: {
       title: "Lo que hace Alchemize y lo que no.",
@@ -548,8 +548,8 @@ export const serviceDetailEs = {
 
   "individual-tax": {
     cta: {
-      hero: "Iniciar una consulta de impuestos",
-      close: "Iniciar una consulta de impuestos",
+      hero: "Solicitar preparación de impuestos",
+      close: "Solicitar preparación de impuestos",
       info: "Preguntar si su declaración encaja",
       title: "Cuéntenos su situación tributaria.",
       body: "No necesita saber qué formularios aplican. Describa sus ingresos y los cambios que hubo; Alchemize confirma la compatibilidad y el alcance antes de preparar la declaración.",
@@ -699,11 +699,14 @@ export const serviceDetailEs = {
 
   "business-advisory": {
     cta: {
-      hero: "Hablar sobre su reto empresarial",
-      close: "Hablar sobre su reto empresarial",
+      hero: "Iniciar una conversación",
+      close: "Iniciar una conversación",
       info: "Preguntar qué servicio encaja",
       title: "Empiece por el problema que necesita resolver.",
       body: "Describa el reto, la decisión o la fricción. Alchemize recomienda el servicio adecuado antes de comenzar cualquier trabajo.",
+    },
+    proof: {
+      text: "La asesoría se apoya en los más de 15 años de experiencia profesional de Jessy Santos en operaciones empresariales, administración y servicio al cliente, además de un MBA, y en un conocimiento práctico de lo que implica llevar a cabo las recomendaciones.",
     },
     summary:
       "La asesoría es donde empieza el trabajo: diagnosticar la situación actual, encontrar la verdadera limitación, priorizar y salir con recomendaciones y una hoja de ruta que pueda ejecutar. La ejecución sustancial es un servicio aparte.",
@@ -836,11 +839,14 @@ export const serviceDetailEs = {
 
   "business-operations": {
     cta: {
-      hero: "Hablar sobre su proyecto de operaciones",
-      close: "Hablar sobre su proyecto de operaciones",
+      hero: "Solicitar apoyo de operaciones",
+      close: "Solicitar apoyo de operaciones",
       info: "Preguntar qué alcance encaja",
       title: "Cuéntenos qué flujo de trabajo debe funcionar mejor.",
       body: "Describa el proceso, las herramientas involucradas y qué debería ser distinto. Alchemize recomienda un alcance antes de comenzar.",
+    },
+    proof: {
+      text: "La trayectoria profesional de Jessy Santos incluye apoyar la creación y el desarrollo de un CRM, contribuir a la mejora de flujos de trabajo y procesos, implementar automatización, mantener una intranet y operaciones administrativas diarias.",
     },
     summary:
       "Operaciones es donde las recomendaciones se convierten en sistemas que funcionan. Alchemize rediseña los flujos de trabajo, construye los procedimientos, plantillas y configuraciones de herramientas que los respaldan, capacita a su equipo y entrega algo que el negocio pueda mantener.",
@@ -990,11 +996,14 @@ export const serviceDetailEs = {
 
   "business-readiness": {
     cta: {
-      hero: "Planificar las bases de su negocio",
-      close: "Planificar las bases de su negocio",
+      hero: "Solicitar apoyo para las bases del negocio",
+      close: "Solicitar apoyo para las bases del negocio",
       info: "Preguntar qué punto de partida encaja",
       title: "Cuéntenos desde dónde parte el negocio.",
       body: "Describa el negocio, su etapa y para qué se está preparando. Alchemize recomienda un punto de partida antes de comenzar cualquier trabajo.",
+    },
+    proof: {
+      text: "Jessy Santos aporta más de 15 años de experiencia profesional en operaciones, administración y responsabilidades financieras, además de un MBA, a la manera en que un negocio nuevo o en crecimiento se organiza.",
     },
     summary:
       "Para negocios que se están estableciendo o preparando para su siguiente etapa: una lectura clara de cómo están las bases, una hoja de ruta de arranque y trabajo de plan de negocios y preparación financiera, sin prometer financiamiento, certificación ni aprobación.",
@@ -1135,11 +1144,14 @@ export const serviceDetailEs = {
 
   "business-bookkeeping": {
     cta: {
-      hero: "Hablar sobre su teneduría de libros",
-      close: "Hablar sobre su teneduría de libros",
+      hero: "Solicitar apoyo de teneduría de libros",
+      close: "Solicitar apoyo de teneduría de libros",
       info: "Preguntar qué nivel encaja",
       title: "Cuéntenos cómo están hoy sus libros.",
       body: "Describa sus cuentas, su volumen y el estado de sus registros. Alchemize recomienda el nivel de apoyo adecuado y si primero hace falta una depuración.",
+    },
+    proof: {
+      text: "Los más de 15 años de experiencia profesional de Jessy Santos incluyen responsabilidades financieras, registros empresariales y procesos administrativos financieros.",
     },
     summary:
       "Teneduría de libros recurrente que mantiene las transacciones categorizadas, las cuentas conciliadas y los reportes al día, con una depuración aparte cuando los registros históricos deben ponerse al corriente primero.",
@@ -1322,8 +1334,8 @@ export const serviceDetailEs = {
 
   "business-payroll": {
     cta: {
-      hero: "Hablar sobre apoyo de nómina",
-      close: "Hablar sobre apoyo de nómina",
+      hero: "Solicitar apoyo de nómina",
+      close: "Solicitar apoyo de nómina",
       info: "Preguntar sobre la configuración",
       title: "Cuéntenos cómo funciona hoy su nómina.",
       body: "Indíquenos su número de empleados, su calendario de pagos y su plataforma, si tiene una. Alchemize confirma el alcance y si hace falta elegir y configurar una plataforma.",
@@ -1455,8 +1467,8 @@ export const serviceDetailEs = {
 
   "business-financial": {
     cta: {
-      hero: "Hablar sobre apoyo tributario empresarial",
-      close: "Hablar sobre apoyo tributario empresarial",
+      hero: "Solicitar apoyo tributario empresarial",
+      close: "Solicitar apoyo tributario empresarial",
       info: "Preguntar si su declaración encaja",
       title: "Cuéntenos sobre el negocio y sus libros.",
       body: "Indíquenos el tipo de entidad, los estados y el estado de sus registros. Alchemize confirma la compatibilidad y el alcance antes de preparar la declaración.",

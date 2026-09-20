@@ -42,6 +42,10 @@ export const serviceCategories = Object.freeze([
     order: 1,
     name: { en: "Tax Preparation", es: "Preparación de impuestos" },
     esStatus: "established",
+    summary: {
+      en: "Need a return prepared without the last-minute document search? Organize records, confirm scope, and prepare the return.",
+      es: "¿Necesita su declaración preparada sin buscar documentos a último momento? Organizamos los registros, confirmamos el alcance y preparamos la declaración.",
+    },
     serviceKeys: ["individual-tax"],
   },
   {
@@ -53,6 +57,10 @@ export const serviceCategories = Object.freeze([
       es: "Servicios notariales y de documentos",
     },
     esStatus: "established",
+    summary: {
+      en: "Need a document notarized or a packet put in order? Request an appointment and get the document ready first.",
+      es: "¿Necesita notarizar un documento u ordenar un paquete de documentos? Solicite una cita y prepare primero el documento.",
+    },
     serviceKeys: ["individual-notary"],
   },
   {
@@ -72,6 +80,10 @@ export const serviceCategories = Object.freeze([
     order: 4,
     name: { en: "Digital Support", es: "Apoyo digital" },
     esStatus: "established",
+    summary: {
+      en: "Need your expertise presented online? Websites, profiles, and business email for independent professionals.",
+      es: "¿Necesita presentar su experiencia en línea? Sitios web, perfiles y correo empresarial para profesionales independientes.",
+    },
     serviceKeys: [],
     sharedWith: "business-digital",
   },
@@ -82,8 +94,8 @@ export const serviceCategories = Object.freeze([
     name: { en: "Business Foundation", es: "Bases del negocio" },
     esStatus: "established",
     summary: {
-      en: "For businesses getting established, formalized, reorganized, or prepared for their next stage.",
-      es: "Para negocios que se están estableciendo, formalizando, reorganizando o preparando para su siguiente etapa.",
+      en: "Starting, formalizing, or reorganizing a business? Assess the foundation, plan the next stage, and get the records in order.",
+      es: "¿Está iniciando, formalizando o reorganizando un negocio? Evalúe las bases, planifique la siguiente etapa y ponga los registros en orden.",
     },
     serviceKeys: ["business-readiness"],
   },
@@ -94,8 +106,8 @@ export const serviceCategories = Object.freeze([
     name: { en: "Business Advisory", es: "Asesoría empresarial" },
     esStatus: "needs-review",
     summary: {
-      en: "For owners who need to assess a business challenge, identify priorities, and determine what should happen next.",
-      es: "Para propietarios que necesitan evaluar un desafío del negocio, identificar prioridades y determinar qué debe suceder a continuación.",
+      en: "Need clarity before making a business decision? Assess the situation, identify gaps, and establish practical priorities.",
+      es: "¿Necesita claridad antes de tomar una decisión empresarial? Evalúe la situación, identifique brechas y establezca prioridades prácticas.",
     },
     serviceKeys: ["business-advisory"],
   },
@@ -109,8 +121,8 @@ export const serviceCategories = Object.freeze([
     },
     esStatus: "established",
     summary: {
-      en: "For businesses that need stronger workflows, documentation, administrative systems, and hands-on implementation.",
-      es: "Para negocios que necesitan flujos de trabajo, documentación, sistemas administrativos e implementación práctica más sólidos.",
+      en: "When the work is harder than it should be. Improve workflows, systems, documentation, and the way work moves through the business.",
+      es: "Cuando el trabajo es más difícil de lo que debería. Mejore flujos de trabajo, sistemas, documentación y la forma en que el trabajo circula en el negocio.",
     },
     serviceKeys: ["business-operations"],
   },
@@ -123,6 +135,10 @@ export const serviceCategories = Object.freeze([
       es: "Impuestos y organización financiera",
     },
     esStatus: "needs-review",
+    summary: {
+      en: "Need business tax records ready before filing season? Organize records, deadlines, and documents ahead of time.",
+      es: "¿Necesita los registros tributarios del negocio listos antes de la temporada de declaraciones? Organice registros, fechas límite y documentos con anticipación.",
+    },
     serviceKeys: ["business-financial"],
   },
   {
@@ -135,8 +151,8 @@ export const serviceCategories = Object.freeze([
     },
     esStatus: "needs-review",
     summary: {
-      en: "Recurring financial operations organized around the day-to-day needs of the business.",
-      es: "Operaciones financieras recurrentes organizadas en torno a las necesidades diarias del negocio.",
+      en: "Need reliable books instead of financial catch-up? Recurring bookkeeping and payroll administration organized around the day-to-day needs of the business.",
+      es: "¿Necesita libros confiables en lugar de ponerse al día con las finanzas? Teneduría de libros recurrente y administración de nómina organizadas en torno a las necesidades diarias del negocio.",
     },
     serviceKeys: ["business-bookkeeping", "business-payroll"],
   },
@@ -147,8 +163,8 @@ export const serviceCategories = Object.freeze([
     name: { en: "Web & Digital Solutions", es: "Web y soluciones digitales" },
     esStatus: "established",
     summary: {
-      en: "Professional websites, digital presence, and connected systems built around how the business actually operates.",
-      es: "Sitios web profesionales, presencia digital y sistemas conectados construidos en torno a cómo opera realmente el negocio.",
+      en: "Need technology to work as part of the business? Build and improve websites, visibility, automation, and connected digital systems.",
+      es: "¿Necesita que la tecnología funcione como parte del negocio? Construya y mejore sitios web, visibilidad, automatización y sistemas digitales conectados.",
     },
     serviceKeys: ["business-digital"],
   },

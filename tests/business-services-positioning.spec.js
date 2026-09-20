@@ -52,19 +52,19 @@ test("the six Business Services follow the canonical order with need-based summa
   for (const [name, text] of [
     [
       "Business Foundation",
-      "For businesses getting established, formalized, reorganized, or prepared for their next stage.",
+      "Starting, formalizing, or reorganizing a business? Assess the foundation, plan the next stage, and get the records in order.",
     ],
     [
       "Business Advisory",
-      "For owners who need to assess a business challenge, identify priorities, and determine what should happen next.",
+      "Need clarity before making a business decision? Assess the situation, identify gaps, and establish practical priorities.",
     ],
     [
       "Operations & Administration",
-      "For businesses that need stronger workflows, documentation, administrative systems, and hands-on implementation.",
+      "When the work is harder than it should be. Improve workflows, systems, documentation, and the way work moves through the business.",
     ],
     [
       "Web & Digital Solutions",
-      "Professional websites, digital presence, and connected systems built around how the business actually operates.",
+      "Need technology to work as part of the business? Build and improve websites, visibility, automation, and connected digital systems.",
     ],
   ]) {
     await expect(summary(name).locator("p").first()).toHaveText(text);
@@ -72,7 +72,7 @@ test("the six Business Services follow the canonical order with need-based summa
   // Tax & Financial Organization keeps its current scope and wording
   const tax = summary("Tax & Financial Organization");
   await expect(tax.locator("p").first()).toHaveText(
-    "Business tax responsibilities are easier to manage when records, deadlines, and required documents are organized before filing season arrives.",
+    "Need business tax records ready before filing season? Organize records, deadlines, and documents ahead of time.",
   );
   await expect(tax.locator("li")).toHaveText([
     "Business tax preparation",
@@ -83,7 +83,7 @@ test("the six Business Services follow the canonical order with need-based summa
   // Bookkeeping & Payroll: parent descriptor, both services kept as children
   const group = panel.locator("#bookkeeping-payroll-support");
   await expect(group.locator(".service-group-descriptor")).toHaveText(
-    "Recurring financial operations organized around the day-to-day needs of the business.",
+    "Need reliable books instead of financial catch-up? Recurring bookkeeping and payroll administration organized around the day-to-day needs of the business.",
   );
   await expect(group.locator(".service-child h4")).toHaveText([
     "Bookkeeping",
@@ -113,7 +113,7 @@ test("every surface that consumes the taxonomy shows Business Services in the sa
     await page
       .locator(".home-path-grid article")
       .nth(1)
-      .locator("li span")
+      .locator("li")
       .allTextContents(),
   ).toEqual(order);
   expect(
@@ -191,7 +191,7 @@ test("Individual Services and the service pages are unchanged", async ({
   await expect(
     panel.locator("a.service-row").first().locator("p").first(),
   ).toHaveText(
-    "Organized tax preparation begins with complete records, clear questions, and a filing process that does not depend on last-minute document searches.",
+    "Need a return prepared without the last-minute document search? Organize records, confirm scope, and prepare the return.",
   );
   // the service pages keep their own statements (the summaries are Services-page only)
   await page.goto("/services/businesses/readiness-growth");

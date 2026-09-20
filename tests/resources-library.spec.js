@@ -114,7 +114,7 @@ test("browse by responsibility renders real category counts and filters the libr
   page,
 }) => {
   await page.goto("/resources", { waitUntil: "networkidle" });
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+  await expect(page.locator(".resource-showcase-title")).toHaveText(
     "Individual Tax Preparation Organizer",
   );
   await expect(
@@ -156,7 +156,7 @@ test("featured resources replace retired coverage content", async ({
 }) => {
   await page.goto("/resources", { waitUntil: "domcontentloaded" });
   const carousel = page.getByRole("region", { name: "Featured resources" });
-  const heading = page.getByRole("heading", { level: 1 });
+  const heading = page.locator(".resource-showcase-title");
   const readGuide = page.getByRole("link", { name: "Read the guide" });
   await expect(readGuide).toHaveAttribute(
     "href",
@@ -241,7 +241,7 @@ test("new hosting and API guides expose their intended links and disclosures", a
   );
   await expect(
     page.getByRole("link", {
-      name: "Explore Alchemize web and digital services",
+      name: "Explore Web & Digital Solutions",
     }),
   ).toHaveAttribute("href", "/web-digital");
 });
@@ -483,7 +483,7 @@ test("the bottom CTA uses valid existing consultation and services routes", asyn
     "/assets/images/resources/resources-botanical-cta.png",
   );
   await expect(
-    cta.getByRole("link", { name: "Schedule a consultation" }),
+    cta.getByRole("link", { name: "Tell Us What You Need" }),
   ).toHaveAttribute("href", "/contact");
   await expect(
     cta.getByRole("link", { name: "Explore services" }),

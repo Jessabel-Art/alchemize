@@ -1122,3 +1122,75 @@
     transition: none !important;
   }
 }
+
+/* Advice + implementation: four roles instead of three steps */
+@media (min-width: 1025px) {
+  .why-approach-steps--four {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .why-approach-steps--four::before {
+    width: 25%;
+  }
+}
+.why-approach-role {
+  display: block;
+  margin-top: 0.5rem;
+  color: #6c561f;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.why-approach-steps--four h3 {
+  font-size: 1.55rem;
+}
+.why-approach-note {
+  max-width: 62ch;
+  margin: 2rem 0 0;
+  padding-left: 1rem;
+  border-left: 3px solid var(--gold);
+  color: var(--color-text-soft);
+  line-height: 1.7;
+}
+@media (max-width: 1024px) and (min-width: 701px) {
+  .why-approach-steps--four {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .why-approach-steps--four::before {
+    width: 50%;
+  }
+  .why-approach-steps--four article:last-child {
+    grid-column: auto;
+    margin-top: 0;
+    padding-left: 1.6rem;
+    border-left: 1px solid rgba(6, 43, 43, 0.16);
+  }
+  .why-approach-steps--four article:nth-child(n + 3) {
+    margin-top: 2rem;
+    border-top: 1px solid rgba(6, 43, 43, 0.16);
+  }
+}
+@media (max-width: 700px) {
+  .why-approach-role {
+    grid-column: 2;
+  }
+}
+
+/* Capability and scope: two wide reasons instead of five cards */
+@media (min-width: 701px) {
+  .why-principle-list.why-principle-list--pair {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .why-principle-list.why-principle-list--pair article:nth-child(n) {
+    grid-column: auto;
+    border-top: 0;
+    border-right: 1px solid rgba(255, 255, 255, 0.16);
+  }
+  .why-principle-list.why-principle-list--pair article:nth-child(2) {
+    border-right: 0;
+  }
+}
+.why-principle-list--pair .text-link {
+  display: inline-block;
+  margin-top: 1rem;
+}

@@ -7,6 +7,7 @@ import {
   buildServiceSchema,
   ensureJsonLd,
   ensureMeta,
+  ensureSocialImage,
   injectSiteEntitySchema,
   SITE_URL,
 } from "../../seo/siteSchema.js";
@@ -77,6 +78,7 @@ function useServiceMetadata(service, language) {
       name: "twitter:description",
       content: seoDescription,
     });
+    ensureSocialImage();
     injectSiteEntitySchema();
     ensureJsonLd(`service-schema-${language}-${service.slug}`, {
       "@context": "https://schema.org",

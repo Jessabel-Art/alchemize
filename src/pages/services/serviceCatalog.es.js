@@ -94,7 +94,7 @@ const translations = {
   },
   "notary-document-services": {
     title: "Servicios notariales y de documentos",
-    seoTitle: "Servicios de Notario en Carolina del Norte | Alchemize",
+    seoTitle: "Notario y Apoyo Documental en Carolina del Norte | Alchemize",
     seoDescription:
       "Servicios de notario en Carolina del Norte para documentos, firmas, reconocimientos y apoyo administrativo con citas claras y requisitos bien definidos.",
     hero: "Prepare el documento. Verifique los requisitos. Complete correctamente la cita.",
@@ -173,9 +173,9 @@ const translations = {
   },
   "translation-services": {
     title: "Servicios de traducción",
-    seoTitle: "Servicios de Traducción de Documentos | Alchemize",
+    seoTitle: "Traducción de Documentos Inglés–Español | Alchemize",
     seoDescription:
-      "Traducción profesional de documentos para individuos y negocios, con apoyo virtual y coordinación basada en Carolina del Norte cuando corresponde.",
+      "Traducción de documentos entre inglés y español, desde registros personales breves hasta traducciones certificadas para uso oficial, con precios publicados.",
     hero: "Apoyo profesional para traducción de documentos personales, administrativos y empresariales.",
     overview:
       "Las necesidades de traducción varían según el documento, el destino y el propósito. Con sede en Carolina del Norte, Alchemize ayuda a organizar materiales traducidos, aclarar el contenido y preparar un conjunto útil para revisión antes de confirmar el servicio, con apoyo virtual cuando corresponde.",
@@ -250,9 +250,9 @@ const translations = {
   },
   "apostille-services": {
     title: "Facilitación y apoyo para apostillas de Carolina del Norte",
-    seoTitle: "Servicios de Apostilla en Carolina del Norte | Alchemize",
+    seoTitle: "Apoyo para Apostilla en Carolina del Norte | Alchemize",
     seoDescription:
-      "Apoyo para apostilla y autenticación de documentos en Carolina del Norte, con coordinación remota cuando los requisitos dependen del documento, la jurisdicción y el país de destino.",
+      "Apoyo y coordinación para apostillas en Carolina del Norte, según el documento y el país de destino. Las apostillas las emite la autoridad gubernamental correspondiente, no Alchemize.",
     hero: "Prepare el conjunto de documentos para el destino que los recibirá.",
     overview:
       "Alchemize facilita y apoya el proceso de apostilla de Carolina del Norte mediante la organización del paquete documental y la coordinación de requisitos previos, envío y devolución. La apostilla la emite la autoridad gubernamental correspondiente, no Alchemize, y la disponibilidad permanece pendiente de preparación operativa.",
@@ -412,7 +412,7 @@ const translations = {
   },
   "operations-implementation": {
     title: "Operaciones y administración",
-    seoTitle: "Apoyo Operativo para Pequeñas Empresas | Alchemize",
+    seoTitle: "Operaciones y Procesos para Pequeñas Empresas | Alchemize",
     seoDescription:
       "Apoyo operativo para pequeñas empresas en procesos, flujos de trabajo, sistemas administrativos e implementación práctica para mejorar la operación del negocio.",
     hero: "Una recomendación solo es útil si después el negocio puede operar de otra manera.",
@@ -759,9 +759,9 @@ const translations = {
   },
   "payroll-processing": {
     title: "Nómina",
-    seoTitle: "Servicios de Nómina para Pequeñas Empresas | Alchemize",
+    seoTitle: "Apoyo de Nómina y Reportes para Pequeñas Empresas | Alchemize",
     seoDescription:
-      "Apoyo de nómina para pequeñas empresas con registros organizados, reportes recurrentes y administración virtual donde lo permite el flujo seleccionado.",
+      "Apoyo de nómina para pequeñas empresas: registros organizados, reportes recurrentes y administración junto con la plataforma o el proveedor de nómina que usa el negocio.",
     hero: "Apoyo estructurado de nómina para negocios que necesitan pagos confiables a empleados y contratistas, registros organizados y reportes recurrentes.",
     overview:
       "El trabajo de nómina requiere información confiable, propiedad clara del proceso y un historial ordenado. Con sede en Carolina del Norte, Alchemize puede apoyar el procesamiento de nómina para pequeñas empresas y la administración de nómina con coordinación virtual en Estados Unidos donde la plataforma y el alcance lo permitan.",

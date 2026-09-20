@@ -820,3 +820,20 @@
     padding-left: 1.6rem;
   }
 }
+
+/* Four experience domains: a 2 x 2 rule grid instead of the six-card layout */
+@media (min-width: 701px) {
+  .founder-capabilities.founder-capabilities--four {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .founder-capabilities--four .founder-capability:nth-child(n) {
+    border-right: 1px solid rgba(6, 43, 43, 0.16);
+    border-bottom: 1px solid rgba(6, 43, 43, 0.16);
+  }
+  .founder-capabilities--four .founder-capability:nth-child(2n) {
+    border-right: 0;
+  }
+  .founder-capabilities--four .founder-capability:nth-child(n + 3) {
+    border-bottom: 0;
+  }
+}

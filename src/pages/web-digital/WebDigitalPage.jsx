@@ -1,8 +1,16 @@
+import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import Reveal from "../../components/ui/Reveal.jsx";
 import { LocalizedLink as Link } from "../../i18n/LocalizedLink.jsx";
 import { useLanguage } from "../../i18n/LanguageContext.jsx";
 import usePageMetadata from "../../i18n/usePageMetadata.js";
+import {
+  buildServiceSchema,
+  ensureJsonLd,
+  SITE_URL,
+} from "../../seo/siteSchema.js";
+import { resourceBySlug } from "../resources/resourcesData.js";
+import { resourceBySlugEs } from "../resources/resourcesData.es.js";
 import {
   leadOriginState,
   trackServiceCtaClick,
@@ -15,6 +23,17 @@ const BOTANICAL_IMAGE = "/assets/images/services/botanical-asset.png";
 const BOTANICAL_CORNER_IMAGE =
   "/assets/images/services/resources-botanical-cta.png";
 const HERO_VISUAL = "/assets/images/services/web-digital-hero.png";
+
+// Guides that explain the work this page describes (website process, digital
+// presence review, search visibility), linked with the guide's own title.
+const relatedGuides = {
+  label: { en: "Related guides", es: "Guías relacionadas" },
+  slugs: [
+    "professional-website-design-process",
+    "digital-presence-audit",
+    "seo-and-website-metadata",
+  ],
+};
 
 // The three solution groups keep the summary's titles (so the Services page
 // listing and this page agree); each carries the capability panels for it.
@@ -34,29 +53,31 @@ const contentMap = {
       eyebrow: "Web & Digital Solutions",
       title: "Professional digital presence for the work that matters.",
       copy: webDigitalDetail.en.heroCopy,
-      primary: "Request a Project Proposal",
+      primary: "Discuss Your Project",
       secondary: "See What We Build ↓",
     },
     positioning: {
-      eyebrow: "A business-first approach",
-      title: "A website should do more than exist.",
-      copy: "It should explain the business, establish credibility, and guide people toward a clear action—while supporting the work happening behind the screen.",
+      eyebrow: "Digital capability",
+      title: "Built through real business use.",
+      copy: "A website, CRM, automation, or internal system should not be an isolated technical product. It should support how the business actually works.",
+      origin:
+        "This capability did not start with a decision to sell websites. It grew out of Jessy Santos's professional work, where business operations and business technology were part of the same job.",
       values: [
         [
-          "Establish credibility",
-          "Make the business look established, current, and trustworthy.",
+          "CRM & automation",
+          "Supported CRM creation and development, and implemented workflow automation.",
         ],
         [
-          "Explain your services",
-          "Help visitors quickly understand what you offer and who it is for.",
+          "Internal systems",
+          "Added to and maintained an intranet and internal digital resources.",
         ],
         [
-          "Generate action",
-          "Create clear paths to call, inquire, schedule, request a quote, or purchase.",
+          "E-commerce & websites",
+          "Worked on e-commerce websites, managed e-commerce, and created and managed websites.",
         ],
         [
-          "Support the business",
-          "Connect the website to the tools and workflows used behind the scenes.",
+          "Later study",
+          "UX, web-development, and SEO study deepened that foundation.",
         ],
       ],
     },
@@ -134,14 +155,14 @@ const contentMap = {
     difference: {
       eyebrow: "The Alchemize difference",
       title: "Built with more than design in mind.",
-      copy: "A good website has to work for the people visiting it and the business operating behind it. Alchemize brings experience in business operations, administrative workflows, client communication, service delivery, and user experience into the way each project is structured.",
+      copy: "A website, CRM, or automation has to work for the people using it and for the process behind it. Alchemize considers the technology and the business process it is meant to support together.",
       alt: "A laptop showing a clean website structure on a desk with books, plants, and a notebook",
       items: [
-        "Business operations",
-        "Client communication",
-        "Administrative workflows",
+        "Intake and follow-up",
+        "Records and reporting",
+        "Customer communication",
+        "Administrative handoffs",
         "Conversion paths",
-        "Service delivery",
         "User experience",
       ],
     },
@@ -184,41 +205,43 @@ const contentMap = {
       eyebrow: "Need more than a standard website?",
       title: "Not sure what your digital presence needs yet?",
       copy: webDigitalDetail.en.finalCopy,
-      cta: "Request a Project Proposal",
+      cta: "Discuss Your Project",
     },
   },
   es: {
     metadata: {
-      title: "Diseño de sitios web para pequeñas empresas | Alchemize",
+      title: "Diseño Web y Soluciones Digitales para Negocios | Alchemize",
       description: webDigitalDetail.es.metaDescription,
     },
     hero: {
       eyebrow: "Web y soluciones digitales",
       title: "Una presencia digital profesional para el trabajo que importa.",
       copy: webDigitalDetail.es.heroCopy,
-      primary: "Solicitar una propuesta de proyecto",
+      primary: "Converse sobre su proyecto",
       secondary: "Ver qué construimos ↓",
     },
     positioning: {
-      eyebrow: "Un enfoque empresarial primero",
-      title: "Un sitio web debe hacer más que existir.",
-      copy: "Debe explicar el negocio, establecer credibilidad y guiar a las personas hacia una acción clara, mientras respalda el trabajo que ocurre detrás de la pantalla.",
+      eyebrow: "Capacidad digital",
+      title: "Desarrollada en el uso empresarial real.",
+      copy: "Un sitio web, un CRM, una automatización o un sistema interno no debe ser un producto técnico aislado. Debe apoyar cómo funciona realmente el negocio.",
+      origin:
+        "Esta capacidad no comenzó con la decisión de vender sitios web. Surgió del trabajo profesional de Jessy Santos, en el que las operaciones empresariales y la tecnología del negocio formaban parte de la misma labor.",
       values: [
         [
-          "Establecer credibilidad",
-          "Que el negocio se vea establecido, actual y confiable.",
+          "CRM y automatización",
+          "Apoyó la creación y el desarrollo de un CRM e implementó automatización de flujos de trabajo.",
         ],
         [
-          "Explicar sus servicios",
-          "Ayude a los visitantes a entender rápidamente qué ofrece y para quién.",
+          "Sistemas internos",
+          "Amplió y mantuvo una intranet y recursos digitales internos.",
         ],
         [
-          "Generar acción",
-          "Cree vías claras para llamar, consultar, programar, solicitar una cotización o comprar.",
+          "Comercio electrónico y sitios web",
+          "Trabajó en sitios de comercio electrónico, administró comercio electrónico y creó y administró sitios web.",
         ],
         [
-          "Respaldar el negocio",
-          "Conecte el sitio web con las herramientas y flujos de trabajo utilizados detrás de escena.",
+          "Estudios posteriores",
+          "Los estudios de UX, desarrollo web y SEO profundizaron esa base.",
         ],
       ],
     },
@@ -296,14 +319,14 @@ const contentMap = {
     difference: {
       eyebrow: "La diferencia de Alchemize",
       title: "Creado pensando en más que el diseño.",
-      copy: "Un buen sitio web debe funcionar tanto para las personas que lo visitan como para el negocio que opera detrás de él. Alchemize aporta experiencia en operaciones empresariales, flujos administrativos, comunicación con clientes, prestación de servicios y experiencia de usuario a la forma en que se estructura cada proyecto.",
+      copy: "Un sitio web, un CRM o una automatización tiene que funcionar para las personas que lo usan y para el proceso que hay detrás. Alchemize considera juntas la tecnología y el proceso empresarial al que debe servir.",
       alt: "Una laptop mostrando una estructura de sitio web clara sobre un escritorio con libros, plantas y un cuaderno",
       items: [
-        "Operaciones empresariales",
+        "Admisión y seguimiento",
+        "Registros y reportes",
         "Comunicación con clientes",
-        "Flujos administrativos",
+        "Traspasos administrativos",
         "Rutas de conversión",
-        "Prestación de servicios",
         "Experiencia de usuario",
       ],
     },
@@ -349,7 +372,7 @@ const contentMap = {
       eyebrow: "¿Necesita más que un sitio web estándar?",
       title: "¿No está seguro de lo que necesita su presencia digital?",
       copy: webDigitalDetail.es.finalCopy,
-      cta: "Solicitar una propuesta de proyecto",
+      cta: "Converse sobre su proyecto",
     },
   },
 };
@@ -409,6 +432,27 @@ function WebDigitalPage() {
     en: contentMap.en.metadata,
     es: contentMap.es.metadata,
   });
+  // One umbrella Service for the page; price is never part of it (pricing is
+  // scoped privately), and the visible page carries the same description.
+  useEffect(() => {
+    const prefix = language === "es" ? "/es" : "";
+    const id = `web-digital-schema-${language}`;
+    ensureJsonLd(
+      id,
+      buildServiceSchema(
+        {
+          slug: "web-digital",
+          title: content.hero.eyebrow,
+          seoDescription: content.metadata.description,
+        },
+        language,
+        `${SITE_URL}${prefix}/web-digital`,
+      ),
+    );
+    return () =>
+      document.head.querySelector(`script[data-schema-id="${id}"]`)?.remove();
+  }, [content, language]);
+  const guideMap = language === "es" ? resourceBySlugEs : resourceBySlug;
 
   return (
     <article className="webx-page">
@@ -500,6 +544,9 @@ function WebDigitalPage() {
           </Reveal>
           <Reveal className="webx-positioning-copy" delay={70}>
             <p>{content.positioning.copy}</p>
+            <p className="webx-positioning-origin">
+              {content.positioning.origin}
+            </p>
             <ul>
               {content.positioning.values.map(([label, text]) => (
                 <li key={label}>
@@ -739,13 +786,30 @@ function WebDigitalPage() {
             <span className="eyebrow">{content.faq.eyebrow}</span>
             <h2>{content.faq.title}</h2>
           </Reveal>
-          <div className="webx-faq-list">
-            {content.faq.items.map(({ q, a }) => (
-              <details key={q}>
-                <summary>{q}</summary>
-                <p>{a}</p>
-              </details>
-            ))}
+          <div className="webx-faq-main">
+            <div className="webx-faq-list">
+              {content.faq.items.map(({ q, a }) => (
+                <details key={q}>
+                  <summary>{q}</summary>
+                  <p>{a}</p>
+                </details>
+              ))}
+            </div>
+            <nav
+              className="webx-related"
+              aria-label={relatedGuides.label[language]}
+            >
+              <h3>{relatedGuides.label[language]}</h3>
+              <ul>
+                {relatedGuides.slugs.map((slug) => (
+                  <li key={slug}>
+                    <Link to={`/resources/${slug}`}>
+                      {guideMap.get(slug)?.title}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
           </div>
         </div>
       </section>

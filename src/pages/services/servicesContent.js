@@ -4,7 +4,7 @@ export const servicesContent = {
     metadata: {
       title: "Business & Individual Services | Alchemize",
       description:
-        "Explore practical services for individuals and businesses, including tax support, notary and document services, advisory, operations, technology, readiness, and financial guidance.",
+        "Services for individuals and small businesses: tax, notary, translation, and apostille support, plus advisory, operations, bookkeeping, payroll, and web design.",
     },
     hero: {
       eyebrow: "Services",
@@ -32,7 +32,7 @@ export const servicesContent = {
         heading:
           "Support for the responsibilities that affect you and your family.",
         description:
-          "Clear, organized assistance for tax, protection, documents, and related personal responsibilities.",
+          "Tax preparation, document services, and related personal responsibilities.",
       },
       businesses: {
         eyebrow: "Business services",
@@ -44,8 +44,8 @@ export const servicesContent = {
     close: {
       eyebrow: "Start with the problem, not the service",
       title: "Not sure where your needs fit?",
-      text: "Tell us what you are trying to accomplish, improve, organize, or resolve. We will help identify the appropriate next step—and point you in the right direction when the need falls outside our scope.",
-      cta: "Schedule a Consultation",
+      text: "Tell us what you are trying to accomplish, improve, organize, or resolve. We will review the request and identify the next step, and point you in the right direction when the need falls outside our scope.",
+      cta: "Tell Us What You Need",
     },
   },
   es: {
@@ -53,7 +53,7 @@ export const servicesContent = {
     metadata: {
       title: "Servicios para Negocios y Personas | Alchemize",
       description:
-        "Explore servicios prácticos para personas y empresas, incluidos apoyo tributario, notaría y documentos, asesoría, operaciones, tecnología, preparación y orientación financiera.",
+        "Servicios para personas y pequeñas empresas: impuestos, notario, traducción y apostilla, además de asesoría, operaciones, teneduría de libros, nómina y diseño web.",
     },
     hero: {
       eyebrow: "Servicios",
@@ -68,7 +68,7 @@ export const servicesContent = {
       individuals: {
         short: "Para mí",
         title: "Servicios individuales",
-        text: "Preparación de impuestos personales, seguros, notaría y apoyo documental para usted y su hogar.",
+        text: "Preparación de impuestos personales, notaría y apoyo documental para usted y su hogar.",
       },
       businesses: {
         short: "Para mi negocio",
@@ -82,7 +82,7 @@ export const servicesContent = {
         heading:
           "Apoyo para las responsabilidades que afectan a usted y a su familia.",
         description:
-          "Asistencia clara y organizada para impuestos, protección, documentos y responsabilidades personales relacionadas.",
+          "Preparación de impuestos, servicios de documentos y responsabilidades personales relacionadas.",
       },
       businesses: {
         eyebrow: "Servicios empresariales",
@@ -95,8 +95,8 @@ export const servicesContent = {
     close: {
       eyebrow: "Comience con el problema, no con el servicio",
       title: "¿No sabe dónde encaja su necesidad?",
-      text: "Cuéntenos qué intenta lograr, mejorar, organizar o resolver. Le ayudaremos a identificar el siguiente paso adecuado y, si la necesidad está fuera de nuestro alcance, a orientarse en la dirección correcta.",
-      cta: "Programar una consulta",
+      text: "Cuéntenos qué intenta lograr, mejorar, organizar o resolver. Revisaremos la solicitud e identificaremos el siguiente paso y, si la necesidad está fuera de nuestro alcance, le orientaremos en la dirección correcta.",
+      cta: "Cuéntenos qué necesita",
     },
   },
 };
@@ -104,7 +104,7 @@ export const servicesContent = {
 export const serviceDetailUi = {
   en: {
     breadcrumb: "Breadcrumb",
-    consultation: "Schedule a Consultation",
+    consultation: "Tell Us What You Need",
     who: "Who this is for",
     fitTitle: "Support built around a specific responsibility.",
     helps: "What Alchemize can help with",
@@ -132,7 +132,7 @@ export const serviceDetailUi = {
   },
   es: {
     breadcrumb: "Ruta de navegación",
-    consultation: "Programar una consulta",
+    consultation: "Cuéntenos qué necesita",
     who: "Para quién es este servicio",
     fitTitle: "Apoyo diseñado para una responsabilidad específica.",
     helps: "Cómo puede ayudar Alchemize",

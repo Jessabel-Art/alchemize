@@ -204,6 +204,37 @@ for (const { code, prefix, notaryPath, cta } of languages) {
     );
   });
 
+  test(`${code}: the refined CTA labels keep the same measured structure`, async ({
+    page,
+  }) => {
+    await page.goto(`${prefix}/services/businesses/advisory-optimization`);
+    await page.locator(".editorial-service-actions a.button").first().click();
+    let [click] = await named(page, "service_cta_click");
+    expect(click.params).toEqual({
+      service_key: "business-advisory",
+      service_category: "business-advisory",
+      audience: "business",
+      page_path: `${prefix}/services/businesses/advisory-optimization`,
+      language: code,
+      cta_location: "service_hero",
+      cta_label:
+        code === "en" ? "Start a Conversation" : "Iniciar una conversación",
+    });
+    await page.goto(`${prefix}/web-digital`);
+    await page.locator(".webx-actions a.button").click();
+    [click] = await named(page, "service_cta_click");
+    expect(click.params).toEqual({
+      service_key: "business-digital",
+      service_category: "web-digital-solutions",
+      audience: "business",
+      page_path: `${prefix}/web-digital`,
+      language: code,
+      cta_location: "web_hero",
+      cta_label:
+        code === "en" ? "Discuss Your Project" : "Converse sobre su proyecto",
+    });
+  });
+
   test(`${code}: a direct visit is measured with no service and lead_source_page "direct"`, async ({
     page,
   }) => {

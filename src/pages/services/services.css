@@ -2763,6 +2763,31 @@
   }
 }
 
+/* one line of relevant experience in the closing block (not a section) */
+.editorial-service-close-grid .editorial-service-proof {
+  max-width: 60ch;
+  margin: 1.4rem 0 0;
+  padding: 0.9rem 0 0;
+  border-top: 1px solid rgba(6, 43, 43, 0.18);
+  color: var(--color-text-soft);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.editorial-service-proof strong {
+  display: block;
+  margin-bottom: 0.3rem;
+  color: var(--emerald-deep);
+  font-size: 0.68rem;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.editorial-service-proof .text-link {
+  display: inline-flex;
+  margin: 0.5rem 0 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .editorial-service * {
     transition: none !important;

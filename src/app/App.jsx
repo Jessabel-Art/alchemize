@@ -22,6 +22,7 @@ import ResourcesPage from "../pages/resources/ResourcesPage.jsx";
 import MeetTheFounderPage from "../pages/resources/MeetTheFounderPage.jsx";
 import ResourceRoutePage from "../pages/resources/ResourceRoutePage.jsx";
 import LegalPage from "../pages/legal/LegalPage.jsx";
+import NotFoundPage from "../pages/not-found/NotFoundPage.jsx";
 import JessyLinkBioPage from "../pages/jessy/JessyLinkBioPage.jsx";
 import AuthPage, { SetPasswordPage } from "../pages/auth/AuthPage.jsx";
 import AdminDashboardPage from "../pages/admin/AdminDashboardPage.jsx";
@@ -198,6 +199,7 @@ function App() {
           <Route path="resources/:slug" element={<ResourceRoutePage />} />
           <Route path="faq" element={<FaqPage />} />
           <Route path="why-alchemize" element={<WhyAlchemizePage />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Route>
         <Route element={<PublicLayout />}>
           <Route path="/" element={<HomePage />} />
@@ -262,6 +264,7 @@ function App() {
               />
             }
           />
+          <Route path="*" element={<NotFoundPage />} />
         </Route>
 
         <Route element={<AuthLayout />}>

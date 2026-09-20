@@ -5,6 +5,27 @@ import { SITE_URL } from "../seo/siteSchema.js";
 const LanguageContext = createContext(null);
 const STORAGE_KEY = "alchemize-language";
 
+// Pages that exist in English only: they get no Spanish alternate.
+const ENGLISH_ONLY_PATHS = [
+  "/privacy",
+  "/terms",
+  "/resources/hostinger-for-small-business-websites",
+  "/resources/api-integrations-for-small-business",
+];
+
+// One URL per page: "/services/" and "/services" are the same document.
+export function normalizePathname(pathname) {
+  const trimmed = pathname.replace(/\/+$/, "");
+  return trimmed || "/";
+}
+
+// True for pages that have no Spanish edition (in either language's URL).
+export function isEnglishOnlyPath(pathname) {
+  return ENGLISH_ONLY_PATHS.includes(
+    stripLanguagePrefix(normalizePathname(pathname)),
+  );
+}
+
 export function stripLanguagePrefix(pathname) {
   if (pathname === "/es") return "/";
   return pathname.startsWith("/es/") ? pathname.slice(3) || "/" : pathname;
@@ -72,12 +93,21 @@ export function LanguageProvider({ children }) {
     document.documentElement.lang = language;
     window.localStorage.setItem(STORAGE_KEY, language);
 
-    const englishPath = localizePath(location.pathname, "en");
-    const spanishPath = localizePath(location.pathname, "es");
+    const pathname = normalizePathname(location.pathname);
+    const englishPath = localizePath(pathname, "en");
+    const spanishPath = localizePath(pathname, "es");
     const origin = SITE_URL;
-    const legalEnglishOnly = ["/privacy", "/terms"].includes(englishPath);
+    const englishOnly = isEnglishOnlyPath(pathname);
+
+    // An unknown URL (see NotFoundPage) is not a page: no canonical, no alternates.
+    if (document.documentElement.dataset.notFound) {
+      document.head.querySelector('link[rel="canonical"]')?.remove();
+      ["en", "es", "x-default"].forEach(removeAlternate);
+      return;
+    }
+
     ensureAlternate("en", `${origin}${englishPath}`);
-    if (legalEnglishOnly) removeAlternate("es");
+    if (englishOnly) removeAlternate("es");
     else ensureAlternate("es", `${origin}${spanishPath}`);
     ensureAlternate("x-default", `${origin}${englishPath}`);
 
@@ -87,7 +117,8 @@ export function LanguageProvider({ children }) {
       canonical.rel = "canonical";
       document.head.append(canonical);
     }
-    canonical.href = `${origin}${location.pathname}`;
+    // An English-only page's canonical is always its English URL.
+    canonical.href = `${origin}${englishOnly ? englishPath : pathname}`;
   }, [language, location.pathname]);
 
   const value = useMemo(

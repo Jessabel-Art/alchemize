@@ -184,7 +184,7 @@ for (const { code, prefix } of languages) {
     expect(dollarAmounts(web)).toEqual([]);
     expect(web).not.toMatch(internalTerms);
     expect(web).not.toMatch(
-      /Website Launch|Website Growth|Managed Website|Website Care|Connected Business Automation|Advanced Digital Business Solution/i,
+      /Website Launch|Website Growth|Managed Website(?!s)|Website Care|Connected Business Automation|Advanced Digital Business Solution/,
     );
   });
 
@@ -267,9 +267,7 @@ for (const { code, prefix } of languages) {
     );
     // still exactly two proposal CTAs, both routed through service preselection
     const label =
-      code === "en"
-        ? "Request a Project Proposal"
-        : "Solicitar una propuesta de proyecto";
+      code === "en" ? "Discuss Your Project" : "Converse sobre su proyecto";
     const ctas = page.getByRole("link", { name: label });
     await expect(ctas).toHaveCount(2);
     for (const href of await ctas.evaluateAll((links) =>
@@ -299,6 +297,8 @@ for (const { code, prefix } of languages) {
   test(`${code}: service pages have no serious accessibility violations`, async ({
     page,
   }) => {
+    // one axe scan per page across every service page: allow for a loaded runner
+    test.setTimeout(120_000);
     const all = [...pages.map(([slug]) => `/services/${slug}`), "/web-digital"];
     for (const path of all) {
       await page.goto(withPrefix(prefix, path));

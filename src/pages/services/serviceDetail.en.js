@@ -244,8 +244,8 @@ export const serviceDetailEn = {
 
   "individual-apostille": {
     cta: {
-      hero: "Start an Apostille Request",
-      close: "Start an Apostille Request",
+      hero: "Request Apostille Support",
+      close: "Request Apostille Support",
       info: "Ask about your document",
       title: "Tell us about the document and where it is going.",
       body: "Share the document type and the destination country. Alchemize reviews what the document needs and confirms scope and next steps before an engagement begins.",
@@ -303,7 +303,7 @@ export const serviceDetailEn = {
           "Notarization or certified translation, when the document needs them",
         ],
       },
-      cta: "Start an Apostille Request",
+      cta: "Request Apostille Support",
     },
     does: {
       title: "What Alchemize does, and what it does not.",
@@ -562,8 +562,8 @@ export const serviceDetailEn = {
 
   "individual-tax": {
     cta: {
-      hero: "Start a Tax Inquiry",
-      close: "Start a Tax Inquiry",
+      hero: "Request Tax Preparation",
+      close: "Request Tax Preparation",
       info: "Ask whether your return fits",
       title: "Tell us about your tax situation.",
       body: "You do not need to know which forms apply. Describe your income and any changes; Alchemize confirms fit and scope before preparation begins.",
@@ -713,11 +713,14 @@ export const serviceDetailEn = {
 
   "business-advisory": {
     cta: {
-      hero: "Discuss Your Business Challenge",
-      close: "Discuss Your Business Challenge",
+      hero: "Start a Conversation",
+      close: "Start a Conversation",
       info: "Ask which engagement fits",
       title: "Start with the problem you need solved.",
       body: "Describe the challenge, decision, or friction. Alchemize recommends the engagement that fits before any work begins.",
+    },
+    proof: {
+      text: "Advisory draws on Jessy Santos's 15+ years of professional experience in business operations, administration, and client service, plus an MBA, and on a working knowledge of what it takes to carry recommendations out.",
     },
     summary:
       "Advisory is where the work starts: diagnose the current state, find the real constraint, prioritize, and leave with recommendations and a roadmap you can act on. Substantial execution is a separate engagement.",
@@ -850,11 +853,14 @@ export const serviceDetailEn = {
 
   "business-operations": {
     cta: {
-      hero: "Discuss Your Operations Project",
-      close: "Discuss Your Operations Project",
+      hero: "Request Operations Support",
+      close: "Request Operations Support",
       info: "Ask which scope fits",
       title: "Tell us which workflow needs to work better.",
       body: "Describe the process, the tools involved, and what should be different. Alchemize recommends a scope before work begins.",
+    },
+    proof: {
+      text: "Jessy Santos's professional background includes supporting CRM creation and development, contributing to workflow and process improvement, implementing automation, maintaining an intranet, and day-to-day administrative operations.",
     },
     summary:
       "Operations is where recommendations become working systems. Alchemize redesigns workflows, builds the SOPs, templates, and tool configurations behind them, trains your team, and hands off something the business can maintain.",
@@ -1001,11 +1007,14 @@ export const serviceDetailEn = {
 
   "business-readiness": {
     cta: {
-      hero: "Plan Your Business Foundation",
-      close: "Plan Your Business Foundation",
+      hero: "Request Business Foundation Support",
+      close: "Request Business Foundation Support",
       info: "Ask which starting point fits",
       title: "Tell us where the business is starting from.",
       body: "Describe the business, its stage, and what it is preparing for. Alchemize recommends a starting point before any work begins.",
+    },
+    proof: {
+      text: "Jessy Santos brings 15+ years of professional experience across operations, administration, and financial responsibilities, plus an MBA, to how a new or growing business gets organized.",
     },
     summary:
       "For businesses getting established or ready for their next stage: a clear read on where the foundation stands, a startup roadmap, and business-plan and financial-readiness work, without promising financing, certification, or approval.",
@@ -1140,11 +1149,14 @@ export const serviceDetailEn = {
 
   "business-bookkeeping": {
     cta: {
-      hero: "Discuss Your Bookkeeping Needs",
-      close: "Discuss Your Bookkeeping Needs",
+      hero: "Request Bookkeeping Support",
+      close: "Request Bookkeeping Support",
       info: "Ask which level fits",
       title: "Tell us how your books stand today.",
       body: "Describe your accounts, your volume, and the condition of your records. Alchemize recommends the right level of support, and whether cleanup comes first.",
+    },
+    proof: {
+      text: "Jessy Santos's 15+ years of professional experience include financial responsibilities, business records, and administrative financial processes.",
     },
     summary:
       "Recurring bookkeeping that keeps transactions categorized, accounts reconciled, and reporting current, with separate cleanup when historical records need to be brought current first.",
@@ -1327,8 +1339,8 @@ export const serviceDetailEn = {
 
   "business-payroll": {
     cta: {
-      hero: "Discuss Payroll Support",
-      close: "Discuss Payroll Support",
+      hero: "Request Payroll Support",
+      close: "Request Payroll Support",
       info: "Ask about setup",
       title: "Tell us how payroll runs today.",
       body: "Share your headcount, pay schedule, and platform, if you have one. Alchemize confirms scope and whether a platform needs to be selected and set up.",
@@ -1457,8 +1469,8 @@ export const serviceDetailEn = {
 
   "business-financial": {
     cta: {
-      hero: "Discuss Business Tax Support",
-      close: "Discuss Business Tax Support",
+      hero: "Request Business Tax Support",
+      close: "Request Business Tax Support",
       info: "Ask whether your return fits",
       title: "Tell us about the business and its books.",
       body: "Share the entity type, states, and the condition of your records. Alchemize confirms fit and scope before preparation begins.",

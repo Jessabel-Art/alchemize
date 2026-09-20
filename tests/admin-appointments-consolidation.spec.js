@@ -297,7 +297,21 @@ test.describe("Calendar integration", () => {
   test("Cancelled appointments are hidden from Month/Week/Day but remain in the Appointment list", async ({
     page,
   }) => {
-    await mockRoutes(page, { appointments: [...appointments] });
+    // The week view shows one Monday-Sunday week, so this test pins the clock
+    // to a Wednesday and dates its appointments from it; against the real
+    // date it fails whenever the four days cross a week or month boundary.
+    const today = new Date("2026-03-04T12:00:00");
+    await page.clock.setFixedTime(today);
+    const onDay = (offset) => {
+      const day = new Date(today);
+      day.setDate(day.getDate() + offset);
+      return day.toLocaleDateString("en-CA");
+    };
+    const pinned = appointments.map((appointment, index) => ({
+      ...appointment,
+      scheduled_at: `${onDay(index)} ${appointment.scheduled_at.split(" ")[1]}`,
+    }));
+    await mockRoutes(page, { appointments: pinned });
     await page.goto("/admin/appointments/");
 
     await expect(page.locator(".calendar-event.cancelled")).toHaveCount(0);

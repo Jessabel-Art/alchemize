@@ -1,9 +1,7 @@
 import {
-  ClipboardCheck,
-  Compass,
   Focus,
+  Laptop,
   Link2,
-  RefreshCw,
   Search,
   ShieldCheck,
   Wrench,
@@ -16,8 +14,8 @@ import { getServiceCategories } from "../services/publicServiceIndex.js";
 import { whyContent } from "./whyContent.js";
 import "./why-alchemize.css";
 
-const approachIcons = [Search, Focus, Wrench];
-const principleIcons = [Compass, Link2, ClipboardCheck, ShieldCheck, RefreshCw];
+const approachIcons = [Search, Focus, Wrench, Laptop];
+const principleIcons = [Link2, ShieldCheck];
 
 function WhyAlchemizePage() {
   const { language } = useLanguage();
@@ -45,9 +43,12 @@ function WhyAlchemizePage() {
               <Link className="button button-primary" to="/contact">
                 {content.hero.primary}
               </Link>
-              <a className="button button-outline" href="#difference">
+              <Link
+                className="button button-outline"
+                to="/resources/meet-the-founder"
+              >
                 {content.hero.secondary}
-              </a>
+              </Link>
             </div>
           </Reveal>
           <div className="why-orbit" aria-hidden="true">
@@ -73,7 +74,7 @@ function WhyAlchemizePage() {
             ))}
           </Reveal>
           <ul className="why-sequence">
-            {content.problem.sequence.map((item, index) => (
+            {content.problem.examples.map((item, index) => (
               <Reveal as="li" delay={index * 70} key={item}>
                 {item}
               </Reveal>
@@ -124,8 +125,8 @@ function WhyAlchemizePage() {
             <span className="eyebrow">{content.approach.eyebrow}</span>
             <h2>{content.approach.title}</h2>
           </Reveal>
-          <div className="why-approach-steps">
-            {content.approach.items.map(([title, copy], index) => {
+          <div className="why-approach-steps why-approach-steps--four">
+            {content.approach.items.map(([title, role, copy], index) => {
               const Icon = approachIcons[index];
               return (
                 <Reveal as="article" delay={index * 70} key={title}>
@@ -135,11 +136,13 @@ function WhyAlchemizePage() {
                     strokeWidth={1.5}
                   />
                   <h3>{title}</h3>
+                  <span className="why-approach-role">{role}</span>
                   <p>{copy}</p>
                 </Reveal>
               );
             })}
           </div>
+          <p className="why-approach-note">{content.approach.note}</p>
         </div>
       </section>
 
@@ -151,21 +154,28 @@ function WhyAlchemizePage() {
             </span>
             <h2>{content.principles.title}</h2>
           </Reveal>
-          <div className="why-principle-list">
-            {content.principles.items.map(([title, copy], index) => {
-              const Icon = principleIcons[index];
-              return (
-                <Reveal as="article" delay={(index % 2) * 70} key={title}>
-                  <Icon
-                    className="why-principle-icon"
-                    aria-hidden="true"
-                    strokeWidth={1.5}
-                  />
-                  <h3>{title}</h3>
-                  <p>{copy}</p>
-                </Reveal>
-              );
-            })}
+          <div className="why-principle-list why-principle-list--pair">
+            {content.principles.items.map(
+              ([title, copy, linkLabel, linkTo], index) => {
+                const Icon = principleIcons[index];
+                return (
+                  <Reveal as="article" delay={(index % 2) * 70} key={title}>
+                    <Icon
+                      className="why-principle-icon"
+                      aria-hidden="true"
+                      strokeWidth={1.5}
+                    />
+                    <h3>{title}</h3>
+                    <p>{copy}</p>
+                    {linkLabel ? (
+                      <Link className="text-link why-light-link" to={linkTo}>
+                        {linkLabel}
+                      </Link>
+                    ) : null}
+                  </Reveal>
+                );
+              },
+            )}
           </div>
         </div>
       </section>

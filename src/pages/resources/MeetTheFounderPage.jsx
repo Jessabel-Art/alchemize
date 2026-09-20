@@ -8,7 +8,6 @@ import {
   ensureJsonLd,
   SITE_URL,
 } from "../../seo/siteSchema.js";
-import { capabilityAreas } from "../../data/capabilityAreas.js";
 import "./meet-the-founder.css";
 
 export default function MeetTheFounderPage() {
@@ -67,36 +66,56 @@ export default function MeetTheFounderPage() {
       backgroundEyebrow: "Professional Background",
       backgroundTitle: "Experience built across the work behind a business.",
       backgroundCopy: [
-        "Jessy brings more than 15 years of professional experience across business operations, administration, client service, organization, financial responsibilities, and practical decision-making. Her work has required balancing priorities, coordinating responsibilities, managing recurring processes, and creating order around details that affect the larger business.",
-        "Her MBA strengthened and broadened that established experience with a deeper understanding of how businesses function, how priorities connect, and where thoughtful structure can make work more manageable. It complements the practical judgment developed through years of day-to-day responsibility.",
+        "Jessy brings more than 15 years of professional experience across business operations, administration, client service, financial responsibilities, and business systems. Her work has meant coordinating responsibilities, managing recurring processes, and creating order around details that affect the larger business. Alchemize is the newer company; that experience was developed before and alongside it.",
+        "Her MBA formalized and broadened that practical foundation with a deeper view of how businesses function and where structure makes work more manageable. Later UX and web-development study, and ongoing technical development, built on the professional background already in place.",
       ],
-      approachEyebrow: "How That Experience Shapes Alchemize",
-      approachTitle: "Business problems rarely exist in isolation.",
+      approachEyebrow: "Why Alchemize Exists",
+      approachTitle: "Business problems rarely stay in one lane.",
       approachCopy:
-        "A client-service problem may also be a workflow problem. An administrative challenge may point to a systems gap. A website issue may actually begin with unclear communication or service delivery. Alchemize starts by understanding the broader need, then identifies a practical solution that fits how the client or business actually works.",
+        "The same pattern kept appearing. A client-service problem was also a workflow problem. A digital project exposed a process gap. Administrative work revealed organizational and financial gaps. Alchemize was built around that reality: understand the broader need first, then choose the practical response that fits how the business actually works.",
       capabilitiesEyebrow: "Experience Across the Business",
-      capabilitiesTitle: "The work behind clear, capable support.",
+      capabilitiesTitle: "Four areas of hands-on experience.",
       capabilitiesIntro:
-        "Alchemize draws on connected experience across the operational and digital responsibilities that shape how a business serves its clients and moves work forward.",
-      capabilities: capabilityAreas.en,
+        "Developed in professional roles before and alongside Alchemize, and the reason the company is organized the way it is.",
+      capabilities: [
+        {
+          label: "Business operations & administration",
+          title: "Operations & Administration",
+          copy: "Process coordination, documentation, administrative systems, financial responsibilities, client service, and day-to-day operational support across functions.",
+        },
+        {
+          label: "Systems, CRM & automation",
+          title: "Systems, CRM & Automation",
+          copy: "Supporting CRM creation and development and the workflow and process work around it, implementing automation, improving workflows, and supporting adoption of business systems.",
+        },
+        {
+          label: "Internal digital systems",
+          title: "Internal Digital Systems",
+          copy: "Intranet additions and ongoing maintenance, organizing internal information, and internal digital resources that gave employees access to operational information.",
+        },
+        {
+          label: "Web, e-commerce & digital",
+          title: "Web, E-Commerce & Digital",
+          copy: "Creating and managing websites, e-commerce website work and e-commerce management, digital content, SEO and visibility, and user experience.",
+        },
+      ],
       digitalEyebrow: "Business + Digital",
       digitalTitle:
         "Business experience and digital work have developed side by side.",
       digitalCopy: [
-        "Jessy’s experience with websites and digital business began well before formal UX or web-development study. Over the years, she created websites, managed e-commerce businesses, worked with online presence, and advised on SEO and digital visibility alongside her broader business responsibilities.",
-        "UX study through Full Sail University gave that existing background a more structured understanding of user experience, usability, information architecture, and the ways people interact with digital systems. Continued web-development work then expanded the technical side of that experience.",
-        "Together, those disciplines explain why Alchemize does not treat technology and business operations as separate worlds. A website, interface, or digital tool should communicate clearly and fit the way the business actually serves people and moves work forward.",
-        "For clients, that means each problem can be considered from both sides: whether the process needs clearer information, better organization, a more useful digital tool, hands-on human support, or another qualified specialist.",
+        "Jessy's digital experience predates her formal UX and web-development study. It began inside her professional roles: creating and managing websites, working on e-commerce websites and managing e-commerce, and working with online presence and SEO alongside her broader business responsibilities.",
+        "UX study through Full Sail University then gave that background a more structured understanding of usability, information architecture, and how people interact with digital systems. Continued web-development work has expanded the technical side.",
+        "That is why Alchemize does not treat technology and business operations as separate worlds. A website, CRM, or digital tool should fit how the business actually serves people and moves work forward, and each problem can be considered from both sides.",
       ],
       perspectiveEyebrow: "Perspective",
       perspectiveTitle: "The Perspective Behind Alchemize",
       perspectiveCopy:
-        "The Alchemize model is intentional. It reflects Jessy’s experience across the operational work that keeps a business moving and the digital work that shapes how it communicates, serves clients, and uses modern systems. Administrative, financial, operational, and digital needs are considered in relation to one another rather than as isolated tasks.",
+        "The Alchemize model reflects that experience: administrative, financial, operational, and digital needs are considered in relation to one another rather than as isolated tasks. Connected does not mean unlimited. Alchemize defines its scope and points work that belongs with another professional in the right direction.",
       quote:
         "Business support works best when it brings clarity, order, and useful momentum to the work that matters most.",
       ctaCopy:
-        "If you need practical support for a business, project, or digital presence, begin with a conversation about what needs to move forward.",
-      ctaPrimary: "Schedule a Consultation",
+        "If you are weighing a business need, a project, or a digital presence, start by telling us what is going on.",
+      ctaPrimary: "Tell Us What You Need",
       ctaSecondary: "Explore Services",
     },
     es: {
@@ -113,37 +132,57 @@ export default function MeetTheFounderPage() {
       backgroundTitle:
         "Experiencia desarrollada en el trabajo detrás de un negocio.",
       backgroundCopy: [
-        "Jessy aporta más de 15 años de experiencia profesional en operaciones empresariales, administración, servicio al cliente, organización, responsabilidades financieras y toma de decisiones prácticas. Su trabajo ha requerido equilibrar prioridades, coordinar responsabilidades, administrar procesos recurrentes y crear orden alrededor de detalles que afectan al negocio en general.",
-        "Su MBA fortaleció y amplió esa experiencia ya establecida con una comprensión más profunda de cómo funcionan las empresas, cómo se conectan las prioridades y dónde una estructura bien pensada puede hacer el trabajo más manejable. Complementa el criterio práctico desarrollado durante años de responsabilidad diaria.",
+        "Jessy aporta más de 15 años de experiencia profesional en operaciones empresariales, administración, servicio al cliente, responsabilidades financieras y sistemas empresariales. Su trabajo ha consistido en coordinar responsabilidades, administrar procesos recurrentes y crear orden alrededor de detalles que afectan al negocio en general. Alchemize es la empresa nueva; esa experiencia se desarrolló antes y durante su creación.",
+        "Su MBA formalizó y amplió esa base práctica con una visión más profunda de cómo funcionan las empresas y dónde la estructura hace el trabajo más manejable. Los estudios posteriores de UX y desarrollo web, y su desarrollo técnico continuo, se apoyaron en la trayectoria profesional que ya tenía.",
       ],
-      approachEyebrow: "Cómo Esa Experiencia Da Forma a Alchemize",
+      approachEyebrow: "Por Qué Existe Alchemize",
       approachTitle:
-        "Los problemas empresariales rara vez existen de forma aislada.",
+        "Los problemas empresariales rara vez se quedan en un solo carril.",
       approachCopy:
-        "Un problema de servicio al cliente también puede ser un problema de flujo de trabajo. Un desafío administrativo puede señalar una brecha en los sistemas. Un problema con un sitio web puede comenzar realmente con una comunicación o una prestación de servicios poco clara. Alchemize comienza por entender la necesidad más amplia y luego identifica una solución práctica que se adapte a cómo realmente trabaja el cliente o la empresa.",
+        "El mismo patrón se repetía. Un problema de servicio al cliente era también un problema de flujo de trabajo. Un proyecto digital dejaba al descubierto una brecha en los procesos. El trabajo administrativo revelaba brechas de organización y financieras. Alchemize se construyó en torno a esa realidad: primero entender la necesidad más amplia y luego elegir la respuesta práctica que se ajuste a cómo realmente funciona el negocio.",
       capabilitiesEyebrow: "Experiencia en Todo el Negocio",
-      capabilitiesTitle: "El trabajo detrás de un apoyo claro y capaz.",
+      capabilitiesTitle: "Cuatro áreas de experiencia práctica.",
       capabilitiesIntro:
-        "Alchemize se apoya en experiencia conectada a través de las responsabilidades operativas y digitales que determinan cómo una empresa atiende a sus clientes y hace avanzar el trabajo.",
-      capabilities: capabilityAreas.es,
+        "Desarrolladas en funciones profesionales antes y durante Alchemize, y la razón por la que la empresa está organizada como está.",
+      capabilities: [
+        {
+          label: "Operaciones empresariales y administración",
+          title: "Operaciones y Administración",
+          copy: "Coordinación de procesos, documentación, sistemas administrativos, responsabilidades financieras, servicio al cliente y apoyo operativo diario en distintas funciones.",
+        },
+        {
+          label: "Sistemas, CRM y automatización",
+          title: "Sistemas, CRM y Automatización",
+          copy: "Apoyo en la creación y el desarrollo de un CRM y en el trabajo de flujos y procesos que lo rodea, implementación de automatización, mejora de flujos de trabajo y apoyo a la adopción de sistemas empresariales.",
+        },
+        {
+          label: "Sistemas digitales internos",
+          title: "Sistemas Digitales Internos",
+          copy: "Ampliación y mantenimiento continuo de una intranet, organización de la información interna y recursos digitales internos que daban a los empleados acceso a información operativa.",
+        },
+        {
+          label: "Web, comercio electrónico y digital",
+          title: "Web, Comercio Electrónico y Digital",
+          copy: "Creación y administración de sitios web, trabajo en sitios de comercio electrónico y administración del comercio electrónico, contenido digital, SEO y visibilidad, y experiencia de usuario.",
+        },
+      ],
       digitalEyebrow: "Negocios + Digital",
       digitalTitle:
         "La experiencia empresarial y el trabajo digital se han desarrollado lado a lado.",
       digitalCopy: [
-        "La experiencia de Jessy con sitios web y negocios digitales comenzó mucho antes de sus estudios formales de UX o desarrollo web. A lo largo de los años, creó sitios web, administró negocios de comercio electrónico, trabajó con presencia en línea y asesoró sobre SEO y visibilidad digital junto con sus responsabilidades empresariales más amplias.",
-        "Los estudios de UX a través de Full Sail University aportaron a esa experiencia una comprensión más estructurada de la experiencia de usuario, la usabilidad, la arquitectura de la información y la forma en que las personas interactúan con los sistemas digitales. El trabajo continuo en desarrollo web amplió luego el aspecto técnico de esa experiencia.",
-        "En conjunto, esas disciplinas explican por qué Alchemize no trata la tecnología y las operaciones empresariales como mundos separados. Un sitio web, una interfaz o una herramienta digital debe comunicar con claridad y adaptarse a la forma en que la empresa atiende a las personas y hace avanzar el trabajo.",
-        "Para los clientes, esto significa que cada problema puede analizarse desde ambos lados: si el proceso necesita información más clara, mejor organización, una herramienta digital más útil, apoyo humano directo u otro especialista calificado.",
+        "La experiencia digital de Jessy es anterior a sus estudios formales de UX y desarrollo web. Comenzó dentro de sus funciones profesionales: crear y administrar sitios web, trabajar en sitios de comercio electrónico y administrar el comercio electrónico, y trabajar con la presencia en línea y el SEO junto con sus responsabilidades empresariales más amplias.",
+        "Los estudios de UX en Full Sail University dieron luego a esa base una comprensión más estructurada de la usabilidad, la arquitectura de la información y la forma en que las personas interactúan con los sistemas digitales. El trabajo continuo en desarrollo web ha ampliado el aspecto técnico.",
+        "Por eso Alchemize no trata la tecnología y las operaciones empresariales como mundos separados. Un sitio web, un CRM o una herramienta digital debe ajustarse a cómo el negocio realmente atiende a las personas y hace avanzar el trabajo, y cada problema puede analizarse desde ambos lados.",
       ],
       perspectiveEyebrow: "Perspectiva",
       perspectiveTitle: "La Perspectiva Detrás de Alchemize",
       perspectiveCopy:
-        "El modelo de Alchemize es intencional. Refleja la experiencia de Jessy tanto en el trabajo operativo que mantiene una empresa en movimiento como en el trabajo digital que influye en su comunicación, servicio al cliente y uso de sistemas modernos. Las necesidades administrativas, financieras, operativas y digitales se consideran en relación unas con otras, no como tareas aisladas.",
+        "El modelo de Alchemize refleja esa experiencia: las necesidades administrativas, financieras, operativas y digitales se consideran en relación unas con otras, no como tareas aisladas. Conectado no significa ilimitado. Alchemize define su alcance y orienta hacia el profesional adecuado el trabajo que le corresponde a otro.",
       quote:
         "El apoyo empresarial funciona mejor cuando aporta claridad, orden e impulso útil al trabajo que más importa.",
       ctaCopy:
-        "Si necesita apoyo práctico para un negocio, proyecto o presencia digital, comience con una conversación sobre lo que necesita avanzar.",
-      ctaPrimary: "Programar una Consulta",
+        "Si está evaluando una necesidad empresarial, un proyecto o una presencia digital, comience contándonos qué está ocurriendo.",
+      ctaPrimary: "Cuéntenos qué necesita",
       ctaSecondary: "Explorar Servicios",
     },
   }[language];
@@ -228,7 +267,7 @@ export default function MeetTheFounderPage() {
             <i>A</i>
             <span>Digital experience</span>
           </div>
-          <div className="founder-capabilities">
+          <div className="founder-capabilities founder-capabilities--four">
             {content.capabilities.map((item, index) => (
               <Reveal
                 as="article"

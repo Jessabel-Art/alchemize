@@ -342,7 +342,7 @@ export const resources = [
       "Clarify the primary business goal for the website.",
       "Identify the audiences and actions the site needs to support.",
       "Gather existing content, brand assets, and access information.",
-      "Schedule a consultation to discuss fit, scope, and the appropriate starting point.",
+      "Contact Alchemize to discuss fit, scope, and the appropriate starting point.",
     ],
     disclaimer: digitalDisclaimer,
   },
@@ -489,8 +489,6 @@ export const resources = [
     updated: "September 4, 2026",
     modifiedDate: "2026-09-04",
     readTime: "7 min read",
-    servicePath: "/web-digital",
-    serviceLabel: "Explore Alchemize web and digital services",
     sections: [
       {
         id: "why-hosting-matters",
@@ -573,8 +571,6 @@ export const resources = [
     updated: "September 4, 2026",
     modifiedDate: "2026-09-04",
     readTime: "9 min read",
-    servicePath: "/web-digital",
-    serviceLabel: "Explore Alchemize web and digital services",
     sections: [
       {
         id: "business-problem",

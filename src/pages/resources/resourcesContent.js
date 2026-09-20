@@ -18,7 +18,7 @@ export const resourcesUi = {
       ctaTitle: "Need more than a guide?",
       ctaText:
         "Some business questions need individual attention. Discuss your situation with Alchemize and determine the next best step.",
-      ctaPrimary: "Schedule a consultation",
+      ctaPrimary: "Tell Us What You Need",
       ctaSecondary: "Explore services",
       ctaSupport: "Practical support for a more organized, confident business.",
     },
@@ -79,6 +79,8 @@ export const resourcesUi = {
       next: "What to do next",
       nextTitle: "Turn the guide into a useful next step.",
       serviceLink: "Need help organizing what comes next? Explore Services",
+      practice: "Need help putting this into practice?",
+      practiceLink: (service) => `Explore ${service}`,
       notice: "Educational notice",
       continue: "Continue learning",
       related: "Related resources",
@@ -108,7 +110,7 @@ export const resourcesUi = {
       ctaTitle: "¿Necesita más que una guía?",
       ctaText:
         "Algunas preguntas de negocio requieren atención individual. Hable sobre su situación con Alchemize y determine el próximo paso.",
-      ctaPrimary: "Programar una consulta",
+      ctaPrimary: "Cuéntenos qué necesita",
       ctaSecondary: "Explorar servicios",
       ctaSupport:
         "Apoyo práctico para un negocio más organizado y seguro de sí mismo.",
@@ -172,6 +174,8 @@ export const resourcesUi = {
       nextTitle: "Convierta la guía en un próximo paso útil.",
       serviceLink:
         "¿Necesita ayuda para organizar lo que sigue? Explore los servicios",
+      practice: "¿Necesita ayuda para ponerlo en práctica?",
+      practiceLink: (service) => `Explorar ${service}`,
       notice: "Aviso educativo",
       continue: "Continúe aprendiendo",
       related: "Recursos relacionados",
@@ -186,6 +190,7 @@ export const resourcesUi = {
 
 export const featuredContent = {
   en: {
+    pageTitle: "Resource Library: practical guides and checklists",
     label: "Featured resources",
     controls: "Featured resource controls",
     previous: "Previous",
@@ -270,6 +275,7 @@ export const featuredContent = {
     ],
   },
   es: {
+    pageTitle: "Biblioteca de recursos: guías y listas prácticas",
     label: "Recursos destacados",
     controls: "Controles de recursos destacados",
     previous: "Anterior",

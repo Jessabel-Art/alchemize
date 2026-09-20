@@ -25,6 +25,8 @@ export const moduleLabels = {
     faq: "Questions",
     thisService: "This service",
     viewService: "View service",
+    proofLabel: "Experience behind the work",
+    proofLink: "Meet the Founder",
   },
   es: {
     fit: "¿Es para usted?",
@@ -38,6 +40,8 @@ export const moduleLabels = {
     faq: "Preguntas",
     thisService: "Este servicio",
     viewService: "Ver servicio",
+    proofLabel: "La experiencia detrás del trabajo",
+    proofLink: "Conozca a la fundadora",
   },
 };
 
@@ -114,7 +118,7 @@ export function ServiceOptions({ options, language }) {
               <p>{item.text}</p>
               {item.to ? (
                 <LocalizedLink className="text-link" to={item.to}>
-                  {labels.viewService}
+                  {labels.viewService}: {item.name}
                 </LocalizedLink>
               ) : null}
             </li>
@@ -254,7 +258,7 @@ export function ServiceCompare({ compare, language }) {
               <p>{row.text}</p>
               {row.to ? (
                 <LocalizedLink className="text-link" to={row.to}>
-                  {labels.viewService}
+                  {labels.viewService}: {row.label}
                 </LocalizedLink>
               ) : null}
             </li>
@@ -308,5 +312,22 @@ export function ServiceRelated({ items, heading }) {
         ))}
       </div>
     </section>
+  );
+}
+
+// One restrained line of relevant experience, shown only where it adds value
+// (Advisory, Foundation, Operations, Bookkeeping). It sits in the closing
+// block, just above the request, instead of becoming a section of its own.
+export function ServiceProof({ proof, language }) {
+  if (!proof?.text) return null;
+  const labels = moduleLabels[language] ?? moduleLabels.en;
+  return (
+    <p className="editorial-service-proof">
+      <strong>{labels.proofLabel}</strong>
+      <span>{proof.text}</span>
+      <LocalizedLink className="text-link" to="/resources/meet-the-founder">
+        {labels.proofLink}
+      </LocalizedLink>
+    </p>
   );
 }
