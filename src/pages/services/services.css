@@ -2211,6 +2211,7 @@
 .editorial-service-fit,
 .editorial-service-options,
 .editorial-service-pricing,
+.editorial-service-fee-table,
 .editorial-service-steps,
 .editorial-service-compare,
 .editorial-service-faq {
@@ -2225,6 +2226,7 @@
 
 .editorial-service-options,
 .editorial-service-pricing,
+.editorial-service-fee-table,
 .editorial-service-compare {
   background: var(--ivory);
 }
@@ -2232,6 +2234,7 @@
 .editorial-service-fit h2,
 .editorial-service-options h2,
 .editorial-service-pricing h2,
+.editorial-service-fee-table h2,
 .editorial-service-steps h2,
 .editorial-service-compare h2,
 .editorial-service-faq h2 {
@@ -2246,6 +2249,7 @@
 .editorial-service-fit .eyebrow,
 .editorial-service-options .eyebrow,
 .editorial-service-pricing .eyebrow,
+.editorial-service-fee-table .eyebrow,
 .editorial-service-steps .eyebrow,
 .editorial-service-compare .eyebrow,
 .editorial-service-faq .eyebrow {
@@ -2571,6 +2575,69 @@
   color: var(--color-text-soft);
   font-size: 0.92rem;
   line-height: 1.5;
+}
+
+/* fee schedule (a fixed, published table -- e.g. notary -- not priced tiers) */
+.fee-schedule-table {
+  width: 100%;
+  margin: clamp(1.8rem, 3vw, 2.6rem) 0 0;
+  border-top: 3px solid var(--gold);
+  background: var(--white);
+  border-collapse: collapse;
+}
+
+.fee-schedule-table th,
+.fee-schedule-table td {
+  padding: 0.85rem 1.5rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(6, 43, 43, 0.14);
+  line-height: 1.5;
+}
+
+.fee-schedule-table thead th {
+  color: #6c561f;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  border-bottom: 1px solid rgba(6, 43, 43, 0.22);
+}
+
+.fee-schedule-table tbody th {
+  color: var(--emerald-deep);
+  font-size: 0.95rem;
+  font-weight: 600;
+  vertical-align: top;
+}
+
+.fee-schedule-table tbody td {
+  color: var(--navy);
+  font-size: 0.95rem;
+  font-variant-numeric: lining-nums;
+  vertical-align: top;
+}
+
+.fee-schedule-table tbody tr:last-child th,
+.fee-schedule-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.fee-schedule-note {
+  max-width: 68ch;
+  margin: 1.2rem 0 0;
+  padding-left: 1rem;
+  border-left: 3px solid var(--gold);
+  color: #4b5c57;
+  line-height: 1.65;
+}
+
+@media (max-width: 700px) {
+  .fee-schedule-table th,
+  .fee-schedule-table td {
+    padding: 0.65rem 0.9rem;
+    font-size: 0.88rem;
+  }
 }
 
 /* steps (services that otherwise show a "what to bring" panel) */

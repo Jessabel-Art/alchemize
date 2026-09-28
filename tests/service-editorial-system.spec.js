@@ -31,10 +31,12 @@ const serviceRoutes = [
   ],
 ];
 
-// Only these two services publish prices (see service-detail-content.spec.js).
+// Translation and Apostille publish Alchemize's own price; Notary publishes
+// North Carolina's notarial fee schedule (see service-detail-content.spec.js).
 const publiclyPriced = [
   "/services/individuals/translation-services/",
   "/services/individuals/apostille-services/",
+  "/services/individuals/notary-document-services/",
 ];
 
 for (const [route, headline] of serviceRoutes) {

@@ -14,11 +14,15 @@ const affectedRoutes = [
   "/services/businesses/business-tax-support/",
 ];
 
-// Public pricing policy: only Translation and Apostille publish prices (covered
-// by service-detail-content.spec.js). Every other service page stays price-free.
+// Public pricing policy: Translation and Apostille publish Alchemize's own
+// price (covered by service-detail-content.spec.js). Notary publishes North
+// Carolina's published notarial fee schedule, not an Alchemize rate -- also a
+// public price, in a fee-table presentation rather than pricing cards. Every
+// other service page stays price-free.
 const publiclyPriced = [
   "/services/individuals/translation-services/",
   "/services/individuals/apostille-services/",
+  "/services/individuals/notary-document-services/",
 ];
 
 for (const route of affectedRoutes) {

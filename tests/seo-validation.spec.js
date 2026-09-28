@@ -323,14 +323,20 @@ test.describe("SEO validation", () => {
     }
   });
 
-  test("no page metadata carries pricing, and only Translation and Apostille show prices", async ({
+  test("no page metadata carries pricing, and only the approved pages show a price", async ({
     page,
   }) => {
     for (const { loc } of sitemap) {
       const { title, description } = pages.get(loc);
       expect(`${title} ${description}`, loc).not.toMatch(/\$\s?\d/);
     }
-    const priced = new Set(["translation-services", "apostille-services"]);
+    // Translation and Apostille publish Alchemize's own price; Notary publishes
+    // North Carolina's published notarial fee schedule, not an Alchemize rate.
+    const priced = new Set([
+      "translation-services",
+      "apostille-services",
+      "notary-document-services",
+    ]);
     for (const path of [
       "/services/individuals/tax-preparation",
       "/services/individuals/notary-document-services",

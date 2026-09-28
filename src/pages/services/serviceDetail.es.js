@@ -433,6 +433,24 @@ export const serviceDetailEs = {
         "Firmantes y testigos que deben coordinarse para una sola cita",
       ],
     },
+    feeSchedule: {
+      title: "Tarifario notarial de Carolina del Norte.",
+      intro:
+        "Estas son las tarifas notariales que permite la ley de Carolina del Norte. Corresponden al acto notarial en sí; el apoyo documental y la coordinación de la cita forman parte del servicio descrito a continuación.",
+      rows: [
+        { id: "acknowledgment", label: "Reconocimiento" },
+        { id: "jurat", label: "Declaración jurada" },
+        { id: "verification", label: "Verificación o prueba" },
+        { id: "oath", label: "Juramento o afirmación sin firma" },
+        {
+          id: "absenteeBallot",
+          label: "Notarización de boleta de voto ausente",
+        },
+        { id: "mobileTravel", label: "Viaje móvil" },
+      ],
+      travelNote:
+        "El viaje móvil se cobra según el millaje real, a la tarifa federal de millaje comercial vigente, no como una tarifa fija de viaje o conveniencia. Usted debe aceptar el cargo por viaje por escrito antes de que este ocurra.",
+    },
     does: {
       title: "Lo que respalda el servicio.",
       intro:
@@ -530,7 +548,7 @@ export const serviceDetailEs = {
         },
         {
           q: "¿Cuánto cuesta?",
-          a: "Las tarifas se confirman con usted cuando se revisa su solicitud.",
+          a: "Consulte el tarifario notarial de Carolina del Norte más arriba. El viaje móvil se cobra por separado a la tarifa federal de millaje comercial vigente, con su acuerdo por escrito antes de que ocurra el viaje.",
         },
       ],
     },

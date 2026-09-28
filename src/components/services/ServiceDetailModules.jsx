@@ -6,6 +6,7 @@ import {
   formatPercent,
   publicServicePricing,
 } from "../../data/publicServicePricing.js";
+import { describeNotaryFee } from "../../data/notaryFeeSchedule.js";
 
 // Reusable modules for the editorial service page. Each takes the matching
 // block of a service's `detail` (see serviceDetail.en.js / serviceDetail.es.js)
@@ -19,6 +20,9 @@ export const moduleLabels = {
     options: "How it is scoped",
     pricing: "Pricing",
     seePricing: "See pricing",
+    feeScheduleEyebrow: "Fee Schedule",
+    feeService: "Notarial Service",
+    feeAmount: "Fee",
     process: "What to expect",
     processTitle: "How the work moves.",
     compare: "How it differs",
@@ -34,6 +38,9 @@ export const moduleLabels = {
     options: "Cómo se define el alcance",
     pricing: "Precios",
     seePricing: "Ver precios",
+    feeScheduleEyebrow: "Tarifario",
+    feeService: "Servicio Notarial",
+    feeAmount: "Tarifa",
     process: "Qué esperar",
     processTitle: "Cómo avanza el trabajo.",
     compare: "En qué se diferencia",
@@ -203,6 +210,53 @@ export function ServicePricing({ serviceKey, pricing, language, ctaProps }) {
             {pricing.cta}
           </LocalizedLink>
         ) : null}
+      </div>
+    </section>
+  );
+}
+
+// A compact fee schedule for a service whose fees are a fixed, published
+// table rather than priced tiers (e.g. the state-permitted notary fees) --
+// one table, not a card per row. Renders nothing when `feeSchedule` is absent.
+export function ServiceFeeTable({ feeSchedule, language }) {
+  if (!feeSchedule) return null;
+  const labels = moduleLabels[language] ?? moduleLabels.en;
+  return (
+    <section id="pricing" className="editorial-service-fee-table">
+      <div className="content-shell">
+        <Reveal className="editorial-service-module-head">
+          <div>
+            <span className="eyebrow">{labels.feeScheduleEyebrow}</span>
+            <h2>{feeSchedule.title}</h2>
+          </div>
+          {feeSchedule.intro ? <p>{feeSchedule.intro}</p> : null}
+        </Reveal>
+        <Reveal>
+          <table className="fee-schedule-table">
+            <caption className="sr-only">{feeSchedule.title}</caption>
+            <thead>
+              <tr>
+                <th scope="col">{labels.feeService}</th>
+                <th scope="col">{labels.feeAmount}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {feeSchedule.rows.map((row) => {
+                const fee = describeNotaryFee(row.id, language);
+                if (!fee) return null;
+                return (
+                  <tr key={row.id}>
+                    <th scope="row">{row.label}</th>
+                    <td>{fee.fee}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          {feeSchedule.travelNote ? (
+            <p className="fee-schedule-note">{feeSchedule.travelNote}</p>
+          ) : null}
+        </Reveal>
       </div>
     </section>
   );

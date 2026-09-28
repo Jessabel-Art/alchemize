@@ -25,6 +25,10 @@ const priced = new Set([
   "individuals/translation-services",
   "individuals/apostille-services",
 ]);
+// Notary shows dollar figures too, but they are North Carolina's published
+// notarial fee schedule, not an Alchemize commercial price -- kept distinct
+// from `priced` above so the two policies stay separately testable.
+const governmentFeeSchedule = new Set(["individuals/notary-document-services"]);
 const languages = [
   { code: "en", prefix: "" },
   { code: "es", prefix: "/es" },
@@ -143,16 +147,33 @@ for (const { code, prefix } of languages) {
     expect(text).not.toMatch(internalTerms);
   });
 
-  test(`${code}: Notary stays visible and requestable, with no pricing and no commission claim`, async ({
+  test(`${code}: Notary publishes the North Carolina fee schedule as a table, not an Alchemize price`, async ({
     page,
   }) => {
     await page.goto(`${prefix}/services/individuals/notary-document-services`);
     const text = await bodyText(page);
-    expect(dollarAmounts(text)).toEqual([]);
-    expect(text).not.toMatch(
-      /statutory|estatutari|per signature|por firma|mileage|millaje|\bcommissioned\b|comisionad/i,
+    // four $10 acts (acknowledgment, jurat, verification, oath); no charge
+    // and the mileage rate carry no dollar figure of their own
+    expect(dollarAmounts(text).sort()).toEqual(["10", "10", "10", "10"]);
+    // never presented as individual pricing cards/boxes (that is Apostille's
+    // presentation, not Notary's)
+    await expect(page.locator(".editorial-service-price-card")).toHaveCount(0);
+    const table = page.locator(".fee-schedule-table");
+    await expect(table).toBeVisible();
+    await expect(table.locator("tbody tr")).toHaveCount(6);
+    await expect(table.locator("tbody tr").nth(4)).toContainText(
+      code === "en" ? "No Charge" : "Sin costo",
     );
+    // mobile travel is a mileage-based charge, never a flat number in the fee cell
+    const travelFeeCell = table.locator("tbody tr").nth(5).locator("td");
+    await expect(travelFeeCell).toContainText(
+      code === "en" ? "mileage rate" : "millaje",
+    );
+    await expect(travelFeeCell).not.toContainText("$");
+    expect(text).toMatch(/written|por escrito/i);
+    // no proprietary rate, and no claim of a current commission
     expect(text).not.toMatch(internalTerms);
+    expect(text).not.toMatch(/\bcommissioned\b|comisionad/i);
     const hero = page.locator(".editorial-service-actions a.button").first();
     await expect(hero).toBeVisible();
     await expect(hero).toHaveAttribute(
@@ -169,7 +190,7 @@ for (const { code, prefix } of languages) {
     page,
   }) => {
     for (const [slug] of pages) {
-      if (priced.has(slug)) continue;
+      if (priced.has(slug) || governmentFeeSchedule.has(slug)) continue;
       await page.goto(`${prefix}/services/${slug}`);
       const text = await bodyText(page);
       expect(dollarAmounts(text), slug).toEqual([]);
@@ -281,6 +302,8 @@ for (const { code, prefix } of languages) {
   test(`${code}: no horizontal overflow at 390, 834 and 1440 on any service page`, async ({
     page,
   }) => {
+    // 11 pages x 3 widths: allow for a loaded runner
+    test.setTimeout(90_000);
     const all = [...pages.map(([slug]) => `/services/${slug}`), "/web-digital"];
     for (const width of [390, 834, 1440]) {
       await page.setViewportSize({ width, height: 900 });
@@ -366,4 +389,41 @@ test("Translation's See pricing link lands on the pricing section", async ({
   await expect(link).toHaveText(/See pricing/);
   await link.click();
   await expect(page.locator("#pricing")).toBeInViewport();
+});
+
+test("Notary's See pricing link lands on the fee schedule, not a pricing-card section", async ({
+  page,
+}) => {
+  await page.goto("/services/individuals/notary-document-services");
+  const link = page.locator('.editorial-service-actions a[href="#pricing"]');
+  await expect(link).toHaveText(/See pricing/);
+  await link.click();
+  await expect(page.locator("#pricing")).toBeInViewport();
+  await expect(page.locator("#pricing .fee-schedule-table")).toBeVisible();
+  await expect(
+    page.locator("#pricing .editorial-service-price-card"),
+  ).toHaveCount(0);
+});
+
+// No public service page offers direct card/checkout payment -- every public
+// service, priced or not, routes through the Contact request flow. This is
+// the one payment-adjacent surface a marketing page could carry; the
+// authenticated Client Portal's own Stripe/PayPal checkout is unrelated and
+// untouched by this pass.
+test("no public service page offers a direct Stripe or card checkout", async ({
+  page,
+}) => {
+  for (const prefix of ["", "/es"]) {
+    const routes = [
+      ...pages.map(([slug]) => `/services/${slug}`),
+      "/web-digital",
+    ];
+    for (const path of routes) {
+      await page.goto(prefix + path);
+      await expect(
+        page.locator('a[href*="stripe" i], a[href*="checkout" i]'),
+      ).toHaveCount(0);
+      await expect(page.getByText(/pay with stripe/i)).toHaveCount(0);
+    }
+  }
 });

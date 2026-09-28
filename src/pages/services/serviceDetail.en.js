@@ -447,6 +447,21 @@ export const serviceDetailEn = {
         "Signers and witnesses who need to be coordinated for one appointment",
       ],
     },
+    feeSchedule: {
+      title: "North Carolina notary fee schedule.",
+      intro:
+        "These are the notarial fees North Carolina law permits. They apply to the notarial act itself; document support and appointment coordination are part of the service described below.",
+      rows: [
+        { id: "acknowledgment", label: "Acknowledgment" },
+        { id: "jurat", label: "Jurat" },
+        { id: "verification", label: "Verification or Proof" },
+        { id: "oath", label: "Oath or Affirmation without a Signature" },
+        { id: "absenteeBallot", label: "Absentee Ballot Notarization" },
+        { id: "mobileTravel", label: "Mobile Travel" },
+      ],
+      travelNote:
+        "Mobile travel is charged at actual mileage using the current federal business mileage rate, not a flat travel or convenience fee. You must agree to the travel charge in writing before travel occurs.",
+    },
     does: {
       title: "What the service supports.",
       intro:
@@ -544,7 +559,7 @@ export const serviceDetailEn = {
         },
         {
           q: "How much does it cost?",
-          a: "Fees are confirmed with you when your request is reviewed.",
+          a: "See the North Carolina notary fee schedule above. Mobile travel is billed separately at the current federal business mileage rate, with your written agreement before travel occurs.",
         },
       ],
     },

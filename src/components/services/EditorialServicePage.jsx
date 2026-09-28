@@ -10,6 +10,7 @@ import {
 import {
   ServiceCompare,
   ServiceFaq,
+  ServiceFeeTable,
   ServiceFit,
   ServiceOptions,
   ServiceProof,
@@ -756,7 +757,7 @@ export default function EditorialServicePage({ service, ui, language }) {
               >
                 {cta.hero || labels.consultation}
               </LocalizedLink>
-              {detail.pricing ? (
+              {detail.pricing || detail.feeSchedule ? (
                 <a href="#pricing">
                   {modules.seePricing} <ArrowRight aria-hidden="true" />
                 </a>
@@ -805,6 +806,7 @@ export default function EditorialServicePage({ service, ui, language }) {
         language={language}
         ctaProps={contactCta("service_pricing", detail.pricing?.cta ?? "")}
       />
+      <ServiceFeeTable feeSchedule={detail.feeSchedule} language={language} />
       <ServiceOptions options={detail.options} language={language} />
       {profile.type === "project" && detail.process ? (
         <ServiceSteps steps={detail.process} language={language} />
