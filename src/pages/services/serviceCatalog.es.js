@@ -101,7 +101,7 @@ const translations = {
     overview:
       "El trabajo notarial y el apoyo documental administrativo son servicios relacionados, pero distintos. Alchemize ofrece servicios notariales en Carolina del Norte y ayuda a organizar paquetes no legales sin seleccionar formularios, redactar términos jurídicos ni interpretar consecuencias legales.",
     statement:
-      "Prepare el documento. Verifique los requisitos. Complete correctamente la cita.",
+      "Apoyo notarial en Carolina del Norte para firmas, reconocimientos y declaraciones juradas.",
     capabilities: [
       "Notarización tradicional",
       "Preparación documental",

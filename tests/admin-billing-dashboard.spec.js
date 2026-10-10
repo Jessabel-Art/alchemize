@@ -119,6 +119,9 @@ const statusTab = (page, label) =>
   page.getByRole("tab", { name: label, exact: true });
 
 test.beforeEach(async ({ page }) => {
+  // The fixture is dated around 2026-09-09; pin the page clock to it so
+  // past-due / open / paid derivations do not drift as the real date moves on.
+  await page.clock.setFixedTime(new Date("2026-09-09T12:00:00"));
   await mockAdmin(page);
 });
 

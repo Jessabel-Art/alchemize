@@ -1646,7 +1646,7 @@
   color: rgba(215, 176, 95, 0.78);
 }
 
-.editorial-service-mark > div {
+.editorial-service-mark-words {
   position: absolute;
   right: 0;
   bottom: 1rem;
@@ -1664,6 +1664,115 @@
   font-weight: 600;
   letter-spacing: 0.11em;
   text-transform: uppercase;
+}
+
+/* a service's compact hero summary (price anchor + short facts), replacing
+   the icon and three-word mark inside the same bordered, motif-backed frame */
+.editorial-service-hero-summary {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 0.85rem;
+  width: 100%;
+  max-width: 240px;
+  padding: 0 1.5rem;
+  text-align: left;
+}
+
+.editorial-service-hero-summary-eyebrow {
+  color: rgba(215, 176, 95, 0.92);
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.editorial-service-hero-summary-price {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 0.5rem;
+  margin: 0;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid rgba(215, 176, 95, 0.32);
+}
+
+.editorial-service-hero-summary-price strong {
+  color: var(--white);
+  font-family: var(--font-display);
+  font-size: clamp(2.1rem, 3vw, 2.6rem);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.editorial-service-hero-summary-price span {
+  color: #d4dedb;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.editorial-service-hero-summary ul {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.editorial-service-hero-summary li {
+  position: relative;
+  padding-left: 0.95rem;
+  color: #d4dedb;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.editorial-service-hero-summary li::before {
+  content: "";
+  position: absolute;
+  top: 0.6em;
+  left: 0;
+  width: 0.5rem;
+  height: 1px;
+  background: rgba(215, 176, 95, 0.7);
+}
+
+/* summary variant: no icon, no background motif -- the frame is just the two
+   gold rules, with the text set on the frame's left edge and centred between
+   them, so it reads as aligned with the hero copy rather than floating */
+.editorial-service-mark--summary {
+  min-height: 0;
+  place-items: center start;
+  padding: clamp(1.6rem, 2.6vw, 2.2rem) 0;
+  background: none;
+}
+
+.editorial-service-mark--summary .editorial-service-hero-summary {
+  gap: 0.6rem;
+  max-width: none;
+  padding: 0;
+}
+
+.editorial-service-mark--summary .editorial-service-hero-summary-price {
+  display: grid;
+  gap: 0.35rem;
+  padding-bottom: 0.7rem;
+}
+
+.editorial-service-mark--summary .editorial-service-hero-summary-price strong {
+  font-size: clamp(3.4rem, 5.2vw, 4.6rem);
+  line-height: 0.9;
+  letter-spacing: -0.03em;
+}
+
+.editorial-service-mark--summary .editorial-service-hero-summary-price span {
+  font-size: 0.9rem;
+}
+
+.editorial-service-mark--summary .editorial-service-hero-summary ul {
+  gap: 0.3rem;
 }
 
 .service-motif-wrap {
@@ -1756,6 +1865,13 @@
 
 .editorial-service--business-digital .editorial-service-mark {
   background: rgba(15, 86, 88, 0.12);
+}
+
+/* "North Carolina Notary Services" is a plain service label rather than the
+   short editorial sentence other pages use as their H1, so it needs more
+   room per line than the shared 10.5ch measure to read as two clean lines. */
+.editorial-service--individual-notary .editorial-service-hero h1 {
+  max-width: 17ch;
 }
 
 @media (max-width: 900px) {
@@ -2154,6 +2270,11 @@
     min-height: 220px;
   }
 
+  .editorial-service-mark--summary {
+    width: 100%;
+    min-height: 0;
+  }
+
   .editorial-service-close-grid {
     gap: 3.5rem;
   }
@@ -2322,6 +2443,65 @@
   height: 0.5rem;
   border: 1px solid var(--gold);
   transform: rotate(45deg);
+}
+
+/* consolidated "needs and support" section: two plain lists, one section */
+.editorial-service-needs-group + .editorial-service-needs-group {
+  margin-top: clamp(1.6rem, 2.6vw, 2.2rem);
+}
+
+.editorial-service-needs-group h3 {
+  margin: 0 0 0.7rem;
+  color: #6c561f;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.editorial-service-needs-group > p {
+  max-width: 62ch;
+  margin: 0.85rem 0 0;
+  color: #4b5c57;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+/* scope statement set beside the closing request instead of in its own band */
+.editorial-service-scope-aside {
+  align-self: center;
+  padding-left: 1.25rem;
+  border-left: 3px solid var(--gold);
+}
+
+.editorial-service-scope-aside p {
+  max-width: 52ch;
+  margin: 0.6rem 0 0;
+  color: #4b5c57;
+  font-size: 0.92rem;
+  line-height: 1.65;
+}
+
+.editorial-service-scope-aside strong {
+  color: var(--emerald-deep);
+}
+
+.editorial-service--individual-notary .editorial-service-close h2 {
+  max-width: 17ch;
+}
+
+/* no scope band above the closing request, so no second helping of padding */
+.editorial-service--individual-notary .editorial-service-close-grid {
+  padding-top: 0;
+}
+
+/* the process heading stacks under its eyebrow, left-aligned, at every width */
+.editorial-service--individual-notary
+  .editorial-service-steps
+  .editorial-service-specific-heading {
+  grid-template-columns: 1fr;
+  gap: 0.65rem;
 }
 
 /* grouped scope, inside the existing scope band */
@@ -2618,6 +2798,25 @@
   vertical-align: top;
 }
 
+/* the fee column is what visitors scan for first: give every row's amount
+   (or "No Charge" / mileage-rate line) the same accent weight so the eye can
+   run straight down this column */
+.fee-schedule-table tbody td strong {
+  color: color-mix(in srgb, var(--gold) 45%, var(--emerald-deep));
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.fee-schedule-table tbody td span {
+  color: var(--navy);
+}
+
+.fee-schedule-table tbody td .fee-schedule-flat {
+  color: color-mix(in srgb, var(--gold) 45%, var(--emerald-deep));
+  font-weight: 600;
+}
+
 .fee-schedule-table tbody tr:last-child th,
 .fee-schedule-table tbody tr:last-child td {
   border-bottom: none;
@@ -2633,10 +2832,11 @@
 }
 
 @media (max-width: 700px) {
+  /* tighten density, not legibility: the table gets more compact through
+     padding alone, and cell text keeps its full reading size */
   .fee-schedule-table th,
   .fee-schedule-table td {
-    padding: 0.65rem 0.9rem;
-    font-size: 0.88rem;
+    padding: 0.7rem 1rem;
   }
 }
 

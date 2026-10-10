@@ -35,15 +35,17 @@ const unitLabels = {
   },
 };
 
-// { fee: "$10 per notarized principal signature" } — the string a fee-table
-// row renders; a row with no dollar amount (no charge, mileage rate) renders
-// its label alone.
+// { amount: "$10", unit: "per notarized principal signature" } -- mirrors
+// describeTier()'s { price, unit } shape so the fee table and the hero
+// summary can give the dollar figure its own strong/emphasized treatment.
+// A row with no dollar amount (no charge, mileage rate) returns
+// `amount: null` and its full description in `unit`.
 export function describeNotaryFee(id, language = "en") {
   const row = notaryFeeSchedule.find((item) => item.id === id);
   if (!row) return null;
   const labels = unitLabels[language === "es" ? "es" : "en"];
   if (row.amount === null || row.amount === 0) {
-    return { fee: labels[row.unit] };
+    return { amount: null, unit: labels[row.unit] };
   }
-  return { fee: `${formatUsd(row.amount)} ${labels[row.unit]}` };
+  return { amount: formatUsd(row.amount), unit: labels[row.unit] };
 }

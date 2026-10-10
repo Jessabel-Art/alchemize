@@ -123,7 +123,7 @@ const individual = [
       "North Carolina notary and nonlegal administrative document support for signatures, acknowledgments, packet organization, and clear appointment expectations.",
     Icon: FileCheck2,
     statement:
-      "Prepare the document. Verify the requirements. Complete the appointment correctly.",
+      "North Carolina notary support for signatures, acknowledgments, and sworn statements.",
     hero: "Prepare the document. Verify the requirements. Complete the appointment correctly.",
     overview:
       "Notary work and administrative document support are related but distinct. Alchemize provides North Carolina notary support and nonlegal packet organization for appointments that require accurate identification, witnessing, and document readiness without selecting forms, drafting legal terms, or interpreting legal consequences.",

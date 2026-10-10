@@ -12,6 +12,8 @@ import {
   ServiceFaq,
   ServiceFeeTable,
   ServiceFit,
+  ServiceHeroSummary,
+  ServiceNeeds,
   ServiceOptions,
   ServiceProof,
   ServicePricing,
@@ -82,17 +84,12 @@ const profiles = {
     watermark: "Witness",
     mark: ["Document", "Identity", "Act"],
     hero: {
-      en: "Prepare the document first.",
-      es: "Prepare primero el documento.",
+      en: "North Carolina Notary Services",
+      es: "Servicios Notariales de Carolina del Norte",
     },
-    contextTitle: {
-      en: "The appointment is one part of the process.",
-      es: "La cita es solo una parte del proceso.",
-    },
-    second: {
-      en: "The document, signer, identification, receiving-party requirements, and requested notarial act all need to align. The notarial act is completed by an authorized notary, without selecting forms or interpreting legal effect.",
-      es: "El documento, el firmante, la identificación, los requisitos del destinatario y el acto notarial deben coincidir. El acto notarial lo realiza un notario autorizado, sin seleccionar formularios ni interpretar efectos legales.",
-    },
+    // the page goes from the hero straight to what is offered; scope lives
+    // once, beside the closing request
+    skipContext: true,
     scopeTitle: { en: "Appointment support", es: "Apoyo para la cita" },
   },
   "individual-translation": {
@@ -543,16 +540,30 @@ function ServiceMotif({ profile, type = "default" }) {
   );
 }
 
-function HeroMark({ profile, Icon }) {
+// A service can replace the icon + three-word mark with a compact, factual
+// summary (price anchor, availability) by defining `detail.heroSummary` --
+// still set inside this same bordered, motif-backed frame so the editorial
+// composition of the hero is unchanged. Every other service leaves
+// `heroSummary` undefined and keeps the icon treatment exactly as before.
+function HeroMark({ profile, Icon, heroSummary, language }) {
   return (
-    <Reveal className="editorial-service-mark" delay={100}>
-      <Icon aria-hidden="true" strokeWidth={1.05} />
-      <div>
-        {profile.mark.map((word) => (
-          <i key={word}>{word}</i>
-        ))}
-      </div>
-      <ServiceMotif profile={profile} />
+    <Reveal
+      className={`editorial-service-mark${heroSummary ? " editorial-service-mark--summary" : ""}`}
+      delay={100}
+    >
+      {heroSummary ? (
+        <ServiceHeroSummary heroSummary={heroSummary} language={language} />
+      ) : (
+        <>
+          <Icon aria-hidden="true" strokeWidth={1.05} />
+          <div className="editorial-service-mark-words">
+            {profile.mark.map((word) => (
+              <i key={word}>{word}</i>
+            ))}
+          </div>
+        </>
+      )}
+      {heroSummary ? null : <ServiceMotif profile={profile} />}
     </Reveal>
   );
 }
@@ -606,23 +617,32 @@ function ServiceSpecific({
   labels,
   steps,
   prepare,
+  prepareCopy,
 }) {
   if (profile.type === "project") {
+    // a service can supply its own short heading and drop the default intro
+    // (the checklist beside it already says what is needed)
+    const compact = Boolean(prepareCopy);
     return (
       <section className="editorial-service-specific editorial-service-specific--project">
         <div className="content-shell editorial-service-specific-grid">
           <Reveal>
-            <span className="eyebrow">{labels.preparation}</span>
+            <span className="eyebrow">
+              {prepareCopy?.eyebrow ?? labels.preparation}
+            </span>
             <h2>
-              {language === "es"
-                ? "Prepare el material antes de comenzar."
-                : "Prepare the material before work begins."}
+              {prepareCopy?.title ??
+                (language === "es"
+                  ? "Prepare el material antes de comenzar."
+                  : "Prepare the material before work begins.")}
             </h2>
-            <p>
-              {language === "es"
-                ? "No necesita resolver cada pregunta antes de comunicarse. Los documentos disponibles ayudan a confirmar el alcance y detectar requisitos pendientes."
-                : "You do not need to resolve every question before reaching out. The available documents help confirm scope and identify requirements that still need attention."}
-            </p>
+            {compact ? null : (
+              <p>
+                {language === "es"
+                  ? "No necesita resolver cada pregunta antes de comunicarse. Los documentos disponibles ayudan a confirmar el alcance y detectar requisitos pendientes."
+                  : "You do not need to resolve every question before reaching out. The available documents help confirm scope and identify requirements that still need attention."}
+              </p>
+            )}
             {resource ? (
               <a
                 className="text-link"
@@ -762,7 +782,7 @@ export default function EditorialServicePage({ service, ui, language }) {
                   {modules.seePricing} <ArrowRight aria-hidden="true" />
                 </a>
               ) : null}
-              {resource ? (
+              {resource && detail.heroResource !== false ? (
                 <a
                   href={resource.download}
                   target="_blank"
@@ -774,31 +794,44 @@ export default function EditorialServicePage({ service, ui, language }) {
               ) : null}
             </div>
           </Reveal>
-          <HeroMark profile={profile} Icon={Icon} />
+          <HeroMark
+            profile={profile}
+            Icon={Icon}
+            heroSummary={detail.heroSummary}
+            language={language}
+          />
         </div>
       </section>
-      <section className="editorial-service-context">
-        <div className="content-shell editorial-service-context-grid">
-          <Reveal>
-            <span className="eyebrow">{labels.context}</span>
-            <h2>{profile.contextTitle[language]}</h2>
-          </Reveal>
-          <Reveal className="editorial-service-context-copy" delay={80}>
-            <p>{service.statement}</p>
-            <p>{profile.second[language]}</p>
-          </Reveal>
-        </div>
-      </section>
-      <ServiceFit fit={detail.fit} language={language} />
-      {detail.does ? (
-        <ServiceScopeGroups does={detail.does} language={language} />
+      {profile.skipContext ? null : (
+        <section className="editorial-service-context">
+          <div className="content-shell editorial-service-context-grid">
+            <Reveal>
+              <span className="eyebrow">{labels.context}</span>
+              <h2>{profile.contextTitle[language]}</h2>
+            </Reveal>
+            <Reveal className="editorial-service-context-copy" delay={80}>
+              <p>{service.statement}</p>
+              <p>{profile.second[language]}</p>
+            </Reveal>
+          </div>
+        </section>
+      )}
+      {detail.needs ? (
+        <ServiceNeeds needs={detail.needs} language={language} />
       ) : (
-        <Scope
-          service={service}
-          profile={profile}
-          language={language}
-          labels={labels}
-        />
+        <>
+          <ServiceFit fit={detail.fit} language={language} />
+          {detail.does ? (
+            <ServiceScopeGroups does={detail.does} language={language} />
+          ) : (
+            <Scope
+              service={service}
+              profile={profile}
+              language={language}
+              labels={labels}
+            />
+          )}
+        </>
       )}
       <ServicePricing
         serviceKey={service.serviceKey}
@@ -809,7 +842,11 @@ export default function EditorialServicePage({ service, ui, language }) {
       <ServiceFeeTable feeSchedule={detail.feeSchedule} language={language} />
       <ServiceOptions options={detail.options} language={language} />
       {profile.type === "project" && detail.process ? (
-        <ServiceSteps steps={detail.process} language={language} />
+        <ServiceSteps
+          steps={detail.process}
+          title={detail.processTitle}
+          language={language}
+        />
       ) : null}
       <ServiceSpecific
         service={service}
@@ -819,17 +856,20 @@ export default function EditorialServicePage({ service, ui, language }) {
         labels={labels}
         steps={steps}
         prepare={prepare}
+        prepareCopy={detail.prepareCopy}
       />
       <ServiceCompare compare={detail.compare} language={language} />
       <ServiceFaq faq={detail.faq} language={language} />
       <section className="editorial-service-close">
         <div className="content-shell">
-          <div className="editorial-service-boundary">
-            <span className="eyebrow">{labels.boundary}</span>
-            <p>
-              <strong>{service.title}</strong> — {service.boundary}
-            </p>
-          </div>
+          {detail.scopeAside ? null : (
+            <div className="editorial-service-boundary">
+              <span className="eyebrow">{labels.boundary}</span>
+              <p>
+                <strong>{service.title}</strong> — {service.boundary}
+              </p>
+            </div>
+          )}
           {service.status ? (
             <div className="editorial-service-status">
               <strong>{service.status.label}</strong>
@@ -864,18 +904,27 @@ export default function EditorialServicePage({ service, ui, language }) {
                 </LocalizedLink>
               </div>
             </Reveal>
-            <div className="editorial-service-related">
-              <ServiceRelated
-                items={service.related}
-                heading={labels.related}
-              />
-              {service.resources.some(([, to]) => Boolean(to)) ? (
-                <section>
-                  <h3>{labels.resources}</h3>
-                  <LinkRows items={service.resources} />
-                </section>
-              ) : null}
-            </div>
+            {detail.scopeAside ? (
+              <aside className="editorial-service-scope-aside">
+                <span className="eyebrow">{labels.boundary}</span>
+                <p>
+                  <strong>{service.title}</strong> — {service.boundary}
+                </p>
+              </aside>
+            ) : (
+              <div className="editorial-service-related">
+                <ServiceRelated
+                  items={service.related}
+                  heading={labels.related}
+                />
+                {service.resources.some(([, to]) => Boolean(to)) ? (
+                  <section>
+                    <h3>{labels.resources}</h3>
+                    <LinkRows items={service.resources} />
+                  </section>
+                ) : null}
+              </div>
+            )}
           </div>
         </div>
       </section>

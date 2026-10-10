@@ -215,6 +215,37 @@ export function ServicePricing({ serviceKey, pricing, language, ctaProps }) {
   );
 }
 
+// What the service covers, as two plain lists in one section: the notarial
+// (or core) work, and the separate support around it. One band replaces the
+// separate "is this for you" and "what the service supports" sections.
+export function ServiceNeeds({ needs, language }) {
+  if (!needs?.groups?.length) return null;
+  const labels = moduleLabels[language] ?? moduleLabels.en;
+  return (
+    <section className="editorial-service-fit editorial-service-needs">
+      <div className="content-shell editorial-service-fit-grid">
+        <Reveal>
+          <span className="eyebrow">{needs.eyebrow || labels.fit}</span>
+          <h2>{needs.title}</h2>
+        </Reveal>
+        <Reveal delay={70}>
+          {needs.groups.map((group) => (
+            <div key={group.title} className="editorial-service-needs-group">
+              <h3>{group.title}</h3>
+              <ul className="editorial-service-fit-list">
+                {group.items.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+              {group.note ? <p>{group.note}</p> : null}
+            </div>
+          ))}
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
 // A compact fee schedule for a service whose fees are a fixed, published
 // table rather than priced tiers (e.g. the state-permitted notary fees) --
 // one table, not a card per row. Renders nothing when `feeSchedule` is absent.
@@ -247,7 +278,15 @@ export function ServiceFeeTable({ feeSchedule, language }) {
                 return (
                   <tr key={row.id}>
                     <th scope="row">{row.label}</th>
-                    <td>{fee.fee}</td>
+                    <td>
+                      {fee.amount ? (
+                        <>
+                          <strong>{fee.amount}</strong> <span>{fee.unit}</span>
+                        </>
+                      ) : (
+                        <span className="fee-schedule-flat">{fee.unit}</span>
+                      )}
+                    </td>
                   </tr>
                 );
               })}
@@ -262,9 +301,37 @@ export function ServiceFeeTable({ feeSchedule, language }) {
   );
 }
 
+// A compact, factual replacement for a service's hero icon+mark: an eyebrow
+// label, the representative fee (reusing the fee-schedule data so the number
+// can only ever match the table below it), and a couple of short facts.
+export function ServiceHeroSummary({ heroSummary, language }) {
+  if (!heroSummary) return null;
+  const fee = describeNotaryFee(heroSummary.feeId, language);
+  return (
+    <div className="editorial-service-hero-summary">
+      <span className="editorial-service-hero-summary-eyebrow">
+        {heroSummary.eyebrow}
+      </span>
+      {fee ? (
+        <p className="editorial-service-hero-summary-price">
+          {fee.amount ? <strong>{fee.amount}</strong> : null}
+          <span>{fee.unit}</span>
+        </p>
+      ) : null}
+      {heroSummary.points?.length ? (
+        <ul>
+          {heroSummary.points.map((point) => (
+            <li key={point}>{point}</li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
 // Numbered steps for services whose page otherwise shows a "what to bring"
 // panel instead of a process.
-export function ServiceSteps({ steps, language }) {
+export function ServiceSteps({ steps, title, language }) {
   if (!steps?.length) return null;
   const labels = moduleLabels[language] ?? moduleLabels.en;
   return (
@@ -272,7 +339,7 @@ export function ServiceSteps({ steps, language }) {
       <div className="content-shell">
         <div className="editorial-service-specific-heading">
           <span className="eyebrow">{labels.process}</span>
-          <h2>{labels.processTitle}</h2>
+          <h2>{title || labels.processTitle}</h2>
         </div>
         <ol className="editorial-service-process">
           {steps.map(([name, description], index) => (
@@ -295,7 +362,7 @@ export function ServiceCompare({ compare, language }) {
     <section className="editorial-service-compare">
       <div className="content-shell editorial-service-compare-grid">
         <Reveal>
-          <span className="eyebrow">{labels.compare}</span>
+          <span className="eyebrow">{compare.eyebrow || labels.compare}</span>
           <h2>{compare.title}</h2>
           {compare.intro ? <p>{compare.intro}</p> : null}
         </Reveal>

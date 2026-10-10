@@ -29,6 +29,9 @@ const priced = new Set([
 // notarial fee schedule, not an Alchemize commercial price -- kept distinct
 // from `priced` above so the two policies stay separately testable.
 const governmentFeeSchedule = new Set(["individuals/notary-document-services"]);
+// Notary folds "is this for you" and "what the service supports" into one
+// section, and relates other services through one compact list.
+const consolidated = new Set(["individuals/notary-document-services"]);
 const languages = [
   { code: "en", prefix: "" },
   { code: "es", prefix: "/es" },
@@ -152,12 +155,32 @@ for (const { code, prefix } of languages) {
   }) => {
     await page.goto(`${prefix}/services/individuals/notary-document-services`);
     const text = await bodyText(page);
-    // four $10 acts (acknowledgment, jurat, verification, oath); no charge
-    // and the mileage rate carry no dollar figure of their own
-    expect(dollarAmounts(text).sort()).toEqual(["10", "10", "10", "10"]);
+    // four $10 acts in the fee table (acknowledgment, jurat, verification,
+    // oath), plus the same acknowledgment fee restated in the hero summary;
+    // no charge and the mileage rate carry no dollar figure of their own
+    expect(dollarAmounts(text).sort()).toEqual(["10", "10", "10", "10", "10"]);
     // never presented as individual pricing cards/boxes (that is Apostille's
     // presentation, not Notary's)
     await expect(page.locator(".editorial-service-price-card")).toHaveCount(0);
+    // the fee table is not explained twice: its note carries the travel terms
+    await expect(page.locator(".fee-schedule-note")).toHaveCount(1);
+    // the hero states the service, the price anchor, and availability --
+    // replacing the generic icon + three-word mark other services still use
+    const heroSummary = page.locator(".editorial-service-hero-summary");
+    await expect(heroSummary).toContainText("$10");
+    await expect(heroSummary).toContainText(
+      code === "en" ? "North Carolina" : "Carolina del Norte",
+    );
+    await expect(page.locator(".editorial-service-mark-words")).toHaveCount(0);
+    await expect(
+      page.getByRole("heading", {
+        level: 1,
+        name:
+          code === "en"
+            ? "North Carolina Notary Services"
+            : "Servicios Notariales de Carolina del Norte",
+      }),
+    ).toBeVisible();
     const table = page.locator(".fee-schedule-table");
     await expect(table).toBeVisible();
     await expect(table.locator("tbody tr")).toHaveCount(6);
@@ -170,7 +193,9 @@ for (const { code, prefix } of languages) {
       code === "en" ? "mileage rate" : "millaje",
     );
     await expect(travelFeeCell).not.toContainText("$");
-    expect(text).toMatch(/written|por escrito/i);
+    await expect(page.locator(".fee-schedule-note")).toContainText(
+      code === "en" ? "in writing" : "por escrito",
+    );
     // no proprietary rate, and no claim of a current commission
     expect(text).not.toMatch(internalTerms);
     expect(text).not.toMatch(/\bcommissioned\b|comisionad/i);
@@ -184,6 +209,82 @@ for (const { code, prefix } of languages) {
     await hero.click();
     await expect(page.locator("#service")).toHaveValue("individual-notary");
     await expect(page.locator("#audience")).toHaveValue("individual");
+  });
+
+  test(`${code}: Notary keeps the appointment preparation checklist, the related-service links, and a strong closing CTA`, async ({
+    page,
+  }) => {
+    await page.goto(`${prefix}/services/individuals/notary-document-services`);
+    // preparation requirements stay in one accessible, actionable checklist
+    const prepItems = page.locator(".editorial-service-prepare-panel li");
+    await expect(prepItems).toHaveCount(5);
+    await expect(prepItems.first()).toBeVisible();
+    await expect(page.locator(".editorial-service-specific h2")).toHaveText(
+      code === "en"
+        ? "What to Bring to Your Appointment"
+        : "Qué llevar a su cita",
+    );
+    // the workbook is offered here, as the section's secondary action, and
+    // no longer in the hero
+    await expect(
+      page.locator(".editorial-service-specific a[href$='.pdf']"),
+    ).toHaveCount(1);
+    await expect(
+      page.locator(".editorial-service-hero a[href$='.pdf']"),
+    ).toHaveCount(0);
+    // related-service links (translation, apostille) remain functional, in one
+    // compact list rather than a comparison plus a second related list
+    const related = page.locator(".editorial-service-compare-list a");
+    await expect(related).toHaveCount(2);
+    await expect(page.locator(".editorial-service-compare h2")).toHaveText(
+      code === "en"
+        ? "Related Document Services"
+        : "Servicios documentales relacionados",
+    );
+    const hrefs = await related.evaluateAll((links) =>
+      links.map((a) => a.getAttribute("href")),
+    );
+    expect(hrefs).toEqual([
+      `${prefix}/services/individuals/translation-services`,
+      `${prefix}/services/individuals/apostille-services`,
+    ]);
+    await expect(page.locator(".editorial-service-related a")).toHaveCount(0);
+    // redundant sections are gone: no context band, no second scope band
+    await expect(page.locator(".editorial-service-context")).toHaveCount(0);
+    await expect(page.locator(".editorial-service-scope")).toHaveCount(0);
+    await expect(page.locator(".editorial-service-boundary")).toHaveCount(0);
+    // one consolidated section with the two distinct groups
+    await expect(page.locator(".editorial-service-needs-group")).toHaveCount(2);
+    await expect(
+      page.locator(".editorial-service-needs-group").nth(1),
+    ).toContainText(
+      code === "en"
+        ? "not part of the notarial fee"
+        : "no forma parte de la tarifa notarial",
+    );
+    // the process heading and the four steps
+    await expect(page.locator(".editorial-service-steps h2")).toHaveText(
+      code === "en"
+        ? "How Your Notary Appointment Works"
+        : "Cómo funciona su cita notarial",
+    );
+    await expect(page.locator(".editorial-service-process li")).toHaveCount(4);
+    // scope sits once, beside the closing request
+    await expect(page.locator(".editorial-service-scope-aside")).toHaveCount(1);
+    // the final section is a clear, substantial conversion point, not a
+    // second copy of the generic template close
+    await expect(page.locator(".editorial-service-close h2")).toHaveText(
+      code === "en"
+        ? "Ready to Get Your Document Notarized?"
+        : "¿Listo para notarizar su documento?",
+    );
+    const closeCta = page
+      .locator(".editorial-service-close-grid a.button")
+      .first();
+    await expect(closeCta).toHaveAttribute(
+      "href",
+      `${prefix}/contact?service=individual-notary`,
+    );
   });
 
   test(`${code}: every non-priced service page shows no price and no internal figure`, async ({
@@ -214,6 +315,7 @@ for (const { code, prefix } of languages) {
   }) => {
     for (const [slug] of pages) {
       await page.goto(`${prefix}/services/${slug}`);
+      if (consolidated.has(slug)) continue; // covered by the Notary tests
       await expect(page.locator(".editorial-service-fit li")).not.toHaveCount(
         0,
       );
@@ -390,6 +492,83 @@ test("Translation's See pricing link lands on the pricing section", async ({
   await link.click();
   await expect(page.locator("#pricing")).toBeInViewport();
 });
+
+test("the hero-summary treatment is scoped to Notary; other services keep their icon and mark", async ({
+  page,
+}) => {
+  for (const slug of [
+    "individuals/tax-preparation",
+    "individuals/translation-services",
+    "individuals/apostille-services",
+    "businesses/advisory-optimization",
+  ]) {
+    await page.goto(`/services/${slug}`);
+    await expect(page.locator(".editorial-service-mark-words")).toHaveCount(1);
+    await expect(page.locator(".editorial-service-hero-summary")).toHaveCount(
+      0,
+    );
+  }
+});
+
+for (const { code, prefix } of languages) {
+  test(`${code}: Notary FAQ answers distinct questions and its accordions work`, async ({
+    page,
+  }) => {
+    await page.goto(`${prefix}/services/individuals/notary-document-services`);
+    const items = page.locator(".editorial-service-faq-list details");
+    await expect(items).toHaveCount(6);
+    const questions = await page
+      .locator(".editorial-service-faq-list summary")
+      .allTextContents();
+    expect(new Set(questions).size).toBe(questions.length);
+    // the process and the checklist are not asked about a second time
+    for (const question of questions)
+      expect(question).not.toMatch(
+        /what should I bring|what happens after|qué debo llevar|qué pasa después/i,
+      );
+    // each accordion opens and closes
+    const first = items.first();
+    await expect(first).not.toHaveAttribute("open", "");
+    await first.locator("summary").click();
+    await expect(first).toHaveAttribute("open", "");
+    await expect(first.locator("p")).toBeVisible();
+    await first.locator("summary").click();
+    await expect(first).not.toHaveAttribute("open", "");
+    // answers do not make blanket claims about who must appear for a vehicle
+    // document: the document and receiving agency decide
+    const vehicle = items.nth(1);
+    await vehicle.locator("summary").click();
+    await expect(vehicle.locator("p")).toContainText(
+      code === "en" ? "depends on the document" : "Depende del documento",
+    );
+  });
+
+  test(`${code}: Notary page has no horizontal overflow and a compact fee table at phone width`, async ({
+    page,
+  }) => {
+    for (const width of [390, 768, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(
+        `${prefix}/services/individuals/notary-document-services`,
+      );
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth > window.innerWidth,
+        ),
+        `${width}px`,
+      ).toBe(false);
+    }
+    // a real table remains at phone width, with the fee column still beside
+    // its service name
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.goto(`${prefix}/services/individuals/notary-document-services`);
+    const row = page.locator(".fee-schedule-table tbody tr").first();
+    const label = await row.locator("th").boundingBox();
+    const fee = await row.locator("td").boundingBox();
+    expect(fee.x).toBeGreaterThan(label.x + label.width - 1);
+    expect(fee.x + fee.width).toBeLessThanOrEqual(390);
+  });
+}
 
 test("Notary's See pricing link lands on the fee schedule, not a pricing-card section", async ({
   page,

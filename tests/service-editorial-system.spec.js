@@ -4,7 +4,7 @@ const serviceRoutes = [
   ["/services/individuals/tax-preparation/", "Prepare before filing."],
   [
     "/services/individuals/notary-document-services/",
-    "Prepare the document first.",
+    "North Carolina Notary Services",
   ],
   ["/services/individuals/translation-services/", "Make the document clear."],
   [
@@ -39,14 +39,24 @@ const publiclyPriced = [
   "/services/individuals/notary-document-services/",
 ];
 
+// pages that fold the context and scope bands into one section
+const consolidatedRoutes = ["/services/individuals/notary-document-services/"];
+
 for (const [route, headline] of serviceRoutes) {
   test(`${route} uses the editorial service system`, async ({ page }) => {
     await page.goto(route);
     await expect(
       page.getByRole("heading", { level: 1, name: headline }),
     ).toBeVisible();
-    await expect(page.locator(".editorial-service-context")).toBeVisible();
-    await expect(page.locator(".editorial-service-scope")).toBeVisible();
+    if (consolidatedRoutes.includes(route)) {
+      // Notary goes from the hero straight to one "needs and support" section
+      await expect(page.locator(".editorial-service-context")).toHaveCount(0);
+      await expect(page.locator(".editorial-service-scope")).toHaveCount(0);
+      await expect(page.locator(".editorial-service-needs")).toBeVisible();
+    } else {
+      await expect(page.locator(".editorial-service-context")).toBeVisible();
+      await expect(page.locator(".editorial-service-scope")).toBeVisible();
+    }
     await expect(page.locator(".editorial-service-close")).toBeVisible();
     await expect(
       page.getByText("Who this is for", { exact: true }),

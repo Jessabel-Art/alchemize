@@ -418,25 +418,47 @@ export const serviceDetailEs = {
       hero: "Solicitar una cita notarial",
       close: "Solicitar una cita notarial",
       info: "Consultar antes de reservar",
-      title: "Cuéntenos qué necesita notarizar.",
-      body: "Indíquenos el documento, quién debe firmar, y dónde y cuándo. Alchemize revisa la solicitud y coordina la cita con usted.",
+      title: "¿Listo para notarizar su documento?",
+      body: "Solicite una cita y comparta algunos detalles sobre su documento, los firmantes requeridos y su ubicación preferida.",
     },
-    summary:
-      "Solicite una cita con un notario de Carolina del Norte. Cuéntele a Alchemize qué necesita notarizar y dónde; la solicitud se revisa y la cita se coordina con un notario autorizado.",
-    fit: {
-      title: "Necesidades notariales frecuentes",
-      items: [
-        "Reconocimiento de la firma en un documento",
-        "Declaraciones juradas y verificaciones bajo juramento",
-        "Juramentos y afirmaciones",
-        "Documentos que la parte receptora exige notarizados",
-        "Firmantes y testigos que deben coordinarse para una sola cita",
+    summary: "Prepare el documento. Alchemize se encarga de la notarización.",
+    // the preparation workbook is offered in the preparation section only
+    heroResource: false,
+    heroSummary: {
+      eyebrow: "Notaría tradicional",
+      feeId: "acknowledgment",
+      points: ["Citas móviles disponibles", "Carolina del Norte"],
+    },
+    needs: {
+      eyebrow: "Servicios",
+      title: "Necesidades notariales frecuentes y apoyo documental.",
+      groups: [
+        {
+          title: "Necesidades notariales frecuentes",
+          items: [
+            "Reconocimiento de la firma en un documento",
+            "Declaraciones juradas y verificaciones bajo juramento",
+            "Juramentos y afirmaciones",
+            "Documentos que la parte receptora exige notarizados",
+            "Firmantes y testigos que deben coordinarse para una sola cita",
+          ],
+        },
+        {
+          title: "Apoyo documental adicional",
+          items: [
+            "Impresión, escaneo y copias",
+            "Conversión de archivos y organización digital",
+            "Armado de paquetes de documentos",
+            "Revisión de que esté completo y en el formato correcto antes de presentarlo",
+          ],
+          note: "Disponible bajo solicitud. El apoyo documental es aparte del acto notarial y no forma parte de la tarifa notarial.",
+        },
       ],
     },
     feeSchedule: {
       title: "Tarifario notarial de Carolina del Norte.",
       intro:
-        "Estas son las tarifas notariales que permite la ley de Carolina del Norte. Corresponden al acto notarial en sí; el apoyo documental y la coordinación de la cita forman parte del servicio descrito a continuación.",
+        "La ley de Carolina del Norte permite estas tarifas notariales. Aplican solo al acto notarial.",
       rows: [
         { id: "acknowledgment", label: "Reconocimiento" },
         { id: "jurat", label: "Declaración jurada" },
@@ -449,33 +471,9 @@ export const serviceDetailEs = {
         { id: "mobileTravel", label: "Viaje móvil" },
       ],
       travelNote:
-        "El viaje móvil se cobra según el millaje real, a la tarifa federal de millaje comercial vigente, no como una tarifa fija de viaje o conveniencia. Usted debe aceptar el cargo por viaje por escrito antes de que este ocurra.",
+        "El viaje móvil se basa en el millaje real a la tarifa federal de millaje comercial vigente, no en una tarifa fija. Debe aceptar el cargo por escrito antes del viaje.",
     },
-    does: {
-      title: "Lo que respalda el servicio.",
-      intro:
-        "La notarización es un paso para dejar un documento listo. Alchemize ayuda con las solicitudes y con la preparación que la rodea.",
-      groups: [
-        {
-          title: "Solicitudes notariales",
-          items: [
-            "Revisión de la solicitud y del acto que se pide",
-            "Coordinación de la cita con un notario autorizado",
-            "Confirmación de firmantes, identificación y testigos",
-            "Realización del acto notarial solicitado",
-          ],
-        },
-        {
-          title: "Apoyo documental alrededor de la cita",
-          items: [
-            "Impresión, escaneo y copias",
-            "Conversión de archivos y organización digital",
-            "Armado de paquetes de documentos",
-            "Revisión de que esté completo y en el formato correcto antes de presentarlo",
-          ],
-        },
-      ],
-    },
+    processTitle: "Cómo funciona su cita notarial",
     process: [
       [
         "Solicitud",
@@ -494,35 +492,29 @@ export const serviceDetailEs = {
         "Se verifica la identificación y un notario autorizado realiza el acto notarial.",
       ],
     ],
+    prepareCopy: {
+      eyebrow: "Preparación",
+      title: "Qué llevar a su cita",
+    },
     prepare: [
       "El documento completo, sin firmar salvo que se indique lo contrario",
       "Identificación aceptable de cada firmante",
-      "Todos los firmantes presentes y testigos, si se requieren",
+      "Todos los firmantes requeridos y testigos, si corresponde",
       "Las instrucciones de la parte receptora",
       "Lugar y hora de la cita, y datos de devolución",
     ],
     compare: {
-      title: "Dónde encaja la notarización con otros servicios.",
-      intro:
-        "Un notario verifica la identidad y realiza un acto notarial. No decide qué debe decir un documento ni si es legalmente suficiente.",
+      eyebrow: "Otros servicios",
+      title: "Servicios documentales relacionados",
       rows: [
         {
-          label: "Notarización",
-          text: "Verificación de identidad y realización del acto notarial solicitado.",
-          current: true,
-        },
-        {
-          label: "Apoyo documental",
-          text: "Impresión, escaneo, organización de paquetes y revisión administrativa. No incluye formularios legales, redacción ni asesoría legal.",
-        },
-        {
           label: "Traducción",
-          text: "Si el documento también debe estar en inglés o en español, la traducción es un servicio aparte.",
+          text: "Para documentos que también deben estar en inglés o en español. Es un servicio aparte.",
           to: R.translation,
         },
         {
           label: "Facilitación de apostilla",
-          text: "Para su uso en el extranjero, una apostilla puede seguir a la notarización. Es un servicio aparte.",
+          text: "Para documentos que se usarán en el extranjero. Alchemize facilita el proceso de Carolina del Norte, que puede seguir a la notarización.",
           to: R.apostille,
         },
       ],
@@ -531,37 +523,35 @@ export const serviceDetailEs = {
       title: "Preguntas sobre notaría",
       items: [
         {
-          q: "¿Qué pasa después de enviar una solicitud?",
-          a: "Alchemize la revisa, confirma los detalles con usted y coordina la cita. Según la solicitud, la cita puede coordinarse con otro notario apropiado.",
+          q: "¿Pueden notarizar más de una firma en un mismo documento?",
+          a: "Sí, siempre que cada firmante comparezca con identificación aceptable. La tarifa se cobra por firma principal notariada.",
         },
         {
-          q: "¿Qué debo llevar?",
-          a: "El documento completo (sin firmar salvo que se indique lo contrario), identificación aceptable de cada firmante, todos los firmantes y testigos requeridos, y las instrucciones de la parte receptora.",
+          q: "¿El comprador y el vendedor deben estar presentes para un documento de un vehículo?",
+          a: "Depende del documento y del acto notarial que se solicite. El documento o la entidad receptora determina qué firmas deben notarizarse, así que confirme sus instrucciones antes de la cita y llévelas consigo.",
         },
         {
-          q: "¿Pueden decirme qué acto notarial necesita mi documento?",
-          a: "Eso debe especificarlo la parte receptora o un abogado. Un notario no elige formularios, no redacta textos ni da asesoría legal, pero Alchemize puede revisar con usted las instrucciones de la parte receptora.",
+          q: "¿Hay citas notariales móviles disponibles?",
+          a: "Sí. Incluya el lugar de la cita en su solicitud. Cualquier cargo por viaje sigue las condiciones de millaje del tarifario.",
         },
         {
-          q: "¿Pueden notarizar un documento que se usará en el extranjero?",
-          a: "La notarización puede ser un primer paso. La autenticación para su uso en otro país, la apostilla, es un servicio aparte.",
+          q: "¿Se puede notarizar un documento que se usará en otro país?",
+          a: "Sí, la notarización puede ser un primer paso. La autenticación para su uso en otro país, la apostilla, es un servicio aparte.",
         },
         {
-          q: "¿Cuánto cuesta?",
-          a: "Consulte el tarifario notarial de Carolina del Norte más arriba. El viaje móvil se cobra por separado a la tarifa federal de millaje comercial vigente, con su acuerdo por escrito antes de que ocurra el viaje.",
+          q: "¿Cómo se calculan las tarifas notariales?",
+          a: "Siguen el tarifario anterior y dependen del acto notarial y del número de firmas o personas. El viaje móvil se agrega solo cuando la cita lo requiere.",
+        },
+        {
+          q: "¿Pueden decirme qué acto notarial requiere mi documento?",
+          a: "Debe especificarlo la parte receptora o un abogado. Un notario no puede elegir el acto por usted, pero Alchemize puede revisar con usted las instrucciones de la parte receptora.",
         },
       ],
     },
-    related: [
-      [
-        R.apostille,
-        "Para documentos que irán al extranjero, la apostilla puede ser el siguiente paso.",
-      ],
-      [
-        R.translation,
-        "Servicio aparte para documentos que necesitan otro idioma.",
-      ],
-    ],
+    // the scope statement sits beside the closing request, not in a band of
+    // its own, and related services live in the comparison above
+    scopeAside: true,
+    related: [],
   },
 
   "individual-tax": {

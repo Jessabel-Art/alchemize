@@ -15,6 +15,17 @@
 //   options  { title, intro, items: [{ name, tag, text, points[] }], note }
 //   pricing  { title, intro, tiers: [{ id, name, text, points[] }], extras,
 //              notes[], separate: { title, items[] }, cta }   (priced services only)
+//   needs    { eyebrow, title, groups: [{ title, items[], note? }] }  one
+//            section in place of fit + does (Notary)
+//   feeSchedule { title, intro, rows: [{ id, label }], travelNote }  a fixed,
+//            published fee table; amounts come from notaryFeeSchedule.js
+//   heroSummary { eyebrow, feeId, points[] }  replaces the hero icon + mark
+//   heroResource false  keeps the download link out of the hero
+//   processTitle  heading for the process steps
+//   prepareCopy { eyebrow, title }  short heading for "what to bring"; drops
+//            the default intro paragraph
+//   scopeAside true  scope statement beside the closing request; related
+//            services then live in `compare`, so `related` is []
 //   process  [[name, text]]         overrides the catalog steps
 //   prepare  [item]                 overrides the "what to bring" list
 //   compare  { title, intro, rows: [{ label, text, to, current }] }
@@ -432,25 +443,47 @@ export const serviceDetailEn = {
       hero: "Request a Notary Appointment",
       close: "Request a Notary Appointment",
       info: "Ask before you book",
-      title: "Tell us what needs to be notarized.",
-      body: "Share the document, who needs to sign, and where and when. Alchemize reviews the request and coordinates the appointment with you.",
+      title: "Ready to Get Your Document Notarized?",
+      body: "Request an appointment and provide a few details about your document, required signers, and preferred location.",
     },
-    summary:
-      "Request a North Carolina notary appointment. Tell Alchemize what needs to be notarized and where; the request is reviewed and the appointment is coordinated with an authorized notary.",
-    fit: {
-      title: "Common notarial needs",
-      items: [
-        "Acknowledgments of a signature on a document",
-        "Jurats and sworn statements",
-        "Oaths and affirmations",
-        "Documents a receiving party requires to be notarized",
-        "Signers and witnesses who need to be coordinated for one appointment",
+    summary: "Prepare the document. Alchemize handles the notarization.",
+    // the preparation workbook is offered in the preparation section only
+    heroResource: false,
+    heroSummary: {
+      eyebrow: "Traditional Notary",
+      feeId: "acknowledgment",
+      points: ["Mobile appointments available", "North Carolina"],
+    },
+    needs: {
+      eyebrow: "Services",
+      title: "Common notarial needs and document support.",
+      groups: [
+        {
+          title: "Common Notarial Needs",
+          items: [
+            "Acknowledgments of a signature on a document",
+            "Jurats and sworn statements",
+            "Oaths and affirmations",
+            "Documents a receiving party requires to be notarized",
+            "Signers and witnesses who need to be coordinated for one appointment",
+          ],
+        },
+        {
+          title: "Additional Document Support",
+          items: [
+            "Printing, scanning, and copying",
+            "File conversion and digital organization",
+            "Assembly of document packets",
+            "Completeness and format checks before submission",
+          ],
+          note: "Available on request. Document support is separate from the notarial act and is not part of the notarial fee.",
+        },
       ],
     },
     feeSchedule: {
       title: "North Carolina notary fee schedule.",
       intro:
-        "These are the notarial fees North Carolina law permits. They apply to the notarial act itself; document support and appointment coordination are part of the service described below.",
+        "North Carolina law permits these notarial fees. They apply to the notarial act only.",
       rows: [
         { id: "acknowledgment", label: "Acknowledgment" },
         { id: "jurat", label: "Jurat" },
@@ -460,33 +493,9 @@ export const serviceDetailEn = {
         { id: "mobileTravel", label: "Mobile Travel" },
       ],
       travelNote:
-        "Mobile travel is charged at actual mileage using the current federal business mileage rate, not a flat travel or convenience fee. You must agree to the travel charge in writing before travel occurs.",
+        "Mobile travel is based on actual mileage at the current federal business mileage rate, not a flat fee. You must agree to the charge in writing before travel.",
     },
-    does: {
-      title: "What the service supports.",
-      intro:
-        "Notarization is one step in getting a document ready. Alchemize helps with the requests and the preparation around it.",
-      groups: [
-        {
-          title: "Notarial requests",
-          items: [
-            "Review of the request and the act being asked for",
-            "Coordination of the appointment with an authorized notary",
-            "Confirmation of signers, identification, and witnesses",
-            "Completion of the requested notarial act",
-          ],
-        },
-        {
-          title: "Document support around the appointment",
-          items: [
-            "Printing, scanning, and copying",
-            "File conversion and digital organization",
-            "Assembly of document packets",
-            "Completeness and format checks before submission",
-          ],
-        },
-      ],
-    },
+    processTitle: "How Your Notary Appointment Works",
     process: [
       [
         "Request",
@@ -505,35 +514,29 @@ export const serviceDetailEn = {
         "Identification is verified and the notarial act is completed by an authorized notary.",
       ],
     ],
+    prepareCopy: {
+      eyebrow: "Preparation",
+      title: "What to Bring to Your Appointment",
+    },
     prepare: [
-      "The complete document, unsigned unless instructed otherwise",
-      "Acceptable identification for every signer",
-      "All signers present, and witnesses if required",
+      "The completed document, unsigned unless instructed otherwise",
+      "Acceptable identification for each signer",
+      "All required signers, and witnesses where applicable",
       "Any instructions from the receiving party",
       "Appointment location, timing, and return details",
     ],
     compare: {
-      title: "Where notarization fits with other services.",
-      intro:
-        "A notary verifies identity and completes a notarial act. It does not decide what a document should say or whether it is legally sufficient.",
+      eyebrow: "Other services",
+      title: "Related Document Services",
       rows: [
         {
-          label: "Notarization",
-          text: "Identity verification and completion of the requested notarial act.",
-          current: true,
-        },
-        {
-          label: "Document support",
-          text: "Printing, scanning, packet organization, and administrative proofreading. This does not include legal forms, drafting, or legal advice.",
-        },
-        {
           label: "Translation",
-          text: "If a document also needs to be in English or Spanish, translation is a separate service.",
+          text: "For documents that also need to be in English or Spanish. A separate service.",
           to: R.translation,
         },
         {
-          label: "Apostille facilitation",
-          text: "For use abroad, an apostille may follow notarization. It is a separate service.",
+          label: "Apostille Facilitation",
+          text: "For documents going abroad. Alchemize facilitates the North Carolina process, which may follow notarization.",
           to: R.apostille,
         },
       ],
@@ -542,37 +545,35 @@ export const serviceDetailEn = {
       title: "Notary questions",
       items: [
         {
-          q: "What happens after I submit a request?",
-          a: "Alchemize reviews it, confirms the details with you, and coordinates the appointment. Depending on the request, the appointment may be coordinated with another appropriate notary.",
+          q: "Can you notarize more than one signature on a document?",
+          a: "Yes, when each signer appears with acceptable identification. The fee is charged per notarized principal signature.",
         },
         {
-          q: "What should I bring?",
-          a: "The complete document (unsigned unless instructed otherwise), acceptable identification for every signer, all required signers and witnesses, and any instructions from the receiving party.",
+          q: "Do both the buyer and seller need to be present for a vehicle document?",
+          a: "That depends on the document and the notarial act requested. The document or the receiving agency determines which signatures must be notarized, so confirm their instructions before the appointment and bring them with you.",
         },
         {
-          q: "Can you tell me which notarial act my document needs?",
-          a: "The receiving party, or an attorney, should specify that. A notary does not select forms, draft language, or give legal advice, but Alchemize can review the receiving party's instructions with you.",
+          q: "Are mobile notary appointments available?",
+          a: "Yes. Include the appointment location in your request. Any travel charge follows the mileage terms in the fee schedule.",
         },
         {
-          q: "Can you notarize a document that will be used abroad?",
-          a: "Notarization may be a first step. Authentication for use in another country, an apostille, is a separate service.",
+          q: "Can a document intended for international use be notarized?",
+          a: "Yes, notarization may be a first step. Authentication for use in another country, an apostille, is a separate service.",
         },
         {
-          q: "How much does it cost?",
-          a: "See the North Carolina notary fee schedule above. Mobile travel is billed separately at the current federal business mileage rate, with your written agreement before travel occurs.",
+          q: "How are notarization fees calculated?",
+          a: "They follow the fee schedule above and depend on the notarial act and the number of signatures or persons. Mobile travel is added only when an appointment requires it.",
+        },
+        {
+          q: "Can you tell me which notarial act my document requires?",
+          a: "The receiving party or an attorney should specify it. A notary cannot choose the act for you, but Alchemize can review the receiving party's instructions with you.",
         },
       ],
     },
-    related: [
-      [
-        R.apostille,
-        "For documents going abroad, an apostille can be the next step.",
-      ],
-      [
-        R.translation,
-        "A separate service for documents needing another language.",
-      ],
-    ],
+    // the scope statement sits beside the closing request, not in a band of
+    // its own, and related services live in the comparison above
+    scopeAside: true,
+    related: [],
   },
 
   "individual-tax": {
