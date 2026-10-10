@@ -9,7 +9,7 @@ const routes = [
   "/contact/",
   "/privacy/",
   "/terms/",
-  "/jessy/",
+  "/links/",
 ];
 
 test.describe("Accessibility smoke checks", () => {

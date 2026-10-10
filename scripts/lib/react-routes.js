@@ -51,6 +51,7 @@ export const APP_ROUTE_PATHS = [
   "/terms",
   "/login",
   "/register",
+  "/links",
   "/jessy",
   "/admin",
   "/admin/dashboard",
@@ -95,6 +96,7 @@ const REDIRECT_ROUTE_PATHS = new Set([
   "/es/about",
   "/es/services/individuals",
   "/es/services/businesses",
+  "/jessy",
 ]);
 
 export const PUBLIC_SITEMAP_ROUTES = APP_ROUTE_PATHS.filter(
@@ -104,7 +106,7 @@ export const PUBLIC_SITEMAP_ROUTES = APP_ROUTE_PATHS.filter(
     !path.startsWith("/client-portal") &&
     !path.startsWith("/login") &&
     !path.startsWith("/register") &&
-    path !== "/jessy",
+    path !== "/links",
 );
 
 export function getSitemapRoutes() {

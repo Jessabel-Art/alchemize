@@ -94,7 +94,7 @@ test.describe("SEO validation", () => {
       // one URL per page: no trailing slash except the homepage
       if (loc !== `${ORIGIN}/`) expect(loc.endsWith("/")).toBe(false);
       expect(pathOf(loc)).not.toMatch(
-        /^\/(admin|client-portal|login|register|set-password|jessy|appointment)/,
+        /^\/(admin|client-portal|login|register|set-password|jessy|links|appointment)/,
       );
     }
     expect(locs).toContain(`${ORIGIN}/web-digital`);

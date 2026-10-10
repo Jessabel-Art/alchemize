@@ -23,7 +23,7 @@ import MeetTheFounderPage from "../pages/resources/MeetTheFounderPage.jsx";
 import ResourceRoutePage from "../pages/resources/ResourceRoutePage.jsx";
 import LegalPage from "../pages/legal/LegalPage.jsx";
 import NotFoundPage from "../pages/not-found/NotFoundPage.jsx";
-import JessyLinkBioPage from "../pages/jessy/JessyLinkBioPage.jsx";
+import LinkHubPage from "../pages/links/LinkHubPage.jsx";
 import AuthPage, { SetPasswordPage } from "../pages/auth/AuthPage.jsx";
 import AdminDashboardPage from "../pages/admin/AdminDashboardPage.jsx";
 import AdminCommunicationsPage from "../pages/admin/AdminCommunicationsPage.jsx";
@@ -364,7 +364,8 @@ function App() {
           />
         </Route>
 
-        <Route path="/jessy" element={<JessyLinkBioPage />} />
+        <Route path="/links" element={<LinkHubPage />} />
+        <Route path="/jessy" element={<Navigate to="/links" replace />} />
       </Routes>
     </>
   );

@@ -1,0 +1,254 @@
+/* /links link-in-bio hub. The supplied raster artwork is the design; this file
+   only lays it out and adds the gold-backed press interaction. Sizes inside
+   the stage use cqw so the composition keeps the mockup's proportions at any
+   column width. */
+
+.links-page {
+  --links-ink: #15130f;
+  --links-cream: #fbf0d2;
+  --links-gold: #d4a12f;
+
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: clip;
+  background: #0d100c;
+}
+
+.links-stage {
+  container-type: inline-size;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: min(100%, clamp(340px, 54vh, 560px));
+  width: min(100%, clamp(340px, 54dvh, 560px));
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: clip;
+  background: #f3e3bd url("/assets/images/link-bio/web/links-background.webp")
+    center / cover no-repeat;
+}
+
+/* Wider than the column: the same artwork, softened, fills the surround so
+   the portrait composition reads as a framed card instead of floating. */
+@media (min-width: 600px) {
+  .links-page::before {
+    content: "";
+    position: fixed;
+    inset: -48px;
+    z-index: -1;
+    background: url("/assets/images/link-bio/web/links-background.webp")
+      center / cover no-repeat;
+    filter: blur(22px) brightness(0.48) saturate(1.15);
+  }
+
+  .links-stage {
+    box-shadow:
+      0 0 0 1px rgba(0, 0, 0, 0.6),
+      0 24px 80px rgba(0, 0, 0, 0.55);
+  }
+}
+
+/* Header: slightly wider than the column so the lettering approaches the
+   mockup's scale; only the outermost ray tips of the burst are trimmed. */
+.links-title {
+  flex-shrink: 0;
+  width: 108cqw;
+  margin: 5cqw 0 0;
+  line-height: 0;
+}
+
+.links-title img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Navigation buttons */
+.links-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2.6cqw;
+  width: 86cqw;
+  margin: 5cqw 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.links-btn {
+  --links-offset: 1.15cqw;
+
+  position: relative;
+  display: block;
+  border-radius: 999px;
+  line-height: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.links-btn__gold,
+.links-btn__face {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Stationary backing layer, sized to the trimmed button shape and offset
+   down-right so it shows along the bottom and right edges. */
+.links-btn__gold {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  transform: translate(var(--links-offset), var(--links-offset));
+}
+
+.links-btn__face {
+  position: relative;
+  transition: transform 150ms cubic-bezier(0.3, 0.7, 0.4, 1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  a.links-btn:hover .links-btn__face {
+    transform: translate(
+      calc(var(--links-offset) * 0.4),
+      calc(var(--links-offset) * 0.4)
+    );
+  }
+}
+
+a.links-btn:active .links-btn__face {
+  transform: translate(
+    calc(var(--links-offset) * 0.9),
+    calc(var(--links-offset) * 0.9)
+  );
+  transition-duration: 70ms;
+}
+
+/* Two-tone ring stays visible against every color in the artwork. */
+a.links-btn:focus-visible,
+a.links-social__icon:focus-visible {
+  outline: 3px solid var(--links-cream);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 3px var(--links-ink);
+}
+
+.links-btn--pending {
+  cursor: default;
+}
+
+/* Social row */
+.links-social {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2.6cqw;
+  margin: 6cqw 0 6cqw;
+}
+
+.links-social__divider {
+  position: relative;
+  width: 48cqw;
+  height: 3cqw;
+}
+
+.links-social__divider::before {
+  content: "";
+  position: absolute;
+  inset: 50% 0 auto;
+  height: max(1px, 0.25cqw);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #3a2f17 14%,
+    #3a2f17 42%,
+    transparent 45%,
+    transparent 55%,
+    #3a2f17 58%,
+    #3a2f17 86%,
+    transparent
+  );
+}
+
+.links-social__divider::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 3cqw;
+  height: 3cqw;
+  background: var(--links-gold);
+  transform: translateX(-50%);
+  clip-path: polygon(
+    50% 0,
+    60% 40%,
+    100% 50%,
+    60% 60%,
+    50% 100%,
+    40% 60%,
+    0 50%,
+    40% 40%
+  );
+}
+
+.links-social__list {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.links-social__item {
+  display: flex;
+  align-items: center;
+}
+
+.links-social__item + .links-social__item {
+  margin-left: 1.6cqw;
+  padding-left: 1.6cqw;
+  border-left: max(1px, 0.25cqw) solid rgba(21, 19, 15, 0.55);
+}
+
+.links-social__icon {
+  display: block;
+  width: clamp(40px, 10cqw, 56px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  line-height: 0;
+  transition:
+    transform 150ms ease,
+    filter 150ms ease;
+}
+
+.links-social__icon img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  a.links-social__icon:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.08);
+  }
+}
+
+a.links-social__icon:active {
+  transform: translateY(1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .links-btn__face,
+  .links-social__icon {
+    transition: none;
+  }
+
+  a.links-social__icon:hover,
+  a.links-social__icon:active {
+    transform: none;
+  }
+}
