@@ -55,15 +55,14 @@ export const linkHubButtons = [
 export const linkHubSocials = [
   {
     id: "instagram",
-    label: "Alchemize on Instagram",
-    href: "https://www.instagram.com/getalchemize/",
+    label: "@jessieleonne on Instagram",
+    href: "https://www.instagram.com/jessieleonne/",
     image: `${IMAGE_DIR}/links-social-instagram-160.webp`,
   },
   {
     id: "facebook",
     label: "Alchemize on Facebook",
-    // CONFIG: set to the Alchemize Facebook page URL once confirmed.
-    href: null,
+    href: "https://www.facebook.com/getalchemizefb",
     image: `${IMAGE_DIR}/links-social-facebook-160.webp`,
   },
   {
@@ -75,7 +74,7 @@ export const linkHubSocials = [
   {
     id: "linkedin",
     label: "Alchemize on LinkedIn",
-    href: "https://www.linkedin.com/company/alchemize-business-services/",
+    href: "https://www.linkedin.com/getalchemize",
     image: `${IMAGE_DIR}/links-social-linkedin-160.webp`,
   },
 ];
