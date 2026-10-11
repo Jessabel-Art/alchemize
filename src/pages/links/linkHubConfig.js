@@ -74,7 +74,7 @@ export const linkHubSocials = [
   {
     id: "linkedin",
     label: "Alchemize on LinkedIn",
-    href: "https://www.linkedin.com/getalchemize",
+    href: "https://www.linkedin.com/company/getalchemize/",
     image: `${IMAGE_DIR}/links-social-linkedin-160.webp`,
   },
 ];
