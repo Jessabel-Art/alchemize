@@ -46,7 +46,7 @@ const organizationBase = {
   sameAs: [
     "https://www.instagram.com/getalchemize/",
     "https://www.threads.com/@getalchemize",
-    "https://www.linkedin.com/company/alchemize-business-services/",
+    "https://www.linkedin.com/company/getalchemize/",
   ],
   founder: {
     "@type": "Person",
